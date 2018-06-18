@@ -1,0 +1,18 @@
+{
+  "name": "dotstats-server",
+  "version": "0.1.0",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "tsc && node dist/index.js",
+    "tsc": "tsc"
+  },
+  "author": "Parity Technologies Ltd. <admin@parity.io>",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "@types/node": "^10.3.3",
+    "@types/ws": "^5.1.2",
+    "typescript": "^2.9.2",
+    "ws": "5.2.0"
+  }
+}
