@@ -1,5 +1,8 @@
 import * as WebSocket from 'ws';
+import { Maybe } from './maybe';
 import { parseMessage, getBestBlock, Message, BestBlock } from './message';
+
+const BLOCK_TIME_HISTORY = 10;
 
 export default class Node {
     private socket: WebSocket;
@@ -8,6 +11,8 @@ export default class Node {
     private implementation: string;
     private version: string;
     private height: number = 0;
+    private blockTimes: Array<number> = new Array(BLOCK_TIME_HISTORY);
+    private lastBlockTime: Maybe<Date> = null;
 
     constructor(socket: WebSocket, name: string, config: string, implentation: string, version: string) {
         this.socket = socket;
@@ -33,12 +38,44 @@ export default class Node {
         });
     }
 
-    updateBestBlock(update: BestBlock) {
-        if (this.height < update.height) {
-            this.height = update.height;
+    private updateBestBlock(update: BestBlock) {
+        const { height, ts: time, best } = update;
 
-            console.log(`Best block for ${this.name} is ${this.height}`);
+        if (this.height < height) {
+            const blockTime = this.getBlockTime(time);
+
+            this.height = height;
+            this.lastBlockTime = time;
+            this.blockTimes[height % BLOCK_TIME_HISTORY] = blockTime;
+
+            console.log(`Best block for ${this.name} is ${this.height}, block time: ${blockTime / 1000}s, average: ${this.average / 1000}s`);
         }
+    }
+
+    private getBlockTime(time: Date): number {
+        if (!this.lastBlockTime) {
+            return 0;
+        }
+
+        return +time - +this.lastBlockTime;
+    }
+
+    get average(): number {
+        let accounted = 0;
+        let sum = 0;
+
+        for (const time of this.blockTimes) {
+            if (time) {
+                accounted += 1;
+                sum += time;
+            }
+        }
+
+        if (accounted === 0) {
+            return 0;
+        }
+
+        return sum / accounted;
     }
 
     static fromSocket(socket: WebSocket): Promise<Node> {

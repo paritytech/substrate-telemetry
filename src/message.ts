@@ -5,7 +5,9 @@ export function parseMessage(data: Data): Maybe<Message> {
     try {
         const message = JSON.parse(data.toString());
 
-        if (message && typeof message.msg === 'string') {
+        if (message && typeof message.msg === 'string' && typeof message.ts === 'string') {
+            message.ts = new Date(message.ts);
+
             return message;
         }
     } catch (_) {
@@ -27,14 +29,14 @@ export function getBestBlock(message: Message): Maybe<BestBlock> {
 }
 
 interface MessageBase {
-    ts: string, // Timestamp
+    ts: Date,
     level: 'INFO' | 'WARN',
 }
 
 export interface BestBlock {
     best: string,
     height: number,
-    ts: string,
+    ts: Date,
 }
 
 interface SystemConnected {
