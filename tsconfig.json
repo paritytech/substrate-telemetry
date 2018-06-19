@@ -1,9 +1,17 @@
 {
   "compilerOptions": {
-    "target": "es6",
+    "target": "es2017",
     "module": "commonjs",
     "outDir": "dist",
-    "sourceMap": true
+    "strictNullChecks": true,
+    "sourceMap": true,
+    "moduleResolution": "node",
+    "noEmitOnError": false,
+    // "noUnusedLocals": true,
+    // "noUnusedParameters": true,
+    "pretty": true,
+    "noErrorTruncation": true,
+    "noImplicitAny": true
   },
   "files": [
     "./node_modules/@types/node/index.d.ts",
