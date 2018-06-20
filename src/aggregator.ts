@@ -4,7 +4,8 @@ import { NodeId } from './nodeId';
 
 export default class Aggregator extends EventEmitter {
     private nodes: Map<NodeId, Node> = new Map;
-    private height: number = 0;
+
+    public height: number = 0;
 
     add(node: Node) {
         this.nodes.set(node.id, node);
@@ -17,8 +18,8 @@ export default class Aggregator extends EventEmitter {
         node.on('block', () => this.updateBlock(node));
     }
 
-    get nodeList(): Iterable<Node> {
-        return this.nodes.values();
+    get nodeList(): Array<Node> {
+        return Array.from(this.nodes.values());
     }
 
     private updateBlock(node: Node) {
