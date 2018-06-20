@@ -1,19 +1,24 @@
 import * as EventEmitter from 'events';
 import Node from './node';
+import { NodeId } from './nodeId';
 
 export default class Aggregator extends EventEmitter {
-    private nodes: WeakSet<Node> = new WeakSet;
+    private nodes: Map<NodeId, Node> = new Map;
     private height: number = 0;
 
     add(node: Node) {
-        this.nodes.add(node);
+        this.nodes.set(node.id, node);
         node.once('disconnect', () => {
             node.removeAllListeners('block');
 
-            this.nodes.delete(node);
+            this.nodes.delete(node.id);
         });
 
         node.on('block', () => this.updateBlock(node));
+    }
+
+    get nodeList(): Iterable<Node> {
+        return this.nodes.values();
     }
 
     private updateBlock(node: Node) {

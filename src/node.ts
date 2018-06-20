@@ -1,14 +1,13 @@
 import * as WebSocket from 'ws';
 import * as EventEmitter from 'events';
 import { Maybe } from './maybe';
+import { NodeId, getId } from './nodeId';
 import { parseMessage, getBestBlock, Message, BestBlock } from './message';
 
 const BLOCK_TIME_HISTORY = 10;
 
-let idDispenser = 0;
-
 export default class Node extends EventEmitter {
-    public id: number;
+    public id: NodeId;
     public name: string;
     public implementation: string;
     public version: string;
@@ -24,7 +23,7 @@ export default class Node extends EventEmitter {
     constructor(socket: WebSocket, name: string, config: string, implentation: string, version: string) {
         super();
 
-        this.id = idDispenser++;
+        this.id = getId();
         this.socket = socket;
         this.name = name;
         this.config = config;
