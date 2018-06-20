@@ -5,21 +5,26 @@ import { parseMessage, getBestBlock, Message, BestBlock } from './message';
 
 const BLOCK_TIME_HISTORY = 10;
 
+let idDispenser = 0;
+
 export default class Node extends EventEmitter {
-    private id: number;
+    public id: number;
+    public name: string;
+    public implementation: string;
+    public version: string;
+    public height: number = 0;
+    public config: string;
+    public latency: number = 0;
+    public blockTime: number = 0;
+
     private socket: WebSocket;
-    private name: string;
-    private config: string;
-    private implementation: string;
-    private version: string;
-    private height: number = 0;
     private blockTimes: Array<number> = new Array(BLOCK_TIME_HISTORY);
-    private lastBlockTime: Maybe<Date> = null;
-    private latency: number = 0;
+    private lastBlockAt: Maybe<Date> = null;
 
     constructor(socket: WebSocket, name: string, config: string, implentation: string, version: string) {
         super();
 
+        this.id = idDispenser++;
         this.socket = socket;
         this.name = name;
         this.config = config;
@@ -86,6 +91,7 @@ export default class Node extends EventEmitter {
     private disconnect() {
         console.log(`${this.name} has disconnected`);
 
+        this.socket.removeAllListeners('message');
         this.emit('disconnect');
     }
 
@@ -100,19 +106,20 @@ export default class Node extends EventEmitter {
             const blockTime = this.getBlockTime(time);
 
             this.height = height;
-            this.lastBlockTime = time;
+            this.lastBlockAt = time;
             this.blockTimes[height % BLOCK_TIME_HISTORY] = blockTime;
+            this.blockTime = blockTime;
 
-            console.log(`Best block for ${this.name} is ${this.height}, block time: ${blockTime / 1000}s, average: ${this.average / 1000}s | latency ${this.latency}`);
+            this.emit('block');
         }
     }
 
     private getBlockTime(time: Date): number {
-        if (!this.lastBlockTime) {
+        if (!this.lastBlockAt) {
             return 0;
         }
 
-        return +time - +this.lastBlockTime;
+        return +time - +this.lastBlockAt;
     }
 
     get average(): number {
@@ -132,5 +139,4 @@ export default class Node extends EventEmitter {
 
         return sum / accounted;
     }
-
 }

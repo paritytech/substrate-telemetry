@@ -1,20 +1,17 @@
 import * as WebSocket from 'ws';
 import Node from './node';
+import Aggregator from './aggregator';
 
 const wss = new WebSocket.Server({ port: 1024 });
-const nodes = new WeakSet();
+
+const aggregator = new Aggregator;
 
 wss.on('connection', async (socket: WebSocket) => {
-    let node: Node;
-
     try {
-        node = await Node.fromSocket(socket);
+        aggregator.add(await Node.fromSocket(socket));
     } catch (err) {
         console.error(err);
 
         return;
     }
-
-    nodes.add(node);
-    node.once('disconnect', () => nodes.delete(node));
 });
