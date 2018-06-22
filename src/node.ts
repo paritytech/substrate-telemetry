@@ -39,8 +39,6 @@ export default class Node extends EventEmitter {
 
             this.updateLatency(message.ts);
 
-            // console.log('received', message);
-
             const update = getBestBlock(message);
 
             if (update) {
@@ -48,27 +46,30 @@ export default class Node extends EventEmitter {
             }
         });
 
-        socket.on('close', () => this.disconnect());
-        socket.on('error', () => this.disconnect());
+        socket.on('close', () => {
+            console.log(`${this.name} has disconnected`);
+
+            this.disconnect();
+        });
+
+        socket.on('error', (error) => {
+            console.error(`${this.name} has errored`, error);
+
+            this.disconnect()
+        });
     }
 
     static fromSocket(socket: WebSocket): Promise<Node> {
         return new Promise((resolve, reject) => {
             function cleanup() {
                 clearTimeout(timeout);
-                socket.removeEventListener('message');
+                socket.removeAllListeners('message');
             }
 
             function handler(data: WebSocket.Data) {
                 const message = parseMessage(data);
 
-                if (!message) {
-                    cleanup();
-
-                    return reject(new Error('Invalid message'));
-                }
-
-                if (message.msg === "system.connected") {
+                if (message && message.msg === "system.connected") {
                     cleanup();
 
                     const { name, config, implementation, version } = message;
@@ -82,15 +83,17 @@ export default class Node extends EventEmitter {
             const timeout = setTimeout(() => {
                 cleanup();
 
+                socket.close();
+
                 return reject(new Error('Timeout on waiting for system.connected message'));
             }, 5000);
         });
     }
 
     private disconnect() {
-        console.log(`${this.name} has disconnected`);
-
         this.socket.removeAllListeners('message');
+        this.socket.close();
+
         this.emit('disconnect');
     }
 
