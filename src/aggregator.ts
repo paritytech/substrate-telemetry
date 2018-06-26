@@ -3,23 +3,41 @@ import Node from './node';
 import { NodeId } from './nodeId';
 
 export default class Aggregator extends EventEmitter {
-    private nodes: Map<NodeId, Node> = new Map;
+    private _nodes: Map<NodeId, Node> = new Map;
 
     public height: number = 0;
 
-    add(node: Node) {
-        this.nodes.set(node.id, node);
+    constructor() {
+        super();
+
+        setInterval(() => this.timeoutCheck(), 10000);
+    }
+
+    public add(node: Node) {
+        this._nodes.set(node.id, node);
         node.once('disconnect', () => {
             node.removeAllListeners('block');
 
-            this.nodes.delete(node.id);
+            this._nodes.delete(node.id);
         });
 
         node.on('block', () => this.updateBlock(node));
     }
 
-    get nodeList(): Array<Node> {
-        return Array.from(this.nodes.values());
+    public get nodes(): IterableIterator<Node> {
+        return this._nodes.values();
+    }
+
+    public get length(): number {
+        return this._nodes.size;
+    }
+
+    private timeoutCheck() {
+        const now = Date.now();
+
+        for (const node of this.nodes) {
+            node.timeoutCheck(now);
+        }
     }
 
     private updateBlock(node: Node) {

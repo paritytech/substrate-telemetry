@@ -5,8 +5,10 @@ import { NodeId, getId } from './nodeId';
 import { parseMessage, getBestBlock, Message, BestBlock } from './message';
 
 const BLOCK_TIME_HISTORY = 10;
+const TIMEOUT = 1000 * 60 * 5; // 5 seconds
 
 export default class Node extends EventEmitter {
+    public lastMessage: number;
     public id: NodeId;
     public name: string;
     public implementation: string;
@@ -23,6 +25,7 @@ export default class Node extends EventEmitter {
     constructor(socket: WebSocket, name: string, config: string, implentation: string, version: string) {
         super();
 
+        this.lastMessage = Date.now();
         this.id = getId();
         this.socket = socket;
         this.name = name;
@@ -32,11 +35,12 @@ export default class Node extends EventEmitter {
 
         console.log(`Listening to a new node: ${name}`);
 
-        socket.on('message', (data: WebSocket.Data) => {
+        socket.on('message', (data) => {
             const message = parseMessage(data);
 
             if (!message) return;
 
+            this.lastMessage = Date.now();
             this.updateLatency(message.ts);
 
             const update = getBestBlock(message);
@@ -55,11 +59,11 @@ export default class Node extends EventEmitter {
         socket.on('error', (error) => {
             console.error(`${this.name} has errored`, error);
 
-            this.disconnect()
+            this.disconnect();
         });
     }
 
-    static fromSocket(socket: WebSocket): Promise<Node> {
+    public static fromSocket(socket: WebSocket): Promise<Node> {
         return new Promise((resolve, reject) => {
             function cleanup() {
                 clearTimeout(timeout);
@@ -90,6 +94,30 @@ export default class Node extends EventEmitter {
         });
     }
 
+    public timeoutCheck(now: number) {
+        if (this.lastMessage + TIMEOUT < now) {
+            this.disconnect();
+        }
+    }
+
+    public get average(): number {
+        let accounted = 0;
+        let sum = 0;
+
+        for (const time of this.blockTimes) {
+            if (time) {
+                accounted += 1;
+                sum += time;
+            }
+        }
+
+        if (accounted === 0) {
+            return 0;
+        }
+
+        return sum / accounted;
+    }
+
     private disconnect() {
         this.socket.removeAllListeners('message');
         this.socket.close();
@@ -98,7 +126,7 @@ export default class Node extends EventEmitter {
     }
 
     private updateLatency(time: Date) {
-        this.latency = Date.now() - +time;
+        this.latency = this.lastMessage - +time;
     }
 
     private updateBestBlock(update: BestBlock) {
@@ -122,23 +150,5 @@ export default class Node extends EventEmitter {
         }
 
         return +time - +this.lastBlockAt;
-    }
-
-    get average(): number {
-        let accounted = 0;
-        let sum = 0;
-
-        for (const time of this.blockTimes) {
-            if (time) {
-                accounted += 1;
-                sum += time;
-            }
-        }
-
-        if (accounted === 0) {
-            return 0;
-        }
-
-        return sum / accounted;
     }
 }
