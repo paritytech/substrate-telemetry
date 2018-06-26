@@ -1,15 +1,25 @@
 import * as WebSocket from 'ws';
 import * as EventEmitter from 'events';
-import { Maybe } from './maybe';
-import { NodeId, getId } from './nodeId';
+import { Maybe, Id, idGenerator } from './utils';
 import { parseMessage, getBestBlock, Message, BestBlock } from './message';
 
 const BLOCK_TIME_HISTORY = 10;
 const TIMEOUT = 1000 * 60 * 5; // 5 seconds
 
+const nextId = idGenerator<Node>();
+
+export interface NodeInfo {
+    name: string;
+}
+
+export interface BlockInfo {
+    height: number;
+    blockTime: number;
+}
+
 export default class Node extends EventEmitter {
     public lastMessage: number;
-    public id: NodeId;
+    public id: Id<Node>;
     public name: string;
     public implementation: string;
     public version: string;
@@ -26,7 +36,7 @@ export default class Node extends EventEmitter {
         super();
 
         this.lastMessage = Date.now();
-        this.id = getId();
+        this.id = nextId();
         this.socket = socket;
         this.name = name;
         this.config = config;
@@ -100,6 +110,19 @@ export default class Node extends EventEmitter {
         }
     }
 
+    public nodeInfo(): NodeInfo {
+        return {
+            name: this.name,
+        };
+    }
+
+    public blockInfo(): BlockInfo {
+        return {
+            height: this.height,
+            blockTime: this.blockTime,
+        };
+    }
+
     public get average(): number {
         let accounted = 0;
         let sum = 0;
@@ -118,8 +141,10 @@ export default class Node extends EventEmitter {
         return sum / accounted;
     }
 
+
+
     private disconnect() {
-        this.socket.removeAllListeners('message');
+        this.socket.removeAllListeners();
         this.socket.close();
 
         this.emit('disconnect');

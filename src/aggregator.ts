@@ -1,9 +1,11 @@
 import * as EventEmitter from 'events';
 import Node from './node';
-import { NodeId } from './nodeId';
+import Feed, { FeedData } from './feed';
+import { Id, IdSet } from './utils';
 
 export default class Aggregator extends EventEmitter {
-    private _nodes: Map<NodeId, Node> = new Map;
+    private nodes: IdSet<Node> = new IdSet<Node>();
+    private feeds: IdSet<Feed> = new IdSet<Feed>();
 
     public height: number = 0;
 
@@ -13,29 +15,48 @@ export default class Aggregator extends EventEmitter {
         setInterval(() => this.timeoutCheck(), 10000);
     }
 
-    public add(node: Node) {
-        this._nodes.set(node.id, node);
+    public addNode(node: Node) {
+        this.nodes.add(node);
+        this.broadcast(Feed.addedNode(node));
+
         node.once('disconnect', () => {
             node.removeAllListeners('block');
 
-            this._nodes.delete(node.id);
+            this.nodes.remove(node);
+            this.broadcast(Feed.removedNode(node));
         });
 
         node.on('block', () => this.updateBlock(node));
     }
 
-    public get nodes(): IterableIterator<Node> {
-        return this._nodes.values();
+    public addFeed(feed: Feed) {
+        this.feeds.add(feed);
+
+        feed.send(Feed.bestBlock(this.height));
+
+        for (const node of this.nodes.entries) {
+            feed.send(Feed.addedNode(node));
+        }
+
+        feed.once('disconnect', () => {
+            this.feeds.remove(feed);
+        })
     }
 
-    public get length(): number {
-        return this._nodes.size;
+    public nodeList(): IterableIterator<Node> {
+        return this.nodes.entries;
+    }
+
+    private broadcast(data: FeedData) {
+        for (const feed of this.feeds.entries) {
+            feed.send(data);
+        }
     }
 
     private timeoutCheck() {
         const now = Date.now();
 
-        for (const node of this.nodes) {
+        for (const node of this.nodes.entries) {
             node.timeoutCheck(now);
         }
     }
@@ -44,8 +65,12 @@ export default class Aggregator extends EventEmitter {
         if (node.height > this.height) {
             this.height = node.height;
 
+            this.broadcast(Feed.bestBlock(this.height));
+
             console.log(`New block ${this.height}`);
         }
+
+        this.broadcast(Feed.imported(node));
 
         console.log(`${node.name} imported ${node.height}, block time: ${node.blockTime / 1000}s, average: ${node.average / 1000}s | latency ${node.latency}`);
     }

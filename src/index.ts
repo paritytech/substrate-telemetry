@@ -2,7 +2,9 @@ import * as WebSocket from 'ws';
 import * as express from 'express';
 import { createServer } from 'http';
 import Node from './node';
+import Feed from './feed';
 import Aggregator from './aggregator';
+import { map, join } from './utils';
 
 const aggregator = new Aggregator;
 const app = express();
@@ -15,9 +17,9 @@ const incomingTelemetry = new WebSocket.Server({ port: 1024 });
 const telemetryFeed = new WebSocket.Server({ server });
 
 app.get('/', function (req, res) {
-    const nodes = Array
-                    .from(aggregator.nodes)
-                    .map((node: Node) => `${node.name} | ${node.height} | Block time ${node.blockTime / 1000}s`);
+    function nodeInfo(node: Node) {
+        return `${node.name} | ${node.height} | Block time ${node.blockTime / 1000}s`;
+    }
 
     res.send(
 
@@ -25,7 +27,7 @@ app.get('/', function (req, res) {
 Best block: ${aggregator.height}
 
 Node list:
-${nodes.join('\n')}
+${ join(map(aggregator.nodeList(), nodeInfo), '\n') }
 </pre>`
 
     );
@@ -33,17 +35,14 @@ ${nodes.join('\n')}
 
 incomingTelemetry.on('connection', async (socket: WebSocket) => {
     try {
-        aggregator.add(await Node.fromSocket(socket));
+        aggregator.addNode(await Node.fromSocket(socket));
     } catch (err) {
         console.error(err);
-
-        return;
     }
 });
 
 telemetryFeed.on('connection', (socket: WebSocket) => {
-    socket.send('HELLO THAR!');
-    socket.close();
+    aggregator.addFeed(new Feed(socket));
 });
 
 server.listen(8080);
