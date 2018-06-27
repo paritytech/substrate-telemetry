@@ -15,6 +15,7 @@ export default class Node extends EventEmitter {
     public implementation: Types.NodeImplementation;
     public version: Types.NodeVersion;
     public config: string;
+    public best = '' as Types.BlockHash;
     public height = 0 as Types.BlockNumber;
     public latency = 0 as Types.Milliseconds;
     public blockTime = 0 as Types.Milliseconds;
@@ -125,7 +126,7 @@ export default class Node extends EventEmitter {
     }
 
     public blockDetails(): Types.BlockDetails {
-        return [this.height, this.blockTime];
+        return [this.height, this.best, this.blockTime];
     }
 
     public get average(): number {
@@ -174,6 +175,7 @@ export default class Node extends EventEmitter {
         if (this.height < height) {
             const blockTime = this.getBlockTime(time);
 
+            this.best = best;
             this.height = height;
             this.lastBlockAt = time;
             this.blockTimes[height % BLOCK_TIME_HISTORY] = blockTime;

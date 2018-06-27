@@ -12,7 +12,7 @@ export type Milliseconds = Opaque<number, 'Milliseconds'>;
 export type PeerCount = Opaque<number, 'PeerCount'>;
 export type TransactionCount = Opaque<number, 'TransactionCount'>;
 
-export type BlockDetails = [BlockNumber, Milliseconds];
+export type BlockDetails = [BlockNumber, BlockHash, Milliseconds];
 export type NodeDetails = [NodeName, NodeImplementation, NodeVersion];
 export type NodeStats = [PeerCount, TransactionCount];
 

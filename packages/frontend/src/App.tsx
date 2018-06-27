@@ -36,14 +36,14 @@ export default class App extends React.Component<{}, State> {
                 <table>
                     <thead>
                         <tr>
-                            <th>Node Name</th><th>Node Type</th><th>Peers</th><th>Transactions</th><th>Block</th><th>Block time</th>
+                            <th>Node Name</th><th>Node Type</th><th>Peers</th><th>Transactions</th><th>Last Block</th><th>Block Time</th>
                         </tr>
                     </thead>
                     <tbody>
                     {
                         this.nodes().map(([ id, node ]) => {
                             const [name, implementation, version] = node.nodeDetails;
-                            const [height, blockTime] = node.blockDetails;
+                            const [height, hash, blockTime] = node.blockDetails;
                             const [peers, txcount] = node.nodeStats;
 
                             return (
@@ -52,7 +52,7 @@ export default class App extends React.Component<{}, State> {
                                     <td>{implementation} v{version}</td>
                                     <td>{peers}</td>
                                     <td>{txcount}</td>
-                                    <td>{height}</td>
+                                    <td>{height} {hash}</td>
                                     <td>{blockTime / 1000}s</td>
                                 </tr>
                             );
