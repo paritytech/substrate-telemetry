@@ -4,6 +4,7 @@ import { Types } from '@dotstats/common';
 
 interface Node {
     nodeDetails: Types.NodeDetails,
+    nodeStats: Types.NodeStats,
     blockDetails: Types.BlockDetails,
 }
 
@@ -35,18 +36,27 @@ export default class App extends React.Component<{}, State> {
                 <table>
                     <thead>
                         <tr>
-                            <th>Name</th><th>Block</th><th>Block time</th>
+                            <th>Node Name</th><th>Node Type</th><th>Peers</th><th>Transactions</th><th>Block</th><th>Block time</th>
                         </tr>
                     </thead>
                     <tbody>
                     {
-                        this.nodes().map(([ id, node ]) => (
-                            <tr key={id}>
-                                <td>{node.nodeDetails.name}</td>
-                                <td>{node.blockDetails.height}</td>
-                                <td>{node.blockDetails.blockTime / 1000}s</td>
-                            </tr>
-                        ))
+                        this.nodes().map(([ id, node ]) => {
+                            const [name, implementation, version] = node.nodeDetails;
+                            const [height, blockTime] = node.blockDetails;
+                            const [peers, txcount] = node.nodeStats;
+
+                            return (
+                                <tr key={id}>
+                                    <td>{name}</td>
+                                    <td>{implementation} v{version}</td>
+                                    <td>{peers}</td>
+                                    <td>{txcount}</td>
+                                    <td>{height}</td>
+                                    <td>{blockTime / 1000}s</td>
+                                </tr>
+                            );
+                        })
                     }
                     </tbody>
                 </table>
@@ -67,8 +77,8 @@ export default class App extends React.Component<{}, State> {
             }
             return;
             case 'added': {
-                const [id, nodeDetails, blockDetails] = message.payload;
-                const node = { nodeDetails, blockDetails };
+                const [id, nodeDetails, nodeStats, blockDetails] = message.payload;
+                const node = { nodeDetails, nodeStats, blockDetails };
 
                 nodes.set(id, node);
             }
@@ -87,6 +97,18 @@ export default class App extends React.Component<{}, State> {
                 }
 
                 node.blockDetails = blockDetails;
+            }
+            break;
+            case 'stats': {
+                const [id, nodeStats] = message.payload;
+
+                const node = nodes.get(id);
+
+                if (!node) {
+                    return;
+                }
+
+                node.nodeStats = nodeStats;
             }
             break;
             default:

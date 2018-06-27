@@ -34,7 +34,7 @@ interface MessageBase {
 }
 
 export interface BestBlock {
-    best: string,
+    best: Types.BlockHash,
     height: Types.BlockNumber,
     ts: Date,
 }
@@ -44,14 +44,14 @@ interface SystemConnected {
     name: Types.NodeName,
     chain: string,
     config: string,
-    implementation: string,
-    version: string,
+    implementation: Types.NodeImplementation,
+    version: Types.NodeVersion,
 }
 
-interface SystemInterval extends BestBlock {
+export interface SystemInterval extends BestBlock {
     msg: 'system.interval',
-    txcount: number,
-    peers: number,
+    txcount: Types.TransactionCount,
+    peers: Types.PeerCount,
     status: 'Idle' | string, // TODO: 'Idle' | ...?
 }
 

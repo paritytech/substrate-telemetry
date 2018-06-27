@@ -20,13 +20,14 @@ export default class Aggregator extends EventEmitter {
         this.broadcast(Feed.addedNode(node));
 
         node.once('disconnect', () => {
-            node.removeAllListeners('block');
+            node.removeAllListeners();
 
             this.nodes.remove(node);
             this.broadcast(Feed.removedNode(node));
         });
 
         node.on('block', () => this.updateBlock(node));
+        node.on('stats', () => this.broadcast(Feed.stats(node)));
     }
 
     public addFeed(feed: Feed) {
@@ -40,7 +41,7 @@ export default class Aggregator extends EventEmitter {
 
         feed.once('disconnect', () => {
             this.feeds.remove(feed);
-        })
+        });
     }
 
     public nodeList(): IterableIterator<Node> {

@@ -41,7 +41,7 @@ export default class Feed extends EventEmitter {
     public static addedNode(node: Node): FeedData {
         return serialize({
             action: 'added',
-            payload: [node.id, node.nodeDetails(), node.blockDetails()]
+            payload: [node.id, node.nodeDetails(), node.nodeStats(), node.blockDetails()]
         })
     }
 
@@ -56,6 +56,13 @@ export default class Feed extends EventEmitter {
         return serialize({
             action: 'imported',
             payload: [node.id, node.blockDetails()]
+        });
+    }
+
+    public static stats(node: Node): FeedData {
+        return serialize({
+            action: 'stats',
+            payload: [node.id, node.nodeStats()]
         });
     }
 
