@@ -1,51 +1,20 @@
 import * as React from 'react';
 import './App.css';
-import { Id } from '@dotstats/common';
-
-export interface NodeInfo {
-    name: string;
-}
-
-export interface BlockInfo {
-    height: number;
-    blockTime: number;
-}
-
-interface BestBlock {
-    action: 'best';
-    payload: number;
-}
-
-interface AddedNode {
-    action: 'added';
-    payload: [Id<Node>, NodeInfo, BlockInfo];
-}
-
-interface RemovedNode {
-    action: 'removed';
-    payload: Id<Node>;
-}
-
-interface Imported {
-    action: 'imported';
-    payload: [Id<Node>, BlockInfo];
-}
-
-type Message = BestBlock | AddedNode | RemovedNode | Imported;
+import { Types } from '@dotstats/common';
 
 interface Node {
-    nodeInfo: NodeInfo,
-    blockInfo: BlockInfo,
+    nodeDetails: Types.NodeDetails,
+    blockDetails: Types.BlockDetails,
 }
 
 interface State {
-    best: number,
-    nodes: Map<Id<Node>, Node>
+    best: Types.BlockNumber,
+    nodes: Map<Types.NodeId, Node>
 }
 
 export default class App extends React.Component<{}, State> {
     public state: State = {
-        best: 0,
+        best: 0 as Types.BlockNumber,
         nodes: new Map()
     };
 
@@ -73,9 +42,9 @@ export default class App extends React.Component<{}, State> {
                     {
                         this.nodes().map(([ id, node ]) => (
                             <tr key={id}>
-                                <td>{node.nodeInfo.name}</td>
-                                <td>{node.blockInfo.height}</td>
-                                <td>{node.blockInfo.blockTime / 1000}s</td>
+                                <td>{node.nodeDetails.name}</td>
+                                <td>{node.blockDetails.height}</td>
+                                <td>{node.blockDetails.blockTime / 1000}s</td>
                             </tr>
                         ))
                     }
@@ -85,11 +54,11 @@ export default class App extends React.Component<{}, State> {
         );
     }
 
-    private nodes(): Array<[Id<Node>, Node]> {
+    private nodes(): Array<[Types.NodeId, Node]> {
         return Array.from(this.state.nodes.entries());
     }
 
-    private onMessage(message: Message) {
+    private onMessage(message: Types.FeedMessage) {
         const { nodes } = this.state;
 
         switch (message.action) {
@@ -98,8 +67,8 @@ export default class App extends React.Component<{}, State> {
             }
             return;
             case 'added': {
-                const [id, nodeInfo, blockInfo] = message.payload;
-                const node = { nodeInfo, blockInfo };
+                const [id, nodeDetails, blockDetails] = message.payload;
+                const node = { nodeDetails, blockDetails };
 
                 nodes.set(id, node);
             }
@@ -109,7 +78,7 @@ export default class App extends React.Component<{}, State> {
             }
             break;
             case 'imported': {
-                const [id, blockInfo] = message.payload;
+                const [id, blockDetails] = message.payload;
 
                 const node = nodes.get(id);
 
@@ -117,7 +86,7 @@ export default class App extends React.Component<{}, State> {
                     return;
                 }
 
-                node.blockInfo = blockInfo;
+                node.blockDetails = blockDetails;
             }
             break;
             default:

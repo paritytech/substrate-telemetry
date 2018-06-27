@@ -1,4 +1,4 @@
-import { Opaque } from './types';
+import { Opaque } from './helpers';
 
 /**
  * Unique type-constrained Id number.
@@ -8,28 +8,32 @@ export type Id<T> = Opaque<number, T>;
 /**
  * Higher order function producing new auto-incremented `Id`s.
  */
-export function idGenerator<T>(): () => Id<T> {
+export function idGenerator<I extends Id<any>>(): () => I {
     let current = 0;
 
-    return () => current++ as Id<T>;
+    return () => current++ as I;
 }
 
-interface HasId<T> {
-    id: Id<T>;
+interface HasId<I> {
+    id: I;
 }
 
-export class IdSet<T> {
-    private map: Map<Id<T>, T> = new Map();
+export class IdSet<I extends Id<any>, T> {
+    private map: Map<I, T> = new Map();
 
-    public add(item: T & HasId<T>) {
+    public add(item: T & HasId<I>) {
         this.map.set(item.id, item);
     }
 
-    public remove(item: T & HasId<T>) {
+    public remove(item: T & HasId<I>) {
         this.map.delete(item.id);
     }
 
-    public get entries(): IterableIterator<T> {
+    public entries(): IterableIterator<[I, T]> {
+        return this.map.entries();
+    }
+
+    public values(): IterableIterator<T> {
         return this.map.values();
     }
 }

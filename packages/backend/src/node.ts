@@ -1,38 +1,29 @@
 import * as WebSocket from 'ws';
 import * as EventEmitter from 'events';
-import { Maybe, Id, idGenerator } from '@dotstats/common';
+import { Maybe, Types, idGenerator } from '@dotstats/common';
 import { parseMessage, getBestBlock, Message, BestBlock } from './message';
 
 const BLOCK_TIME_HISTORY = 10;
 const TIMEOUT = 1000 * 60 * 5; // 5 seconds
 
-const nextId = idGenerator<Node>();
-
-export interface NodeInfo {
-    name: string;
-}
-
-export interface BlockInfo {
-    height: number;
-    blockTime: number;
-}
+const nextId = idGenerator<Types.NodeId>();
 
 export default class Node extends EventEmitter {
     public lastMessage: number;
-    public id: Id<Node>;
-    public name: string;
+    public id: Types.NodeId;
+    public name: Types.NodeName;
     public implementation: string;
     public version: string;
-    public height: number = 0;
     public config: string;
-    public latency: number = 0;
-    public blockTime: number = 0;
+    public height = 0 as Types.BlockNumber;
+    public latency = 0 as Types.Milliseconds;
+    public blockTime = 0 as Types.Milliseconds;
 
     private socket: WebSocket;
     private blockTimes: Array<number> = new Array(BLOCK_TIME_HISTORY);
     private lastBlockAt: Maybe<Date> = null;
 
-    constructor(socket: WebSocket, name: string, config: string, implentation: string, version: string) {
+    constructor(socket: WebSocket, name: Types.NodeName, config: string, implentation: string, version: string) {
         super();
 
         this.lastMessage = Date.now();
@@ -46,6 +37,8 @@ export default class Node extends EventEmitter {
         console.log(`Listening to a new node: ${name}`);
 
         socket.on('message', (data) => {
+            console.log(data);
+
             const message = parseMessage(data);
 
             if (!message) return;
@@ -81,6 +74,8 @@ export default class Node extends EventEmitter {
             }
 
             function handler(data: WebSocket.Data) {
+                console.log(data);
+
                 const message = parseMessage(data);
 
                 if (message && message.msg === "system.connected") {
@@ -110,13 +105,13 @@ export default class Node extends EventEmitter {
         }
     }
 
-    public nodeInfo(): NodeInfo {
+    public nodeDetails(): Types.NodeDetails {
         return {
             name: this.name,
         };
     }
 
-    public blockInfo(): BlockInfo {
+    public blockDetails(): Types.BlockDetails {
         return {
             height: this.height,
             blockTime: this.blockTime,
@@ -141,8 +136,6 @@ export default class Node extends EventEmitter {
         return sum / accounted;
     }
 
-
-
     private disconnect() {
         this.socket.removeAllListeners();
         this.socket.close();
@@ -151,7 +144,7 @@ export default class Node extends EventEmitter {
     }
 
     private updateLatency(time: Date) {
-        this.latency = this.lastMessage - +time;
+        this.latency = (this.lastMessage - +time) as Types.Milliseconds;
     }
 
     private updateBestBlock(update: BestBlock) {
@@ -169,11 +162,11 @@ export default class Node extends EventEmitter {
         }
     }
 
-    private getBlockTime(time: Date): number {
+    private getBlockTime(time: Date): Types.Milliseconds {
         if (!this.lastBlockAt) {
-            return 0;
+            return 0 as Types.Milliseconds;
         }
 
-        return +time - +this.lastBlockAt;
+        return (+time - +this.lastBlockAt) as Types.Milliseconds;
     }
 }

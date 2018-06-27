@@ -1,13 +1,13 @@
 import * as EventEmitter from 'events';
 import Node from './node';
 import Feed, { FeedData } from './feed';
-import { Id, IdSet } from '@dotstats/common';
+import { Types, IdSet } from '@dotstats/common';
 
 export default class Aggregator extends EventEmitter {
-    private nodes: IdSet<Node> = new IdSet<Node>();
-    private feeds: IdSet<Feed> = new IdSet<Feed>();
+    private nodes = new IdSet<Types.NodeId, Node>();
+    private feeds = new IdSet<Types.FeedId, Feed>();
 
-    public height: number = 0;
+    public height = 0 as Types.BlockNumber;
 
     constructor() {
         super();
@@ -34,7 +34,7 @@ export default class Aggregator extends EventEmitter {
 
         feed.send(Feed.bestBlock(this.height));
 
-        for (const node of this.nodes.entries) {
+        for (const node of this.nodes.values()) {
             feed.send(Feed.addedNode(node));
         }
 
@@ -44,11 +44,11 @@ export default class Aggregator extends EventEmitter {
     }
 
     public nodeList(): IterableIterator<Node> {
-        return this.nodes.entries;
+        return this.nodes.values();
     }
 
     private broadcast(data: FeedData) {
-        for (const feed of this.feeds.entries) {
+        for (const feed of this.feeds.values()) {
             feed.send(data);
         }
     }
@@ -56,7 +56,7 @@ export default class Aggregator extends EventEmitter {
     private timeoutCheck() {
         const now = Date.now();
 
-        for (const node of this.nodes.entries) {
+        for (const node of this.nodes.values()) {
             node.timeoutCheck(now);
         }
     }

@@ -1,5 +1,5 @@
 import { Data } from 'ws';
-import { Maybe, Opaque } from '@dotstats/common';
+import { Maybe, Types } from '@dotstats/common';
 
 export function parseMessage(data: Data): Maybe<Message> {
     try {
@@ -35,13 +35,13 @@ interface MessageBase {
 
 export interface BestBlock {
     best: string,
-    height: number,
+    height: Types.BlockNumber,
     ts: Date,
 }
 
 interface SystemConnected {
     msg: 'system.connected',
-    name: string,
+    name: Types.NodeName,
     chain: string,
     config: string,
     implementation: string,

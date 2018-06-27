@@ -8,7 +8,10 @@
     "sourceMap": true,
     "allowJs": true,
     "jsx": "react",
-    "rootDir": "src"
+    "rootDir": "src",
+    "paths": {
+      "@dotstats/common": [ "../common/src" ]
+    }
   },
   "exclude": [
     "node_modules",
@@ -20,6 +23,8 @@
     "src/setupTests.ts"
   ],
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "../common/src/**/*.ts"
   ]
 }
