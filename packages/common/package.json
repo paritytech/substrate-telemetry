@@ -1,0 +1,15 @@
+{
+  "name": "@dotstats/common",
+  "version": "0.1.0",
+  "author": "Parity Technologies Ltd. <admin@parity.io>",
+  "license": "GPL-3.0",
+  "description": "Shared utils and types for backend and frontend",
+  "main": "build/index.js",
+  "types": "src/index.ts",
+  "engines": {
+    "node": ">=9.5"
+  },
+  "scripts": {
+    "test": "echo \"Tests only available from root wrapper\""
+  }
+}
