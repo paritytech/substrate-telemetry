@@ -1,5 +1,5 @@
 import { Data } from 'ws';
-import { Maybe, Opaque } from './utils';
+import { Maybe, Opaque } from './shared';
 
 export function parseMessage(data: Data): Maybe<Message> {
     try {

@@ -4,7 +4,7 @@ import { createServer } from 'http';
 import Node from './node';
 import Feed from './feed';
 import Aggregator from './aggregator';
-import { map, join } from './utils';
+import { map, join } from './shared';
 
 const aggregator = new Aggregator;
 const app = express();

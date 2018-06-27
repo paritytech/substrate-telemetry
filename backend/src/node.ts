@@ -1,6 +1,6 @@
 import * as WebSocket from 'ws';
 import * as EventEmitter from 'events';
-import { Maybe, Id, idGenerator } from './utils';
+import { Maybe, Id, idGenerator } from './shared';
 import { parseMessage, getBestBlock, Message, BestBlock } from './message';
 
 const BLOCK_TIME_HISTORY = 10;

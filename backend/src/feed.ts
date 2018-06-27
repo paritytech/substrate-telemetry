@@ -1,7 +1,7 @@
 import * as WebSocket from 'ws';
 import * as EventEmitter from 'events';
 import Node, { NodeInfo, BlockInfo } from './node';
-import { Opaque, Id, idGenerator } from './utils';
+import { Opaque, Id, idGenerator } from './shared';
 
 const nextId = idGenerator<Feed>();
 

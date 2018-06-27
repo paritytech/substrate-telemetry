@@ -1,7 +1,7 @@
 import * as EventEmitter from 'events';
 import Node from './node';
 import Feed, { FeedData } from './feed';
-import { Id, IdSet } from './utils';
+import { Id, IdSet } from './shared';
 
 export default class Aggregator extends EventEmitter {
     private nodes: IdSet<Node> = new IdSet<Node>();
