@@ -8,6 +8,16 @@ export interface Props {
     className?: string,
 };
 
-export function Icon(props: Props) {
-    return <ReactSVG title={props.alt} className={`Icon ${ props.className || '' }`} path={props.src} />;
+export class Icon extends React.Component<{}, Props> {
+    public props: Props;
+
+    public shouldComponentUpdate() {
+        return false;
+    }
+
+    public render() {
+        const { alt, className, src } = this.props;
+
+        return <ReactSVG title={alt} className={`Icon ${ className || '' }`} path={src} />;
+    }
 }
