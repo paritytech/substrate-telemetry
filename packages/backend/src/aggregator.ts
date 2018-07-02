@@ -1,11 +1,12 @@
 import * as EventEmitter from 'events';
 import Node from './node';
-import Feed, { FeedData } from './feed';
-import { Types, IdSet } from '@dotstats/common';
+import Feed from './feed';
+import { Types, IdSet, FeedMessage } from '@dotstats/common';
 
 export default class Aggregator extends EventEmitter {
     private nodes = new IdSet<Types.NodeId, Node>();
     private feeds = new IdSet<Types.FeedId, Feed>();
+    private messages: Array<FeedMessage.Message> = [];
 
     public height = 0 as Types.BlockNumber;
 
@@ -33,11 +34,13 @@ export default class Aggregator extends EventEmitter {
     public addFeed(feed: Feed) {
         this.feeds.add(feed);
 
-        feed.send(Feed.bestBlock(this.height));
+        const messages = [Feed.bestBlock(this.height)];
 
         for (const node of this.nodes.values()) {
-            feed.send(Feed.addedNode(node));
+            messages.push(Feed.addedNode(node));
         }
+
+        feed.sendMessages(messages);
 
         feed.once('disconnect', () => {
             this.feeds.remove(feed);
@@ -48,9 +51,20 @@ export default class Aggregator extends EventEmitter {
         return this.nodes.values();
     }
 
-    private broadcast(data: FeedData) {
-        for (const feed of this.feeds.values()) {
-            feed.send(data);
+    private broadcast(message: FeedMessage.Message) {
+        const queue = this.messages.length === 0;
+
+        this.messages.push(message);
+
+        if (queue) {
+            process.nextTick(() => {
+                const data = FeedMessage.serialize(this.messages);
+                this.messages = [];
+
+                for (const feed of this.feeds.values()) {
+                    feed.sendData(data);
+                }
+            });
         }
     }
 

@@ -1,8 +1,10 @@
+import { Milliseconds } from './types';
+
 /**
  * PhantomData akin to Rust, because sometimes you need to be smarter than
  * the compiler.
  */
-export class PhantomData<P> { private __PHANTOM__: P }
+export abstract class PhantomData<P> { private __PHANTOM__: P }
 
 /**
  * Opaque type, similar to `opaque type` in Flow, or new types in Rust/C.
@@ -20,3 +22,12 @@ export type Opaque<T, P> = T & PhantomData<P>;
  * Just a readable shorthand for null-ish-able types, akin to `T?` in Flow.
  */
 export type Maybe<T> = T | null | undefined;
+
+/**
+ * Asynchronous sleep
+ */
+export function sleep(time: Milliseconds): Promise<void> {
+    return new Promise<void>((resolve, _reject) => {
+        setTimeout(() => resolve(), time);
+    });
+}

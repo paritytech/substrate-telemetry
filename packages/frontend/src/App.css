@@ -1,5 +1,8 @@
 .App {
   text-align: center;
+  background: #fff;
+  color: #000;
+  font-family: monospace, sans-serif;
 }
 
 .App-logo {
@@ -8,18 +11,18 @@
 }
 
 .App-header {
-  background-color: #222;
-  height: 150px;
+  font-size: 3em;
   padding: 20px;
-  color: white;
+  text-align: left;
 }
 
-.App-title {
-  font-size: 1.5em;
+.App-list {
+  padding: 20px;
 }
 
-.App-intro {
-  font-size: large;
+.App-list th, .App-list td {
+  text-align: left;
+  padding: 0.2em 0.5em;
 }
 
 @keyframes App-logo-spin {

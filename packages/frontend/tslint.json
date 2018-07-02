@@ -9,8 +9,10 @@
   "rules": {
     "ordered-imports": false,
     "no-console": false,
-    "interface-name": false,
     "no-unused-variable": [true, {"ignore-pattern": "^_"}],
-    "no-empty": false
+    "no-empty": false,
+    "no-namespace": false,
+    "no-bitwise": false,
+    "interface-name": false
   }
 }

@@ -1,17 +1,18 @@
 import * as React from 'react';
-import './App.css';
 import { Types } from '@dotstats/common';
+import { Node } from './Node';
+import { Icon } from './Icon';
+import { Connection } from './message';
+import { State } from './state';
+import { formatNumber } from './utils';
 
-interface Node {
-    nodeDetails: Types.NodeDetails,
-    nodeStats: Types.NodeStats,
-    blockDetails: Types.BlockDetails,
-}
-
-interface State {
-    best: Types.BlockNumber,
-    nodes: Map<Types.NodeId, Node>
-}
+import './App.css';
+import nodeIcon from './icons/broadcast.svg';
+import nodeTypeIcon from './icons/device-desktop.svg';
+import peersIcon from './icons/organization.svg';
+import transactionsIcon from './icons/inbox.svg';
+import blockIcon from './icons/package.svg';
+import blockTimeIcon from './icons/history.svg';
 
 export default class App extends React.Component<{}, State> {
     public state: State = {
@@ -22,41 +23,29 @@ export default class App extends React.Component<{}, State> {
     constructor(props: {}) {
         super(props);
 
-        const socket = new WebSocket(`ws://${window.location.hostname}:8080`);
-
-        socket.addEventListener('message', ({ data }) => {
-            this.onMessage(JSON.parse(data));
-        });
+        this.connect();
     }
 
     public render() {
         return (
             <div className="App">
-                <p>Best block: {this.state.best}</p>
-                <table>
+                <div className="App-header">
+                    <Icon src={blockIcon} /> #{formatNumber(this.state.best)}
+                </div>
+                <table className="App-list">
                     <thead>
                         <tr>
-                            <th>Node Name</th><th>Node Type</th><th>Peers</th><th>Transactions</th><th>Last Block</th><th>Block Time</th>
+                            <th><Icon src={nodeIcon} /> Node</th>
+                            <th><Icon src={nodeTypeIcon} /> Type</th>
+                            <th><Icon src={peersIcon} /></th>
+                            <th><Icon src={transactionsIcon} /></th>
+                            <th><Icon src={blockIcon} /> Last Block</th>
+                            <th><Icon src={blockTimeIcon} /></th>
                         </tr>
                     </thead>
                     <tbody>
                     {
-                        this.nodes().map(([ id, node ]) => {
-                            const [name, implementation, version] = node.nodeDetails;
-                            const [height, hash, blockTime] = node.blockDetails;
-                            const [peers, txcount] = node.nodeStats;
-
-                            return (
-                                <tr key={id}>
-                                    <td>{name}</td>
-                                    <td>{implementation} v{version}</td>
-                                    <td>{peers}</td>
-                                    <td>{txcount}</td>
-                                    <td>{height} {hash}</td>
-                                    <td>{blockTime / 1000}s</td>
-                                </tr>
-                            );
-                        })
+                        this.nodes().map((props) => <Node key={props.id} {...props} />)
                     }
                     </tbody>
                 </table>
@@ -64,57 +53,17 @@ export default class App extends React.Component<{}, State> {
         );
     }
 
-    private nodes(): Array<[Types.NodeId, Node]> {
-        return Array.from(this.state.nodes.entries());
+    private async connect() {
+        Connection.create((changes) => {
+            if (changes) {
+                this.setState(changes);
+            }
+
+            return this.state;
+        });
     }
 
-    private onMessage(message: Types.FeedMessage) {
-        const { nodes } = this.state;
-
-        switch (message.action) {
-            case 'best': {
-                this.setState({ best: message.payload });
-            }
-            return;
-            case 'added': {
-                const [id, nodeDetails, nodeStats, blockDetails] = message.payload;
-                const node = { nodeDetails, nodeStats, blockDetails };
-
-                nodes.set(id, node);
-            }
-            break;
-            case 'removed': {
-                nodes.delete(message.payload);
-            }
-            break;
-            case 'imported': {
-                const [id, blockDetails] = message.payload;
-
-                const node = nodes.get(id);
-
-                if (!node) {
-                    return;
-                }
-
-                node.blockDetails = blockDetails;
-            }
-            break;
-            case 'stats': {
-                const [id, nodeStats] = message.payload;
-
-                const node = nodes.get(id);
-
-                if (!node) {
-                    return;
-                }
-
-                node.nodeStats = nodeStats;
-            }
-            break;
-            default:
-            return;
-        }
-
-        this.setState({ nodes });
+    private nodes(): Node.Props[] {
+        return Array.from(this.state.nodes.values());
     }
 }

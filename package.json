@@ -13,7 +13,7 @@
     "start:backend": "scripts/start-backend.sh",
     "build:backend": "scripts/build-backend.sh",
     "check:backend": "tsc -p packages/backend --noEmit",
-    "build:shared": "tsc -p packages/shared",
-    "check:shared": "tsc -p packages/shared --noEmit"
+    "build:common": "tsc -p packages/common",
+    "check:common": "tsc -p packages/common --noEmit"
   }
 }

@@ -6,6 +6,7 @@
     "outDir": "build",
     "sourceMap": true,
     "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
     "noEmitOnError": false,
     "pretty": true,
     "forceConsistentCasingInFileNames": true,
@@ -14,10 +15,7 @@
     "noImplicitAny": true,
     "noImplicitThis": true,
     "strictNullChecks": true,
-    "suppressImplicitAnyIndexErrors": true,
-    "paths": {
-      "@dotstats/common": [ "packages/common/src" ]
-    }
+    "suppressImplicitAnyIndexErrors": true
   },
   "typeRoots": [
     "./node_modules/@types"

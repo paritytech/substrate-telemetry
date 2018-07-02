@@ -5,6 +5,7 @@
   "license": "GPL-3.0",
   "description": "Shared utils and types for backend and frontend",
   "main": "build/index.js",
+  "types": "build/index.d.ts",
   "engines": {
     "node": ">=9.5"
   },

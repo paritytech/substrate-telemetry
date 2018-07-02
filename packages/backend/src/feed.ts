@@ -1,20 +1,10 @@
 import * as WebSocket from 'ws';
 import * as EventEmitter from 'events';
 import Node from './node';
-import { Opaque, Types, idGenerator } from '@dotstats/common';
+import { Opaque, FeedMessage, Types, idGenerator } from '@dotstats/common';
 
 const nextId = idGenerator<Types.FeedId>();
-
-/**
- * Opaque data type to be sent to the feed. Passing through
- * strings means we can only serialize once, no matter how
- * many feed clients are listening in.
- */
-export type FeedData = Opaque<string, Types.FeedMessage>;
-
-function serialize(msg: Types.FeedMessage): FeedData {
-    return JSON.stringify(msg) as FeedData;
-}
+const { Actions } = FeedMessage;
 
 export default class Feed extends EventEmitter {
     public id: Types.FeedId;
@@ -31,43 +21,47 @@ export default class Feed extends EventEmitter {
         socket.on('close', () => this.disconnect());
     }
 
-    public static bestBlock(height: Types.BlockNumber): FeedData {
-        return serialize({
-            action: 'best',
+    public static bestBlock(height: Types.BlockNumber): FeedMessage.Message {
+        return {
+            action: Actions.BestBlock,
             payload: height
-        });
+        };
     }
 
-    public static addedNode(node: Node): FeedData {
-        return serialize({
-            action: 'added',
+    public static addedNode(node: Node): FeedMessage.Message {
+        return {
+            action: Actions.AddedNode,
             payload: [node.id, node.nodeDetails(), node.nodeStats(), node.blockDetails()]
-        })
+        };
     }
 
-    public static removedNode(node: Node): FeedData {
-        return serialize({
-            action: 'removed',
+    public static removedNode(node: Node): FeedMessage.Message {
+        return {
+            action: Actions.RemovedNode,
             payload: node.id
-        });
+        };
     }
 
-    public static imported(node: Node): FeedData {
-        return serialize({
-            action: 'imported',
+    public static imported(node: Node): FeedMessage.Message {
+        return {
+            action: Actions.ImportedBlock,
             payload: [node.id, node.blockDetails()]
-        });
+        };
     }
 
-    public static stats(node: Node): FeedData {
-        return serialize({
-            action: 'stats',
+    public static stats(node: Node): FeedMessage.Message {
+        return {
+            action: Actions.NodeStats,
             payload: [node.id, node.nodeStats()]
-        });
+        };
     }
 
-    public send(data: FeedData) {
+    public sendData(data: FeedMessage.Data) {
         this.socket.send(data);
+    }
+
+    public sendMessages(messages: Array<FeedMessage.Message>) {
+        this.socket.send(FeedMessage.serialize(messages))
     }
 
     private disconnect() {
