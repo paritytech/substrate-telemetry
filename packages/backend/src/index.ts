@@ -4,7 +4,6 @@ import { createServer } from 'http';
 import Node from './node';
 import Feed from './feed';
 import Aggregator from './aggregator';
-import { map, join } from '@dotstats/common';
 
 const aggregator = new Aggregator;
 const app = express();
@@ -17,20 +16,7 @@ const incomingTelemetry = new WebSocket.Server({ port: 1024 });
 const telemetryFeed = new WebSocket.Server({ server });
 
 app.get('/', function (req, res) {
-    function nodeInfo(node: Node) {
-        return `${node.name} | ${node.height} | Block time ${node.blockTime / 1000}s`;
-    }
-
-    res.send(
-
-`<pre>
-Best block: ${aggregator.height}
-
-Node list:
-${ join(map(aggregator.nodeList(), nodeInfo), '\n') }
-</pre>`
-
-    );
+    res.send('See live listing at <a href="https://telemetry.polkadot.io/">https://telemetry.polkadot.io/<a>');
 });
 
 incomingTelemetry.on('connection', async (socket: WebSocket) => {
