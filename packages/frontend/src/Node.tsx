@@ -22,7 +22,8 @@ export function Node(props: Node.Props) {
             <td>{implementation} v{version}</td>
             <td>{peers}</td>
             <td>{txcount}</td>
-            <td>#{formatNumber(height)} / <span title={hash}>{trimHash(hash, 16)}</span></td>
+            <td>#{formatNumber(height)}</td>
+            <td><span title={hash}>{trimHash(hash, 16)}</span></td>
             <td>{blockTime / 1000}s</td>
         </tr>
     );

@@ -7,11 +7,12 @@ import { State } from './state';
 import { formatNumber } from './utils';
 
 import './App.css';
-import nodeIcon from './icons/broadcast.svg';
+import nodeIcon from './icons/server.svg';
 import nodeTypeIcon from './icons/terminal.svg';
-import peersIcon from './icons/organization.svg';
+import peersIcon from './icons/broadcast.svg';
 import transactionsIcon from './icons/inbox.svg';
 import blockIcon from './icons/package.svg';
+import blockHashIcon from './icons/file-binary.svg';
 import blockTimeIcon from './icons/history.svg';
 
 export default class App extends React.Component<{}, State> {
@@ -35,11 +36,12 @@ export default class App extends React.Component<{}, State> {
                 <table className="App-list">
                     <thead>
                         <tr>
-                            <th><Icon src={nodeIcon} alt="Node Name" /></th>
-                            <th><Icon src={nodeTypeIcon} alt="Node Type" /></th>
+                            <th><Icon src={nodeIcon} alt="Node" /></th>
+                            <th><Icon src={nodeTypeIcon} alt="Implementation" /></th>
                             <th><Icon src={peersIcon} alt="Peer Count" /></th>
                             <th><Icon src={transactionsIcon} alt="Transactions in Queue" /></th>
-                            <th><Icon src={blockIcon} alt="Best Block" /></th>
+                            <th><Icon src={blockIcon} alt="Block" /></th>
+                            <th><Icon src={blockHashIcon} alt="Block Hash" /></th>
                             <th><Icon src={blockTimeIcon} alt="Block Time" /></th>
                         </tr>
                     </thead>
