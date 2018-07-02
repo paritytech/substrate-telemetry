@@ -16,7 +16,7 @@ const incomingTelemetry = new WebSocket.Server({ port: 1024 });
 const telemetryFeed = new WebSocket.Server({ server });
 
 app.get('/', function (req, res) {
-    res.send('See live listing at <a href="https://telemetry.polkadot.io/">https://telemetry.polkadot.io/<a>');
+    res.send('See live listing at <a href="http://telemetry.polkadot.io/">https://telemetry.polkadot.io/<a>');
 });
 
 incomingTelemetry.on('connection', async (socket: WebSocket) => {
