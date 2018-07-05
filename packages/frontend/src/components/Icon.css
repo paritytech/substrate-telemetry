@@ -1,6 +1,8 @@
 .Icon {
     fill: currentColor;
     height: 1em;
+    width: 1em;
+    text-align: center;
     vertical-align: middle;
     display: inline-block;
 }

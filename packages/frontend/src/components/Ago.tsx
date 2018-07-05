@@ -58,6 +58,10 @@ export class Ago extends React.Component<Ago.Props, Ago.State> {
     }
 
     public render() {
+        if (this.props.when === 0) {
+            return <span>-</span>;
+        }
+
         const ago = Math.max(this.state.now - this.props.when, 0) / 1000;
 
         let agoStr: string;

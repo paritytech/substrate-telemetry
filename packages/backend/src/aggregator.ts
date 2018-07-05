@@ -1,11 +1,11 @@
 import * as EventEmitter from 'events';
 import Node from './node';
 import Feed from './feed';
-import { timestamp, Types, IdSet, FeedMessage } from '@dotstats/common';
+import { timestamp, Types, FeedMessage } from '@dotstats/common';
 
 export default class Aggregator extends EventEmitter {
-    private nodes = new IdSet<Types.NodeId, Node>();
-    private feeds = new IdSet<Types.FeedId, Feed>();
+    private nodes = new Set<Node>();
+    private feeds = new Set<Feed>();
     private messages: Array<FeedMessage.Message> = [];
 
     public height = 0 as Types.BlockNumber;
@@ -24,7 +24,7 @@ export default class Aggregator extends EventEmitter {
         node.once('disconnect', () => {
             node.removeAllListeners();
 
-            this.nodes.remove(node);
+            this.nodes.delete(node);
             this.broadcast(Feed.removedNode(node));
         });
 
@@ -44,7 +44,7 @@ export default class Aggregator extends EventEmitter {
         feed.sendMessages(messages);
 
         feed.once('disconnect', () => {
-            this.feeds.remove(feed);
+            this.feeds.delete(feed);
         });
     }
 

@@ -2,6 +2,32 @@
   font-size: 2.5em;
   padding: 20px;
   text-align: left;
-  width: 7em;
+  width: 230px;
   display: inline-block;
+  position: relative;
+}
+
+.Tile-label {
+  position: absolute;
+  top: 20px;
+  left: 90px;
+  right: 0;
+  font-size: 0.4em;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.Tile-content {
+  position: absolute;
+  bottom: 20px;
+  left: 90px;
+  right: 0;
+  font-size: 0.75em;
+}
+
+.Tile .Icon {
+  padding: 0.25em;
+  border-radius: 1em;
+  background: #d64ca8;
+  color: #fff;
 }

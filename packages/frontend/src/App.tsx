@@ -13,7 +13,7 @@ import transactionsIcon from './icons/inbox.svg';
 import blockIcon from './icons/package.svg';
 import blockHashIcon from './icons/file-binary.svg';
 import blockTimeIcon from './icons/history.svg';
-import lastTimeIcon from './icons/dashboard.svg';
+import lastTimeIcon from './icons/watch.svg';
 
 export default class App extends React.Component<{}, State> {
     public state: State = {
@@ -72,6 +72,6 @@ export default class App extends React.Component<{}, State> {
     }
 
     private nodes(): Node.Props[] {
-        return Array.from(this.state.nodes.values());
+        return Array.from(this.state.nodes.values()).sort((a, b) => b.blockDetails[0] - a.blockDetails[0]);
     }
 }
