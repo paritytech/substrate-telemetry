@@ -1,5 +1,5 @@
 import { Opaque } from './helpers';
-import { NodeId, NodeDetails, NodeStats, BlockNumber, BlockDetails } from './types';
+import { NodeId, NodeDetails, NodeStats, BlockNumber, BlockDetails, Timestamp } from './types';
 
 export const Actions = {
     BestBlock: 0 as 0,
@@ -7,6 +7,7 @@ export const Actions = {
     RemovedNode: 2 as 2,
     ImportedBlock: 3 as 3,
     NodeStats: 4 as 4,
+    TimeSync: 5 as 5,
 };
 
 export type Action = typeof Actions[keyof typeof Actions];
@@ -19,7 +20,7 @@ export namespace Variants {
 
     export interface BestBlockMessage extends MessageBase {
         action: typeof Actions.BestBlock;
-        payload: BlockNumber;
+        payload: [BlockNumber, Timestamp];
     }
 
     export interface AddedNodeMessage extends MessageBase {
@@ -40,7 +41,12 @@ export namespace Variants {
     export interface NodeStatsMessage extends MessageBase {
         action: typeof Actions.NodeStats;
         payload: [NodeId, NodeStats];
-    };
+    }
+
+    export interface TimeSyncMessage extends MessageBase {
+        action: typeof Actions.TimeSync;
+        payload: Timestamp;
+    }
 }
 
 export type Message =
@@ -48,7 +54,8 @@ export type Message =
     | Variants.AddedNodeMessage
     | Variants.RemovedNodeMessage
     | Variants.ImportedBlockMessage
-    | Variants.NodeStatsMessage;
+    | Variants.NodeStatsMessage
+    | Variants.TimeSyncMessage;
 
 /**
  * Opaque data type to be sent to the feed. Passing through

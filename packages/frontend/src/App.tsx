@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { Types } from '@dotstats/common';
-import { Node } from './Node';
-import { Icon } from './Icon';
+import { Node, Icon, Tile, Ago } from './components';
 import { Connection } from './message';
 import { State } from './state';
 import { formatNumber } from './utils';
@@ -14,10 +13,13 @@ import transactionsIcon from './icons/inbox.svg';
 import blockIcon from './icons/package.svg';
 import blockHashIcon from './icons/file-binary.svg';
 import blockTimeIcon from './icons/history.svg';
+import lastTimeIcon from './icons/dashboard.svg';
 
 export default class App extends React.Component<{}, State> {
     public state: State = {
         best: 0 as Types.BlockNumber,
+        blockTimestamp: 0 as Types.Timestamp,
+        timeDiff: 0 as Types.Milliseconds,
         nodes: new Map()
     };
 
@@ -28,11 +30,14 @@ export default class App extends React.Component<{}, State> {
     }
 
     public render() {
+        const { best, blockTimestamp, timeDiff } = this.state;
+
+        Ago.timeDiff = timeDiff;
+
         return (
             <div className="App">
-                <div className="App-header">
-                    <Icon src={blockIcon} alt="Best Block" /> #{formatNumber(this.state.best)}
-                </div>
+                <Tile icon={blockIcon} title="Best Block">#{formatNumber(best)}</Tile>
+                <Tile icon={lastTimeIcon} title="Last Block"><Ago when={blockTimestamp} /></Tile>
                 <table className="App-list">
                     <thead>
                         <tr>
@@ -43,6 +48,7 @@ export default class App extends React.Component<{}, State> {
                             <th><Icon src={blockIcon} alt="Block" /></th>
                             <th><Icon src={blockHashIcon} alt="Block Hash" /></th>
                             <th><Icon src={blockTimeIcon} alt="Block Time" /></th>
+                            <th><Icon src={lastTimeIcon} alt="Last Block Time" /></th>
                         </tr>
                     </thead>
                     <tbody>

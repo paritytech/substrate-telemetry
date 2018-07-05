@@ -8,6 +8,7 @@
   },
   "rules": {
     "ordered-imports": false,
+    "object-literal-sort-keys": false,
     "no-console": false,
     "no-unused-variable": [true, {"ignore-pattern": "^_"}],
     "no-empty": false,

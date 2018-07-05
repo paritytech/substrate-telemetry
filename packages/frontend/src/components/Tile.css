@@ -1,0 +1,7 @@
+.Tile {
+  font-size: 2.5em;
+  padding: 20px;
+  text-align: left;
+  width: 7em;
+  display: inline-block;
+}

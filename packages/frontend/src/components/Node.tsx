@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { formatNumber, trimHash } from './utils';
+import { formatNumber, trimHash } from '../utils';
+import { Ago } from './Ago';
 import { Types } from '@dotstats/common';
 
 export namespace Node {
@@ -13,7 +14,7 @@ export namespace Node {
 
 export function Node(props: Node.Props) {
     const [name, implementation, version] = props.nodeDetails;
-    const [height, hash, blockTime] = props.blockDetails;
+    const [height, hash, blockTime, blockTimestamp] = props.blockDetails;
     const [peers, txcount] = props.nodeStats;
 
     return (
@@ -24,7 +25,8 @@ export function Node(props: Node.Props) {
             <td>{txcount}</td>
             <td>#{formatNumber(height)}</td>
             <td><span title={hash}>{trimHash(hash, 16)}</span></td>
-            <td>{blockTime / 1000}s</td>
+            <td>{(blockTime / 1000).toFixed(3)}s</td>
+            <td><Ago when={blockTimestamp} /></td>
         </tr>
     );
 }

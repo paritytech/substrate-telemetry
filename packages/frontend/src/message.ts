@@ -1,4 +1,4 @@
-import { FeedMessage, Types, Maybe, sleep } from '@dotstats/common';
+import { timestamp, FeedMessage, Types, Maybe, sleep } from '@dotstats/common';
 import { State, Update } from './state';
 
 const { Actions } = FeedMessage;
@@ -12,7 +12,6 @@ export class Connection {
     }
 
     private static readonly address = `ws://${window.location.hostname}:8080`;
-
 
     private static async socket(): Promise<WebSocket> {
         let socket = await Connection.trySocket();
@@ -61,11 +60,11 @@ export class Connection {
     constructor(socket: WebSocket, update: Update) {
         this.socket = socket;
         this.update = update;
-        this.state = update(null);
         this.bindSocket();
     }
 
     private bindSocket() {
+        this.state = this.update({ nodes: new Map() });
         this.socket.addEventListener('message', this.handleMessages);
         this.socket.addEventListener('close', this.handleDisconnect);
         this.socket.addEventListener('error', this.handleDisconnect);
@@ -85,10 +84,13 @@ export class Connection {
         messages: for (const message of FeedMessage.deserialize(data)) {
             switch (message.action) {
                 case Actions.BestBlock: {
-                    this.state = this.update({ best: message.payload });
+                    const [best, blockTimestamp] = message.payload;
+
+                    this.state = this.update({ best, blockTimestamp });
 
                     continue messages;
                 }
+
                 case Actions.AddedNode: {
                     const [id, nodeDetails, nodeStats, blockDetails] = message.payload;
                     const node = { id, nodeDetails, nodeStats, blockDetails };
@@ -97,14 +99,15 @@ export class Connection {
 
                     break;
                 }
+
                 case Actions.RemovedNode: {
                     nodes.delete(message.payload);
 
                     break;
                 }
+
                 case Actions.ImportedBlock: {
                     const [id, blockDetails] = message.payload;
-
                     const node = nodes.get(id);
 
                     if (!node) {
@@ -115,9 +118,9 @@ export class Connection {
 
                     break;
                 }
+
                 case Actions.NodeStats: {
                     const [id, nodeStats] = message.payload;
-
                     const node = nodes.get(id);
 
                     if (!node) {
@@ -128,8 +131,17 @@ export class Connection {
 
                     break;
                 }
+
+                case Actions.TimeSync: {
+                    this.state = this.update({
+                        timeDiff: (timestamp() - message.payload) as Types.Milliseconds
+                    });
+
+                    continue messages;
+                }
+
                 default: {
-                    return;
+                    continue messages;
                 }
             }
         }

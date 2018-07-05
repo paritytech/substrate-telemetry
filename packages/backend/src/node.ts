@@ -1,15 +1,15 @@
 import * as WebSocket from 'ws';
 import * as EventEmitter from 'events';
-import { Maybe, Types, idGenerator } from '@dotstats/common';
+import { timestamp, Maybe, Types, idGenerator } from '@dotstats/common';
 import { parseMessage, getBestBlock, Message, BestBlock, SystemInterval } from './message';
 
 const BLOCK_TIME_HISTORY = 10;
-const TIMEOUT = 1000 * 60 * 1; // 1 minute
+const TIMEOUT = (1000 * 60 * 1) as Types.Milliseconds; // 1 minute
 
 const nextId = idGenerator<Types.NodeId>();
 
 export default class Node extends EventEmitter {
-    public lastMessage: number;
+    public lastMessage: Types.Timestamp;
     public id: Types.NodeId;
     public name: Types.NodeName;
     public implementation: Types.NodeImplementation;
@@ -19,6 +19,7 @@ export default class Node extends EventEmitter {
     public height = 0 as Types.BlockNumber;
     public latency = 0 as Types.Milliseconds;
     public blockTime = 0 as Types.Milliseconds;
+    public blockTimestamp = 0 as Types.Timestamp;
 
     private peers = 0 as Types.PeerCount;
     private txcount = 0 as Types.TransactionCount;
@@ -36,7 +37,7 @@ export default class Node extends EventEmitter {
     ) {
         super();
 
-        this.lastMessage = Date.now();
+        this.lastMessage = timestamp();
         this.id = nextId();
         this.socket = socket;
         this.name = name;
@@ -53,7 +54,7 @@ export default class Node extends EventEmitter {
                 return;
             }
 
-            this.lastMessage = Date.now();
+            this.lastMessage = timestamp();
             this.updateLatency(message.ts);
 
             const update = getBestBlock(message);
@@ -111,7 +112,7 @@ export default class Node extends EventEmitter {
         });
     }
 
-    public timeoutCheck(now: number) {
+    public timeoutCheck(now: Types.Timestamp) {
         if (this.lastMessage + TIMEOUT < now) {
             this.disconnect();
         }
@@ -126,7 +127,7 @@ export default class Node extends EventEmitter {
     }
 
     public blockDetails(): Types.BlockDetails {
-        return [this.height, this.best, this.blockTime];
+        return [this.height, this.best, this.blockTime, this.blockTimestamp];
     }
 
     public get average(): number {
@@ -145,6 +146,14 @@ export default class Node extends EventEmitter {
         }
 
         return sum / accounted;
+    }
+
+    public get localBlockAt(): Types.Milliseconds {
+        if (!this.lastBlockAt) {
+            return 0 as Types.Milliseconds;
+        }
+
+        return +(this.lastBlockAt || 0) as Types.Milliseconds;
     }
 
     private disconnect() {
@@ -177,6 +186,7 @@ export default class Node extends EventEmitter {
 
             this.best = best;
             this.height = height;
+            this.blockTimestamp = timestamp();
             this.lastBlockAt = time;
             this.blockTimes[height % BLOCK_TIME_HISTORY] = blockTime;
             this.blockTime = blockTime;

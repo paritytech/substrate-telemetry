@@ -1,7 +1,7 @@
 import * as WebSocket from 'ws';
 import * as EventEmitter from 'events';
 import Node from './node';
-import { Opaque, FeedMessage, Types, idGenerator } from '@dotstats/common';
+import { timestamp, Opaque, FeedMessage, Types, idGenerator } from '@dotstats/common';
 
 const nextId = idGenerator<Types.FeedId>();
 const { Actions } = FeedMessage;
@@ -21,10 +21,10 @@ export default class Feed extends EventEmitter {
         socket.on('close', () => this.disconnect());
     }
 
-    public static bestBlock(height: Types.BlockNumber): FeedMessage.Message {
+    public static bestBlock(height: Types.BlockNumber, ts: Types.Timestamp): FeedMessage.Message {
         return {
             action: Actions.BestBlock,
-            payload: height
+            payload: [height, ts]
         };
     }
 
@@ -53,6 +53,13 @@ export default class Feed extends EventEmitter {
         return {
             action: Actions.NodeStats,
             payload: [node.id, node.nodeStats()]
+        };
+    }
+
+    public static timeSync(): FeedMessage.Message {
+        return {
+            action: Actions.TimeSync,
+            payload: timestamp()
         };
     }
 
