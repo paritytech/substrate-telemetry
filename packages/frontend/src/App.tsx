@@ -36,8 +36,10 @@ export default class App extends React.Component<{}, State> {
 
         return (
             <div className="App">
-                <Tile icon={blockIcon} title="Best Block">#{formatNumber(best)}</Tile>
-                <Tile icon={lastTimeIcon} title="Last Block"><Ago when={blockTimestamp} /></Tile>
+                <div className="App-header">
+                    <Tile icon={blockIcon} title="Best Block">#{formatNumber(best)}</Tile>
+                    <Tile icon={lastTimeIcon} title="Last Block"><Ago when={blockTimestamp} /></Tile>
+                </div>
                 <table className="App-list">
                     <thead>
                         <tr>

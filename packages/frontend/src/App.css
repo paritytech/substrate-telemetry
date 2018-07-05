@@ -1,6 +1,11 @@
 .App {
   text-align: left;
-  font-family: monospace, sans-serif;
+  font-family: Roboto, Helvetica, Arial, sans-serif;
+}
+
+.App-header {
+  width: 100%;
+  background: #fff;
 }
 
 .App-logo {
@@ -8,19 +13,19 @@
   height: 80px;
 }
 
-.App-header {
-  font-size: 3em;
-  padding: 20px;
-  text-align: left;
+.App-list {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-.App-list {
-  padding: 20px;
+.App-list thead {
+  background: #3c3c3b;
+  color: #fff;
 }
 
 .App-list th, .App-list td {
   text-align: left;
-  padding: 0.2em 0.5em;
+  padding: 0.4em 0.6em;
 }
 
 @keyframes App-logo-spin {
