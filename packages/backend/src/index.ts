@@ -14,9 +14,15 @@ const telemetryFeed = new WebSocket.Server({ port: 8080 });
 console.log('Telemetry server listening on port 1024');
 console.log('Feed server listening on port 8080');
 
-incomingTelemetry.on('connection', async (socket: WebSocket) => {
+const ipv4 = /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/;
+
+incomingTelemetry.on('connection', async (socket, req) => {
   try {
-    const node = await Node.fromSocket(socket);
+    const [ ip ] = (req.headers['x-forwarded-for'] || req.connection.remoteAddress || '0.0.0.0')
+      .toString()
+      .match(ipv4) || ['0.0.0.0'];
+
+    const node = await Node.fromSocket(socket, ip);
 
     aggregator.addNode(node);
   } catch (err) {

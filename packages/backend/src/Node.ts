@@ -1,5 +1,6 @@
 import * as WebSocket from 'ws';
 import * as EventEmitter from 'events';
+import * as iplocation from 'iplocation';
 import { timestamp, Maybe, Types, idGenerator } from '@dotstats/common';
 import { parseMessage, getBestBlock, Message, BestBlock, SystemInterval } from './message';
 
@@ -83,7 +84,9 @@ export default class Node {
     });
   }
 
-  public static fromSocket(socket: WebSocket): Promise<Node> {
+  public static fromSocket(socket: WebSocket, ip: string): Promise<Node> {
+    console.log('node ip', ip);
+
     return new Promise((resolve, reject) => {
       function cleanup() {
         clearTimeout(timeout);
