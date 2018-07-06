@@ -15,16 +15,16 @@ console.log('Telemetry server listening on port 1024');
 console.log('Feed server listening on port 8080');
 
 incomingTelemetry.on('connection', async (socket: WebSocket) => {
-    try {
-        const node = await Node.fromSocket(socket);
+  try {
+    const node = await Node.fromSocket(socket);
 
-        aggregator.addNode(node);
-    } catch (err) {
-        console.error(err);
-    }
+    aggregator.addNode(node);
+  } catch (err) {
+    console.error(err);
+  }
 });
 
 telemetryFeed.on('connection', (socket: WebSocket) => {
-    aggregator.addFeed(new Feed(socket));
+  aggregator.addFeed(new Feed(socket));
 });
 

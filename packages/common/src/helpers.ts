@@ -27,9 +27,9 @@ export type Maybe<T> = T | null | undefined;
  * Asynchronous sleep
  */
 export function sleep(time: Milliseconds): Promise<void> {
-    return new Promise<void>((resolve, _reject) => {
-        setTimeout(() => resolve(), time);
-    });
+  return new Promise<void>((resolve, _reject) => {
+    setTimeout(() => resolve(), time);
+  });
 }
 
 export const timestamp = Date.now as () => Timestamp;

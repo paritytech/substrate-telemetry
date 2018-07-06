@@ -3,21 +3,21 @@ import ReactSVG from 'react-svg';
 import './Icon.css';
 
 export interface Props {
-    src: string,
-    alt: string,
-    className?: string,
+  src: string,
+  alt: string,
+  className?: string,
 };
 
 export class Icon extends React.Component<{}, Props> {
-    public props: Props;
+  public props: Props;
 
-    public shouldComponentUpdate() {
-        return false;
-    }
+  public shouldComponentUpdate() {
+    return false;
+  }
 
-    public render() {
-        const { alt, className, src } = this.props;
+  public render() {
+    const { alt, className, src } = this.props;
 
-        return <ReactSVG title={alt} className={`Icon ${ className || '' }`} path={src} />;
-    }
+    return <ReactSVG title={alt} className={`Icon ${ className || '' }`} path={src} />;
+  }
 }

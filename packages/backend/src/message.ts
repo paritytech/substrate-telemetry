@@ -2,73 +2,73 @@ import { Data } from 'ws';
 import { Maybe, Types } from '@dotstats/common';
 
 export function parseMessage(data: Data): Maybe<Message> {
-    try {
-        const message = JSON.parse(data.toString());
+  try {
+    const message = JSON.parse(data.toString());
 
-        if (message && typeof message.msg === 'string' && typeof message.ts === 'string') {
-            message.ts = new Date(message.ts);
+    if (message && typeof message.msg === 'string' && typeof message.ts === 'string') {
+      message.ts = new Date(message.ts);
 
-            return message;
-        }
-    } catch (_) {
-        console.warn('Error parsing message JSON');
+      return message;
     }
+  } catch (_) {
+    console.warn('Error parsing message JSON');
+  }
 
-    return null;
+  return null;
 }
 
 export function getBestBlock(message: Message): Maybe<BestBlock> {
-    switch (message.msg) {
-        case 'node.start':
-        case 'system.interval':
-        case 'block.import':
-            return message;
-        default:
-            return null;
-    }
+  switch (message.msg) {
+    case 'node.start':
+    case 'system.interval':
+    case 'block.import':
+      return message;
+    default:
+      return null;
+  }
 }
 
 interface MessageBase {
-    ts: Date,
-    level: 'INFO' | 'WARN',
+  ts: Date,
+  level: 'INFO' | 'WARN',
 }
 
 export interface BestBlock {
-    best: Types.BlockHash,
-    height: Types.BlockNumber,
-    ts: Date,
+  best: Types.BlockHash,
+  height: Types.BlockNumber,
+  ts: Date,
 }
 
 interface SystemConnected {
-    msg: 'system.connected',
-    name: Types.NodeName,
-    chain: Types.ChainLabel,
-    config: string,
-    implementation: Types.NodeImplementation,
-    version: Types.NodeVersion,
+  msg: 'system.connected',
+  name: Types.NodeName,
+  chain: Types.ChainLabel,
+  config: string,
+  implementation: Types.NodeImplementation,
+  version: Types.NodeVersion,
 }
 
 export interface SystemInterval extends BestBlock {
-    msg: 'system.interval',
-    txcount: Types.TransactionCount,
-    peers: Types.PeerCount,
-    status: 'Idle' | string, // TODO: 'Idle' | ...?
+  msg: 'system.interval',
+  txcount: Types.TransactionCount,
+  peers: Types.PeerCount,
+  status: 'Idle' | string, // TODO: 'Idle' | ...?
 }
 
 interface NodeStart extends BestBlock {
-    msg: 'node.start',
+  msg: 'node.start',
 }
 
 interface BlockImport extends BestBlock {
-    msg: 'block.import',
+  msg: 'block.import',
 }
 
 // Union type
 export type Message = MessageBase & (
-    SystemConnected |
-    SystemInterval  |
-    NodeStart       |
-    BlockImport
+  SystemConnected |
+  SystemInterval  |
+  NodeStart       |
+  BlockImport
 );
 
 

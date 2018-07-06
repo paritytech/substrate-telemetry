@@ -2,88 +2,88 @@ import { Opaque } from './helpers';
 import { NodeId, NodeDetails, NodeStats, BlockNumber, BlockDetails, Timestamp, ChainLabel } from './types';
 
 export const Actions = {
-    BestBlock: 0 as 0,
-    AddedNode: 1 as 1,
-    RemovedNode: 2 as 2,
-    ImportedBlock: 3 as 3,
-    NodeStats: 4 as 4,
-    TimeSync: 5 as 5,
-    AddedChain: 6 as 6,
-    RemovedChain: 7 as 7,
-    SubscribedTo: 8 as 8,
-    UnsubscribedFrom: 9 as 9
+  BestBlock: 0 as 0,
+  AddedNode: 1 as 1,
+  RemovedNode: 2 as 2,
+  ImportedBlock: 3 as 3,
+  NodeStats: 4 as 4,
+  TimeSync: 5 as 5,
+  AddedChain: 6 as 6,
+  RemovedChain: 7 as 7,
+  SubscribedTo: 8 as 8,
+  UnsubscribedFrom: 9 as 9
 };
 
 export type Action = typeof Actions[keyof typeof Actions];
 export type Payload = Message['payload'];
 
 export namespace Variants {
-    export interface MessageBase {
-        action: Action;
-    }
+  export interface MessageBase {
+    action: Action;
+  }
 
-    export interface BestBlockMessage extends MessageBase {
-        action: typeof Actions.BestBlock;
-        payload: [BlockNumber, Timestamp];
-    }
+  export interface BestBlockMessage extends MessageBase {
+    action: typeof Actions.BestBlock;
+    payload: [BlockNumber, Timestamp];
+  }
 
-    export interface AddedNodeMessage extends MessageBase {
-        action: typeof Actions.AddedNode;
-        payload: [NodeId, NodeDetails, NodeStats, BlockDetails];
-    }
+  export interface AddedNodeMessage extends MessageBase {
+    action: typeof Actions.AddedNode;
+    payload: [NodeId, NodeDetails, NodeStats, BlockDetails];
+  }
 
-    export interface RemovedNodeMessage extends MessageBase {
-        action: typeof Actions.RemovedNode;
-        payload: NodeId;
-    }
+  export interface RemovedNodeMessage extends MessageBase {
+    action: typeof Actions.RemovedNode;
+    payload: NodeId;
+  }
 
-    export interface ImportedBlockMessage extends MessageBase {
-        action: typeof Actions.ImportedBlock;
-        payload: [NodeId, BlockDetails];
-    }
+  export interface ImportedBlockMessage extends MessageBase {
+    action: typeof Actions.ImportedBlock;
+    payload: [NodeId, BlockDetails];
+  }
 
-    export interface NodeStatsMessage extends MessageBase {
-        action: typeof Actions.NodeStats;
-        payload: [NodeId, NodeStats];
-    }
+  export interface NodeStatsMessage extends MessageBase {
+    action: typeof Actions.NodeStats;
+    payload: [NodeId, NodeStats];
+  }
 
-    export interface TimeSyncMessage extends MessageBase {
-        action: typeof Actions.TimeSync;
-        payload: Timestamp;
-    }
+  export interface TimeSyncMessage extends MessageBase {
+    action: typeof Actions.TimeSync;
+    payload: Timestamp;
+  }
 
-    export interface AddedChainMessage extends MessageBase {
-        action: typeof Actions.AddedChain;
-        payload: ChainLabel;
-    }
+  export interface AddedChainMessage extends MessageBase {
+    action: typeof Actions.AddedChain;
+    payload: ChainLabel;
+  }
 
-    export interface RemovedChainMessage extends MessageBase {
-        action: typeof Actions.RemovedChain;
-        payload: ChainLabel;
-    }
+  export interface RemovedChainMessage extends MessageBase {
+    action: typeof Actions.RemovedChain;
+    payload: ChainLabel;
+  }
 
-    export interface SubscribedToMessage extends MessageBase {
-        action: typeof Actions.SubscribedTo;
-        payload: ChainLabel;
-    }
+  export interface SubscribedToMessage extends MessageBase {
+    action: typeof Actions.SubscribedTo;
+    payload: ChainLabel;
+  }
 
-    export interface UnsubscribedFromMessage extends MessageBase {
-        action: typeof Actions.UnsubscribedFrom;
-        payload: ChainLabel;
-    }
+  export interface UnsubscribedFromMessage extends MessageBase {
+    action: typeof Actions.UnsubscribedFrom;
+    payload: ChainLabel;
+  }
 }
 
 export type Message =
-    | Variants.BestBlockMessage
-    | Variants.AddedNodeMessage
-    | Variants.RemovedNodeMessage
-    | Variants.ImportedBlockMessage
-    | Variants.NodeStatsMessage
-    | Variants.TimeSyncMessage
-    | Variants.AddedChainMessage
-    | Variants.RemovedChainMessage
-    | Variants.SubscribedToMessage
-    | Variants.UnsubscribedFromMessage;
+  | Variants.BestBlockMessage
+  | Variants.AddedNodeMessage
+  | Variants.RemovedNodeMessage
+  | Variants.ImportedBlockMessage
+  | Variants.NodeStatsMessage
+  | Variants.TimeSyncMessage
+  | Variants.AddedChainMessage
+  | Variants.RemovedChainMessage
+  | Variants.SubscribedToMessage
+  | Variants.UnsubscribedFromMessage;
 
 /**
  * Opaque data type to be sent to the feed. Passing through
@@ -100,36 +100,36 @@ export type Data = Opaque<string, 'FeedMessage.Data'>;
  * Action `string`s are converted to opcodes using the `actionToCode` mapping.
  */
 export function serialize(messages: Array<Message>): Data {
-    const squashed = new Array(messages.length * 2);
-    let index = 0;
+  const squashed = new Array(messages.length * 2);
+  let index = 0;
 
-    messages.forEach((message) => {
-        const { action, payload } = message;
+  messages.forEach((message) => {
+    const { action, payload } = message;
 
-        squashed[index++] = action;
-        squashed[index++] = payload;
-    })
+    squashed[index++] = action;
+    squashed[index++] = payload;
+  })
 
-    return JSON.stringify(squashed) as Data;
+  return JSON.stringify(squashed) as Data;
 }
 
 /**
  * Deserialize data to an array of `Message`s.
  */
 export function deserialize(data: Data): Array<Message> {
-    const json: Array<Action | Payload> = JSON.parse(data);
+  const json: Array<Action | Payload> = JSON.parse(data);
 
-    if (!Array.isArray(json) || json.length === 0 || json.length % 2 !== 0) {
-        throw new Error('Invalid FeedMessage.Data');
-    }
+  if (!Array.isArray(json) || json.length === 0 || json.length % 2 !== 0) {
+    throw new Error('Invalid FeedMessage.Data');
+  }
 
-    const messages: Array<Message> = new Array(json.length / 2);
+  const messages: Array<Message> = new Array(json.length / 2);
 
-    for (const index of messages.keys()) {
-        const [ action, payload ] = json.slice(index * 2);
+  for (const index of messages.keys()) {
+    const [ action, payload ] = json.slice(index * 2);
 
-        messages[index] = { action, payload } as Message;
-    }
+    messages[index] = { action, payload } as Message;
+  }
 
-    return messages;
+  return messages;
 }

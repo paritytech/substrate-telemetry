@@ -7,205 +7,205 @@ const TIMEOUT_BASE = (1000 * 5) as Types.Milliseconds; // 5 seconds
 const TIMEOUT_MAX = (1000 * 60 * 5) as Types.Milliseconds; // 5 minutes
 
 export class Connection {
-    public static async create(update: Update): Promise<Connection> {
-        return new Connection(await Connection.socket(), update);
+  public static async create(update: Update): Promise<Connection> {
+    return new Connection(await Connection.socket(), update);
+  }
+
+  private static readonly address = `ws://${window.location.hostname}:8080`;
+
+  private static async socket(): Promise<WebSocket> {
+    let socket = await Connection.trySocket();
+    let timeout = TIMEOUT_BASE;
+
+    while (!socket) {
+      await sleep(timeout);
+
+      timeout = Math.max(timeout * 2, TIMEOUT_MAX) as Types.Milliseconds;
+      socket = await Connection.trySocket();
     }
 
-    private static readonly address = `ws://${window.location.hostname}:8080`;
+    return socket;
+  }
 
-    private static async socket(): Promise<WebSocket> {
-        let socket = await Connection.trySocket();
-        let timeout = TIMEOUT_BASE;
+  private static async trySocket(): Promise<Maybe<WebSocket>> {
+    return new Promise<Maybe<WebSocket>>((resolve, _) => {
+      function clean() {
+        socket.removeEventListener('open', onSuccess);
+        socket.removeEventListener('close', onFailure);
+        socket.removeEventListener('error', onFailure);
+      }
 
-        while (!socket) {
-            await sleep(timeout);
+      function onSuccess() {
+        clean();
+        resolve(socket);
+      }
 
-            timeout = Math.max(timeout * 2, TIMEOUT_MAX) as Types.Milliseconds;
-            socket = await Connection.trySocket();
+      function onFailure() {
+        clean();
+        resolve(null);
+      }
+
+      const socket = new WebSocket(Connection.address);
+
+      socket.addEventListener('open', onSuccess);
+      socket.addEventListener('error', onFailure);
+      socket.addEventListener('close', onFailure);
+    });
+  }
+
+  private socket: WebSocket;
+  private state: Readonly<State>;
+  private readonly update: Update;
+
+  constructor(socket: WebSocket, update: Update) {
+    this.socket = socket;
+    this.update = update;
+    this.bindSocket();
+  }
+
+  public subscribe(chain: Types.ChainLabel) {
+    this.socket.send(`subscribe:${chain}`);
+  }
+
+  private bindSocket() {
+    this.state = this.update({ nodes: new Map() });
+    this.socket.addEventListener('message', this.handleMessages);
+    this.socket.addEventListener('close', this.handleDisconnect);
+    this.socket.addEventListener('error', this.handleDisconnect);
+  }
+
+  private clean() {
+    this.socket.removeEventListener('message', this.handleMessages);
+    this.socket.removeEventListener('close', this.handleDisconnect);
+    this.socket.removeEventListener('error', this.handleDisconnect);
+  }
+
+  private handleMessages = (event: MessageEvent) => {
+    const data = event.data as FeedMessage.Data;
+    const nodes = this.state.nodes;
+    const chains = this.state.chains;
+    const changes = { nodes, chains };
+
+    messages: for (const message of FeedMessage.deserialize(data)) {
+      switch (message.action) {
+        case Actions.BestBlock: {
+          const [best, blockTimestamp] = message.payload;
+
+          this.state = this.update({ best, blockTimestamp });
+
+          continue messages;
         }
 
-        return socket;
-    }
+        case Actions.AddedNode: {
+          const [id, nodeDetails, nodeStats, blockDetails] = message.payload;
+          const node = { id, nodeDetails, nodeStats, blockDetails };
 
-    private static async trySocket(): Promise<Maybe<WebSocket>> {
-        return new Promise<Maybe<WebSocket>>((resolve, _) => {
-            function clean() {
-                socket.removeEventListener('open', onSuccess);
-                socket.removeEventListener('close', onFailure);
-                socket.removeEventListener('error', onFailure);
-            }
+          nodes.set(id, node);
 
-            function onSuccess() {
-                clean();
-                resolve(socket);
-            }
-
-            function onFailure() {
-                clean();
-                resolve(null);
-            }
-
-            const socket = new WebSocket(Connection.address);
-
-            socket.addEventListener('open', onSuccess);
-            socket.addEventListener('error', onFailure);
-            socket.addEventListener('close', onFailure);
-        });
-    }
-
-    private socket: WebSocket;
-    private state: Readonly<State>;
-    private readonly update: Update;
-
-    constructor(socket: WebSocket, update: Update) {
-        this.socket = socket;
-        this.update = update;
-        this.bindSocket();
-    }
-
-    public subscribe(chain: Types.ChainLabel) {
-        this.socket.send(`subscribe:${chain}`);
-    }
-
-    private bindSocket() {
-        this.state = this.update({ nodes: new Map() });
-        this.socket.addEventListener('message', this.handleMessages);
-        this.socket.addEventListener('close', this.handleDisconnect);
-        this.socket.addEventListener('error', this.handleDisconnect);
-    }
-
-    private clean() {
-        this.socket.removeEventListener('message', this.handleMessages);
-        this.socket.removeEventListener('close', this.handleDisconnect);
-        this.socket.removeEventListener('error', this.handleDisconnect);
-    }
-
-    private handleMessages = (event: MessageEvent) => {
-        const data = event.data as FeedMessage.Data;
-        const nodes = this.state.nodes;
-        const chains = this.state.chains;
-        const changes = { nodes, chains };
-
-        messages: for (const message of FeedMessage.deserialize(data)) {
-            switch (message.action) {
-                case Actions.BestBlock: {
-                    const [best, blockTimestamp] = message.payload;
-
-                    this.state = this.update({ best, blockTimestamp });
-
-                    continue messages;
-                }
-
-                case Actions.AddedNode: {
-                    const [id, nodeDetails, nodeStats, blockDetails] = message.payload;
-                    const node = { id, nodeDetails, nodeStats, blockDetails };
-
-                    nodes.set(id, node);
-
-                    break;
-                }
-
-                case Actions.RemovedNode: {
-                    nodes.delete(message.payload);
-
-                    break;
-                }
-
-                case Actions.ImportedBlock: {
-                    const [id, blockDetails] = message.payload;
-                    const node = nodes.get(id);
-
-                    if (!node) {
-                        return;
-                    }
-
-                    node.blockDetails = blockDetails;
-
-                    break;
-                }
-
-                case Actions.NodeStats: {
-                    const [id, nodeStats] = message.payload;
-                    const node = nodes.get(id);
-
-                    if (!node) {
-                        return;
-                    }
-
-                    node.nodeStats = nodeStats;
-
-                    break;
-                }
-
-                case Actions.TimeSync: {
-                    this.state = this.update({
-                        timeDiff: (timestamp() - message.payload) as Types.Milliseconds
-                    });
-
-                    continue messages;
-                }
-
-                case Actions.AddedChain: {
-                    chains.add(message.payload);
-
-                    this.autoSubscribe();
-
-                    break;
-                }
-
-                case Actions.RemovedChain: {
-                    chains.delete(message.payload);
-
-                    if (this.state.subscribed === message.payload) {
-                        nodes.clear();
-
-                        this.state = this.update({ subscribed: null, nodes, chains });
-                        this.autoSubscribe();
-
-                        continue messages;
-                    }
-
-                    break;
-                }
-
-                case Actions.SubscribedTo: {
-                    this.state = this.update({ subscribed: message.payload });
-
-                    continue messages;
-                }
-
-                case Actions.UnsubscribedFrom: {
-                    if (this.state.subscribed === message.payload) {
-                        nodes.clear();
-                        this.state = this.update({ subscribed: null, nodes });
-                    }
-
-                    continue messages;
-                }
-
-                default: {
-                    continue messages;
-                }
-            }
+          break;
         }
 
-        this.state = this.update(changes);
-    }
+        case Actions.RemovedNode: {
+          nodes.delete(message.payload);
 
-    private autoSubscribe() {
-        const { subscribed, chains } = this.state;
-
-        if (subscribed == null && chains.size) {
-            const first = chains.values().next().value;
-
-            this.subscribe(first);
+          break;
         }
+
+        case Actions.ImportedBlock: {
+          const [id, blockDetails] = message.payload;
+          const node = nodes.get(id);
+
+          if (!node) {
+            return;
+          }
+
+          node.blockDetails = blockDetails;
+
+          break;
+        }
+
+        case Actions.NodeStats: {
+          const [id, nodeStats] = message.payload;
+          const node = nodes.get(id);
+
+          if (!node) {
+            return;
+          }
+
+          node.nodeStats = nodeStats;
+
+          break;
+        }
+
+        case Actions.TimeSync: {
+          this.state = this.update({
+            timeDiff: (timestamp() - message.payload) as Types.Milliseconds
+          });
+
+          continue messages;
+        }
+
+        case Actions.AddedChain: {
+          chains.add(message.payload);
+
+          this.autoSubscribe();
+
+          break;
+        }
+
+        case Actions.RemovedChain: {
+          chains.delete(message.payload);
+
+          if (this.state.subscribed === message.payload) {
+            nodes.clear();
+
+            this.state = this.update({ subscribed: null, nodes, chains });
+            this.autoSubscribe();
+
+            continue messages;
+          }
+
+          break;
+        }
+
+        case Actions.SubscribedTo: {
+          this.state = this.update({ subscribed: message.payload });
+
+          continue messages;
+        }
+
+        case Actions.UnsubscribedFrom: {
+          if (this.state.subscribed === message.payload) {
+            nodes.clear();
+            this.state = this.update({ subscribed: null, nodes });
+          }
+
+          continue messages;
+        }
+
+        default: {
+          continue messages;
+        }
+      }
     }
 
-    private handleDisconnect = async () => {
-        this.clean();
-        this.socket.close();
-        this.socket = await Connection.socket();
-        this.bindSocket();
+    this.state = this.update(changes);
+  }
+
+  private autoSubscribe() {
+    const { subscribed, chains } = this.state;
+
+    if (subscribed == null && chains.size) {
+      const first = chains.values().next().value;
+
+      this.subscribe(first);
     }
+  }
+
+  private handleDisconnect = async () => {
+    this.clean();
+    this.socket.close();
+    this.socket = await Connection.socket();
+    this.bindSocket();
+  }
 }
