@@ -24,12 +24,11 @@
   color: #fff;
 }
 
-.App-list th, .App-list td {
-  text-align: left;
-  padding: 0.4em 0.6em;
+.App-list tbody {
+  font-family: monospace, sans-serif;
 }
 
-@keyframes App-logo-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.App-list th, .App-list td {
+  text-align: left;
+  padding: 0.8em 1em;
 }
