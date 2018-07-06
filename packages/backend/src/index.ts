@@ -1,9 +1,9 @@
 import * as WebSocket from 'ws';
-import Node from './node';
-import Feed from './feed';
-import Aggregator from './aggregator';
+import Node from './Node';
+import Feed from './Feed';
+import Aggregator from './Aggregator';
 
-const aggregator = new Aggregator;
+const aggregator = new Aggregator();
 
 // WebSocket for Nodes feeding telemetry data to the server
 const incomingTelemetry = new WebSocket.Server({ port: 1024 });
@@ -16,7 +16,9 @@ console.log('Feed server listening on port 8080');
 
 incomingTelemetry.on('connection', async (socket: WebSocket) => {
     try {
-        aggregator.addNode(await Node.fromSocket(socket));
+        const node = await Node.fromSocket(socket);
+
+        aggregator.addNode(node);
     } catch (err) {
         console.error(err);
     }

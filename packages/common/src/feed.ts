@@ -1,5 +1,5 @@
 import { Opaque } from './helpers';
-import { NodeId, NodeDetails, NodeStats, BlockNumber, BlockDetails, Timestamp } from './types';
+import { NodeId, NodeDetails, NodeStats, BlockNumber, BlockDetails, Timestamp, ChainLabel } from './types';
 
 export const Actions = {
     BestBlock: 0 as 0,
@@ -8,6 +8,10 @@ export const Actions = {
     ImportedBlock: 3 as 3,
     NodeStats: 4 as 4,
     TimeSync: 5 as 5,
+    AddedChain: 6 as 6,
+    RemovedChain: 7 as 7,
+    SubscribedTo: 8 as 8,
+    UnsubscribedFrom: 9 as 9
 };
 
 export type Action = typeof Actions[keyof typeof Actions];
@@ -47,6 +51,26 @@ export namespace Variants {
         action: typeof Actions.TimeSync;
         payload: Timestamp;
     }
+
+    export interface AddedChainMessage extends MessageBase {
+        action: typeof Actions.AddedChain;
+        payload: ChainLabel;
+    }
+
+    export interface RemovedChainMessage extends MessageBase {
+        action: typeof Actions.RemovedChain;
+        payload: ChainLabel;
+    }
+
+    export interface SubscribedToMessage extends MessageBase {
+        action: typeof Actions.SubscribedTo;
+        payload: ChainLabel;
+    }
+
+    export interface UnsubscribedFromMessage extends MessageBase {
+        action: typeof Actions.UnsubscribedFrom;
+        payload: ChainLabel;
+    }
 }
 
 export type Message =
@@ -55,7 +79,11 @@ export type Message =
     | Variants.RemovedNodeMessage
     | Variants.ImportedBlockMessage
     | Variants.NodeStatsMessage
-    | Variants.TimeSyncMessage;
+    | Variants.TimeSyncMessage
+    | Variants.AddedChainMessage
+    | Variants.RemovedChainMessage
+    | Variants.SubscribedToMessage
+    | Variants.UnsubscribedFromMessage;
 
 /**
  * Opaque data type to be sent to the feed. Passing through

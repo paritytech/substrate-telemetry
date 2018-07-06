@@ -42,7 +42,7 @@ export interface BestBlock {
 interface SystemConnected {
     msg: 'system.connected',
     name: Types.NodeName,
-    chain: string,
+    chain: Types.ChainLabel,
     config: string,
     implementation: Types.NodeImplementation,
     version: Types.NodeVersion,

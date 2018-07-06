@@ -8,12 +8,16 @@ const TIMEOUT = (1000 * 60 * 1) as Types.Milliseconds; // 1 minute
 
 const nextId = idGenerator<Types.NodeId>();
 
-export default class Node extends EventEmitter {
+export default class Node {
+    public readonly id: Types.NodeId;
+    public readonly name: Types.NodeName;
+    public readonly chain: Types.ChainLabel;
+    public readonly implementation: Types.NodeImplementation;
+    public readonly version: Types.NodeVersion;
+
+    public readonly events = new EventEmitter();
+
     public lastMessage: Types.Timestamp;
-    public id: Types.NodeId;
-    public name: Types.NodeName;
-    public implementation: Types.NodeImplementation;
-    public version: Types.NodeVersion;
     public config: string;
     public best = '' as Types.BlockHash;
     public height = 0 as Types.BlockNumber;
@@ -24,28 +28,26 @@ export default class Node extends EventEmitter {
     private peers = 0 as Types.PeerCount;
     private txcount = 0 as Types.TransactionCount;
 
-    private socket: WebSocket;
+    private readonly socket: WebSocket;
     private blockTimes: Array<number> = new Array(BLOCK_TIME_HISTORY);
     private lastBlockAt: Maybe<Date> = null;
 
     constructor(
         socket: WebSocket,
         name: Types.NodeName,
+        chain: Types.ChainLabel,
         config: string,
         implentation: Types.NodeImplementation,
         version: Types.NodeVersion,
     ) {
-        super();
-
-        this.lastMessage = timestamp();
         this.id = nextId();
-        this.socket = socket;
         this.name = name;
+        this.chain = chain;
         this.config = config;
         this.implementation = implentation;
         this.version = version;
-
-        console.log(`Listening to a new node: ${name}`);
+        this.lastMessage = timestamp();
+        this.socket = socket;
 
         socket.on('message', (data) => {
             const message = parseMessage(data);
@@ -94,9 +96,9 @@ export default class Node extends EventEmitter {
                 if (message && message.msg === "system.connected") {
                     cleanup();
 
-                    const { name, config, implementation, version } = message;
+                    const { name, chain, config, implementation, version } = message;
 
-                    resolve(new Node(socket, name, config, implementation, version));
+                    resolve(new Node(socket, name, chain, config, implementation, version));
                 }
             }
 
@@ -160,7 +162,7 @@ export default class Node extends EventEmitter {
         this.socket.removeAllListeners();
         this.socket.close();
 
-        this.emit('disconnect');
+        this.events.emit('disconnect');
     }
 
     private onSystemInterval(message: SystemInterval) {
@@ -170,7 +172,7 @@ export default class Node extends EventEmitter {
             this.peers = peers;
             this.txcount = txcount;
 
-            this.emit('stats');
+            this.events.emit('stats');
         }
     }
 
@@ -191,7 +193,7 @@ export default class Node extends EventEmitter {
             this.blockTimes[height % BLOCK_TIME_HISTORY] = blockTime;
             this.blockTime = blockTime;
 
-            this.emit('block');
+            this.events.emit('block');
         }
     }
 

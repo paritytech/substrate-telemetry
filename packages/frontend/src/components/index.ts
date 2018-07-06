@@ -1,3 +1,4 @@
+export * from './Chains';
 export * from './Icon';
 export * from './Node';
 export * from './Tile';

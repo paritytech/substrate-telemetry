@@ -63,6 +63,10 @@ export class Connection {
         this.bindSocket();
     }
 
+    public subscribe(chain: Types.ChainLabel) {
+        this.socket.send(`subscribe:${chain}`);
+    }
+
     private bindSocket() {
         this.state = this.update({ nodes: new Map() });
         this.socket.addEventListener('message', this.handleMessages);
@@ -79,7 +83,8 @@ export class Connection {
     private handleMessages = (event: MessageEvent) => {
         const data = event.data as FeedMessage.Data;
         const nodes = this.state.nodes;
-        const changes = { nodes };
+        const chains = this.state.chains;
+        const changes = { nodes, chains };
 
         messages: for (const message of FeedMessage.deserialize(data)) {
             switch (message.action) {
@@ -140,6 +145,44 @@ export class Connection {
                     continue messages;
                 }
 
+                case Actions.AddedChain: {
+                    chains.add(message.payload);
+
+                    this.autoSubscribe();
+
+                    break;
+                }
+
+                case Actions.RemovedChain: {
+                    chains.delete(message.payload);
+
+                    if (this.state.subscribed === message.payload) {
+                        nodes.clear();
+
+                        this.state = this.update({ subscribed: null, nodes, chains });
+                        this.autoSubscribe();
+
+                        continue messages;
+                    }
+
+                    break;
+                }
+
+                case Actions.SubscribedTo: {
+                    this.state = this.update({ subscribed: message.payload });
+
+                    continue messages;
+                }
+
+                case Actions.UnsubscribedFrom: {
+                    if (this.state.subscribed === message.payload) {
+                        nodes.clear();
+                        this.state = this.update({ subscribed: null, nodes });
+                    }
+
+                    continue messages;
+                }
+
                 default: {
                     continue messages;
                 }
@@ -147,6 +190,16 @@ export class Connection {
         }
 
         this.state = this.update(changes);
+    }
+
+    private autoSubscribe() {
+        const { subscribed, chains } = this.state;
+
+        if (subscribed == null && chains.size) {
+            const first = chains.values().next().value;
+
+            this.subscribe(first);
+        }
     }
 
     private handleDisconnect = async () => {

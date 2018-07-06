@@ -1,0 +1,30 @@
+.Chains {
+    background: #3c3c3b;
+    color: #fff;
+    padding: 0.25em 1em;
+}
+
+.Chains .Icon {
+    margin-right: 1em;
+}
+
+.Chains-chain {
+    padding: 0.25em 0.75em;
+    margin-left: 0.5em;
+    background: #222;
+    color: #999;
+    border-radius: 0.3em;
+    display: inline-block;
+    cursor: pointer;
+    font-family: monospace, sans-serif;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.Chains-chain-selected {
+    background: #eee;
+    color: #000;
+    border-radius: 0.3em 0.3em 0 0;
+    padding-bottom: 1em;
+    margin-bottom: -1em;
+}

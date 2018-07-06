@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Types } from '@dotstats/common';
-import { Node, Icon, Tile, Ago } from './components';
+import { Chains, Node, Icon, Tile, Ago } from './components';
 import { Connection } from './message';
 import { State } from './state';
 import { formatNumber } from './utils';
@@ -20,22 +20,33 @@ export default class App extends React.Component<{}, State> {
         best: 0 as Types.BlockNumber,
         blockTimestamp: 0 as Types.Timestamp,
         timeDiff: 0 as Types.Milliseconds,
+        subscribed: null,
+        chains: new Set(),
         nodes: new Map()
     };
+
+    private connection: Promise<Connection>;
 
     constructor(props: {}) {
         super(props);
 
-        this.connect();
+        this.connection = Connection.create((changes) => {
+            if (changes) {
+                this.setState(changes);
+            }
+
+            return this.state;
+        });
     }
 
     public render() {
-        const { best, blockTimestamp, timeDiff } = this.state;
+        const { best, blockTimestamp, timeDiff, chains, subscribed } = this.state;
 
         Ago.timeDiff = timeDiff;
 
         return (
             <div className="App">
+                <Chains chains={chains} subscribed={subscribed} connection={this.connection} />
                 <div className="App-header">
                     <Tile icon={blockIcon} title="Best Block">#{formatNumber(best)}</Tile>
                     <Tile icon={lastTimeIcon} title="Last Block"><Ago when={blockTimestamp} /></Tile>
@@ -61,16 +72,6 @@ export default class App extends React.Component<{}, State> {
                 </table>
             </div>
         );
-    }
-
-    private async connect() {
-        Connection.create((changes) => {
-            if (changes) {
-                this.setState(changes);
-            }
-
-            return this.state;
-        });
     }
 
     private nodes(): Node.Props[] {
