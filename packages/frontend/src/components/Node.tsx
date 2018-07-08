@@ -14,7 +14,7 @@ export namespace Node {
 
 export function Node(props: Node.Props) {
   const [name, implementation, version] = props.nodeDetails;
-  const [height, hash, blockTime, blockTimestamp] = props.blockDetails;
+  const [height, hash, blockTime, blockTimestamp, propagationTime] = props.blockDetails;
   const [peers, txcount] = props.nodeStats;
 
   return (
@@ -26,6 +26,7 @@ export function Node(props: Node.Props) {
       <td>#{formatNumber(height)}</td>
       <td><span title={hash}>{trimHash(hash, 16)}</span></td>
       <td>{(blockTime / 1000).toFixed(3)}s</td>
+      <td>{propagationTime === null ? '∞' : `${propagationTime}ms`}</td>
       <td><Ago when={blockTimestamp} /></td>
     </tr>
   );

@@ -1,4 +1,4 @@
-import { Opaque } from './helpers';
+import { Opaque, Maybe } from './helpers';
 import { Id } from './id';
 
 export type ChainLabel = Opaque<string, 'ChainLabel'>;
@@ -11,9 +11,10 @@ export type BlockNumber = Opaque<number, 'BlockNumber'>;
 export type BlockHash = Opaque<string, 'BlockHash'>;
 export type Milliseconds = Opaque<number, 'Milliseconds'>;
 export type Timestamp = Opaque<Milliseconds, 'Timestamp'>;
+export type PropagationTime = Opaque<Milliseconds, 'PropagationTime'>;
 export type PeerCount = Opaque<number, 'PeerCount'>;
 export type TransactionCount = Opaque<number, 'TransactionCount'>;
 
-export type BlockDetails = [BlockNumber, BlockHash, Milliseconds, Timestamp];
+export type BlockDetails = [BlockNumber, BlockHash, Milliseconds, Timestamp, Maybe<PropagationTime>];
 export type NodeDetails = [NodeName, NodeImplementation, NodeVersion];
 export type NodeStats = [PeerCount, TransactionCount];

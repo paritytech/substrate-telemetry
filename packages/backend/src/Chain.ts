@@ -77,10 +77,13 @@ export default class Chain {
     if (node.height > this.height) {
       this.height = node.height;
       this.blockTimestamp = node.blockTimestamp;
+      node.propagationTime = 0 as Types.PropagationTime;
 
       this.feeds.broadcast(Feed.bestBlock(this.height, this.blockTimestamp));
 
       console.log(`[${this.label}] New block ${this.height}`);
+    } else if (node.height === this.height) {
+      node.propagationTime = (node.blockTimestamp - this.blockTimestamp) as Types.PropagationTime;
     }
 
     this.feeds.broadcast(Feed.imported(node));

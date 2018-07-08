@@ -25,6 +25,7 @@ export default class Node {
   public latency = 0 as Types.Milliseconds;
   public blockTime = 0 as Types.Milliseconds;
   public blockTimestamp = 0 as Types.Timestamp;
+  public propagationTime: Maybe<Types.PropagationTime> = null;
 
   private peers = 0 as Types.PeerCount;
   private txcount = 0 as Types.TransactionCount;
@@ -132,7 +133,7 @@ export default class Node {
   }
 
   public blockDetails(): Types.BlockDetails {
-    return [this.height, this.best, this.blockTime, this.blockTimestamp];
+    return [this.height, this.best, this.blockTime, this.blockTimestamp, this.propagationTime];
   }
 
   public get average(): number {

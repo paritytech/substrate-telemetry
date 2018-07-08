@@ -3,27 +3,12 @@
   font-family: Roboto, Helvetica, Arial, sans-serif;
 }
 
-.App-header {
-  width: 100%;
-  background: #eee;
-  color: #000;
-}
-
-.App-list {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.App-list thead {
-  background: #3c3c3b;
-  color: #fff;
-}
-
-.App-list tbody {
-  font-family: monospace, sans-serif;
-}
-
-.App-list th, .App-list td {
-  text-align: left;
-  padding: 0.8em 1em;
+.App-no-telemetry {
+  width: 100vw;
+  height: 100vh;
+  line-height: 80vh;
+  font-size: 3.5em;
+  font-weight: 100;
+  text-align: center;
+  color: #888;
 }

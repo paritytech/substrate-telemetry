@@ -1,0 +1,33 @@
+.Chain-header {
+  width: 100%;
+  background: #eee;
+  color: #000;
+}
+
+.Chain-content {
+  position: absolute;
+  left: 80px;
+  right: 0;
+  min-height: 50vh;
+  background: #222;
+  color: #fff;
+  box-shadow: rgba(0,0,0,0.5) 0 3px 30px;
+}
+
+.Chain-node-list {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.Chain-node-list thead {
+  background: #3c3c3b;
+}
+
+.Chain-node-list tbody {
+  font-family: monospace, sans-serif;
+}
+
+.Chain-node-list th, .Chain-node-list td {
+  text-align: left;
+  padding: 0.8em 1em;
+}

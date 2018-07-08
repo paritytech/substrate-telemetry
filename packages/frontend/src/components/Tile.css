@@ -9,17 +9,16 @@
 
 .Tile-label {
   position: absolute;
-  top: 20px;
+  top: 25px;
   left: 100px;
   right: 0;
   font-size: 0.4em;
   text-transform: uppercase;
-  font-weight: bold;
 }
 
 .Tile-content {
   position: absolute;
-  bottom: 20px;
+  bottom: 25px;
   left: 100px;
   right: 0;
   font-weight: 300;
