@@ -1,5 +1,7 @@
 .Chain-header {
   width: 100%;
+  height: 108px;
+  overflow: hidden;
   background: #eee;
   color: #000;
 }
@@ -8,6 +10,8 @@
   position: absolute;
   left: 0; /*80px;*/
   right: 0;
+  bottom: 0;
+  top: 148px;
   min-height: 50vh;
   background: #222;
   color: #fff;

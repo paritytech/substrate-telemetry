@@ -41,14 +41,14 @@ export class Ago extends React.Component<Ago.Props, Ago.State> {
     super(props);
 
     this.state = {
-      now: (timestamp() + Ago.timeDiff) as Types.Timestamp
+      now: (timestamp() - Ago.timeDiff) as Types.Timestamp
     };
   }
 
   public componentWillMount() {
     tickers.set(this, (now) => {
       this.setState({
-        now: (now + Ago.timeDiff) as Types.Timestamp
+        now: (now - Ago.timeDiff) as Types.Timestamp
       });
     })
   }

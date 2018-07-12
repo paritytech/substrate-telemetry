@@ -1,15 +1,15 @@
 .Tile {
   font-size: 2.5em;
-  padding: 20px;
   text-align: left;
-  width: 220px;
+  width: 260px;
+  height: 100px;
   display: inline-block;
   position: relative;
 }
 
 .Tile-label {
   position: absolute;
-  top: 25px;
+  top: 24px;
   left: 100px;
   right: 0;
   font-size: 0.4em;
@@ -18,7 +18,7 @@
 
 .Tile-content {
   position: absolute;
-  bottom: 25px;
+  bottom: 16px;
   left: 100px;
   right: 0;
   font-weight: 300;
@@ -26,6 +26,9 @@
 }
 
 .Tile .Icon {
+  position: absolute;
+  left: 20px;
+  top: 20px;
   font-size: .8em;
   padding: 0.5em;
   border-radius: 1.25em;

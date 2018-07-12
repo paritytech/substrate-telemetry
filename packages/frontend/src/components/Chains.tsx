@@ -41,7 +41,7 @@ export class Chains extends React.Component<Chains.Props, {}> {
 
     return (
       <a key={label} className={className} onClick={this.subscribe.bind(this, label)}>
-        {label} ({nodeCount})
+        {label} <span className="Chains-node-count">{nodeCount}</span>
       </a>
     )
   }
