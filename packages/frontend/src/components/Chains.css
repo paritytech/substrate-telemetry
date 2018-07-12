@@ -1,6 +1,6 @@
 .Chains {
-  background: #3c3c3b;
-  color: #fff;
+  background: #ccc;
+  color: #000;
   padding: 0 1em;
   height: 40px;
 }
@@ -11,8 +11,8 @@
 
 .Chains-chain {
   padding: 0 12px;
-  background: #222;
-  color: #999;
+  background: #bbb;
+  color: #444;
   display: inline-block;
   margin: 0 0 0 1px;
   height: 40px;
@@ -33,7 +33,7 @@
 }
 
 .Chains-chain-selected {
-  background: #eee;
+  background: #fff;
   color: #000;
   z-index: 1;
 }
