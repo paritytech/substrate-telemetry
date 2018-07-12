@@ -56,6 +56,8 @@ export default class Aggregator {
 
       chain.events.on('disconnect', (count: number) => {
         if (count !== 0) {
+          this.feeds.broadcast(Feed.addedChain(chain));
+
           return;
         }
 
