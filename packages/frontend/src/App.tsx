@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Types } from '@dotstats/common';
 import { Chains, Chain, Ago } from './components';
-import { Connection } from './message';
+import { Connection } from './Connection';
 import { State } from './state';
 
 import './App.css';
@@ -12,7 +12,7 @@ export default class App extends React.Component<{}, State> {
     blockTimestamp: 0 as Types.Timestamp,
     timeDiff: 0 as Types.Milliseconds,
     subscribed: null,
-    chains: new Set(),
+    chains: new Map(),
     nodes: new Map()
   };
 

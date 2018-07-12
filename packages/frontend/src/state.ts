@@ -6,7 +6,7 @@ export interface State {
   blockTimestamp: Types.Timestamp,
   timeDiff: Types.Milliseconds,
   subscribed: Maybe<Types.ChainLabel>,
-  chains: Set<Types.ChainLabel>,
+  chains: Map<Types.ChainLabel, Types.NodeCount>,
   nodes: Map<Types.NodeId, Node.Props>,
 }
 

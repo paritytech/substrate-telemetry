@@ -1,6 +1,7 @@
 import * as WebSocket from 'ws';
 import * as EventEmitter from 'events';
 import Node from './Node';
+import Chain from './Chain';
 import { timestamp, Maybe, FeedMessage, Types, idGenerator } from '@dotstats/common';
 
 const nextId = idGenerator<Types.FeedId>();
@@ -66,10 +67,10 @@ export default class Feed {
     };
   }
 
-  public static addedChain(label: Types.ChainLabel): FeedMessage.Message {
+  public static addedChain(chain: Chain): FeedMessage.Message {
     return {
       action: Actions.AddedChain,
-      payload: label
+      payload: [chain.label, chain.nodeCount]
     };
   }
 

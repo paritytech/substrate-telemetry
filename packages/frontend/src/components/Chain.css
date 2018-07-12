@@ -6,7 +6,7 @@
 
 .Chain-content {
   position: absolute;
-  left: 80px;
+  left: 0; /*80px;*/
   right: 0;
   min-height: 50vh;
   background: #222;

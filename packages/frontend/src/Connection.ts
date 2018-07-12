@@ -146,8 +146,8 @@ export class Connection {
         }
 
         case Actions.AddedChain: {
-          chains.add(message.payload);
-
+          const [label, nodeCount] = message.payload;
+          chains.set(label, nodeCount);
           this.autoSubscribe();
 
           break;
@@ -195,10 +195,22 @@ export class Connection {
   private autoSubscribe() {
     const { subscribed, chains } = this.state;
 
-    if (subscribed == null && chains.size) {
-      const first = chains.values().next().value;
+    if (subscribed) {
+      return;
+    }
 
-      this.subscribe(first);
+    let topLabel: Maybe<Types.ChainLabel> = null;
+    let topCount: Types.NodeCount = 0 as Types.NodeCount;
+
+    for (const [label, count] of chains.entries()) {
+      if (count > topCount) {
+        topLabel = label;
+        topCount = topCount;
+      }
+    }
+
+    if (topLabel) {
+      this.subscribe(topLabel);
     }
   }
 

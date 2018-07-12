@@ -1,14 +1,19 @@
 import * as React from 'react';
-import { Connection } from '../message';
+import { Connection } from '../Connection';
 import { Icon } from './Icon';
 import { Types, Maybe } from '@dotstats/common';
 
 import chainIcon from '../icons/link.svg';
 import './Chains.css';
 
+interface ChainData {
+  label: Types.ChainLabel;
+  nodeCount: Types.NodeCount;
+}
+
 export namespace Chains {
   export interface Props {
-    chains: Set<Types.ChainLabel>,
+    chains: Map<Types.ChainLabel, Types.NodeCount>,
     subscribed: Maybe<Types.ChainLabel>,
     connection: Promise<Connection>
   }
@@ -26,20 +31,28 @@ export class Chains extends React.Component<Chains.Props, {}> {
     );
   }
 
-  private renderChain(chain: Types.ChainLabel): React.ReactNode {
-    const className = chain === this.props.subscribed
+  private renderChain(chain: ChainData): React.ReactNode {
+    const { label, nodeCount } = chain;
+
+    const className = label === this.props.subscribed
       ? 'Chains-chain Chains-chain-selected'
       : 'Chains-chain';
 
+
     return (
-      <a key={chain} className={className} onClick={this.subscribe.bind(this, chain)}>
-        {chain}
+      <a key={label} className={className} onClick={this.subscribe.bind(this, label)}>
+        {label} ({nodeCount})
       </a>
     )
   }
 
-  private get chains(): Types.ChainLabel[] {
-    return Array.from(this.props.chains);
+  private get chains(): ChainData[] {
+    return Array
+      .from(this.props.chains.entries())
+      .sort((a, b) => {
+        return b[1] - a[1];
+      })
+      .map(([label, nodeCount]) => ({ label, nodeCount }));
   }
 
   private async subscribe(chain: Types.ChainLabel) {

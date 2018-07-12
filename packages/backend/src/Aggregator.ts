@@ -16,13 +16,15 @@ export default class Aggregator {
     let chain = this.getChain(node.chain);
 
     chain.addNode(node);
+
+    this.feeds.broadcast(Feed.addedChain(chain));
   }
 
   public addFeed(feed: Feed) {
     this.feeds.add(feed);
 
     for (const chain of this.chains.values()) {
-      feed.sendMessage(Feed.addedChain(chain.label));
+      feed.sendMessage(Feed.addedChain(chain));
     }
 
     feed.events.on('subscribe', (label: Types.ChainLabel) => {
@@ -68,7 +70,7 @@ export default class Aggregator {
       this.chains.set(label, chain);
 
       console.log(`New chain: ${label}`);
-      this.feeds.broadcast(Feed.addedChain(label));
+      this.feeds.broadcast(Feed.addedChain(chain));
 
       return chain;
     }

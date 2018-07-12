@@ -18,8 +18,8 @@ export default class Chain {
     this.label = label;
   }
 
-  public get nodeCount(): number {
-    return this.nodes.size;
+  public get nodeCount(): Types.NodeCount {
+    return this.nodes.size as Types.NodeCount;
   }
 
   public addNode(node: Node) {

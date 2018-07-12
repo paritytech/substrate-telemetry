@@ -12,6 +12,7 @@ export type BlockHash = Opaque<string, 'BlockHash'>;
 export type Milliseconds = Opaque<number, 'Milliseconds'>;
 export type Timestamp = Opaque<Milliseconds, 'Timestamp'>;
 export type PropagationTime = Opaque<Milliseconds, 'PropagationTime'>;
+export type NodeCount = Opaque<number, 'NodeCount'>;
 export type PeerCount = Opaque<number, 'PeerCount'>;
 export type TransactionCount = Opaque<number, 'TransactionCount'>;
 

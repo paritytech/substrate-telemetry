@@ -1,5 +1,14 @@
 import { Opaque } from './helpers';
-import { NodeId, NodeDetails, NodeStats, BlockNumber, BlockDetails, Timestamp, ChainLabel } from './types';
+import {
+  NodeId,
+  NodeCount,
+  NodeDetails,
+  NodeStats,
+  BlockNumber,
+  BlockDetails,
+  Timestamp,
+  ChainLabel
+} from './types';
 
 export const Actions = {
   BestBlock: 0 as 0,
@@ -54,7 +63,7 @@ export namespace Variants {
 
   export interface AddedChainMessage extends MessageBase {
     action: typeof Actions.AddedChain;
-    payload: ChainLabel;
+    payload: [ChainLabel, NodeCount];
   }
 
   export interface RemovedChainMessage extends MessageBase {
