@@ -25,7 +25,7 @@ function sortNodes(a: Node.Props, b: Node.Props): number {
   const aPropagation = a.blockDetails[4] == null ? Infinity : a.blockDetails[4] as number;
   const bPropagation = b.blockDetails[4] == null ? Infinity : b.blockDetails[4] as number;
 
-  if (aPropagation === bPropagation) {
+  if (aPropagation === Infinity && bPropagation === Infinity) {
     // Descending sort by block number
     return b.blockDetails[0] - a.blockDetails[0];
   }
