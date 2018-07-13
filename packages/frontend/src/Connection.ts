@@ -36,8 +36,6 @@ export class Connection {
       }
 
       function onSuccess() {
-        this.state = this.update({ status: 'online' });
-
         clean();
         resolve(socket);
       }
@@ -70,7 +68,10 @@ export class Connection {
   }
 
   private bindSocket() {
-    this.state = this.update({ nodes: new Map() });
+    this.state = this.update({
+      status: 'online',
+      nodes: new Map()
+    });
     this.socket.addEventListener('message', this.handleMessages);
     this.socket.addEventListener('close', this.handleDisconnect);
     this.socket.addEventListener('error', this.handleDisconnect);
