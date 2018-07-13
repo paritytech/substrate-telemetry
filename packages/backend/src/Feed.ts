@@ -2,7 +2,7 @@ import * as WebSocket from 'ws';
 import * as EventEmitter from 'events';
 import Node from './Node';
 import Chain from './Chain';
-import { timestamp, Maybe, FeedMessage, Types, idGenerator } from '@dotstats/common';
+import { VERSION, timestamp, Maybe, FeedMessage, Types, idGenerator } from '@dotstats/common';
 
 const nextId = idGenerator<Types.FeedId>();
 const { Actions } = FeedMessage;
@@ -25,10 +25,17 @@ export default class Feed {
     socket.on('close', () => this.disconnect());
   }
 
-  public static bestBlock(height: Types.BlockNumber, ts: Types.Timestamp): FeedMessage.Message {
+  public static feedVersion(): FeedMessage.Message {
+    return {
+      action: Actions.FeedVersion,
+      payload: VERSION
+    };
+  }
+
+  public static bestBlock(height: Types.BlockNumber, ts: Types.Timestamp, avg: Maybe<Types.Milliseconds>): FeedMessage.Message {
     return {
       action: Actions.BestBlock,
-      payload: [height, ts]
+      payload: [height, ts, avg]
     };
   }
 

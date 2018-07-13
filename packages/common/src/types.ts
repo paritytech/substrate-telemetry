@@ -1,6 +1,7 @@
 import { Opaque, Maybe } from './helpers';
 import { Id } from './id';
 
+export type FeedVersion = Opaque<number, 'FeedVersion'>;
 export type ChainLabel = Opaque<string, 'ChainLabel'>;
 export type FeedId = Id<'Feed'>;
 export type NodeId = Id<'Node'>;

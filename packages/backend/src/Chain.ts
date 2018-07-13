@@ -2,7 +2,9 @@ import * as EventEmitter from 'events';
 import Node from './Node';
 import Feed from './Feed';
 import FeedSet from './FeedSet';
-import { timestamp, Types, FeedMessage } from '@dotstats/common';
+import { timestamp, Maybe, Types, FeedMessage } from '@dotstats/common';
+
+const BLOCK_TIME_HISTORY = 10;
 
 export default class Chain {
   private nodes = new Set<Node>();
@@ -13,6 +15,8 @@ export default class Chain {
 
   public height = 0 as Types.BlockNumber;
   public blockTimestamp = 0 as Types.Timestamp;
+
+  private blockTimes: Array<number> = new Array(BLOCK_TIME_HISTORY);
 
   constructor(label: Types.ChainLabel) {
     this.label = label;
@@ -48,7 +52,7 @@ export default class Chain {
     feed.chain = this.label;
 
     feed.sendMessage(Feed.timeSync());
-    feed.sendMessage(Feed.bestBlock(this.height, this.blockTimestamp));
+    feed.sendMessage(Feed.bestBlock(this.height, this.blockTimestamp, this.averageBlockTime));
 
     for (const node of this.nodes.values()) {
       feed.sendMessage(Feed.addedNode(node));
@@ -75,11 +79,17 @@ export default class Chain {
 
   private updateBlock(node: Node) {
     if (node.height > this.height) {
-      this.height = node.height;
-      this.blockTimestamp = node.blockTimestamp;
+      const { height, blockTimestamp } = node;
+
+      if (this.blockTimestamp) {
+        this.blockTimes[height * BLOCK_TIME_HISTORY] = blockTimestamp - this.blockTimestamp;
+      }
+
+      this.height = height;
+      this.blockTimestamp = blockTimestamp;
       node.propagationTime = 0 as Types.PropagationTime;
 
-      this.feeds.broadcast(Feed.bestBlock(this.height, this.blockTimestamp));
+      this.feeds.broadcast(Feed.bestBlock(this.height, this.blockTimestamp, this.averageBlockTime));
 
       console.log(`[${this.label}] New block ${this.height}`);
     } else if (node.height === this.height) {
@@ -89,5 +99,23 @@ export default class Chain {
     this.feeds.broadcast(Feed.imported(node));
 
     console.log(`[${this.label}] ${node.name} imported ${node.height}, block time: ${node.blockTime / 1000}s, average: ${node.average / 1000}s | latency ${node.latency}`);
+  }
+
+  private get averageBlockTime(): Maybe<Types.Milliseconds> {
+    let sum = 0;
+    let count = 0;
+
+    for (const time of this.blockTimes) {
+      if (time != null) {
+        sum += time;
+        count += 1;
+      }
+    }
+
+    if (count === 0) {
+      return null;
+    }
+
+    return (sum / count) as Types.Milliseconds;
   }
 }

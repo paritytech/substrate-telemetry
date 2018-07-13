@@ -20,14 +20,14 @@ export function Node(props: Node.Props) {
   return (
     <tr>
       <td>{name}</td>
-      <td>{implementation} v{version}</td>
-      <td>{peers}</td>
-      <td>{txcount}</td>
-      <td>#{formatNumber(height)}</td>
-      <td><span title={hash}>{trimHash(hash, 16)}</span></td>
-      <td>{(blockTime / 1000).toFixed(3)}s</td>
-      <td>{propagationTime === null ? '∞' : `${propagationTime}ms`}</td>
-      <td><Ago when={blockTimestamp} /></td>
+      <td style={{ width: 240 }}>{implementation} v{version}</td>
+      <td style={{ width: 26 }}>{peers}</td>
+      <td style={{ width: 26 }}>{txcount}</td>
+      <td style={{ width: 88 }}>#{formatNumber(height)}</td>
+      <td style={{ width: 154 }}><span title={hash}>{trimHash(hash, 16)}</span></td>
+      <td style={{ width: 80 }}>{(blockTime / 1000).toFixed(3)}s</td>
+      <td style={{ width: 58 }}>{propagationTime === null ? '∞' : `${propagationTime}ms`}</td>
+      <td style={{ width: 82 }}><Ago when={blockTimestamp} /></td>
     </tr>
   );
 }

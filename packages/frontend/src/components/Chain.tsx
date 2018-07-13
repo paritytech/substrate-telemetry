@@ -25,11 +25,17 @@ function sortNodes(a: Node.Props, b: Node.Props): number {
   const aPropagation = a.blockDetails[4] == null ? Infinity : a.blockDetails[4] as number;
   const bPropagation = b.blockDetails[4] == null ? Infinity : b.blockDetails[4] as number;
 
+  if (aPropagation === bPropagation) {
+    // Descending sort by block number
+    return b.blockDetails[0] - a.blockDetails[0];
+  }
+
+  // Ascending sort by propagation time
   return aPropagation - bPropagation;
 }
 
 export function Chain(props: Chain.Props) {
-  const { best, blockTimestamp } = props.state;
+  const { best, blockTimestamp, blockAverage } = props.state;
 
   const nodes = Array.from(props.state.nodes.values()).sort(sortNodes);
 
@@ -37,6 +43,7 @@ export function Chain(props: Chain.Props) {
     <div className="Chain">
       <div className="Chain-header">
         <Tile icon={blockIcon} title="Best Block">#{formatNumber(best)}</Tile>
+        <Tile icon={blockTimeIcon} title="Avgerage Time">{ blockAverage == null ? '-' : (blockAverage / 1000).toFixed(3) + 's' }</Tile>
         <Tile icon={lastTimeIcon} title="Last Block"><Ago when={blockTimestamp} /></Tile>
       </div>
       <div className="Chain-content">

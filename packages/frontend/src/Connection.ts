@@ -1,4 +1,4 @@
-import { timestamp, FeedMessage, Types, Maybe, sleep } from '@dotstats/common';
+import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from '@dotstats/common';
 import { State, Update } from './state';
 
 const { Actions } = FeedMessage;
@@ -68,7 +68,10 @@ export class Connection {
   }
 
   private bindSocket() {
-    this.state = this.update({ nodes: new Map() });
+    this.state = this.update({
+      status: 'online',
+      nodes: new Map()
+    });
     this.socket.addEventListener('message', this.handleMessages);
     this.socket.addEventListener('close', this.handleDisconnect);
     this.socket.addEventListener('error', this.handleDisconnect);
@@ -88,10 +91,24 @@ export class Connection {
 
     messages: for (const message of FeedMessage.deserialize(data)) {
       switch (message.action) {
-        case Actions.BestBlock: {
-          const [best, blockTimestamp] = message.payload;
+        case Actions.FeedVersion: {
+          if (message.payload !== VERSION) {
+            this.state = this.update({ status: 'upgrade-requested' });
+            this.clean();
 
-          this.state = this.update({ best, blockTimestamp });
+            // Force reload from the server
+            setTimeout(() => window.location.reload(true), 3000);
+
+            return;
+          }
+
+          continue messages;
+        }
+
+        case Actions.BestBlock: {
+          const [best, blockTimestamp, blockAverage] = message.payload;
+
+          this.state = this.update({ best, blockTimestamp, blockAverage });
 
           continue messages;
         }
@@ -215,6 +232,7 @@ export class Connection {
   }
 
   private handleDisconnect = async () => {
+    this.state = this.update({ status: 'offline' });
     this.clean();
     this.socket.close();
     this.socket = await Connection.socket();

@@ -1,5 +1,6 @@
-import { Opaque } from './helpers';
+import { Opaque, Maybe } from './helpers';
 import {
+  FeedVersion,
   NodeId,
   NodeCount,
   NodeDetails,
@@ -7,10 +8,12 @@ import {
   BlockNumber,
   BlockDetails,
   Timestamp,
+  Milliseconds,
   ChainLabel
 } from './types';
 
 export const Actions = {
+  FeedVersion: 255 as 255,
   BestBlock: 0 as 0,
   AddedNode: 1 as 1,
   RemovedNode: 2 as 2,
@@ -31,9 +34,14 @@ export namespace Variants {
     action: Action;
   }
 
+  export interface FeedVersionMessage extends MessageBase {
+    action: typeof Actions.FeedVersion;
+    payload: FeedVersion;
+  }
+
   export interface BestBlockMessage extends MessageBase {
     action: typeof Actions.BestBlock;
-    payload: [BlockNumber, Timestamp];
+    payload: [BlockNumber, Timestamp, Maybe<Milliseconds>];
   }
 
   export interface AddedNodeMessage extends MessageBase {
@@ -83,6 +91,7 @@ export namespace Variants {
 }
 
 export type Message =
+  | Variants.FeedVersionMessage
   | Variants.BestBlockMessage
   | Variants.AddedNodeMessage
   | Variants.RemovedNodeMessage

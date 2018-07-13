@@ -23,7 +23,7 @@ export class Chains extends React.Component<Chains.Props, {}> {
   public render() {
     return (
       <div className="Chains">
-        <Icon src={chainIcon} alt="Observed chain" />
+        <Icon src={chainIcon} alt="Observed Chain" />
         {
           this.chains.map((chain) => this.renderChain(chain))
         }
@@ -38,10 +38,9 @@ export class Chains extends React.Component<Chains.Props, {}> {
       ? 'Chains-chain Chains-chain-selected'
       : 'Chains-chain';
 
-
     return (
       <a key={label} className={className} onClick={this.subscribe.bind(this, label)}>
-        {label} <span className="Chains-node-count">{nodeCount}</span>
+        {label} <span className="Chains-node-count" title="Node Count">{nodeCount}</span>
       </a>
     )
   }

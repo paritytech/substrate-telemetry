@@ -23,6 +23,8 @@ export default class Aggregator {
   public addFeed(feed: Feed) {
     this.feeds.add(feed);
 
+    feed.sendMessage(Feed.feedVersion());
+
     for (const chain of this.chains.values()) {
       feed.sendMessage(Feed.addedChain(chain));
     }
