@@ -3,6 +3,7 @@ import * as EventEmitter from 'events';
 import Node from './Node';
 import Chain from './Chain';
 import { VERSION, timestamp, Maybe, FeedMessage, Types, idGenerator } from '@dotstats/common';
+import { Location } from './location';
 
 const nextId = idGenerator<Types.FeedId>();
 const { Actions } = FeedMessage;
@@ -42,7 +43,7 @@ export default class Feed {
   public static addedNode(node: Node): FeedMessage.Message {
     return {
       action: Actions.AddedNode,
-      payload: [node.id, node.nodeDetails(), node.nodeStats(), node.blockDetails()]
+      payload: [node.id, node.nodeDetails(), node.nodeStats(), node.blockDetails(), node.nodeLocation()]
     };
   }
 
@@ -50,6 +51,13 @@ export default class Feed {
     return {
       action: Actions.RemovedNode,
       payload: node.id
+    };
+  }
+
+  public static locatedNode(node: Node, location: Location): FeedMessage.Message {
+    return {
+      action: Actions.LocatedNode,
+      payload: [node.id, location.lat, location.lon]
     };
   }
 

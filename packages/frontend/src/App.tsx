@@ -50,7 +50,7 @@ export default class App extends React.Component<{}, State> {
       <div className="App">
         <OfflineIndicator status={status} />
         <Chains chains={chains} subscribed={subscribed} connection={this.connection} />
-        <Chain state={this.state} />
+        <Chain appState={this.state} />
       </div>
     );
   }

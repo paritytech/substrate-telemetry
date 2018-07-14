@@ -8,10 +8,33 @@
 
 .Chain-content-container {
   position: absolute;
-  left: 0; /*80px;*/
+  left: 0;
   right: 0;
   bottom: 0;
   top: 148px;
+}
+
+.Chain-map {
+  background: url('../assets/world-map.svg') no-repeat;
+  background-size: contain;
+  background-position: center;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+
+.Chain-map-node {
+  width: 10px;
+  height: 10px;
+  background: #f00; /* #d64ca8;*/
+  border-radius: 5px;
+  margin-left: -5px;
+  margin-top: -5px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
 }
 
 .Chain-content {

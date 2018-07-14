@@ -1,4 +1,3 @@
-export * from './iterators';
 export * from './helpers';
 export * from './id';
 
@@ -7,4 +6,4 @@ import * as FeedMessage from './feed';
 
 export { Types, FeedMessage };
 
-export const VERSION: Types.FeedVersion = 2 as Types.FeedVersion;
+export const VERSION: Types.FeedVersion = 3 as Types.FeedVersion;

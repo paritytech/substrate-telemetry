@@ -16,7 +16,10 @@ export type PropagationTime = Opaque<Milliseconds, 'PropagationTime'>;
 export type NodeCount = Opaque<number, 'NodeCount'>;
 export type PeerCount = Opaque<number, 'PeerCount'>;
 export type TransactionCount = Opaque<number, 'TransactionCount'>;
+export type Latitude = Opaque<number, 'Latitude'>;
+export type Longitude = Opaque<number, 'Longitude'>;
 
 export type BlockDetails = [BlockNumber, BlockHash, Milliseconds, Timestamp, Maybe<PropagationTime>];
 export type NodeDetails = [NodeName, NodeImplementation, NodeVersion];
 export type NodeStats = [PeerCount, TransactionCount];
+export type NodeLocation = [Latitude, Longitude];

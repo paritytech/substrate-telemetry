@@ -1,10 +1,13 @@
 import { Opaque, Maybe } from './helpers';
 import {
   FeedVersion,
+  Latitude,
+  Longitude,
   NodeId,
   NodeCount,
   NodeDetails,
   NodeStats,
+  NodeLocation,
   BlockNumber,
   BlockDetails,
   Timestamp,
@@ -13,17 +16,18 @@ import {
 } from './types';
 
 export const Actions = {
-  FeedVersion: 255 as 255,
-  BestBlock: 0 as 0,
-  AddedNode: 1 as 1,
-  RemovedNode: 2 as 2,
-  ImportedBlock: 3 as 3,
-  NodeStats: 4 as 4,
-  TimeSync: 5 as 5,
-  AddedChain: 6 as 6,
-  RemovedChain: 7 as 7,
-  SubscribedTo: 8 as 8,
-  UnsubscribedFrom: 9 as 9
+  FeedVersion      : 0xff as 0xff,
+  BestBlock        : 0x00 as 0x00,
+  AddedNode        : 0x01 as 0x01,
+  RemovedNode      : 0x02 as 0x02,
+  LocatedNode      : 0x03 as 0x03,
+  ImportedBlock    : 0x04 as 0x04,
+  NodeStats        : 0x05 as 0x05,
+  TimeSync         : 0x06 as 0x06,
+  AddedChain       : 0x07 as 0x07,
+  RemovedChain     : 0x08 as 0x08,
+  SubscribedTo     : 0x09 as 0x09,
+  UnsubscribedFrom : 0x0A as 0x0A,
 };
 
 export type Action = typeof Actions[keyof typeof Actions];
@@ -46,12 +50,17 @@ export namespace Variants {
 
   export interface AddedNodeMessage extends MessageBase {
     action: typeof Actions.AddedNode;
-    payload: [NodeId, NodeDetails, NodeStats, BlockDetails];
+    payload: [NodeId, NodeDetails, NodeStats, BlockDetails, Maybe<NodeLocation>];
   }
 
   export interface RemovedNodeMessage extends MessageBase {
     action: typeof Actions.RemovedNode;
     payload: NodeId;
+  }
+
+  export interface LocatedNodeMessage extends MessageBase {
+    action: typeof Actions.LocatedNode;
+    payload: [NodeId, Latitude, Longitude];
   }
 
   export interface ImportedBlockMessage extends MessageBase {
@@ -95,6 +104,7 @@ export type Message =
   | Variants.BestBlockMessage
   | Variants.AddedNodeMessage
   | Variants.RemovedNodeMessage
+  | Variants.LocatedNodeMessage
   | Variants.ImportedBlockMessage
   | Variants.NodeStatsMessage
   | Variants.TimeSyncMessage

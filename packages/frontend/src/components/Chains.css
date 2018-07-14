@@ -29,7 +29,7 @@
   padding: 0;
   margin: 0;
   position: absolute;
-  right: 6px;
+  right: 12px;
   top: 6px;
 }
 
@@ -38,10 +38,10 @@
   margin: 0;
   height: 24px;
   width: 24px;
-  background: #fff;
-  border: 2px solid #fff;
+  background: #3c3c3b;
+  border: 2px solid #3c3c3b;
   border-radius: 24px;
-  color: #555;
+  color: #ccc;
 }
 
 .Chains-node-count {

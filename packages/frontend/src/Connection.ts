@@ -120,8 +120,8 @@ export class Connection {
         }
 
         case Actions.AddedNode: {
-          const [id, nodeDetails, nodeStats, blockDetails] = message.payload;
-          const node = { id, nodeDetails, nodeStats, blockDetails };
+          const [id, nodeDetails, nodeStats, blockDetails, location] = message.payload;
+          const node = { id, nodeDetails, nodeStats, blockDetails, location };
 
           nodes.set(id, node);
 
@@ -130,6 +130,19 @@ export class Connection {
 
         case Actions.RemovedNode: {
           nodes.delete(message.payload);
+
+          break;
+        }
+
+        case Actions.LocatedNode: {
+          const [id, latitude, longitude] = message.payload;
+          const node = nodes.get(id);
+
+          if (!node) {
+            return;
+          }
+
+          node.location = [latitude, longitude];
 
           break;
         }

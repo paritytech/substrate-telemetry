@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { formatNumber, trimHash } from '../utils';
 import { Ago } from './Ago';
-import { Types } from '@dotstats/common';
+import { Types, Maybe } from '@dotstats/common';
 
 export namespace Node {
   export interface Props {
@@ -9,6 +9,7 @@ export namespace Node {
     nodeDetails: Types.NodeDetails,
     nodeStats: Types.NodeStats,
     blockDetails: Types.BlockDetails,
+    location: Maybe<Types.NodeLocation>,
   }
 }
 
