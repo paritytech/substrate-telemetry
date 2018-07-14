@@ -80,10 +80,15 @@ export default class Chain {
 
   private updateBlock(node: Node) {
     if (node.height > this.height) {
+      // New best block
       const { height, blockTimestamp } = node;
 
       if (this.blockTimestamp) {
         this.updateAverageBlockTime(height, blockTimestamp);
+      }
+
+      for (const otherNode of this.nodes) {
+        node.propagationTime = null;
       }
 
       this.height = height;
@@ -94,6 +99,7 @@ export default class Chain {
 
       console.log(`[${this.label}] New block ${this.height}`);
     } else if (node.height === this.height) {
+      // Caught up to best block
       node.propagationTime = (node.blockTimestamp - this.blockTimestamp) as Types.PropagationTime;
     }
 
