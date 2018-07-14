@@ -4,6 +4,7 @@ import { Icon } from './Icon';
 import { Types, Maybe } from '@dotstats/common';
 
 import chainIcon from '../icons/link.svg';
+import githubIcon from '../icons/mark-github.svg';
 import './Chains.css';
 
 interface ChainData {
@@ -27,6 +28,9 @@ export class Chains extends React.Component<Chains.Props, {}> {
         {
           this.chains.map((chain) => this.renderChain(chain))
         }
+        <a className="Chains-fork-me" href="https://github.com/polkadot-js/dotstats" target="blank">
+          <Icon src={githubIcon} alt="Fork Me!" />
+        </a>
       </div>
     );
   }
