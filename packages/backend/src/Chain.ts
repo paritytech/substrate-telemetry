@@ -16,7 +16,8 @@ export default class Chain {
   public height = 0 as Types.BlockNumber;
   public blockTimestamp = 0 as Types.Timestamp;
 
-  private blockTimes: Array<number> = new Array(BLOCK_TIME_HISTORY);
+  private blockTimes: Array<number> = new Array(BLOCK_TIME_HISTORY).fill(0);
+  private averageBlockTime: Maybe<Types.Milliseconds> = null;
 
   constructor(label: Types.ChainLabel) {
     this.label = label;
@@ -82,7 +83,7 @@ export default class Chain {
       const { height, blockTimestamp } = node;
 
       if (this.blockTimestamp) {
-        this.blockTimes[height % BLOCK_TIME_HISTORY] = blockTimestamp - this.blockTimestamp;
+        this.updateAverageBlockTime(height, blockTimestamp);
       }
 
       this.height = height;
@@ -101,21 +102,20 @@ export default class Chain {
     console.log(`[${this.label}] ${node.name} imported ${node.height}, block time: ${node.blockTime / 1000}s, average: ${node.average / 1000}s | latency ${node.latency}`);
   }
 
-  private get averageBlockTime(): Maybe<Types.Milliseconds> {
+  private updateAverageBlockTime(height: Types.BlockNumber, now: Types.Timestamp) {
+    this.blockTimes[height % BLOCK_TIME_HISTORY] = now - this.blockTimestamp;
+
     let sum = 0;
     let count = 0;
 
     for (const time of this.blockTimes) {
-      if (time != null) {
+      if (time) {
         sum += time;
         count += 1;
       }
     }
 
-    if (count === 0) {
-      return null;
-    }
-
-    return (sum / count) as Types.Milliseconds;
+    // We are guaranteed that count > 0
+    this.averageBlockTime = (sum / count) as Types.Milliseconds;
   }
 }

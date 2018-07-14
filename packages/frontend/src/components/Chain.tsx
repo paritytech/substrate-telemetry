@@ -46,27 +46,29 @@ export function Chain(props: Chain.Props) {
         <Tile icon={blockTimeIcon} title="Avgerage Time">{ blockAverage == null ? '-' : (blockAverage / 1000).toFixed(3) + 's' }</Tile>
         <Tile icon={lastTimeIcon} title="Last Block"><Ago when={blockTimestamp} /></Tile>
       </div>
-      <div className="Chain-content">
-        <table className="Chain-node-list">
-          <thead>
-            <tr>
-              <th><Icon src={nodeIcon} alt="Node" /></th>
-              <th><Icon src={nodeTypeIcon} alt="Implementation" /></th>
-              <th><Icon src={peersIcon} alt="Peer Count" /></th>
-              <th><Icon src={transactionsIcon} alt="Transactions in Queue" /></th>
-              <th><Icon src={blockIcon} alt="Block" /></th>
-              <th><Icon src={blockHashIcon} alt="Block Hash" /></th>
-              <th><Icon src={blockTimeIcon} alt="Block Time" /></th>
-              <th><Icon src={propagationTimeIcon} alt="Block Propagation Time" /></th>
-              <th><Icon src={lastTimeIcon} alt="Last Block Time" /></th>
-            </tr>
-          </thead>
-          <tbody>
-          {
-            nodes.map((node) => <Node key={node.id} {...node} />)
-          }
-          </tbody>
-        </table>
+      <div className="Chain-content-container">
+        <div className="Chain-content">
+          <table className="Chain-node-list">
+            <thead>
+              <tr>
+                <th><Icon src={nodeIcon} alt="Node" /></th>
+                <th><Icon src={nodeTypeIcon} alt="Implementation" /></th>
+                <th><Icon src={peersIcon} alt="Peer Count" /></th>
+                <th><Icon src={transactionsIcon} alt="Transactions in Queue" /></th>
+                <th><Icon src={blockIcon} alt="Block" /></th>
+                <th><Icon src={blockHashIcon} alt="Block Hash" /></th>
+                <th><Icon src={blockTimeIcon} alt="Block Time" /></th>
+                <th><Icon src={propagationTimeIcon} alt="Block Propagation Time" /></th>
+                <th><Icon src={lastTimeIcon} alt="Last Block Time" /></th>
+              </tr>
+            </thead>
+            <tbody>
+            {
+              nodes.map((node) => <Node key={node.id} {...node} />)
+            }
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
