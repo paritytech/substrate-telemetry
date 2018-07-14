@@ -82,7 +82,7 @@ export default class Chain {
       const { height, blockTimestamp } = node;
 
       if (this.blockTimestamp) {
-        this.blockTimes[height * BLOCK_TIME_HISTORY] = blockTimestamp - this.blockTimestamp;
+        this.blockTimes[height % BLOCK_TIME_HISTORY] = blockTimestamp - this.blockTimestamp;
       }
 
       this.height = height;
