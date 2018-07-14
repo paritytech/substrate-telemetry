@@ -72,6 +72,12 @@ export class Connection {
       status: 'online',
       nodes: new Map()
     });
+
+    // Re-subscribe to previously selected chain
+    if (this.state.subscribed) {
+      this.subscribe(this.state.subscribed);
+    }
+
     this.socket.addEventListener('message', this.handleMessages);
     this.socket.addEventListener('close', this.handleDisconnect);
     this.socket.addEventListener('error', this.handleDisconnect);
