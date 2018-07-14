@@ -88,7 +88,7 @@ export default class Chain {
       }
 
       for (const otherNode of this.nodes) {
-        node.propagationTime = null;
+        otherNode.propagationTime = null;
       }
 
       this.height = height;
