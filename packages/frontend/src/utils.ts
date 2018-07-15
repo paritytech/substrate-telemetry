@@ -1,3 +1,15 @@
+export interface Viewport {
+  width: number;
+  height: number;
+}
+
+export function viewport(): Viewport {
+  const width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+  const height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+
+  return { width, height };
+}
+
 export function formatNumber(num: number): string {
   const input =  num.toString();
 

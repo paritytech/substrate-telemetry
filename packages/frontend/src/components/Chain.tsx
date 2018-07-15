@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { State as AppState } from '../state';
-import { formatNumber, secondsWithPrecision } from '../utils';
+import { formatNumber, secondsWithPrecision, viewport } from '../utils';
 import { Tile, Icon, Node, Ago } from './';
+import { Types } from '@dotstats/common';
 
 import nodeIcon from '../icons/server.svg';
 import nodeTypeIcon from '../icons/terminal.svg';
@@ -13,6 +14,9 @@ import blockTimeIcon from '../icons/history.svg';
 import propagationTimeIcon from '../icons/dashboard.svg';
 import lastTimeIcon from '../icons/watch.svg';
 
+const MAP_RATIO = 495 / 266; // width / height
+const HEADER = 148;
+
 import './Chain.css';
 
 export namespace Chain {
@@ -22,6 +26,12 @@ export namespace Chain {
 
   export interface State {
     display: 'map' | 'table';
+    map: {
+      width: number;
+      height: number;
+      top: number;
+      left: number;
+    }
   }
 }
 
@@ -43,8 +53,43 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     super(props);
 
     this.state = {
-      display: 'table'
+      display: window.location.hash === '#map' ? 'map' : 'table',
+      map: {
+        width: 0,
+        height: 0,
+        top: 0,
+        left: 0
+      }
     };
+  }
+
+  public componentWillMount() {
+    const vp = viewport();
+
+    vp.height -= HEADER;
+
+    const ratio = vp.width / vp.height;
+
+    let top = 0;
+    let left = 0;
+    let width = 0;
+    let height = 0;
+
+    if (ratio >= MAP_RATIO) {
+      console.log('wider');
+
+      width = Math.round(vp.height * MAP_RATIO);
+      height = Math.round(vp.height);
+      left = (vp.width - width) / 2;
+    } else {
+      console.log('taller');
+
+      width = Math.round(vp.width);
+      height = Math.round(vp.width / MAP_RATIO);
+      top = (vp.height - height) / 2;
+    }
+
+    this.setState({ map: { top, left, width, height }});
   }
 
   public render() {
@@ -75,10 +120,38 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     return (
       <div className="Chain-map">
       {
-        this.nodes().map((node) => <div key={node.id} className="Chain-map-node" data-foo={JSON.stringify(node)} />)
+        // Debug rect
+        // <div style={{ position: 'absolute', background: 'rgba(0,255,0,0.5)', ...this.state.map}} />
+      }
+      {
+        this.nodes().map((node) => {
+          const location = node.location || [0, 0] as Types.NodeLocation;
+          // const location = [51.4825891, -0.0164137] as Types.NodeLocation; // Greenwich
+          // const location = [52.2330653, 20.921111] as Types.NodeLocation; // Warsaw
+          // const location = [48.8589507, 2.2770201] as Types.NodeLocation; // Paris
+          // const location = [36.7183391, -4.5193071]as Types.NodeLocation; // Malaga
+
+          return (
+            <div
+              key={node.id}
+              className="Chain-map-node"
+              style={this.pixelPosition(location[0], location[1])}
+              data-location={JSON.stringify(node.location)}
+            />
+          );
+        })
       }
       </div>
     );
+  }
+
+  private pixelPosition(lat: Types.Latitude, lon: Types.Longitude): { left: number, top: number } {
+    const { map } = this.state;
+
+    const left = Math.round(((lon + 180) / 360) * map.width + map.left) - 35;
+    const top = Math.round(((-lat + 90) / 180) * map.height + map.top) + 4;
+
+    return { left, top }
   }
 
   private renderTable() {

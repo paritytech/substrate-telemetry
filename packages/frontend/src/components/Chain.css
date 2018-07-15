@@ -39,10 +39,11 @@
 .Chain-map-node {
   width: 10px;
   height: 10px;
-  background: #f00; /* #d64ca8;*/
-  border-radius: 5px;
-  margin-left: -5px;
-  margin-top: -5px;
+  background: #d64ca8;
+  border: 1px solid #000;
+  border-radius: 6px;
+  margin-left: -6px;
+  margin-top: -6px;
   position: absolute;
   top: 50%;
   left: 50%;

@@ -16,18 +16,19 @@ import {
 } from './types';
 
 export const Actions = {
-  FeedVersion      : 0xff as 0xff,
-  BestBlock        : 0x00 as 0x00,
-  AddedNode        : 0x01 as 0x01,
-  RemovedNode      : 0x02 as 0x02,
-  LocatedNode      : 0x03 as 0x03,
-  ImportedBlock    : 0x04 as 0x04,
-  NodeStats        : 0x05 as 0x05,
-  TimeSync         : 0x06 as 0x06,
-  AddedChain       : 0x07 as 0x07,
-  RemovedChain     : 0x08 as 0x08,
-  SubscribedTo     : 0x09 as 0x09,
-  UnsubscribedFrom : 0x0A as 0x0A,
+  FeedVersionLegacy : 0xff as 0xff,
+  FeedVersion      : 0x00 as 0x00,
+  BestBlock        : 0x01 as 0x01,
+  AddedNode        : 0x02 as 0x02,
+  RemovedNode      : 0x03 as 0x03,
+  LocatedNode      : 0x04 as 0x04,
+  ImportedBlock    : 0x05 as 0x05,
+  NodeStats        : 0x06 as 0x06,
+  TimeSync         : 0x07 as 0x07,
+  AddedChain       : 0x08 as 0x08,
+  RemovedChain     : 0x09 as 0x09,
+  SubscribedTo     : 0x0A as 0x0A,
+  UnsubscribedFrom : 0x0B as 0x0B,
 };
 
 export type Action = typeof Actions[keyof typeof Actions];
@@ -36,6 +37,12 @@ export type Payload = Message['payload'];
 export namespace Variants {
   export interface MessageBase {
     action: Action;
+  }
+
+  // TOOD: remove
+  export interface FeedVersionLegacyMessage extends MessageBase {
+    action: typeof Actions.FeedVersionLegacy;
+    payload: FeedVersion;
   }
 
   export interface FeedVersionMessage extends MessageBase {
@@ -100,6 +107,7 @@ export namespace Variants {
 }
 
 export type Message =
+  | Variants.FeedVersionLegacyMessage
   | Variants.FeedVersionMessage
   | Variants.BestBlockMessage
   | Variants.AddedNodeMessage
