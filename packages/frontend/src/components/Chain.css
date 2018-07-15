@@ -4,6 +4,8 @@
   overflow: hidden;
   background: #fff;
   color: #000;
+  min-width: 1350px;
+  position: relative;
 }
 
 .Chain-content-container {
@@ -12,6 +14,15 @@
   right: 0;
   bottom: 0;
   top: 148px;
+}
+
+.Chain-content {
+  width: 100%;
+  min-width: 1350px;
+  min-height: 100%;
+  background: #222;
+  color: #fff;
+  box-shadow: rgba(0,0,0,0.5) 0 3px 30px;
 }
 
 .Chain-map {
@@ -35,14 +46,6 @@
   position: absolute;
   top: 50%;
   left: 50%;
-}
-
-.Chain-content {
-  width: 100%;
-  min-height: 100%;
-  background: #222;
-  color: #fff;
-  box-shadow: rgba(0,0,0,0.5) 0 3px 30px;
 }
 
 .Chain-node-list {
