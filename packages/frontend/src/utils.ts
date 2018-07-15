@@ -23,3 +23,23 @@ export function trimHash(hash: string, length: number): string {
 
   return hash.substr(0, side) + '..' + hash.substr(-side, side);
 }
+
+export function milliOrSecond(num: number): string {
+  if (num < 10000) {
+    return `${num}ms`;
+  }
+
+  return `${(num / 1000) | 0}s`;
+}
+
+export function secondsWithPrecision(num: number): string {
+  const intString = (num | 0).toString()
+  const intDigits = intString.length;
+
+  switch (intDigits) {
+    case 1: return num.toFixed(3) + 's';
+    case 2: return num.toFixed(2) + 's';
+    case 3: return num.toFixed(1) + 's';
+    default: return intString + 's';
+  }
+}

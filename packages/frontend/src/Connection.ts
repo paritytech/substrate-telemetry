@@ -114,6 +114,8 @@ export class Connection {
         case Actions.BestBlock: {
           const [best, blockTimestamp, blockAverage] = message.payload;
 
+          nodes.forEach((node) => node.blockDetails[4] = null);
+
           this.state = this.update({ best, blockTimestamp, blockAverage });
 
           continue messages;

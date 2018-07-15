@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { State as AppState } from '../state';
-import { formatNumber } from '../utils';
+import { formatNumber, secondsWithPrecision } from '../utils';
 import { Tile, Icon, Node, Ago } from './';
 
 import nodeIcon from '../icons/server.svg';
@@ -54,7 +54,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
       <div className="Chain">
         <div className="Chain-header">
           <Tile icon={blockIcon} title="Best Block">#{formatNumber(best)}</Tile>
-          <Tile icon={blockTimeIcon} title="Avgerage Time">{ blockAverage == null ? '-' : (blockAverage / 1000).toFixed(3) + 's' }</Tile>
+          <Tile icon={blockTimeIcon} title="Avgerage Time">{ blockAverage == null ? '-' : secondsWithPrecision(blockAverage / 1000) }</Tile>
           <Tile icon={lastTimeIcon} title="Last Block"><Ago when={blockTimestamp} /></Tile>
         </div>
         <div className="Chain-content-container">

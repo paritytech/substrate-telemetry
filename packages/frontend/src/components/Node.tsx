@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { formatNumber, trimHash } from '../utils';
+import { formatNumber, trimHash, milliOrSecond, secondsWithPrecision } from '../utils';
 import { Ago } from './Ago';
 import { Types, Maybe } from '@dotstats/common';
 
@@ -26,8 +26,8 @@ export function Node(props: Node.Props) {
       <td style={{ width: 26 }}>{txcount}</td>
       <td style={{ width: 88 }}>#{formatNumber(height)}</td>
       <td style={{ width: 154 }}><span title={hash}>{trimHash(hash, 16)}</span></td>
-      <td style={{ width: 80 }}>{(blockTime / 1000).toFixed(3)}s</td>
-      <td style={{ width: 58 }}>{propagationTime === null ? '∞' : `${propagationTime}ms`}</td>
+      <td style={{ width: 80 }}>{secondsWithPrecision(blockTime/1000)}</td>
+      <td style={{ width: 58 }}>{propagationTime === null ? '∞' : milliOrSecond(propagationTime as number)}</td>
       <td style={{ width: 82 }}><Ago when={blockTimestamp} /></td>
     </tr>
   );
