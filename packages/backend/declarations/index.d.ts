@@ -6,8 +6,8 @@ declare module 'iplocation' {
       country?: string;
       countryCode?: string;
       isp?: string;
-      lat: number;
-      lon: number;
+      latitude: number;
+      longitude: number;
       org?: string;
       query?: string;
       region?: string;

@@ -30,7 +30,7 @@ export async function locate(ip: string): Promise<Maybe<Location>> {
         return resolve(null);
       }
 
-      const { lat, lon } = result;
+      const { latitude: lat, longitude: lon } = result;
       const location = { lat, lon } as Location;
 
       cache.set(ip, location);
