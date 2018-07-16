@@ -13,6 +13,7 @@ import blockHashIcon from '../icons/file-binary.svg';
 import blockTimeIcon from '../icons/history.svg';
 import propagationTimeIcon from '../icons/dashboard.svg';
 import lastTimeIcon from '../icons/watch.svg';
+import worldIcon from '../icons/globe.svg';
 
 const MAP_RATIO = 495 / 266; // width / height
 const HEADER = 148;
@@ -53,7 +54,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     super(props);
 
     this.state = {
-      display: window.location.hash === '#map' ? 'map' : 'table',
+      display: 'table',
       map: {
         width: 0,
         height: 0,
@@ -94,6 +95,13 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
 
   public render() {
     const { best, blockTimestamp, blockAverage } = this.props.appState;
+    const { display } = this.state;
+
+    const toggleClass = ['Chain-map-toggle'];
+
+    if (display === 'map') {
+      toggleClass.push('Chain-map-toggle-on');
+    }
 
     return (
       <div className="Chain">
@@ -101,11 +109,12 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
           <Tile icon={blockIcon} title="Best Block">#{formatNumber(best)}</Tile>
           <Tile icon={blockTimeIcon} title="Avgerage Time">{ blockAverage == null ? '-' : secondsWithPrecision(blockAverage / 1000) }</Tile>
           <Tile icon={lastTimeIcon} title="Last Block"><Ago when={blockTimestamp} /></Tile>
+          <Icon src={worldIcon} alt="Toggle Map" className={toggleClass.join(' ')} onClick={this.toggleMap} />
         </div>
         <div className="Chain-content-container">
           <div className="Chain-content">
           {
-            this.state.display === 'table'
+            display === 'table'
               ? this.renderTable()
               : this.renderMap()
           }
@@ -115,8 +124,15 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     );
   }
 
+  private toggleMap = () => {
+    if (this.state.display === 'map') {
+      this.setState({ display: 'table' });
+    } else {
+      this.setState({ display: 'map' });
+    }
+  }
+
   private renderMap() {
-    // return <ReactSVG path={worldMap} className="Chain-map" />;
     return (
       <div className="Chain-map">
       {

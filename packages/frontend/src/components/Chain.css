@@ -8,6 +8,23 @@
   position: relative;
 }
 
+.Chain-map-toggle {
+  position: absolute;
+  right: 20px;
+  bottom: 0;
+  font-size: 32px;
+  padding: 6px;
+  background: #222;
+  color: #aaa;
+  cursor: pointer;
+  border-top: 2px solid #5e5e5e;
+  border-radius: 4px 4px 0 0;
+}
+
+.Chain-map-toggle-on {
+  color: #fff;
+}
+
 .Chain-content-container {
   position: absolute;
   left: 0;

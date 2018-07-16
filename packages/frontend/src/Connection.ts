@@ -188,7 +188,6 @@ export class Connection {
         case Actions.AddedChain: {
           const [label, nodeCount] = message.payload;
           chains.set(label, nodeCount);
-          this.autoSubscribe();
 
           break;
         }
@@ -200,7 +199,6 @@ export class Connection {
             nodes.clear();
 
             this.state = this.update({ subscribed: null, nodes, chains });
-            this.autoSubscribe();
 
             continue messages;
           }
@@ -230,6 +228,8 @@ export class Connection {
     }
 
     this.state = this.update(changes);
+
+    this.autoSubscribe();
   }
 
   private autoSubscribe() {
