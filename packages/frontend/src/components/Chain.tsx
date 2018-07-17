@@ -186,6 +186,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
   private calculateMapDimensions: () => void = () => {
     const vp = viewport();
 
+    vp.width = Math.max(1350, vp.width);
     vp.height -= HEADER;
 
     const ratio = vp.width / vp.height;
