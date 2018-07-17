@@ -97,8 +97,6 @@ export class Connection {
 
     messages: for (const message of FeedMessage.deserialize(data)) {
       switch (message.action) {
-        // TODO: Kick legacy out on next update
-        case Actions.FeedVersionLegacy:
         case Actions.FeedVersion: {
           if (message.payload !== VERSION) {
             this.state = this.update({ status: 'upgrade-requested' });

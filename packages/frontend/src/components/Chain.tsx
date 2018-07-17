@@ -65,32 +65,13 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
   }
 
   public componentWillMount() {
-    const vp = viewport();
+    this.calculateMapDimensions();
 
-    vp.height -= HEADER;
+    window.addEventListener('resize', this.calculateMapDimensions);
+  }
 
-    const ratio = vp.width / vp.height;
-
-    let top = 0;
-    let left = 0;
-    let width = 0;
-    let height = 0;
-
-    if (ratio >= MAP_RATIO) {
-      console.log('wider');
-
-      width = Math.round(vp.height * MAP_RATIO);
-      height = Math.round(vp.height);
-      left = (vp.width - width) / 2;
-    } else {
-      console.log('taller');
-
-      width = Math.round(vp.width);
-      height = Math.round(vp.width / MAP_RATIO);
-      top = (vp.height - height) / 2;
-    }
-
-    this.setState({ map: { top, left, width, height }});
+  public componentWillUnmount() {
+    window.removeEventListener('resize', this.calculateMapDimensions);
   }
 
   public render() {
@@ -109,7 +90,9 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
           <Tile icon={blockIcon} title="Best Block">#{formatNumber(best)}</Tile>
           <Tile icon={blockTimeIcon} title="Avgerage Time">{ blockAverage == null ? '-' : secondsWithPrecision(blockAverage / 1000) }</Tile>
           <Tile icon={lastTimeIcon} title="Last Block"><Ago when={blockTimestamp} /></Tile>
-          <Icon src={worldIcon} alt="Toggle Map" className={toggleClass.join(' ')} onClick={this.toggleMap} />
+          <div className={toggleClass.join(' ')}>
+            <Icon src={worldIcon} alt="Toggle Map" onClick={this.toggleMap} />
+          </div>
         </div>
         <div className="Chain-content-container">
           <div className="Chain-content">
@@ -148,10 +131,11 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
           // const location = [36.7183391, -4.5193071]as Types.NodeLocation; // Malaga
 
           return (
-            <div
+            <span
               key={node.id}
               className="Chain-map-node"
               style={this.pixelPosition(location[0], location[1])}
+              title={node.nodeDetails[0]}
               data-location={JSON.stringify(node.location)}
             />
           );
@@ -159,15 +143,6 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
       }
       </div>
     );
-  }
-
-  private pixelPosition(lat: Types.Latitude, lon: Types.Longitude): { left: number, top: number } {
-    const { map } = this.state;
-
-    const left = Math.round(((lon + 180) / 360) * map.width + map.left) - 35;
-    const top = Math.round(((-lat + 90) / 180) * map.height + map.top) + 4;
-
-    return { left, top }
   }
 
   private renderTable() {
@@ -197,5 +172,39 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
 
   private nodes() {
     return Array.from(this.props.appState.nodes.values());
+  }
+
+  private pixelPosition(lat: Types.Latitude, lon: Types.Longitude): { left: number, top: number } {
+    const { map } = this.state;
+
+    const left = Math.round(((lon + 180) / 360) * map.width + map.left) - 35;
+    const top = Math.round(((-lat + 90) / 180) * map.height + map.top) + 4;
+
+    return { left, top }
+  }
+
+  private calculateMapDimensions: () => void = () => {
+    const vp = viewport();
+
+    vp.height -= HEADER;
+
+    const ratio = vp.width / vp.height;
+
+    let top = 0;
+    let left = 0;
+    let width = 0;
+    let height = 0;
+
+    if (ratio >= MAP_RATIO) {
+      width = Math.round(vp.height * MAP_RATIO);
+      height = Math.round(vp.height);
+      left = (vp.width - width) / 2;
+    } else {
+      width = Math.round(vp.width);
+      height = Math.round(vp.width / MAP_RATIO);
+      top = (vp.height - height) / 2;
+    }
+
+    this.setState({ map: { top, left, width, height }});
   }
 }

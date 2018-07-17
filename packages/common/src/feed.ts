@@ -16,7 +16,6 @@ import {
 } from './types';
 
 export const Actions = {
-  FeedVersionLegacy : 0xff as 0xff,
   FeedVersion      : 0x00 as 0x00,
   BestBlock        : 0x01 as 0x01,
   AddedNode        : 0x02 as 0x02,
@@ -37,12 +36,6 @@ export type Payload = Message['payload'];
 export namespace Variants {
   export interface MessageBase {
     action: Action;
-  }
-
-  // TOOD: remove
-  export interface FeedVersionLegacyMessage extends MessageBase {
-    action: typeof Actions.FeedVersionLegacy;
-    payload: FeedVersion;
   }
 
   export interface FeedVersionMessage extends MessageBase {
@@ -107,7 +100,6 @@ export namespace Variants {
 }
 
 export type Message =
-  | Variants.FeedVersionLegacyMessage
   | Variants.FeedVersionMessage
   | Variants.BestBlockMessage
   | Variants.AddedNodeMessage

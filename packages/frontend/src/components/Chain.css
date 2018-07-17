@@ -8,7 +8,7 @@
   position: relative;
 }
 
-.Chain-map-toggle {
+.Chain-map-toggle .Icon {
   position: absolute;
   right: 20px;
   bottom: 0;
@@ -21,7 +21,7 @@
   border-radius: 4px 4px 0 0;
 }
 
-.Chain-map-toggle-on {
+.Chain-map-toggle-on .Icon {
   color: #fff;
 }
 

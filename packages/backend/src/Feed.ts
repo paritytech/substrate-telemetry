@@ -28,7 +28,7 @@ export default class Feed {
 
   public static feedVersion(): FeedMessage.Message {
     return {
-      action: Actions.FeedVersionLegacy,
+      action: Actions.FeedVersion,
       payload: VERSION
     };
   }
