@@ -88,7 +88,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
       <div className="Chain">
         <div className="Chain-header">
           <Tile icon={blockIcon} title="Best Block">#{formatNumber(best)}</Tile>
-          <Tile icon={blockTimeIcon} title="Avgerage Time">{ blockAverage == null ? '-' : secondsWithPrecision(blockAverage / 1000) }</Tile>
+          <Tile icon={blockTimeIcon} title="Average Time">{ blockAverage == null ? '-' : secondsWithPrecision(blockAverage / 1000) }</Tile>
           <Tile icon={lastTimeIcon} title="Last Block"><Ago when={blockTimestamp} /></Tile>
           <div className={toggleClass.join(' ')}>
             <Icon src={worldIcon} alt="Toggle Map" onClick={this.toggleMap} />
