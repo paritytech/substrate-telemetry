@@ -5,6 +5,7 @@ import { Types, Maybe } from '@dotstats/common';
 
 import nodeIcon from '../icons/server.svg';
 import nodeTypeIcon from '../icons/terminal.svg';
+import nodeLocationIcon from '../icons/location.svg';
 import peersIcon from '../icons/broadcast.svg';
 import transactionsIcon from '../icons/inbox.svg';
 import blockIcon from '../icons/package.svg';
@@ -68,9 +69,13 @@ export namespace Node {
   }
 
   export function Location(props: Props & PixelPosition) {
-    const { left, top } = props;
+    const { left, top, location } = props;
     const [name, implementation, version] = props.nodeDetails;
     const [height, hash, blockTime, blockTimestamp, propagationTime] = props.blockDetails;
+
+    if (!location) {
+      return null;
+    }
 
     return (
       <div className="Node-Location" style={{ left, top }}>
@@ -81,6 +86,9 @@ export namespace Node {
             </tr>
             <tr>
               <td><Icon src={nodeTypeIcon} alt="Implementation" /></td><td colSpan={5}>{implementation} v{version}</td>
+            </tr>
+            <tr>
+              <td><Icon src={nodeLocationIcon} alt="Location" /></td><td colSpan={5}>{location[2]}</td>
             </tr>
             <tr>
               <td><Icon src={blockIcon} alt="Block" /></td><td colSpan={5}>#{formatNumber(height)}</td>

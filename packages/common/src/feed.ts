@@ -3,6 +3,7 @@ import {
   FeedVersion,
   Latitude,
   Longitude,
+  City,
   NodeId,
   NodeCount,
   NodeDetails,
@@ -60,7 +61,7 @@ export namespace Variants {
 
   export interface LocatedNodeMessage extends MessageBase {
     action: typeof Actions.LocatedNode;
-    payload: [NodeId, Latitude, Longitude];
+    payload: [NodeId, Latitude, Longitude, City];
   }
 
   export interface ImportedBlockMessage extends MessageBase {

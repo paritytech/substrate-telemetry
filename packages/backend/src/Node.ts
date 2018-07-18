@@ -98,8 +98,6 @@ export default class Node {
         return;
       }
 
-      console.log('node', ip, 'located at', location);
-
       this.location = location;
 
       this.events.emit('location', location);
@@ -107,8 +105,6 @@ export default class Node {
   }
 
   public static fromSocket(socket: WebSocket, ip: string): Promise<Node> {
-    console.log('node ip', ip);
-
     return new Promise((resolve, reject) => {
       function cleanup() {
         clearTimeout(timeout);
@@ -160,7 +156,7 @@ export default class Node {
   public nodeLocation(): Maybe<Types.NodeLocation> {
     const { location } = this;
 
-    return location ? [location.lat, location.lon] : null;
+    return location ? [location.lat, location.lon, location.city] : null;
   }
 
   public get average(): number {

@@ -2,7 +2,7 @@ declare module 'iplocation' {
   namespace iplocation {
     export interface LocationData {
       as?: string;
-      city?: string;
+      city: string;
       country?: string;
       countryCode?: string;
       isp?: string;

@@ -12,6 +12,11 @@
   cursor: pointer;
 }
 
+.Node-Location:hover {
+  z-index: 2;
+  background: #fff;
+}
+
 .Node-details {
   display: none;
   min-width: 335px;

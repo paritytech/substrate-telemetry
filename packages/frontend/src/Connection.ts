@@ -139,14 +139,14 @@ export class Connection {
         }
 
         case Actions.LocatedNode: {
-          const [id, latitude, longitude] = message.payload;
+          const [id, latitude, longitude, city] = message.payload;
           const node = nodes.get(id);
 
           if (!node) {
             return;
           }
 
-          node.location = [latitude, longitude];
+          node.location = [latitude, longitude, city];
 
           break;
         }

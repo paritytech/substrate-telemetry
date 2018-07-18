@@ -57,7 +57,7 @@ export default class Feed {
   public static locatedNode(node: Node, location: Location): FeedMessage.Message {
     return {
       action: Actions.LocatedNode,
-      payload: [node.id, location.lat, location.lon]
+      payload: [node.id, location.lat, location.lon, location.city]
     };
   }
 

@@ -6,4 +6,4 @@ import * as FeedMessage from './feed';
 
 export { Types, FeedMessage };
 
-export const VERSION: Types.FeedVersion = 4 as Types.FeedVersion;
+export const VERSION: Types.FeedVersion = 5 as Types.FeedVersion;

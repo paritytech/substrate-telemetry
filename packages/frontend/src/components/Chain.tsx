@@ -118,7 +118,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
       }
       {
         this.nodes().map((node) => {
-          const location = node.location || [0, 0] as Types.NodeLocation;
+          const location = node.location || [0, 0, ''] as Types.NodeLocation;
           // const location = [51.4825891, -0.0164137] as Types.NodeLocation; // Greenwich
           // const location = [52.2330653, 20.921111] as Types.NodeLocation; // Warsaw
           // const location = [48.8589507, 2.2770201] as Types.NodeLocation; // Paris
