@@ -54,4 +54,41 @@ export default class App extends React.Component<{}, State> {
       </div>
     );
   }
+
+  public componentWillMount() {
+    window.addEventListener('keydown', this.onKeyPress);
+  }
+
+  public componentWillUnmount() {
+    window.removeEventListener('keydown', this.onKeyPress);
+  }
+
+  private onKeyPress = (event: KeyboardEvent) => {
+    if (event.keyCode !== 9) { // TAB KEY
+      return;
+    }
+
+    event.preventDefault();
+
+    const { subscribed } = this.state;
+    const chains = Array.from(this.state.chains.keys());
+
+    let index = 0;
+
+    if (subscribed) {
+      index = chains.indexOf(subscribed);
+
+      // Do nothing if it's the same chain
+      if (chains[index] === subscribed) {
+        return;
+      }
+
+      // Go to next tab
+      index = (index + 1) % chains.length;
+    }
+
+    this.connection.then((connection) => {
+      connection.subscribe(chains[index]);
+    })
+  }
 }
