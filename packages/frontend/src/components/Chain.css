@@ -54,20 +54,6 @@
   bottom: 0;
 }
 
-.Chain-map-node {
-  width: 10px;
-  height: 10px;
-  background: #d64ca8;
-  border: 1px solid #000;
-  border-radius: 6px;
-  margin-left: -6px;
-  margin-top: -6px;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  cursor: pointer;
-}
-
 .Chain-node-list {
   width: 100%;
   border-collapse: collapse;

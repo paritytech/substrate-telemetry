@@ -4,14 +4,8 @@ import { formatNumber, secondsWithPrecision, viewport } from '../utils';
 import { Tile, Icon, Node, Ago } from './';
 import { Types } from '@dotstats/common';
 
-import nodeIcon from '../icons/server.svg';
-import nodeTypeIcon from '../icons/terminal.svg';
-import peersIcon from '../icons/broadcast.svg';
-import transactionsIcon from '../icons/inbox.svg';
 import blockIcon from '../icons/package.svg';
-import blockHashIcon from '../icons/file-binary.svg';
 import blockTimeIcon from '../icons/history.svg';
-import propagationTimeIcon from '../icons/dashboard.svg';
 import lastTimeIcon from '../icons/watch.svg';
 import worldIcon from '../icons/globe.svg';
 
@@ -130,14 +124,10 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
           // const location = [48.8589507, 2.2770201] as Types.NodeLocation; // Paris
           // const location = [36.7183391, -4.5193071]as Types.NodeLocation; // Malaga
 
+          const { left, top } = this.pixelPosition(location[0], location[1]);
+
           return (
-            <span
-              key={node.id}
-              className="Chain-map-node"
-              style={this.pixelPosition(location[0], location[1])}
-              title={node.nodeDetails[0]}
-              data-location={JSON.stringify(node.location)}
-            />
+            <Node.Location key={node.id} left={left} top={top} {...node} />
           );
         })
       }
@@ -148,19 +138,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
   private renderTable() {
     return (
       <table className="Chain-node-list">
-        <thead>
-          <tr>
-            <th><Icon src={nodeIcon} alt="Node" /></th>
-            <th><Icon src={nodeTypeIcon} alt="Implementation" /></th>
-            <th><Icon src={peersIcon} alt="Peer Count" /></th>
-            <th><Icon src={transactionsIcon} alt="Transactions in Queue" /></th>
-            <th><Icon src={blockIcon} alt="Block" /></th>
-            <th><Icon src={blockHashIcon} alt="Block Hash" /></th>
-            <th><Icon src={blockTimeIcon} alt="Block Time" /></th>
-            <th><Icon src={propagationTimeIcon} alt="Block Propagation Time" /></th>
-            <th><Icon src={lastTimeIcon} alt="Last Block Time" /></th>
-          </tr>
-        </thead>
+        <Node.Header />
         <tbody>
         {
           this.nodes().sort(sortNodes).map((node) => <Node.Row key={node.id} {...node} />)
