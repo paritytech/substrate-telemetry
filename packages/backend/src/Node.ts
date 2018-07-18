@@ -49,6 +49,7 @@ export default class Node {
     config: string,
     implentation: Types.NodeImplementation,
     version: Types.NodeVersion,
+    messages: Array<Message>,
   ) {
     this.ip = ip;
     this.id = nextId();
@@ -67,18 +68,7 @@ export default class Node {
         return;
       }
 
-      this.lastMessage = timestamp();
-      this.updateLatency(message.ts);
-
-      const update = getBestBlock(message);
-
-      if (update) {
-        this.updateBestBlock(update);
-      }
-
-      if (message.msg === 'system.interval') {
-        this.onSystemInterval(message);
-      }
+      this.onMessage(message);
     });
 
     socket.on('close', () => {
@@ -92,6 +82,11 @@ export default class Node {
 
       this.disconnect();
     });
+
+    // Handle cached messages
+    for (const message of messages) {
+      this.onMessage(message);
+    }
 
     locate(ip).then((location) => {
       if (!location) {
@@ -111,15 +106,27 @@ export default class Node {
         socket.removeAllListeners('message');
       }
 
+      const messages: Array<Message> = [];
+
       function handler(data: WebSocket.Data) {
         const message = parseMessage(data);
 
-        if (message && message.msg === "system.connected") {
+        if (!message || !message.msg) {
+          return;
+        }
+
+        if (message.msg === "system.connected") {
           cleanup();
 
           const { name, chain, config, implementation, version } = message;
 
-          resolve(new Node(ip, socket, name, chain, config, implementation, version));
+          resolve(new Node(ip, socket, name, chain, config, implementation, version, messages));
+        } else {
+          if (messages.length === 10) {
+            messages.shift();
+          }
+
+          messages.push(message);
         }
       }
 
@@ -192,6 +199,21 @@ export default class Node {
     this.events.emit('disconnect');
   }
 
+  private onMessage(message: Message) {
+    this.lastMessage = timestamp();
+    this.updateLatency(message.ts);
+
+    const update = getBestBlock(message);
+
+    if (update) {
+      this.updateBestBlock(update);
+    }
+
+    if (message.msg === 'system.interval') {
+      this.onSystemInterval(message);
+    }
+  }
+
   private onSystemInterval(message: SystemInterval) {
     const { peers, txcount } = message;
 
@@ -210,7 +232,7 @@ export default class Node {
   private updateBestBlock(update: BestBlock) {
     const { height, ts: time, best } = update;
 
-    if (this.height < height) {
+    if (this.best !== best && this.height <= height) {
       const blockTime = this.getBlockTime(time);
 
       this.best = best;

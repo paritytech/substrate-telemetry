@@ -36,6 +36,8 @@
 }
 
 .Node-details td:nth-child(odd) {
+  width: 16px;
+  text-align: center;
   padding-right: 0.2em;
 }
 
