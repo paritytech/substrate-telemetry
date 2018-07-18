@@ -163,7 +163,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
         </thead>
         <tbody>
         {
-          this.nodes().sort(sortNodes).map((node) => <Node key={node.id} {...node} />)
+          this.nodes().sort(sortNodes).map((node) => <Node.Row key={node.id} {...node} />)
         }
         </tbody>
       </table>
@@ -174,7 +174,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     return Array.from(this.props.appState.nodes.values());
   }
 
-  private pixelPosition(lat: Types.Latitude, lon: Types.Longitude): { left: number, top: number } {
+  private pixelPosition(lat: Types.Latitude, lon: Types.Longitude): Node.PixelPosition {
     const { map } = this.state;
 
     const left = Math.round(((lon + 180) / 360) * map.width + map.left) - 35;

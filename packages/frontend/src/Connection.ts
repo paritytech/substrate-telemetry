@@ -11,7 +11,9 @@ export class Connection {
     return new Connection(await Connection.socket(), update);
   }
 
-  private static readonly address = `ws://${window.location.hostname}:8080`;
+  private static readonly address = window.location.protocol === 'https:'
+                                      ? `wss://${window.location.hostname}/feed/`
+                                      : `ws://${window.location.hostname}:8080`;
 
   private static async socket(): Promise<WebSocket> {
     let socket = await Connection.trySocket();
