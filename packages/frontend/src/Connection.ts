@@ -245,7 +245,7 @@ export class Connection {
     for (const [label, count] of chains.entries()) {
       if (count > topCount) {
         topLabel = label;
-        topCount = topCount;
+        topCount = count;
       }
     }
 
