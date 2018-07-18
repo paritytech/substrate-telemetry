@@ -76,15 +76,12 @@ export default class App extends React.Component<{}, State> {
     let index = 0;
 
     if (subscribed) {
-      index = chains.indexOf(subscribed);
+      index = (chains.indexOf(subscribed) + 1) % chains.length;
 
       // Do nothing if it's the same chain
       if (chains[index] === subscribed) {
         return;
       }
-
-      // Go to next tab
-      index = (index + 1) % chains.length;
     }
 
     this.connection.then((connection) => {
