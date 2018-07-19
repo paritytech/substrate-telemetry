@@ -86,7 +86,7 @@ export namespace Node {
 
       let className = 'Node-Location';
 
-      if (propagationTime) {
+      if (propagationTime != null) {
         className += ' Node-Location-synced';
       } else if (height % 2 === 1) {
         className += ' Node-Location-odd';
