@@ -39,14 +39,14 @@ export namespace Node {
       <thead>
         <tr>
           <th><Icon src={nodeIcon} alt="Node" /></th>
-          <th><Icon src={nodeTypeIcon} alt="Implementation" /></th>
-          <th><Icon src={peersIcon} alt="Peer Count" /></th>
-          <th><Icon src={transactionsIcon} alt="Transactions in Queue" /></th>
-          <th><Icon src={blockIcon} alt="Block" /></th>
-          <th><Icon src={blockHashIcon} alt="Block Hash" /></th>
-          <th><Icon src={blockTimeIcon} alt="Block Time" /></th>
-          <th><Icon src={propagationTimeIcon} alt="Block Propagation Time" /></th>
-          <th><Icon src={lastTimeIcon} alt="Last Block Time" /></th>
+          <th style={{ width: 240 }}><Icon src={nodeTypeIcon} alt="Implementation" /></th>
+          <th style={{ width: 26 }}><Icon src={peersIcon} alt="Peer Count" /></th>
+          <th style={{ width: 26 }}><Icon src={transactionsIcon} alt="Transactions in Queue" /></th>
+          <th style={{ width: 88 }}><Icon src={blockIcon} alt="Block" /></th>
+          <th style={{ width: 154 }}><Icon src={blockHashIcon} alt="Block Hash" /></th>
+          <th style={{ width: 80 }}><Icon src={blockTimeIcon} alt="Block Time" /></th>
+          <th style={{ width: 58 }}><Icon src={propagationTimeIcon} alt="Block Propagation Time" /></th>
+          <th style={{ width: 100 }}><Icon src={lastTimeIcon} alt="Last Block Time" /></th>
         </tr>
       </thead>
     )
@@ -60,14 +60,14 @@ export namespace Node {
     return (
       <tr>
         <td>{name}</td>
-        <td style={{ width: 240 }}>{implementation} v{version}</td>
-        <td style={{ width: 26 }}>{peers}</td>
-        <td style={{ width: 26 }}>{txcount}</td>
-        <td style={{ width: 88 }}>#{formatNumber(height)}</td>
-        <td style={{ width: 154 }}><span title={hash}>{trimHash(hash, 16)}</span></td>
-        <td style={{ width: 80 }}>{secondsWithPrecision(blockTime/1000)}</td>
-        <td style={{ width: 58 }}>{propagationTime === null ? '∞' : milliOrSecond(propagationTime as number)}</td>
-        <td style={{ width: 82 }}><Ago when={blockTimestamp} /></td>
+        <td>{implementation} v{version}</td>
+        <td>{peers}</td>
+        <td>{txcount}</td>
+        <td>#{formatNumber(height)}</td>
+        <td><span title={hash}>{trimHash(hash, 16)}</span></td>
+        <td>{secondsWithPrecision(blockTime/1000)}</td>
+        <td>{propagationTime === null ? '∞' : milliOrSecond(propagationTime as number)}</td>
+        <td><Ago when={blockTimestamp} /></td>
       </tr>
     );
   }

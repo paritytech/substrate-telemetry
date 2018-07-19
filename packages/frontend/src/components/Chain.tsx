@@ -9,7 +9,8 @@ import blockTimeIcon from '../icons/history.svg';
 import lastTimeIcon from '../icons/watch.svg';
 import worldIcon from '../icons/globe.svg';
 
-const MAP_RATIO = 2;
+const MAP_RATIO = 800 / 350;
+const MAP_HEIGHT_ADJUST = 400 / 350;
 const HEADER = 148;
 
 import './Chain.css';
@@ -150,7 +151,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     // Longitude ranges -180 (west) to +180 (east)
     // Latitude ranges +90 (north) to -90 (south)
     const left = Math.round(((180 + lon) / 360) * map.width + map.left);
-    const top = Math.round(((90 - lat) / 180) * map.height + map.top);
+    const top = Math.round(((90 - lat) / 180) * map.height + map.top) * MAP_HEIGHT_ADJUST;
 
     return { left, top }
   }
