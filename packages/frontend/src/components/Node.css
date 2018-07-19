@@ -10,6 +10,7 @@
   top: 50%;
   left: 50%;
   cursor: pointer;
+  z-index: 1;
   transition: background-color 0.25s linear;
 }
 
@@ -18,11 +19,12 @@
 }
 
 .Node-Location-synced {
+  z-index: 2;
   background: #d64ca8;
 }
 
 .Node-Location:hover {
-  z-index: 2;
+  z-index: 3;
   background: #fff;
 }
 

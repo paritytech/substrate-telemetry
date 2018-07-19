@@ -15,6 +15,8 @@ export class Connection {
                                       ? `wss://${window.location.hostname}/feed/`
                                       : `ws://${window.location.hostname}:8080`;
 
+  // private static readonly address = 'wss://telemetry.polkadot.io/feed/';
+
   private static async socket(): Promise<WebSocket> {
     let socket = await Connection.trySocket();
     let timeout = TIMEOUT_BASE;
