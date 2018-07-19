@@ -77,8 +77,16 @@ export namespace Node {
       return null;
     }
 
+    let className = 'Node-Location';
+
+    if (propagationTime) {
+      className += ' Node-Location-synced';
+    } else if (height % 2 === 1) {
+      className += ' Node-Location-odd';
+    }
+
     return (
-      <div className="Node-Location" style={{ left, top }}>
+      <div className={className} style={{ left, top }}>
         <table className="Node-details">
           <tbody>
             <tr>
