@@ -1,31 +1,31 @@
 .Node-Location {
-  width: 10px;
-  height: 10px;
-  background: #666;
-  border: 1px solid #222;
+  width: 6px;
+  height: 6px;
+  background: transparent;
+  border: 2px solid #666;
   border-radius: 6px;
-  margin-left: -6px;
-  margin-top: -6px;
+  margin-left: -4px;
+  margin-top: -4px;
   position: absolute;
   top: 50%;
   left: 50%;
   cursor: pointer;
   z-index: 1;
-  transition: background-color 0.25s linear;
+  transition: border-color 0.25s linear;
 }
 
 .Node-Location-odd {
-  background: #bbb;
+  border-color: #bbb;
 }
 
 .Node-Location-synced {
   z-index: 2;
-  background: #d64ca8;
+  border-color: #d64ca8;
 }
 
 .Node-Location:hover {
   z-index: 3;
-  background: #fff;
+  border-color: #fff;
 }
 
 .Node-details {
