@@ -9,7 +9,7 @@ import blockTimeIcon from '../icons/history.svg';
 import lastTimeIcon from '../icons/watch.svg';
 import worldIcon from '../icons/globe.svg';
 
-const MAP_RATIO = 495 / 266; // width / height
+const MAP_RATIO = 2;
 const HEADER = 148;
 
 import './Chain.css';
@@ -113,16 +113,8 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     return (
       <div className="Chain-map">
       {
-        // Debug rect
-        // <div style={{ position: 'absolute', background: 'rgba(0,255,0,0.5)', ...this.state.map}} />
-      }
-      {
         this.nodes().map((node) => {
           const location = node.location || [0, 0, ''] as Types.NodeLocation;
-          // const location = [51.4825891, -0.0164137] as Types.NodeLocation; // Greenwich
-          // const location = [52.2330653, 20.921111] as Types.NodeLocation; // Warsaw
-          // const location = [48.8589507, 2.2770201] as Types.NodeLocation; // Paris
-          // const location = [36.7183391, -4.5193071]as Types.NodeLocation; // Malaga
 
           const { left, top } = this.pixelPosition(location[0], location[1]);
 
@@ -155,8 +147,10 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
   private pixelPosition(lat: Types.Latitude, lon: Types.Longitude): Node.PixelPosition {
     const { map } = this.state;
 
-    const left = Math.round(((lon + 180) / 360) * map.width + map.left) - 35;
-    const top = Math.round(((-lat + 90) / 180) * map.height + map.top) + 4;
+    // Longitude ranges -180 (west) to +180 (east)
+    // Latitude ranges +90 (north) to -90 (south)
+    const left = Math.round(((180 + lon) / 360) * map.width + map.left);
+    const top = Math.round(((90 - lat) / 180) * map.height + map.top);
 
     return { left, top }
   }
