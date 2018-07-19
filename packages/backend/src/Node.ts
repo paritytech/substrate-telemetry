@@ -14,6 +14,8 @@ export interface NodeEvents {
   emit(event: 'location', location: Location): void;
 }
 
+function noop() {}
+
 export default class Node {
   public readonly id: Types.NodeId;
   public readonly name: Types.NodeName;
@@ -40,6 +42,7 @@ export default class Node {
   private readonly socket: WebSocket;
   private blockTimes: Array<number> = new Array(BLOCK_TIME_HISTORY);
   private lastBlockAt: Maybe<Date> = null;
+  private pingStart = 0 as Types.Timestamp;
 
   constructor(
     ip: string,
@@ -61,6 +64,8 @@ export default class Node {
     this.lastMessage = timestamp();
     this.socket = socket;
 
+    let start = Date.now();
+
     socket.on('message', (data) => {
       const message = parseMessage(data);
 
@@ -81,6 +86,11 @@ export default class Node {
       console.error(`${this.name} has errored`, error);
 
       this.disconnect();
+    });
+
+    socket.on('pong', () => {
+      this.latency = (timestamp() - this.pingStart) as Types.Milliseconds;
+      this.pingStart = 0 as Types.Timestamp;
     });
 
     // Handle cached messages
@@ -135,7 +145,7 @@ export default class Node {
       const timeout = setTimeout(() => {
         cleanup();
 
-        socket.close();
+        socket.terminate();
 
         return reject(new Error('Timeout on waiting for system.connected message'));
       }, 5000);
@@ -145,6 +155,8 @@ export default class Node {
   public timeoutCheck(now: Types.Timestamp) {
     if (this.lastMessage + TIMEOUT < now) {
       this.disconnect();
+    } else {
+      this.updateLatency(now);
     }
   }
 
@@ -194,14 +206,13 @@ export default class Node {
 
   private disconnect() {
     this.socket.removeAllListeners();
-    this.socket.close();
+    this.socket.terminate();
 
     this.events.emit('disconnect');
   }
 
   private onMessage(message: Message) {
     this.lastMessage = timestamp();
-    this.updateLatency(message.ts);
 
     const update = getBestBlock(message);
 
@@ -225,8 +236,15 @@ export default class Node {
     }
   }
 
-  private updateLatency(time: Date) {
-    this.latency = (this.lastMessage - +time) as Types.Milliseconds;
+  private updateLatency(now: Types.Timestamp) {
+    // if (this.pingStart) {
+    //   console.error(`${this.name} timed out on ping message.`);
+    //   this.disconnect();
+    //   return;
+    // }
+
+    this.pingStart = now;
+    this.socket.ping(noop);
   }
 
   private updateBestBlock(update: BestBlock) {

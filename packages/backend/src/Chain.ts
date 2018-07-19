@@ -2,7 +2,7 @@ import * as EventEmitter from 'events';
 import Node from './Node';
 import Feed from './Feed';
 import FeedSet from './FeedSet';
-import { timestamp, Maybe, Types, FeedMessage } from '@dotstats/common';
+import { Maybe, Types, FeedMessage } from '@dotstats/common';
 
 const BLOCK_TIME_HISTORY = 10;
 
@@ -69,9 +69,7 @@ export default class Chain {
     return this.nodes.values();
   }
 
-  public timeoutCheck() {
-    const now = timestamp();
-
+  public timeoutCheck(now: Types.Timestamp) {
     for (const node of this.nodes.values()) {
       node.timeoutCheck(now);
     }

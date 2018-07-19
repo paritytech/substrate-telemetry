@@ -2,7 +2,7 @@ import Chain from './Chain';
 import Node from './Node';
 import Feed from './Feed';
 import FeedSet from './FeedSet';
-import { Types, FeedMessage } from '@dotstats/common';
+import { Types, FeedMessage, timestamp } from '@dotstats/common';
 
 export default class Aggregator {
   private readonly chains = new Map<Types.ChainLabel, Chain>();
@@ -83,8 +83,10 @@ export default class Aggregator {
   private timeoutCheck() {
     const empty: Types.ChainLabel[] = [];
 
+    const now = timestamp();
+
     for (const chain of this.chains.values()) {
-      chain.timeoutCheck();
+      chain.timeoutCheck(now);
     }
   }
 }
