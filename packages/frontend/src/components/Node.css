@@ -29,7 +29,6 @@
 }
 
 .Node-details {
-  display: none;
   min-width: 335px;
   position: absolute;
   left: 16px;
@@ -54,8 +53,4 @@
 
 .Node-details td:nth-child(even) {
   padding-left: 0.2em;
-}
-
-.Node-Location:hover .Node-details {
-  display: initial;
 }

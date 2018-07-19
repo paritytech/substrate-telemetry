@@ -30,6 +30,10 @@ export namespace Node {
     top: number;
   }
 
+  export interface LocationState {
+    hover: boolean;
+  }
+
   export function Header() {
     return (
       <thead>
@@ -68,25 +72,40 @@ export namespace Node {
     );
   }
 
-  export function Location(props: Props & PixelPosition) {
-    const { left, top, location } = props;
-    const [name, implementation, version] = props.nodeDetails;
-    const [height, hash, blockTime, blockTimestamp, propagationTime] = props.blockDetails;
+  export class Location extends React.Component<Props & PixelPosition, LocationState> {
+    public readonly state = { hover: false };
 
-    if (!location) {
-      return null;
+    public render() {
+      const { left, top, location } = this.props;
+      const height = this.props.blockDetails[0];
+      const propagationTime = this.props.blockDetails[4];
+
+      if (!location) {
+        return null;
+      }
+
+      let className = 'Node-Location';
+
+      if (propagationTime) {
+        className += ' Node-Location-synced';
+      } else if (height % 2 === 1) {
+        className += ' Node-Location-odd';
+      }
+
+      return (
+        <div className={className} style={{ left, top }} onMouseOver={this.onMouseOver} onMouseOut={this.onMouseOut}>
+        {
+          this.state.hover ? this.renderDetails(location) : null
+        }
+        </div>
+      );
     }
 
-    let className = 'Node-Location';
+    private renderDetails(location: Types.NodeLocation) {
+      const [name, implementation, version] = this.props.nodeDetails;
+      const [height, hash, blockTime, blockTimestamp, propagationTime] = this.props.blockDetails;
 
-    if (propagationTime) {
-      className += ' Node-Location-synced';
-    } else if (height % 2 === 1) {
-      className += ' Node-Location-odd';
-    }
-
-    return (
-      <div className={className} style={{ left, top }}>
+      return (
         <table className="Node-details">
           <tbody>
             <tr>
@@ -114,7 +133,15 @@ export namespace Node {
             </tr>
           </tbody>
         </table>
-      </div>
-    );
+      );
+    }
+
+    private onMouseOver = () => {
+      this.setState({ hover: true });
+    }
+
+    private onMouseOut = () => {
+      this.setState({ hover: false });
+    }
   }
 }
