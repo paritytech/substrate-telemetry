@@ -237,11 +237,11 @@ export default class Node {
   }
 
   private updateLatency(now: Types.Timestamp) {
-    if (this.pingStart) {
-      console.error(`${this.name} timed out on ping message.`);
-      this.disconnect();
-      return;
-    }
+    // if (this.pingStart) {
+    //   console.error(`${this.name} timed out on ping message.`);
+    //   this.disconnect();
+    //   return;
+    // }
 
     this.pingStart = now;
     this.socket.ping(noop);
