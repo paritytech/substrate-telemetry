@@ -64,8 +64,6 @@ export default class Node {
     this.lastMessage = timestamp();
     this.socket = socket;
 
-    let start = Date.now();
-
     socket.on('message', (data) => {
       const message = parseMessage(data);
 
@@ -145,6 +143,7 @@ export default class Node {
       const timeout = setTimeout(() => {
         cleanup();
 
+        socket.close();
         socket.terminate();
 
         return reject(new Error('Timeout on waiting for system.connected message'));
@@ -206,6 +205,7 @@ export default class Node {
 
   private disconnect() {
     this.socket.removeAllListeners();
+    this.socket.close();
     this.socket.terminate();
 
     this.events.emit('disconnect');
@@ -237,11 +237,11 @@ export default class Node {
   }
 
   private updateLatency(now: Types.Timestamp) {
-    // if (this.pingStart) {
-    //   console.error(`${this.name} timed out on ping message.`);
-    //   this.disconnect();
-    //   return;
-    // }
+    if (this.pingStart) {
+      console.error(`${this.name} timed out on ping message.`);
+      this.disconnect();
+      return;
+    }
 
     this.pingStart = now;
     this.socket.ping(noop);

@@ -45,6 +45,8 @@ export default class Chain {
     node.events.on('block', () => this.updateBlock(node));
     node.events.on('stats', () => this.feeds.broadcast(Feed.stats(node)));
     node.events.on('location', (location) => this.feeds.broadcast(Feed.locatedNode(node, location)));
+
+    this.updateBlock(node);
   }
 
   public addFeed(feed: Feed) {
