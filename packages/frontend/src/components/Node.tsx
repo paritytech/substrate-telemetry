@@ -62,31 +62,39 @@ export namespace Node {
     )
   }
 
-  export function Row(props: Props & PinState & PinHandler) {
-    const [name, implementation, version] = props.nodeDetails;
-    const [height, hash, blockTime, blockTimestamp, propagationTime] = props.blockDetails;
-    const [peers, txcount] = props.nodeStats;
-    const { nodesPinned } = props; 
-    console.log('nodesPinned: ', nodesPinned);
-
-    const handleNodePinClick = () => {
-      props.handleNodePinClick();
+  export class Row extends React.Component<Props & PinState & PinHandler> {
+    public shouldComponentUpdate(nextProps: any, nextState: any) {
+      if (this.props.nodesPinned !== nextProps.nodesPinned) {
+        return true;
+      }
+      return false;
     }
 
-    return (
-      <tr>
-        <td><span onClick={handleNodePinClick}><Icon src={heartIcon} alt="Pin Node" className={nodesPinned ? "IconRed" : "Icon"} /></span></td>
-        <td>{name}</td>
-        <td>{implementation} v{version}</td>
-        <td>{peers}</td>
-        <td>{txcount}</td>
-        <td>#{formatNumber(height)}</td>
-        <td><span title={hash}>{trimHash(hash, 16)}</span></td>
-        <td>{secondsWithPrecision(blockTime/1000)}</td>
-        <td>{propagationTime === null ? '∞' : milliOrSecond(propagationTime as number)}</td>
-        <td><Ago when={blockTimestamp} /></td>
-      </tr>
-    );
+    public handleNodePinClick = () => {
+      this.props.handleNodePinClick();
+    }
+
+    public render() {
+      const [name, implementation, version] = this.props.nodeDetails;
+      const [height, hash, blockTime, blockTimestamp, propagationTime] = this.props.blockDetails;
+      const [peers, txcount] = this.props.nodeStats;
+      const { nodesPinned } = this.props;
+
+      return (
+        <tr>
+          <td><span onClick={this.handleNodePinClick}><Icon src={heartIcon} alt="Pin Node" className={nodesPinned ? "IconRed" : "Icon"} /></span></td>
+          <td>{name}</td>
+          <td>{implementation} v{version}</td>
+          <td>{peers}</td>
+          <td>{txcount}</td>
+          <td>#{formatNumber(height)}</td>
+          <td><span title={hash}>{trimHash(hash, 16)}</span></td>
+          <td>{secondsWithPrecision(blockTime/1000)}</td>
+          <td>{propagationTime === null ? '∞' : milliOrSecond(propagationTime as number)}</td>
+          <td><Ago when={blockTimestamp} /></td>
+        </tr>
+      );
+    }
   }
 
   export class Location extends React.Component<Props & PixelPosition, LocationState> {
