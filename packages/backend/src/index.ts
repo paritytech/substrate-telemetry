@@ -3,16 +3,19 @@ import Node from './Node';
 import Feed from './Feed';
 import Aggregator from './Aggregator';
 
+const WS_PORT_TELEMETRY_SERVER = 1024;
+const WS_PORT_FEED_SERVER = 8080;
+
 const aggregator = new Aggregator();
 
 // WebSocket for Nodes feeding telemetry data to the server
-const incomingTelemetry = new WebSocket.Server({ port: 1024 });
+const incomingTelemetry = new WebSocket.Server({ port: WS_PORT_TELEMETRY_SERVER });
 
 // WebSocket for web clients listening to the telemetry data aggregate
-const telemetryFeed = new WebSocket.Server({ port: 8080 });
+const telemetryFeed = new WebSocket.Server({ port: WS_PORT_FEED_SERVER });
 
-console.log('Telemetry server listening on port 1024');
-console.log('Feed server listening on port 8080');
+console.log(`Telemetry server listening on port ${WS_PORT_TELEMETRY_SERVER}`);
+console.log(`Feed server listening on port ${WS_PORT_FEED_SERVER}`);
 
 const ipv4 = /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/;
 
