@@ -13,6 +13,7 @@ import blockHashIcon from '../icons/file-binary.svg';
 import blockTimeIcon from '../icons/history.svg';
 import propagationTimeIcon from '../icons/dashboard.svg';
 import lastTimeIcon from '../icons/watch.svg';
+import heartIcon from '../icons/heart.svg';
 
 import './Node.css';
 
@@ -23,6 +24,14 @@ export namespace Node {
     nodeStats: Types.NodeStats;
     blockDetails: Types.BlockDetails;
     location: Maybe<Types.NodeLocation>;
+  }
+
+  export interface PinState {
+    nodesPinned: any;
+  }
+
+  export interface PinHandler {
+    handleNodePinClick: any;
   }
 
   export interface PixelPosition {
@@ -38,6 +47,7 @@ export namespace Node {
     return (
       <thead>
         <tr>
+          <th />
           <th><Icon src={nodeIcon} alt="Node" /></th>
           <th style={{ width: 240 }}><Icon src={nodeTypeIcon} alt="Implementation" /></th>
           <th style={{ width: 26 }}><Icon src={peersIcon} alt="Peer Count" /></th>
@@ -52,13 +62,20 @@ export namespace Node {
     )
   }
 
-  export function Row(props: Props) {
+  export function Row(props: Props & PinState & PinHandler) {
     const [name, implementation, version] = props.nodeDetails;
     const [height, hash, blockTime, blockTimestamp, propagationTime] = props.blockDetails;
     const [peers, txcount] = props.nodeStats;
+    const { nodesPinned } = props; 
+    console.log('nodesPinned: ', nodesPinned);
+
+    const handleNodePinClick = () => {
+      props.handleNodePinClick();
+    }
 
     return (
       <tr>
+        <td><span onClick={handleNodePinClick}><Icon src={heartIcon} alt="Pin Node" className={nodesPinned ? "IconRed" : "Icon"} /></span></td>
         <td>{name}</td>
         <td>{implementation} v{version}</td>
         <td>{peers}</td>

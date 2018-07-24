@@ -18,6 +18,7 @@ import './Chain.css';
 export namespace Chain {
   export interface Props {
     appState: Readonly<AppState>;
+    handleNodePinClick: any;
   }
 
   export interface State {
@@ -129,12 +130,15 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
   }
 
   private renderTable() {
+    const { nodesPinned } =  this.props.appState;
+    const { handleNodePinClick } =  this.props;
+
     return (
       <table className="Chain-node-list">
         <Node.Header />
         <tbody>
         {
-          this.nodes().sort(sortNodes).map((node) => <Node.Row key={node.id} {...node} />)
+          this.nodes().sort(sortNodes).map((node) => <Node.Row key={node.id} {...node} nodesPinned={nodesPinned} handleNodePinClick={handleNodePinClick} />)
         }
         </tbody>
       </table>

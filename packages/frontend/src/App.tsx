@@ -15,7 +15,8 @@ export default class App extends React.Component<{}, State> {
     timeDiff: 0 as Types.Milliseconds,
     subscribed: null,
     chains: new Map(),
-    nodes: new Map()
+    nodes: new Map(),
+    nodesPinned: false
   };
 
   private connection: Promise<Connection>;
@@ -50,7 +51,7 @@ export default class App extends React.Component<{}, State> {
       <div className="App">
         <OfflineIndicator status={status} />
         <Chains chains={chains} subscribed={subscribed} connection={this.connection} />
-        <Chain appState={this.state} />
+        <Chain appState={this.state} handleNodePinClick={this.handleNodePinClick} />
       </div>
     );
   }
@@ -61,6 +62,14 @@ export default class App extends React.Component<{}, State> {
 
   public componentWillUnmount() {
     window.removeEventListener('keydown', this.onKeyPress);
+  }
+
+  private handleNodePinClick = () => {
+    if (this.state.nodesPinned === true) {
+      this.setState({ nodesPinned: false });
+    } else {
+      this.setState({ nodesPinned: true });
+    }
   }
 
   private onKeyPress = (event: KeyboardEvent) => {
