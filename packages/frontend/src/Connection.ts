@@ -84,7 +84,8 @@ export class Connection {
 
     // Re-subscribe to previously selected chain
     if (this.state.subscribed) {
-      this.subscribe(this.state.subscribed);
+      // TODO: Remember the previous subscription for after we get chain info
+      this.state = this.update({ subscribed: null });
     }
 
     this.socket.addEventListener('message', this.handleMessages);
