@@ -1,5 +1,6 @@
 export * from './helpers';
 export * from './id';
+export * from './block';
 
 import * as Types from './types';
 import * as FeedMessage from './feed';

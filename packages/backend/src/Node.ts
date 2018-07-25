@@ -1,6 +1,7 @@
 import * as WebSocket from 'ws';
 import * as EventEmitter from 'events';
-import { noop, timestamp, Maybe, Types, idGenerator } from '@dotstats/common';
+
+import { noop, timestamp, Maybe, Types, idGenerator, blockAverage } from '@dotstats/common';
 import { parseMessage, getBestBlock, Message, BestBlock, SystemInterval } from './message';
 import { locate, Location } from './location';
 
@@ -176,22 +177,8 @@ export default class Node {
     return location ? [location.lat, location.lon, location.city] : null;
   }
 
-  public get average(): number {
-    let accounted = 0;
-    let sum = 0;
-
-    for (const time of this.blockTimes) {
-      if (time) {
-        accounted += 1;
-        sum += time;
-      }
-    }
-
-    if (accounted === 0) {
-      return 0;
-    }
-
-    return sum / accounted;
+  public get average(): Types.Milliseconds {
+    return blockAverage(this.blockTimes);
   }
 
   public get localBlockAt(): Types.Milliseconds {
