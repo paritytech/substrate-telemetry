@@ -57,6 +57,9 @@ export class Connection {
     });
   }
 
+  private pingId = 0;
+  private pingTimeout: NodeJS.Timer;
+  private pingSent: Maybe<Types.Timestamp> = null;
   private socket: WebSocket;
   private state: Readonly<State>;
   private readonly update: Update;
@@ -72,6 +75,8 @@ export class Connection {
   }
 
   private bindSocket() {
+    this.ping();
+
     this.state = this.update({
       status: 'online',
       nodes: new Map()
@@ -87,7 +92,42 @@ export class Connection {
     this.socket.addEventListener('error', this.handleDisconnect);
   }
 
+  private ping = () => {
+    if (this.pingSent) {
+      this.handleDisconnect();
+      return;
+    }
+
+    this.pingId += 1;
+    this.pingSent = timestamp();
+    this.socket.send(`ping:${this.pingId}`);
+  }
+
+  private pong(id: number) {
+    if (!this.pingSent) {
+      console.error('Received a pong without sending a ping first');
+
+      this.handleDisconnect();
+      return;
+    }
+
+    if (id !== this.pingId) {
+      console.error('pingId differs');
+
+      this.handleDisconnect();
+    }
+
+    const latency = timestamp() - this.pingSent;
+    this.pingSent = null;
+
+    console.log('latency', latency);
+
+    this.pingTimeout = setTimeout(this.ping, 30000);
+  }
+
   private clean() {
+    clearTimeout(this.pingTimeout);
+
     this.socket.removeEventListener('message', this.handleMessages);
     this.socket.removeEventListener('close', this.handleDisconnect);
     this.socket.removeEventListener('error', this.handleDisconnect);
@@ -219,6 +259,12 @@ export class Connection {
             nodes.clear();
             this.state = this.update({ subscribed: null, nodes });
           }
+
+          continue messages;
+        }
+
+        case Actions.Pong: {
+          this.pong(Number(message.payload));
 
           continue messages;
         }

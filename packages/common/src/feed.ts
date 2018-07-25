@@ -29,6 +29,7 @@ export const Actions = {
   RemovedChain     : 0x09 as 0x09,
   SubscribedTo     : 0x0A as 0x0A,
   UnsubscribedFrom : 0x0B as 0x0B,
+  Pong             : 0x0C as 0x0C,
 };
 
 export type Action = typeof Actions[keyof typeof Actions];
@@ -98,6 +99,11 @@ export namespace Variants {
     action: typeof Actions.UnsubscribedFrom;
     payload: ChainLabel;
   }
+
+  export interface PongMessage extends MessageBase {
+    action: typeof Actions.Pong;
+    payload: string; // just echo whatever `ping` sent
+  }
 }
 
 export type Message =
@@ -112,7 +118,8 @@ export type Message =
   | Variants.AddedChainMessage
   | Variants.RemovedChainMessage
   | Variants.SubscribedToMessage
-  | Variants.UnsubscribedFromMessage;
+  | Variants.UnsubscribedFromMessage
+  | Variants.PongMessage;
 
 /**
  * Opaque data type to be sent to the feed. Passing through
