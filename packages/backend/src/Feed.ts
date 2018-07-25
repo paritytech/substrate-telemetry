@@ -93,21 +93,28 @@ export default class Feed {
     return {
       action: Actions.RemovedChain,
       payload: label
-    }
+    };
   }
 
   public static subscribedTo(label: Types.ChainLabel): FeedMessage.Message {
     return {
       action: Actions.SubscribedTo,
-      payload: label,
-    }
+      payload: label
+    };
   }
 
   public static unsubscribedFrom(label: Types.ChainLabel): FeedMessage.Message {
     return {
       action: Actions.UnsubscribedFrom,
-      payload: label,
-    }
+      payload: label
+    };
+  }
+
+  public static pong(payload: string): FeedMessage.Message {
+    return {
+      action: Actions.Pong,
+      payload
+    };
   }
 
   public sendData(data: FeedMessage.Data) {
@@ -131,15 +138,28 @@ export default class Feed {
   }
 
   private handleCommand(cmd: string) {
-    if (cmd.startsWith('subscribe:')) {
-      if (this.chain) {
-        this.events.emit('unsubscribe', this.chain);
-        this.chain = null;
-      }
+    const [tag, payload] = cmd.split(':', 2) as [string, Maybe<string>];
 
-      const label = cmd.substr(10) as Types.ChainLabel;
+    if (!payload) {
+      return;
+    }
 
-      this.events.emit('subscribe', label);
+    switch (tag) {
+      case 'subscribe':
+        if (this.chain) {
+          this.events.emit('unsubscribe', this.chain);
+          this.chain = null;
+        }
+
+        this.events.emit('subscribe', payload as Types.ChainLabel);
+        break;
+
+      case 'ping':
+        this.sendMessage(Feed.pong(payload));
+        break;
+
+      default:
+        console.error('Unknown command tag:', tag);
     }
   }
 
