@@ -43,6 +43,7 @@ export default class Node {
   private blockTimes: Array<number> = new Array(BLOCK_TIME_HISTORY);
   private lastBlockAt: Maybe<Date> = null;
   private pingStart = 0 as Types.Timestamp;
+  private throttle = false;
 
   constructor(
     ip: string,
@@ -260,7 +261,16 @@ export default class Node {
       this.blockTimes[height % BLOCK_TIME_HISTORY] = blockTime;
       this.blockTime = blockTime;
 
-      this.events.emit('block');
+      if (blockTime > 100) {
+        this.events.emit('block');
+      } else if (!this.throttle) {
+        this.throttle = true;
+
+        setTimeout(() => {
+          this.events.emit('block');
+          this.throttle = false;
+        }, 1000);
+      }
     }
   }
 
