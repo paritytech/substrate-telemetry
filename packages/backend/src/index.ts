@@ -37,7 +37,7 @@ function logClients() {
   const feed = telemetryFeed.clients.size;
   const node = incomingTelemetry.clients.size;
 
-  console.log(`[System] ${feed} open telemetry connections; ${node} open feed connections`);
+  console.log(`[System] ${node} open telemetry connections; ${feed} open feed connections`);
 
   setTimeout(logClients, 5000);
 }
