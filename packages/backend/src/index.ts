@@ -38,8 +38,11 @@ function logClients() {
   const node = incomingTelemetry.clients.size;
 
   console.log(`[System] ${feed} open telemetry connections; ${node} open feed connections`);
+
+  setTimeout(logClients, 5000);
 }
 
+logClients();
 
 telemetryFeed.on('connection', (socket: WebSocket) => {
   aggregator.addFeed(new Feed(socket));
