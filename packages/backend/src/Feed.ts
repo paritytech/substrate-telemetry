@@ -120,7 +120,13 @@ export default class Feed {
   }
 
   public sendData(data: FeedMessage.Data) {
-    this.socket.send(data);
+    try {
+      this.socket.send(data);
+    } catch (err) {
+      console.error('Failed to send data to a Feed', err);
+
+      this.disconnect();
+    }
   }
 
   public sendMessage(message: FeedMessage.Message) {
@@ -139,7 +145,14 @@ export default class Feed {
       return;
     }
     this.waitingForPong = true;
-    this.socket.ping(noop);
+
+    try {
+      this.socket.ping(noop);
+    } catch (err) {
+      console.error('Failed to send ping to Feed', err);
+
+      this.disconnect();
+    }
   }
 
   private sendMessages = () => {

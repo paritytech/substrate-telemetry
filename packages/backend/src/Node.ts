@@ -243,7 +243,14 @@ export default class Node {
     // }
 
     this.pingStart = now;
-    this.socket.ping(noop);
+
+    try {
+      this.socket.ping(noop);
+    } catch (err) {
+      console.error('Failed to send ping to Node', err);
+
+      this.disconnect();
+    }
   }
 
   private updateBestBlock(update: BestBlock) {
