@@ -5,8 +5,6 @@ export function parseMessage(data: Data): Maybe<Message> {
   try {
     const message = JSON.parse(data.toString());
 
-    console.log(message);
-
     if (message && typeof message.msg === 'string' && typeof message.ts === 'string') {
       message.ts = new Date(message.ts);
 
