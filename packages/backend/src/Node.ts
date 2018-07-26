@@ -1,6 +1,6 @@
 import * as WebSocket from 'ws';
 import * as EventEmitter from 'events';
-import { timestamp, Maybe, Types, idGenerator } from '@dotstats/common';
+import { noop, timestamp, Maybe, Types, idGenerator } from '@dotstats/common';
 import { parseMessage, getBestBlock, Message, BestBlock, SystemInterval } from './message';
 import { locate, Location } from './location';
 
@@ -13,8 +13,6 @@ export interface NodeEvents {
   on(event: 'location', fn: (location: Location) => void): void;
   emit(event: 'location', location: Location): void;
 }
-
-function noop() {}
 
 export default class Node {
   public readonly id: Types.NodeId;
