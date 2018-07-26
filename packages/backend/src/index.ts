@@ -33,6 +33,14 @@ incomingTelemetry.on('connection', async (socket, req) => {
   }
 });
 
+function logClients() {
+  const feed = telemetryFeed.clients.size;
+  const node = incomingTelemetry.clients.size;
+
+  console.log(`[System] ${feed} open telemetry connections; ${node} open feed connections`);
+}
+
+
 telemetryFeed.on('connection', (socket: WebSocket) => {
   aggregator.addFeed(new Feed(socket));
 });

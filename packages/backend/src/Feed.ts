@@ -2,7 +2,7 @@ import * as WebSocket from 'ws';
 import * as EventEmitter from 'events';
 import Node from './Node';
 import Chain from './Chain';
-import { VERSION, timestamp, Maybe, FeedMessage, Types, idGenerator } from '@dotstats/common';
+import { VERSION, noop, timestamp, Maybe, FeedMessage, Types, idGenerator } from '@dotstats/common';
 import { Location } from './location';
 
 const nextId = idGenerator<Types.FeedId>();
@@ -16,6 +16,7 @@ export default class Feed {
 
   private socket: WebSocket;
   private messages: Array<FeedMessage.Message> = [];
+  private waitingForPong = false;
 
   constructor(socket: WebSocket) {
     this.id = nextId();
@@ -24,6 +25,7 @@ export default class Feed {
     socket.on('message', (data) => this.handleCommand(data.toString()));
     socket.on('error', () => this.disconnect());
     socket.on('close', () => this.disconnect());
+    socket.on('pong', () => this.waitingForPong = false);
   }
 
   public static feedVersion(): FeedMessage.Message {
@@ -131,6 +133,15 @@ export default class Feed {
     }
   }
 
+  public ping() {
+    if (this.waitingForPong) {
+      this.disconnect();
+      return;
+    }
+    this.waitingForPong = true;
+    this.socket.ping(noop);
+  }
+
   private sendMessages = () => {
     const data = FeedMessage.serialize(this.messages);
     this.messages = [];
@@ -165,7 +176,7 @@ export default class Feed {
 
   private disconnect() {
     this.socket.removeAllListeners();
-    this.socket.close();
+    this.socket.terminate();
 
     this.events.emit('disconnect');
   }
