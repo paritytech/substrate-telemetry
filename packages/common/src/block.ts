@@ -1,6 +1,6 @@
-import { Types } from '@dotstats/common';
+import { Milliseconds } from './types';
 
-export function blockAverage(blockTimes: Array<number>): Types.Milliseconds {
+export function blockAverage(blockTimes: Array<number>): Milliseconds {
   let count = 0;
   let sum = 0;
 
@@ -12,8 +12,8 @@ export function blockAverage(blockTimes: Array<number>): Types.Milliseconds {
   }
 
   if (count === 0) {
-    return 0 as Types.Milliseconds;
+    return 0 as Milliseconds;
   }
 
-  return (sum / count) as Types.Milliseconds;
+  return (sum / count) as Milliseconds;
 }
