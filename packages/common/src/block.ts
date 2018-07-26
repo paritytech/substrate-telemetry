@@ -1,6 +1,6 @@
 import { Maybe, Types } from '@dotstats/common';
 
-export function blockAverage(blockTimes: Array<number>): Maybe<Types.Milliseconds> {
+export function blockAverage(blockTimes: Array<number>): Types.Milliseconds {
   let count = 0;
   let sum = 0;
 
