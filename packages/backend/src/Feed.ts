@@ -2,7 +2,7 @@ import * as WebSocket from 'ws';
 import * as EventEmitter from 'events';
 import Node from './Node';
 import Chain from './Chain';
-import { VERSION, noop, timestamp, Maybe, FeedMessage, Types, idGenerator } from '@dotstats/common';
+import { VERSION, timestamp, Maybe, FeedMessage, Types, idGenerator } from '@dotstats/common';
 import { Location } from './location';
 
 const nextId = idGenerator<Types.FeedId>();
@@ -120,13 +120,7 @@ export default class Feed {
   }
 
   public sendData(data: FeedMessage.Data) {
-    try {
-      this.socket.send(data);
-    } catch (err) {
-      console.error('Failed to send data to a Feed', err);
-
-      this.disconnect();
-    }
+    this.socket.send(data, this.handleError);
   }
 
   public sendMessage(message: FeedMessage.Message) {
@@ -146,19 +140,13 @@ export default class Feed {
     }
     this.waitingForPong = true;
 
-    try {
-      this.socket.ping(noop);
-    } catch (err) {
-      console.error('Failed to send ping to Feed', err);
-
-      this.disconnect();
-    }
+    this.socket.ping(this.handleError);
   }
 
   private sendMessages = () => {
     const data = FeedMessage.serialize(this.messages);
     this.messages = [];
-    this.socket.send(data);
+    this.socket.send(data, this.handleError);
   }
 
   private handleCommand(cmd: string) {
@@ -184,6 +172,14 @@ export default class Feed {
 
       default:
         console.error('Unknown command tag:', tag);
+    }
+  }
+
+  private handleError = (err: Maybe<Error>) => {
+    if (err) {
+      console.error('Error when sending data to the socket', err);
+
+      this.disconnect();
     }
   }
 
