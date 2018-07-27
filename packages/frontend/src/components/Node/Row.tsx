@@ -23,8 +23,11 @@ export class Row extends React.Component<Props & PinState & PinHandler> {
       if (typeof id === 'undefined') {
         return false;
       }
-      return nodesPinned.get(id) || false;
+      console.log('nodesPinned[id]', nodesPinned[id])
+      return nodesPinned[id] || false;
     }
+
+    console.log('id, nodesPinned', id, nodesPinned);
 
     return (
       <tr>

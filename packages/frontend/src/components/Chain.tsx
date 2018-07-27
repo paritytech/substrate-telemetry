@@ -92,7 +92,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
 
   private sortNodes = (a: Node.Props, b: Node.Props): number => {
     const { nodesPinned } = this.props.appState;
-    return (nodesPinned.get(a.id) === true && nodesPinned.get(b.id) !== true) ? -1 : 1;
+    return (nodesPinned && nodesPinned[a.id] === true && nodesPinned[b.id] !== true) ? -1 : 1;
 
     if (a.blockDetails[0] === b.blockDetails[0]) {
       const aPropagation = a.blockDetails[4] == null ? Infinity : a.blockDetails[4] as number;
