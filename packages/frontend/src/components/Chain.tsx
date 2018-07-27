@@ -32,19 +32,6 @@ export namespace Chain {
   }
 }
 
-function sortNodes(a: Node.Props, b: Node.Props): number {
-  if (a.blockDetails[0] === b.blockDetails[0]) {
-    const aPropagation = a.blockDetails[4] == null ? Infinity : a.blockDetails[4] as number;
-    const bPropagation = b.blockDetails[4] == null ? Infinity : b.blockDetails[4] as number;
-
-    // Ascending sort by propagation time
-    return aPropagation - bPropagation;
-  }
-
-  // Descending sort by block number
-  return b.blockDetails[0] - a.blockDetails[0];
-}
-
 export class Chain extends React.Component<Chain.Props, Chain.State> {
   constructor(props: Chain.Props) {
     super(props);
@@ -103,6 +90,22 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     );
   }
 
+  private sortNodes = (a: Node.Props, b: Node.Props): number => {
+    const { nodesPinned } = this.props.appState;
+    return (nodesPinned.get(a.id) === true && nodesPinned.get(b.id) !== true) ? -1 : 1;
+
+    if (a.blockDetails[0] === b.blockDetails[0]) {
+      const aPropagation = a.blockDetails[4] == null ? Infinity : a.blockDetails[4] as number;
+      const bPropagation = b.blockDetails[4] == null ? Infinity : b.blockDetails[4] as number;
+
+      // Ascending sort by propagation time
+      return aPropagation - bPropagation;
+    }
+
+    // Descending sort by block number
+    return b.blockDetails[0] - a.blockDetails[0];
+  }
+
   private toggleMap = () => {
     if (this.state.display === 'map') {
       this.setState({ display: 'table' });
@@ -138,7 +141,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
         <Node.Header />
         <tbody>
         {
-          this.nodes().sort(sortNodes).map((node) => <Node.Row key={node.id} {...node} nodesPinned={nodesPinned} handleNodePinClick={handleNodePinClick(node.id)} />)
+          this.nodes().sort(this.sortNodes).map((node) => <Node.Row key={node.id} {...node} nodesPinned={nodesPinned} handleNodePinClick={handleNodePinClick(node.id)} />)
         }
         </tbody>
       </table>
