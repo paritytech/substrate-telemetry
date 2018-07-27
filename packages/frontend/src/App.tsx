@@ -16,7 +16,7 @@ export default class App extends React.Component<{}, State> {
     subscribed: null,
     chains: new Map(),
     nodes: new Map(),
-    nodesPinned: false
+    nodesPinned: new Map()
   };
 
   private connection: Promise<Connection>;
@@ -66,11 +66,34 @@ export default class App extends React.Component<{}, State> {
 
   private handleNodePinClick: (id: Types.NodeId) => () => void = (id) => {
     return () => {
-      console.log('clicked: ', id);
-      if (this.state.nodesPinned === true) {
-        this.setState({ nodesPinned: false });
+      const { nodesPinned } = this.state;
+
+      console.log('nodesPinned: ', nodesPinned);
+      console.log('nodesPinned.size === 0: ', nodesPinned.size === 0);
+      console.log('nodesPinned.has(id): ', nodesPinned.has(id));
+
+      // set key to true if empty map or key not exist
+      if (nodesPinned.size === 0 || nodesPinned.has(id) === false) {
+        this.setState((prevState, props) => {
+          const newNodesPinned = prevState.nodesPinned;
+          newNodesPinned.set(id, true);
+
+          console.log('set to: ', newNodesPinned);
+
+          return {nodesPinned: newNodesPinned }
+        });
+
+      // toggle if key already exists
       } else {
-        this.setState({ nodesPinned: true });
+        this.setState((prevState, props) => {
+          const newNodesPinned = prevState.nodesPinned;
+          const existingNodeIdPinnedState = newNodesPinned.get(id);
+          newNodesPinned.set(id, !existingNodeIdPinnedState);
+
+          console.log('toggle to: ', newNodesPinned);
+
+          return {nodesPinned: newNodesPinned }
+        });
       }
     }
   }

@@ -14,22 +14,21 @@ interface PinHandler {
 }
 
 export class Row extends React.Component<Props & PinState & PinHandler> {
-  public shouldComponentUpdate(nextProps: any, nextState: any) {
-    if (this.props.nodesPinned !== nextProps.nodesPinned) {
-      return true;
-    }
-    return false;
-  }
-
   public render() {
+    const { id, nodesPinned } = this.props;
     const [name, implementation, version] = this.props.nodeDetails;
     const [height, hash, blockTime, blockTimestamp, propagationTime] = this.props.blockDetails;
     const [peers, txcount] = this.props.nodeStats;
-    const { nodesPinned } = this.props;
+    const isNodeIdPinned = () => {
+      if (typeof id === 'undefined') {
+        return false;
+      }
+      return nodesPinned.get(id) || false;
+    }
 
     return (
       <tr>
-        <td><span onClick={this.props.handleNodePinClick}><Icon src={heartIcon} alt="Pin Node" className={nodesPinned ? "IconRed" : "Icon"} /></span></td>
+        <td><span onClick={this.props.handleNodePinClick}><Icon src={heartIcon} alt="Pin Node" nodeId={id} isNodeIdPinned={isNodeIdPinned()} /></span></td>
         <td>{name}</td>
         <td>{implementation} v{version}</td>
         <td>{peers}</td>
