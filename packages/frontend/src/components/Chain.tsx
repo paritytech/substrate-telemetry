@@ -18,6 +18,7 @@ import './Chain.css';
 export namespace Chain {
   export interface Props {
     appState: Readonly<AppState>;
+    handleNodePinClick: any;
   }
 
   export interface State {
@@ -29,19 +30,6 @@ export namespace Chain {
       left: number;
     }
   }
-}
-
-function sortNodes(a: Node.Props, b: Node.Props): number {
-  if (a.blockDetails[0] === b.blockDetails[0]) {
-    const aPropagation = a.blockDetails[4] == null ? Infinity : a.blockDetails[4] as number;
-    const bPropagation = b.blockDetails[4] == null ? Infinity : b.blockDetails[4] as number;
-
-    // Ascending sort by propagation time
-    return aPropagation - bPropagation;
-  }
-
-  // Descending sort by block number
-  return b.blockDetails[0] - a.blockDetails[0];
 }
 
 export class Chain extends React.Component<Chain.Props, Chain.State> {
@@ -102,6 +90,22 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     );
   }
 
+  private sortNodes = (a: Node.Props, b: Node.Props): number => {
+    const { nodesPinned } = this.props.appState;
+    return (nodesPinned && nodesPinned[a.id] === true && nodesPinned[b.id] !== true) ? -1 : 1;
+
+    if (a.blockDetails[0] === b.blockDetails[0]) {
+      const aPropagation = a.blockDetails[4] == null ? Infinity : a.blockDetails[4] as number;
+      const bPropagation = b.blockDetails[4] == null ? Infinity : b.blockDetails[4] as number;
+
+      // Ascending sort by propagation time
+      return aPropagation - bPropagation;
+    }
+
+    // Descending sort by block number
+    return b.blockDetails[0] - a.blockDetails[0];
+  }
+
   private toggleMap = () => {
     if (this.state.display === 'map') {
       this.setState({ display: 'table' });
@@ -129,12 +133,15 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
   }
 
   private renderTable() {
+    const { nodesPinned } =  this.props.appState;
+    const { handleNodePinClick } =  this.props;
+
     return (
       <table className="Chain-node-list">
         <Node.Header />
         <tbody>
         {
-          this.nodes().sort(sortNodes).map((node) => <Node.Row key={node.id} {...node} />)
+          this.nodes().sort(this.sortNodes).map((node) => <Node.Row key={node.id} {...node} nodesPinned={nodesPinned} handleNodePinClick={handleNodePinClick(node.id)} />)
         }
         </tbody>
       </table>

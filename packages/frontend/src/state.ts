@@ -10,6 +10,7 @@ export interface State {
   subscribed: Maybe<Types.ChainLabel>;
   chains: Map<Types.ChainLabel, Types.NodeCount>;
   nodes: Map<Types.NodeId, Node.Props>;
+  nodesPinned: any;
 }
 
 export type Update = <K extends keyof State>(changes: Pick<State, K> | null) => Readonly<State>;
