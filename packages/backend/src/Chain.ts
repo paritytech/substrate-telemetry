@@ -2,7 +2,7 @@ import * as EventEmitter from 'events';
 import Node from './Node';
 import Feed from './Feed';
 import FeedSet from './FeedSet';
-import { Maybe, Types, FeedMessage } from '@dotstats/common';
+import { Maybe, Types, FeedMessage, blockAverage } from '@dotstats/common';
 
 const BLOCK_TIME_HISTORY = 10;
 
@@ -112,17 +112,7 @@ export default class Chain {
   private updateAverageBlockTime(height: Types.BlockNumber, now: Types.Timestamp) {
     this.blockTimes[height % BLOCK_TIME_HISTORY] = now - this.blockTimestamp;
 
-    let sum = 0;
-    let count = 0;
-
-    for (const time of this.blockTimes) {
-      if (time) {
-        sum += time;
-        count += 1;
-      }
-    }
-
     // We are guaranteed that count > 0
-    this.averageBlockTime = (sum / count) as Types.Milliseconds;
+    this.averageBlockTime = blockAverage(this.blockTimes);
   }
 }
