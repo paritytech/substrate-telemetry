@@ -34,6 +34,6 @@ export class Icon extends React.Component<{}, Props> {
   public render() {
     const { alt, className, onClick, src, isNodeIdPinned } = this.props;
 
-    return <ReactSVG title={alt} className={`${isNodeIdPinned ? 'IconRed' : 'Icon'} ${ className || '' }`} path={src} onClick={onClick} />;
+    return <ReactSVG title={alt} className={`${isNodeIdPinned ? 'IconPurple' : 'Icon'} ${ className || '' }`} path={src} onClick={onClick} />;
   }
 }
