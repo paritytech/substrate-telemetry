@@ -138,7 +138,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
         <Node.Header />
         <tbody>
         {
-          this.nodes().sort(sortNodes).map((node) => <Node.Row key={node.id} {...node} nodesPinned={nodesPinned} handleNodePinClick={handleNodePinClick} />)
+          this.nodes().sort(sortNodes).map((node) => <Node.Row key={node.id} {...node} nodesPinned={nodesPinned} handleNodePinClick={handleNodePinClick(node.id)} />)
         }
         </tbody>
       </table>

@@ -10,7 +10,7 @@ interface PinState {
 }
 
 interface PinHandler {
-  handleNodePinClick: any;
+  handleNodePinClick: () => void;
 }
 
 export class Row extends React.Component<Props & PinState & PinHandler> {
@@ -21,10 +21,6 @@ export class Row extends React.Component<Props & PinState & PinHandler> {
     return false;
   }
 
-  public handleNodePinClick = () => {
-    this.props.handleNodePinClick();
-  }
-
   public render() {
     const [name, implementation, version] = this.props.nodeDetails;
     const [height, hash, blockTime, blockTimestamp, propagationTime] = this.props.blockDetails;
@@ -33,7 +29,7 @@ export class Row extends React.Component<Props & PinState & PinHandler> {
 
     return (
       <tr>
-        <td><span onClick={this.handleNodePinClick}><Icon src={heartIcon} alt="Pin Node" className={nodesPinned ? "IconRed" : "Icon"} /></span></td>
+        <td><span onClick={this.props.handleNodePinClick}><Icon src={heartIcon} alt="Pin Node" className={nodesPinned ? "IconRed" : "Icon"} /></span></td>
         <td>{name}</td>
         <td>{implementation} v{version}</td>
         <td>{peers}</td>

@@ -64,11 +64,14 @@ export default class App extends React.Component<{}, State> {
     window.removeEventListener('keydown', this.onKeyPress);
   }
 
-  private handleNodePinClick = () => {
-    if (this.state.nodesPinned === true) {
-      this.setState({ nodesPinned: false });
-    } else {
-      this.setState({ nodesPinned: true });
+  private handleNodePinClick: (id: Types.NodeId) => () => void = (id) => {
+    return () => {
+      console.log('clicked: ', id);
+      if (this.state.nodesPinned === true) {
+        this.setState({ nodesPinned: false });
+      } else {
+        this.setState({ nodesPinned: true });
+      }
     }
   }
 
