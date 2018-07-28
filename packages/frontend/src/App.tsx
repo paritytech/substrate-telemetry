@@ -6,6 +6,8 @@ import { State } from './state';
 
 import './App.css';
 
+const NODES_PINNED = 'nodesPinned';
+
 export default class App extends React.Component<{}, State> {
   public state: State = {
     status: 'offline',
@@ -15,7 +17,8 @@ export default class App extends React.Component<{}, State> {
     timeDiff: 0 as Types.Milliseconds,
     subscribed: null,
     chains: new Map(),
-    nodes: new Map()
+    nodes: new Map(),
+    nodesPinned: {}
   };
 
   private connection: Promise<Connection>;
@@ -50,9 +53,27 @@ export default class App extends React.Component<{}, State> {
       <div className="App">
         <OfflineIndicator status={status} />
         <Chains chains={chains} subscribed={subscribed} connection={this.connection} />
-        <Chain appState={this.state} />
+        <Chain appState={this.state} handleNodePinClick={this.handleNodePinClick} />
       </div>
     );
+  }
+
+  public componentDidMount() {
+    const { nodesPinned } = this.state;
+    const cachedNodesPinned = localStorage.getItem(NODES_PINNED);
+    console.log('component mount with localstorage cachedNodesPinned: ', cachedNodesPinned);
+
+    if (!nodesPinned.length && cachedNodesPinned) {
+      this.setState((prevState, props) => {
+        const newNodesPinned = prevState.nodesPinned;
+        // override localstorage with latest component state
+        const merged = {...JSON.parse(cachedNodesPinned), ...newNodesPinned};
+      
+        console.log('component mount setting state to (merged): ', merged);
+
+        return {nodesPinned: merged }
+      });
+    }
   }
 
   public componentWillMount() {
@@ -61,6 +82,44 @@ export default class App extends React.Component<{}, State> {
 
   public componentWillUnmount() {
     window.removeEventListener('keydown', this.onKeyPress);
+  }
+
+  private handleNodePinClick: (id: Types.NodeId) => () => void = (id) => {
+    return () => {
+      const { nodesPinned } = this.state;
+
+      // console.log('nodesPinned: ', nodesPinned);
+      // console.log('nodesPinned.size === 0: ', nodesPinned.size === 0);
+      // console.log('nodesPinned.has(id): ', nodesPinned.hasOwnProperty(id));
+
+      // set key to true if empty map or key not exist
+      if (nodesPinned.size === 0 || nodesPinned.hasOwnProperty(id) === false) {
+        this.setState((prevState, props) => {
+          const newNodesPinned = prevState.nodesPinned;
+          newNodesPinned[id] = true;
+
+          console.log('handle click setting localstorage to: ', newNodesPinned);
+
+          localStorage.setItem(NODES_PINNED, JSON.stringify(newNodesPinned));
+
+          console.log('handle click set localstorage to: ', localStorage.getItem(NODES_PINNED));
+
+          return {nodesPinned: newNodesPinned }
+        });
+
+      // toggle if key already exists
+      } else {
+        this.setState((prevState, props) => {
+          const newNodesPinned = prevState.nodesPinned;
+          const existingNodeIdPinnedState = newNodesPinned[id];
+          newNodesPinned[id] = !existingNodeIdPinnedState;
+
+          console.log('toggle to: ', newNodesPinned);
+
+          return {nodesPinned: newNodesPinned }
+        });
+      }
+    }
   }
 
   private onKeyPress = (event: KeyboardEvent) => {
