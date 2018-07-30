@@ -14,6 +14,7 @@
     "build:backend": "scripts/build-backend.sh",
     "check:backend": "tsc -p packages/backend --noEmit",
     "build:common": "tsc -p packages/common",
-    "check:common": "tsc -p packages/common --noEmit"
+    "check:common": "tsc -p packages/common --noEmit",
+    "cleanup": "rm -rf packages/frontend/build packages/backend/build packages/common/build node_modules packages/frontend/node_modules packages/backend/node_modules packages/common/node_modules"
   }
 }
