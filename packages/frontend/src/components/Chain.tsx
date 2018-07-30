@@ -32,16 +32,16 @@ export namespace Chain {
 }
 
 function sortNodes(a: Node.Props, b: Node.Props): number {
-  const aPropagation = a.blockDetails[4] == null ? Infinity : a.blockDetails[4] as number;
-  const bPropagation = b.blockDetails[4] == null ? Infinity : b.blockDetails[4] as number;
+  if (a.blockDetails[0] === b.blockDetails[0]) {
+    const aPropagation = a.blockDetails[4] == null ? Infinity : a.blockDetails[4] as number;
+    const bPropagation = b.blockDetails[4] == null ? Infinity : b.blockDetails[4] as number;
 
-  if (aPropagation === Infinity && bPropagation === Infinity) {
-    // Descending sort by block number
-    return b.blockDetails[0] - a.blockDetails[0];
+    // Ascending sort by propagation time
+    return aPropagation - bPropagation;
   }
 
-  // Ascending sort by propagation time
-  return aPropagation - bPropagation;
+  // Descending sort by block number
+  return b.blockDetails[0] - a.blockDetails[0];
 }
 
 export class Chain extends React.Component<Chain.Props, Chain.State> {

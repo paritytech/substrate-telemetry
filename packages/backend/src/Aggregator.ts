@@ -88,5 +88,9 @@ export default class Aggregator {
     for (const chain of this.chains.values()) {
       chain.timeoutCheck(now);
     }
+
+    for (const feed of this.feeds.values()) {
+      feed.ping();
+    }
   }
 }

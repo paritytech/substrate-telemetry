@@ -1,9 +1,11 @@
 export * from './helpers';
 export * from './id';
+export * from './block';
 
 import * as Types from './types';
 import * as FeedMessage from './feed';
 
 export { Types, FeedMessage };
 
-export const VERSION: Types.FeedVersion = 5 as Types.FeedVersion;
+// Increment this if breaking changes were made to types in `feed.ts`
+export const VERSION: Types.FeedVersion = 8 as Types.FeedVersion;

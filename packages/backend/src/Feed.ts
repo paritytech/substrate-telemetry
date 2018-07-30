@@ -16,6 +16,7 @@ export default class Feed {
 
   private socket: WebSocket;
   private messages: Array<FeedMessage.Message> = [];
+  private waitingForPong = false;
 
   constructor(socket: WebSocket) {
     this.id = nextId();
@@ -24,6 +25,7 @@ export default class Feed {
     socket.on('message', (data) => this.handleCommand(data.toString()));
     socket.on('error', () => this.disconnect());
     socket.on('close', () => this.disconnect());
+    socket.on('pong', () => this.waitingForPong = false);
   }
 
   public static feedVersion(): FeedMessage.Message {
@@ -93,25 +95,32 @@ export default class Feed {
     return {
       action: Actions.RemovedChain,
       payload: label
-    }
+    };
   }
 
   public static subscribedTo(label: Types.ChainLabel): FeedMessage.Message {
     return {
       action: Actions.SubscribedTo,
-      payload: label,
-    }
+      payload: label
+    };
   }
 
   public static unsubscribedFrom(label: Types.ChainLabel): FeedMessage.Message {
     return {
       action: Actions.UnsubscribedFrom,
-      payload: label,
-    }
+      payload: label
+    };
+  }
+
+  public static pong(payload: string): FeedMessage.Message {
+    return {
+      action: Actions.Pong,
+      payload
+    };
   }
 
   public sendData(data: FeedMessage.Data) {
-    this.socket.send(data);
+    this.socket.send(data, this.handleError);
   }
 
   public sendMessage(message: FeedMessage.Message) {
@@ -124,28 +133,59 @@ export default class Feed {
     }
   }
 
+  public ping() {
+    if (this.waitingForPong) {
+      this.disconnect();
+      return;
+    }
+    this.waitingForPong = true;
+
+    this.socket.ping(this.handleError);
+  }
+
   private sendMessages = () => {
     const data = FeedMessage.serialize(this.messages);
     this.messages = [];
-    this.socket.send(data);
+    this.socket.send(data, this.handleError);
   }
 
   private handleCommand(cmd: string) {
-    if (cmd.startsWith('subscribe:')) {
-      if (this.chain) {
-        this.events.emit('unsubscribe', this.chain);
-        this.chain = null;
-      }
+    const [tag, payload] = cmd.split(':', 2) as [string, Maybe<string>];
 
-      const label = cmd.substr(10) as Types.ChainLabel;
+    if (!payload) {
+      return;
+    }
 
-      this.events.emit('subscribe', label);
+    switch (tag) {
+      case 'subscribe':
+        if (this.chain) {
+          this.events.emit('unsubscribe', this.chain);
+          this.chain = null;
+        }
+
+        this.events.emit('subscribe', payload as Types.ChainLabel);
+        break;
+
+      case 'ping':
+        this.sendMessage(Feed.pong(payload));
+        break;
+
+      default:
+        console.error('Unknown command tag:', tag);
+    }
+  }
+
+  private handleError = (err: Maybe<Error>) => {
+    if (err) {
+      console.error('Error when sending data to the socket', err);
+
+      this.disconnect();
     }
   }
 
   private disconnect() {
     this.socket.removeAllListeners();
-    this.socket.close();
+    this.socket.terminate();
 
     this.events.emit('disconnect');
   }

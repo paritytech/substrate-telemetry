@@ -24,7 +24,7 @@ export class Connection {
     while (!socket) {
       await sleep(timeout);
 
-      timeout = Math.max(timeout * 2, TIMEOUT_MAX) as Types.Milliseconds;
+      timeout = Math.min(timeout * 2, TIMEOUT_MAX) as Types.Milliseconds;
       socket = await Connection.trySocket();
     }
 
@@ -57,6 +57,10 @@ export class Connection {
     });
   }
 
+  private pingId = 0;
+  private pingTimeout: NodeJS.Timer;
+  private pingSent: Maybe<Types.Timestamp> = null;
+  private resubscribeTo: Maybe<Types.ChainLabel> = null;
   private socket: WebSocket;
   private state: Readonly<State>;
   private readonly update: Update;
@@ -72,14 +76,16 @@ export class Connection {
   }
 
   private bindSocket() {
+    this.ping();
+
     this.state = this.update({
       status: 'online',
       nodes: new Map()
     });
 
-    // Re-subscribe to previously selected chain
     if (this.state.subscribed) {
-      this.subscribe(this.state.subscribed);
+      this.resubscribeTo = this.state.subscribed;
+      this.state = this.update({ subscribed: null });
     }
 
     this.socket.addEventListener('message', this.handleMessages);
@@ -87,7 +93,43 @@ export class Connection {
     this.socket.addEventListener('error', this.handleDisconnect);
   }
 
+  private ping = () => {
+    if (this.pingSent) {
+      this.handleDisconnect();
+      return;
+    }
+
+    this.pingId += 1;
+    this.pingSent = timestamp();
+    this.socket.send(`ping:${this.pingId}`);
+
+    this.pingTimeout = setTimeout(this.ping, 30000);
+  }
+
+  private pong(id: number) {
+    if (!this.pingSent) {
+      console.error('Received a pong without sending a ping first');
+
+      this.handleDisconnect();
+      return;
+    }
+
+    if (id !== this.pingId) {
+      console.error('pingId differs');
+
+      this.handleDisconnect();
+    }
+
+    const latency = timestamp() - this.pingSent;
+    this.pingSent = null;
+
+    console.log('latency', latency);
+  }
+
   private clean() {
+    clearTimeout(this.pingTimeout);
+    this.pingSent = null;
+
     this.socket.removeEventListener('message', this.handleMessages);
     this.socket.removeEventListener('close', this.handleDisconnect);
     this.socket.removeEventListener('error', this.handleDisconnect);
@@ -223,6 +265,12 @@ export class Connection {
           continue messages;
         }
 
+        case Actions.Pong: {
+          this.pong(Number(message.payload));
+
+          continue messages;
+        }
+
         default: {
           continue messages;
         }
@@ -236,9 +284,19 @@ export class Connection {
 
   private autoSubscribe() {
     const { subscribed, chains } = this.state;
+    const { resubscribeTo } = this;
 
     if (subscribed) {
       return;
+    }
+
+    if (resubscribeTo) {
+      this.resubscribeTo = null;
+
+      if (chains.has(resubscribeTo)) {
+        this.subscribe(resubscribeTo);
+        return;
+      }
     }
 
     let topLabel: Maybe<Types.ChainLabel> = null;

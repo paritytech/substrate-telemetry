@@ -1,6 +1,7 @@
 import * as WebSocket from 'ws';
 import * as EventEmitter from 'events';
-import { timestamp, Maybe, Types, idGenerator } from '@dotstats/common';
+
+import { noop, timestamp, Maybe, Types, idGenerator, blockAverage } from '@dotstats/common';
 import { parseMessage, getBestBlock, Message, BestBlock, SystemInterval } from './message';
 import { locate, Location } from './location';
 
@@ -13,8 +14,6 @@ export interface NodeEvents {
   on(event: 'location', fn: (location: Location) => void): void;
   emit(event: 'location', location: Location): void;
 }
-
-function noop() {}
 
 export default class Node {
   public readonly id: Types.NodeId;
@@ -43,6 +42,7 @@ export default class Node {
   private blockTimes: Array<number> = new Array(BLOCK_TIME_HISTORY);
   private lastBlockAt: Maybe<Date> = null;
   private pingStart = 0 as Types.Timestamp;
+  private throttle = false;
 
   constructor(
     ip: string,
@@ -63,8 +63,6 @@ export default class Node {
     this.version = version;
     this.lastMessage = timestamp();
     this.socket = socket;
-
-    let start = Date.now();
 
     socket.on('message', (data) => {
       const message = parseMessage(data);
@@ -145,6 +143,7 @@ export default class Node {
       const timeout = setTimeout(() => {
         cleanup();
 
+        socket.close();
         socket.terminate();
 
         return reject(new Error('Timeout on waiting for system.connected message'));
@@ -178,22 +177,8 @@ export default class Node {
     return location ? [location.lat, location.lon, location.city] : null;
   }
 
-  public get average(): number {
-    let accounted = 0;
-    let sum = 0;
-
-    for (const time of this.blockTimes) {
-      if (time) {
-        accounted += 1;
-        sum += time;
-      }
-    }
-
-    if (accounted === 0) {
-      return 0;
-    }
-
-    return sum / accounted;
+  public get average(): Types.Milliseconds {
+    return blockAverage(this.blockTimes);
   }
 
   public get localBlockAt(): Types.Milliseconds {
@@ -206,6 +191,7 @@ export default class Node {
 
   private disconnect() {
     this.socket.removeAllListeners();
+    this.socket.close();
     this.socket.terminate();
 
     this.events.emit('disconnect');
@@ -244,7 +230,14 @@ export default class Node {
     // }
 
     this.pingStart = now;
-    this.socket.ping(noop);
+
+    try {
+      this.socket.ping(noop);
+    } catch (err) {
+      console.error('Failed to send ping to Node', err);
+
+      this.disconnect();
+    }
   }
 
   private updateBestBlock(update: BestBlock) {
@@ -260,7 +253,16 @@ export default class Node {
       this.blockTimes[height % BLOCK_TIME_HISTORY] = blockTime;
       this.blockTime = blockTime;
 
-      this.events.emit('block');
+      if (blockTime > 100) {
+        this.events.emit('block');
+      } else if (!this.throttle) {
+        this.throttle = true;
+
+        setTimeout(() => {
+          this.events.emit('block');
+          this.throttle = false;
+        }, 1000);
+      }
     }
   }
 
