@@ -1,3 +1,11 @@
+.Node-Row {
+  color: #999;
+}
+
+.Node-Row-synced {
+  color: #fff;
+}
+
 .Node-Location {
   width: 6px;
   height: 6px;
