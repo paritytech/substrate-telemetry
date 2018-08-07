@@ -16,6 +16,8 @@ import lastTimeIcon from '../icons/watch.svg';
 
 import './Node.css';
 
+const SEMVER_PATTERN = /^\d+\.\d+\.\d+/;
+
 export namespace Node {
   export interface Props {
     id: Types.NodeId;
@@ -56,11 +58,18 @@ export namespace Node {
     const [name, implementation, version] = props.nodeDetails;
     const [height, hash, blockTime, blockTimestamp, propagationTime] = props.blockDetails;
     const [peers, txcount] = props.nodeStats;
+    const [semver] = version.match(SEMVER_PATTERN) || [version];
+
+    let className = 'Node-Row';
+
+    if (propagationTime != null) {
+      className += ' Node-Row-synced';
+    }
 
     return (
-      <tr>
+      <tr className={className}>
         <td>{name}</td>
-        <td>{implementation} v{version}</td>
+        <td><span title={`${implementation} v${version}`}>{implementation} v{semver}</span></td>
         <td>{peers}</td>
         <td>{txcount}</td>
         <td>#{formatNumber(height)}</td>
