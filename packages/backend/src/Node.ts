@@ -119,8 +119,6 @@ export default class Node {
       function handler(data: WebSocket.Data) {
         const message = parseMessage(data);
 
-        console.log(message);
-
         if (!message || !message.msg) {
           return;
         }
@@ -200,8 +198,6 @@ export default class Node {
   }
 
   private onMessage(message: Message) {
-    console.log(message);
-
     this.lastMessage = timestamp();
 
     const update = getBestBlock(message);
