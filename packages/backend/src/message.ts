@@ -46,6 +46,7 @@ interface SystemConnected {
   config: string,
   implementation: Types.NodeImplementation,
   version: Types.NodeVersion,
+  pubkey: Maybe<Types.NodePubKey>,
 }
 
 export interface SystemInterval extends BestBlock {

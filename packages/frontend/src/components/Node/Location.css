@@ -1,10 +1,3 @@
-.Node-Row {
-  color: #999;
-}
-
-.Node-Row-synced {
-  color: #fff;
-}
 
 .Node-Location {
   width: 6px;
@@ -36,7 +29,7 @@
   border-color: #fff;
 }
 
-.Node-details {
+.Node-Location-details {
   min-width: 335px;
   position: absolute;
   left: 16px;
@@ -48,17 +41,17 @@
   border-collapse: collapse;
 }
 
-.Node-details td {
+.Node-Location-details td {
   text-align: left;
   padding: 0.5em 1em;
 }
 
-.Node-details td:nth-child(odd) {
+.Node-Location-details td:nth-child(odd) {
   width: 16px;
   text-align: center;
   padding-right: 0.2em;
 }
 
-.Node-details td:nth-child(even) {
+.Node-Location-details td:nth-child(even) {
   padding-left: 0.2em;
 }
