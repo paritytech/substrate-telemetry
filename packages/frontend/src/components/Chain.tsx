@@ -31,7 +31,7 @@ export namespace Chain {
   }
 }
 
-function sortNodes(a: Node.Props, b: Node.Props): number {
+function sortNodes(a: AppState.Node, b: AppState.Node): number {
   if (a.blockDetails[0] === b.blockDetails[0]) {
     const aPropagation = a.blockDetails[4] == null ? Infinity : a.blockDetails[4] as number;
     const bPropagation = b.blockDetails[4] == null ? Infinity : b.blockDetails[4] as number;
@@ -131,7 +131,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
   private renderTable() {
     return (
       <table className="Chain-node-list">
-        <Node.Header />
+        <Node.Row.Header />
         <tbody>
         {
           this.nodes().sort(sortNodes).map((node) => <Node.Row key={node.id} {...node} />)
@@ -145,7 +145,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     return Array.from(this.props.appState.nodes.values());
   }
 
-  private pixelPosition(lat: Types.Latitude, lon: Types.Longitude): Node.PixelPosition {
+  private pixelPosition(lat: Types.Latitude, lon: Types.Longitude): Node.Location.Position {
     const { map } = this.state;
 
     // Longitude ranges -180 (west) to +180 (east)

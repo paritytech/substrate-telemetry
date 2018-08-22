@@ -8,6 +8,7 @@ export type NodeId = Id<'Node'>;
 export type NodeName = Opaque<string, 'NodeName'>;
 export type NodeImplementation = Opaque<string, 'NodeImplementation'>;
 export type NodeVersion = Opaque<string, 'NodeVersion'>;
+export type NodePubKey = Opaque<string, 'NodePubKey'>;
 export type BlockNumber = Opaque<number, 'BlockNumber'>;
 export type BlockHash = Opaque<string, 'BlockHash'>;
 export type Milliseconds = Opaque<number, 'Milliseconds'>;
