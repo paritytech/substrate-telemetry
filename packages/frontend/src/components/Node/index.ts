@@ -1,4 +1,3 @@
-import { Types, Maybe } from '@dotstats/common';
 import Row from './Row';
 import Location from './Location';
 
