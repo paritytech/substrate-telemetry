@@ -1,14 +1,13 @@
 import * as WebSocket from 'ws';
 import * as EventEmitter from 'events';
 
-import { noop, timestamp, Maybe, Types, idGenerator, blockAverage } from '@dotstats/common';
+import { noop, timestamp, Maybe, Types, blockAverage } from '@dotstats/common';
 import { parseMessage, getBestBlock, Message, BestBlock, SystemInterval } from './message';
 import { locate, Location } from './location';
+import { getId, refreshId } from './nodeId';
 
 const BLOCK_TIME_HISTORY = 10;
 const TIMEOUT = (1000 * 60 * 1) as Types.Milliseconds; // 1 minute
-
-const nextId = idGenerator<Types.NodeId>();
 
 export interface NodeEvents {
   on(event: 'location', fn: (location: Location) => void): void;
@@ -21,6 +20,7 @@ export default class Node {
   public readonly chain: Types.ChainLabel;
   public readonly implementation: Types.NodeImplementation;
   public readonly version: Types.NodeVersion;
+  public readonly pubkey: Maybe<Types.NodePubKey>;
 
   public readonly events = new EventEmitter() as EventEmitter & NodeEvents;
 
@@ -52,15 +52,17 @@ export default class Node {
     config: string,
     implentation: Types.NodeImplementation,
     version: Types.NodeVersion,
+    pubkey: Maybe<Types.NodePubKey>,
     messages: Array<Message>,
   ) {
     this.ip = ip;
-    this.id = nextId();
+    this.id = getId(pubkey);
     this.name = name;
     this.chain = chain;
     this.config = config;
     this.implementation = implentation;
     this.version = version;
+    this.pubkey = pubkey;
     this.lastMessage = timestamp();
     this.socket = socket;
 
@@ -126,9 +128,9 @@ export default class Node {
         if (message.msg === "system.connected") {
           cleanup();
 
-          const { name, chain, config, implementation, version } = message;
+          const { name, chain, config, implementation, version, pubkey } = message;
 
-          resolve(new Node(ip, socket, name, chain, config, implementation, version, messages));
+          resolve(new Node(ip, socket, name, chain, config, implementation, version, pubkey, messages));
         } else {
           if (messages.length === 10) {
             messages.shift();
@@ -193,6 +195,8 @@ export default class Node {
     this.socket.removeAllListeners();
     this.socket.close();
     this.socket.terminate();
+
+    refreshId(this.pubkey, this.id);
 
     this.events.emit('disconnect');
   }
