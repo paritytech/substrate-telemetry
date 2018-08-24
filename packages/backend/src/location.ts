@@ -7,7 +7,7 @@ export interface Location {
   city: Types.City;
 }
 
-const cache = new Map<string, Location>();
+const cache = new Map<string, Maybe<Location>>();
 
 export async function locate(ip: string): Promise<Maybe<Location>> {
   if (ip === '127.0.0.1') {
@@ -18,16 +18,18 @@ export async function locate(ip: string): Promise<Maybe<Location>> {
     });
   }
 
-  const cached = cache.get(ip);
-
-  if (cached) {
-    return Promise.resolve(cached);
+  if (cache.has(ip)) {
+    return Promise.resolve(cache.get(ip));
   }
+
+  const cached = cache.get(ip);
 
   return new Promise<Maybe<Location>>((resolve, _) => {
     iplocation(ip, (err, result) => {
       if (err) {
         console.error(`Couldn't locate ${ip}`);
+
+        cache.set(ip, null);
 
         return resolve(null);
       }
