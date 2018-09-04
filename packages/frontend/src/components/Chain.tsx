@@ -49,7 +49,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     super(props);
 
     this.state = {
-      display: 'table',
+      display: window.location.hash === '#map' ? 'map' : 'table',
       map: {
         width: 0,
         height: 0,
@@ -105,8 +105,10 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
   private toggleMap = () => {
     if (this.state.display === 'map') {
       this.setState({ display: 'table' });
+      window.location.hash = '';
     } else {
       this.setState({ display: 'map' });
+      window.location.hash = '#map';
     }
   }
 

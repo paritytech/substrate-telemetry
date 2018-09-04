@@ -16,12 +16,8 @@
 }
 
 .Node-Location-ping {
+  pointer-events: none;
   position: absolute;
-  left: 2px;
-  top: 2px;
-  width: 0;
-  height: 0;
-  border: 1px solid transparent;
   display: none;
 }
 
@@ -99,14 +95,16 @@
     top: -1px;
     width: 6px;
     height: 6px;
+    border-width: 1px;
     border-color: rgba(255,255,255,1);
   }
 
   to {
-    left: -13px;
-    top: -13px;
-    width: 30px;
-    height: 30px;
+    left: -18px;
+    top: -18px;
+    width: 40px;
+    height: 40px;
+    border-width: 1px;
     border-color: rgba(255,255,255,0);
   }
 }
