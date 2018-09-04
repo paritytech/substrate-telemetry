@@ -49,13 +49,33 @@
 .Node-Location-details {
   min-width: 335px;
   position: absolute;
-  left: 16px;
-  top: -4px;
+  /*left: 16px;
+  top: -4px;*/
   font-family: monospace, sans-serif;
   background: #222;
   color: #fff;
   box-shadow: 0 3px 20px rgba(0,0,0,0.5);
   border-collapse: collapse;
+}
+
+.Node-Location-quarter0 .Node-Location-details {
+  left: 16px;
+  top: -4px;
+}
+
+.Node-Location-quarter1 .Node-Location-details {
+  right: 16px;
+  top: -4px;
+}
+
+.Node-Location-quarter2 .Node-Location-details {
+  left: 16px;
+  bottom: -4px;
+}
+
+.Node-Location-quarter3 .Node-Location-details {
+  right: 16px;
+  bottom: -4px;
 }
 
 .Node-Location-details td {
@@ -75,10 +95,10 @@
 
 @keyframes ping {
   from {
-    left: 2px;
-    right: 2px;
-    width: 0;
-    height: 0;
+    left: -1px;
+    top: -1px;
+    width: 6px;
+    height: 6px;
     border-color: rgba(255,255,255,1);
   }
 

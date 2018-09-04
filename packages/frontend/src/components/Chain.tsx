@@ -122,10 +122,10 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
             return null;
           }
 
-          const { left, top } = this.pixelPosition(location[0], location[1]);
+          const { left, top, quarter } = this.pixelPosition(location[0], location[1]);
 
           return (
-            <Node.Location key={node.id} left={left} top={top} {...node} />
+            <Node.Location key={node.id} left={left} top={top} quarter={quarter} {...node} />
           );
         })
       }
@@ -158,7 +158,17 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     const left = Math.round(((180 + lon) / 360) * map.width + map.left);
     const top = Math.round(((90 - lat) / 180) * map.height + map.top) * MAP_HEIGHT_ADJUST;
 
-    return { left, top }
+    let quarter = 0;
+
+    if (lon > 0) {
+      quarter |= 1;
+    }
+
+    if (lat < 0) {
+      quarter |= 2;
+    }
+
+    return { left, top, quarter: quarter as 0 | 1 | 2 | 3 };
   }
 
   private calculateMapDimensions: () => void = () => {

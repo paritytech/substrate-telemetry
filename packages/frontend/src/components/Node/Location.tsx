@@ -19,6 +19,7 @@ namespace Location {
   export interface Position {
     left: number;
     top: number;
+    quarter: 0 | 1 | 2 | 3;
   }
 
   export interface State {
@@ -30,7 +31,7 @@ class Location extends React.Component<AppState.Node & Location.Position, Locati
   public readonly state = { hover: false };
 
   public render() {
-    const { left, top, location } = this.props;
+    const { left, top, quarter, location } = this.props;
     const height = this.props.blockDetails[0];
     const propagationTime = this.props.blockDetails[4];
 
@@ -38,7 +39,7 @@ class Location extends React.Component<AppState.Node & Location.Position, Locati
       return null;
     }
 
-    let className = 'Node-Location';
+    let className = `Node-Location Node-Location-quarter${quarter}`;
 
     if (propagationTime != null) {
       className += ' Node-Location-synced';
@@ -61,7 +62,7 @@ class Location extends React.Component<AppState.Node & Location.Position, Locati
     const [height, hash, blockTime, blockTimestamp, propagationTime] = this.props.blockDetails;
 
     return (
-      <table className="Node-Location-details">
+      <table className="Node-Location-details Node-Location-details">
         <tbody>
           <tr>
             <td><Icon src={nodeIcon} alt="Node" /></td><td colSpan={5}>{name}</td>
