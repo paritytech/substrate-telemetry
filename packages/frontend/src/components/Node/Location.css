@@ -15,6 +15,16 @@
   transition: border-color 0.25s linear;
 }
 
+.Node-Location-ping {
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 0;
+  height: 0;
+  border: 1px solid transparent;
+  display: none;
+}
+
 .Node-Location-odd {
   border-color: #bbb;
 }
@@ -22,6 +32,13 @@
 .Node-Location-synced {
   z-index: 2;
   border-color: #d64ca8;
+}
+
+.Node-Location-synced .Node-Location-ping {
+  border: 1px solid #fff;
+  border-radius: 30px;
+  display: block;
+  animation: ping 1s forwards;
 }
 
 .Node-Location:hover {
@@ -54,4 +71,22 @@
 
 .Node-Location-details td:nth-child(even) {
   padding-left: 0.2em;
+}
+
+@keyframes ping {
+  from {
+    left: 2px;
+    right: 2px;
+    width: 0;
+    height: 0;
+    border-color: rgba(255,255,255,1);
+  }
+
+  to {
+    left: -13px;
+    top: -13px;
+    width: 30px;
+    height: 30px;
+    border-color: rgba(255,255,255,0);
+  }
 }
