@@ -51,6 +51,7 @@ class Location extends React.Component<AppState.Node & Location.Position, Locati
       {
         this.state.hover ? this.renderDetails(location) : null
       }
+        <div className="Node-Location-ping" />
       </div>
     );
   }

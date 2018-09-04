@@ -115,7 +115,12 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
       <div className="Chain-map">
       {
         this.nodes().map((node) => {
-          const location = node.location || [0, 0, ''] as Types.NodeLocation;
+          const location = node.location;
+
+          if (!location || location[0] == null || location[1] == null) {
+            // Skip nodes with unknown location
+            return null;
+          }
 
           const { left, top } = this.pixelPosition(location[0], location[1]);
 
