@@ -9,7 +9,7 @@ interface NodeIdCache {
 }
 
 const nextId = idGenerator<Types.NodeId>();
-const idCache = new Map<Types.NodePubKey, NodeIdCache>();
+const idCache = new Map<Types.Address, NodeIdCache>();
 
 function clearCache() {
   const now = timestamp();
@@ -25,7 +25,7 @@ function clearCache() {
 
 clearCache();
 
-export function getId(pubkey: Maybe<Types.NodePubKey>): Types.NodeId {
+export function getId(pubkey: Maybe<Types.Address>): Types.NodeId {
   if (!pubkey) {
     return nextId();
   }
@@ -44,7 +44,7 @@ export function getId(pubkey: Maybe<Types.NodePubKey>): Types.NodeId {
   return id;
 }
 
-export function refreshId(pubkey: Maybe<Types.NodePubKey>, id: Types.NodeId) {
+export function refreshId(pubkey: Maybe<Types.Address>, id: Types.NodeId) {
   if (!pubkey) {
     return;
   }

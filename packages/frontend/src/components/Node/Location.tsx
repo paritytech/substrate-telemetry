@@ -16,10 +16,12 @@ import lastTimeIcon from '../../icons/watch.svg';
 import './Location.css';
 
 namespace Location {
+  export type Quarter = 0 | 1 | 2 | 3;
+
   export interface Position {
     left: number;
     top: number;
-    quarter: 0 | 1 | 2 | 3;
+    quarter: Quarter;
   }
 
   export interface State {

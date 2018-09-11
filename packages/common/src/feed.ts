@@ -1,6 +1,7 @@
 import { Opaque, Maybe } from './helpers';
 import {
   FeedVersion,
+  Address,
   Latitude,
   Longitude,
   City,

@@ -1,10 +1,12 @@
 import * as React from 'react';
+import Identicon from 'polkadot-identicon';
 import { formatNumber, trimHash, milliOrSecond, secondsWithPrecision } from '../../utils';
 import { State as AppState } from '../../state';
 import { SEMVER_PATTERN } from './';
 import { Ago, Icon } from '../';
 
 import nodeIcon from '../../icons/server.svg';
+import nodeValidatorIcon from '../../icons/shield.svg';
 import nodeTypeIcon from '../../icons/terminal.svg';
 import peersIcon from '../../icons/broadcast.svg';
 import transactionsIcon from '../../icons/inbox.svg';
@@ -22,6 +24,7 @@ export default class Row extends React.Component<AppState.Node, {}> {
       <thead>
         <tr>
           <th><Icon src={nodeIcon} alt="Node" /></th>
+          <th style={{ width: 26 }}><Icon src={nodeValidatorIcon} alt="Validator" /></th>
           <th style={{ width: 240 }}><Icon src={nodeTypeIcon} alt="Implementation" /></th>
           <th style={{ width: 26 }}><Icon src={peersIcon} alt="Peer Count" /></th>
           <th style={{ width: 26 }}><Icon src={transactionsIcon} alt="Transactions in Queue" /></th>
@@ -38,7 +41,7 @@ export default class Row extends React.Component<AppState.Node, {}> {
   public render() {
     const { nodeDetails, blockDetails, nodeStats } = this.props;
 
-    const [name, implementation, version] = nodeDetails;
+    const [name, implementation, version, validator] = nodeDetails;
     const [height, hash, blockTime, blockTimestamp, propagationTime] = blockDetails;
     const [peers, txcount] = nodeStats;
     const [semver] = version.match(SEMVER_PATTERN) || [version];
@@ -52,6 +55,7 @@ export default class Row extends React.Component<AppState.Node, {}> {
     return (
       <tr className={className}>
         <td>{name}</td>
+        <td>{validator ? <span title={validator}><Identicon id={validator} size={16} /></span> : null}</td>
         <td><span title={`${implementation} v${version}`}>{implementation} v{semver}</span></td>
         <td>{peers}</td>
         <td>{txcount}</td>

@@ -20,7 +20,8 @@ export default class Node {
   public readonly chain: Types.ChainLabel;
   public readonly implementation: Types.NodeImplementation;
   public readonly version: Types.NodeVersion;
-  public readonly pubkey: Maybe<Types.NodePubKey>;
+  public readonly address: Maybe<Types.Address>;
+  public readonly authority: boolean;
 
   public readonly events = new EventEmitter() as EventEmitter & NodeEvents;
 
@@ -52,17 +53,19 @@ export default class Node {
     config: string,
     implentation: Types.NodeImplementation,
     version: Types.NodeVersion,
-    pubkey: Maybe<Types.NodePubKey>,
+    address: Maybe<Types.Address>,
+    authority: boolean,
     messages: Array<Message>,
   ) {
     this.ip = ip;
-    this.id = getId(pubkey);
+    this.id = getId(address);
     this.name = name;
     this.chain = chain;
     this.config = config;
     this.implementation = implentation;
     this.version = version;
-    this.pubkey = pubkey;
+    this.address = address;
+    this.authority = authority;
     this.lastMessage = timestamp();
     this.socket = socket;
 
@@ -93,10 +96,12 @@ export default class Node {
       this.pingStart = 0 as Types.Timestamp;
     });
 
-    // Handle cached messages
-    for (const message of messages) {
-      this.onMessage(message);
-    }
+    process.nextTick(() => {
+      // Handle cached messages
+      for (const message of messages) {
+        this.onMessage(message);
+      }
+    });
 
     locate(ip).then((location) => {
       if (!location) {
@@ -128,9 +133,9 @@ export default class Node {
         if (message.msg === "system.connected") {
           cleanup();
 
-          const { name, chain, config, implementation, version, pubkey } = message;
+          const { name, chain, config, implementation, version, pubkey, authority } = message;
 
-          resolve(new Node(ip, socket, name, chain, config, implementation, version, pubkey, messages));
+          resolve(new Node(ip, socket, name, chain, config, implementation, version, pubkey, authority === true, messages));
         } else {
           if (messages.length === 10) {
             messages.shift();
@@ -162,7 +167,9 @@ export default class Node {
   }
 
   public nodeDetails(): Types.NodeDetails {
-    return [this.name, this.implementation, this.version];
+    const authority = this.authority ? this.address : null;
+
+    return [this.name, this.implementation, this.version, authority];
   }
 
   public nodeStats(): Types.NodeStats {
@@ -196,7 +203,7 @@ export default class Node {
     this.socket.close();
     this.socket.terminate();
 
-    refreshId(this.pubkey, this.id);
+    refreshId(this.address, this.id);
 
     this.events.emit('disconnect');
   }
