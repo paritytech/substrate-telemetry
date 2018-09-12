@@ -55,7 +55,7 @@ export default class Row extends React.Component<AppState.Node, {}> {
     return (
       <tr className={className}>
         <td>{name}</td>
-        <td>{validator ? <span title={validator}><Identicon id={validator} size={16} /></span> : null}</td>
+        <td>{validator ? <span className="Node-Row-validator" title={validator}><Identicon id={validator} size={16} /></span> : null}</td>
         <td><span title={`${implementation} v${version}`}>{implementation} v{semver}</span></td>
         <td>{peers}</td>
         <td>{txcount}</td>

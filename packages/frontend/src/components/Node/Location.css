@@ -45,8 +45,6 @@
 .Node-Location-details {
   min-width: 335px;
   position: absolute;
-  /*left: 16px;
-  top: -4px;*/
   font-family: monospace, sans-serif;
   background: #222;
   color: #fff;
@@ -107,4 +105,13 @@
     border-width: 1px;
     border-color: rgba(255,255,255,0);
   }
+}
+
+.Node-Location-validator {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  transform: scale(1.5);
+  transform-origin: right 50%;
+  margin-left: 16px;
 }
