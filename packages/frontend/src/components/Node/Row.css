@@ -5,3 +5,14 @@
 .Node-Row-synced {
   color: #fff;
 }
+
+.Node-Row-validator {
+  display: block;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.Node-Row-validator:hover {
+  transform: scale(2);
+}

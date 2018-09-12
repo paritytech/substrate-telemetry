@@ -1,10 +1,12 @@
 import * as React from 'react';
+import Identicon from 'polkadot-identicon';
 import { Types } from '@dotstats/common';
 import { formatNumber, trimHash, milliOrSecond, secondsWithPrecision } from '../../utils';
 import { Ago, Icon } from '../';
 import { State as AppState } from '../../state';
 
 import nodeIcon from '../../icons/server.svg';
+import nodeValidatorIcon from '../../icons/shield.svg';
 import nodeTypeIcon from '../../icons/terminal.svg';
 import nodeLocationIcon from '../../icons/location.svg';
 import blockIcon from '../../icons/package.svg';
@@ -16,10 +18,12 @@ import lastTimeIcon from '../../icons/watch.svg';
 import './Location.css';
 
 namespace Location {
+  export type Quarter = 0 | 1 | 2 | 3;
+
   export interface Position {
     left: number;
     top: number;
-    quarter: 0 | 1 | 2 | 3;
+    quarter: Quarter;
   }
 
   export interface State {
@@ -58,8 +62,22 @@ class Location extends React.Component<AppState.Node & Location.Position, Locati
   }
 
   private renderDetails(location: Types.NodeLocation) {
-    const [name, implementation, version] = this.props.nodeDetails;
+    const [name, implementation, version, validator] = this.props.nodeDetails;
     const [height, hash, blockTime, blockTimestamp, propagationTime] = this.props.blockDetails;
+
+    let validatorRow = null;
+
+    if (validator) {
+      validatorRow = (
+        <tr>
+          <td><Icon src={nodeValidatorIcon} alt="Node" /></td>
+          <td colSpan={5}>
+            {trimHash(validator, 30)}
+            <span className="Node-Location-validator"><Identicon id={validator} size={16} /></span>
+          </td>
+        </tr>
+      );
+    }
 
     return (
       <table className="Node-Location-details Node-Location-details">
@@ -67,6 +85,7 @@ class Location extends React.Component<AppState.Node & Location.Position, Locati
           <tr>
             <td><Icon src={nodeIcon} alt="Node" /></td><td colSpan={5}>{name}</td>
           </tr>
+          {validatorRow}
           <tr>
             <td><Icon src={nodeTypeIcon} alt="Implementation" /></td><td colSpan={5}>{implementation} v{version}</td>
           </tr>

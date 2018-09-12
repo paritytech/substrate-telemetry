@@ -141,7 +141,10 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
         <Node.Row.Header />
         <tbody>
         {
-          this.nodes().sort(sortNodes).map((node) => <Node.Row key={node.id} {...node} />)
+          this
+            .nodes()
+            .sort(sortNodes)
+            .map((node) => <Node.Row key={node.id} {...node} />)
         }
         </tbody>
       </table>
@@ -160,17 +163,17 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     const left = Math.round(((180 + lon) / 360) * map.width + map.left);
     const top = Math.round(((90 - lat) / 180) * map.height + map.top) * MAP_HEIGHT_ADJUST;
 
-    let quarter = 0;
+    let quarter: Node.Location.Quarter = 0;
 
     if (lon > 0) {
-      quarter |= 1;
+      quarter = (quarter | 1) as Node.Location.Quarter;
     }
 
     if (lat < 0) {
-      quarter |= 2;
+      quarter = (quarter | 2) as Node.Location.Quarter;
     }
 
-    return { left, top, quarter: quarter as 0 | 1 | 2 | 3 };
+    return { left, top, quarter };
   }
 
   private calculateMapDimensions: () => void = () => {

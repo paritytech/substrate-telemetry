@@ -34,42 +34,43 @@ interface MessageBase {
 }
 
 export interface BestBlock {
-  best: Types.BlockHash,
-  height: Types.BlockNumber,
-  ts: Date,
+  best: Types.BlockHash;
+  height: Types.BlockNumber;
+  ts: Date;
 }
 
-interface SystemConnected {
-  msg: 'system.connected',
-  name: Types.NodeName,
-  chain: Types.ChainLabel,
-  config: string,
-  implementation: Types.NodeImplementation,
-  version: Types.NodeVersion,
-  pubkey: Maybe<Types.NodePubKey>,
+export interface SystemConnected {
+  msg: 'system.connected';
+  name: Types.NodeName;
+  chain: Types.ChainLabel;
+  config: string;
+  implementation: Types.NodeImplementation;
+  version: Types.NodeVersion;
+  pubkey: Maybe<Types.Address>;
+  authority: Maybe<boolean>;
 }
 
 export interface SystemInterval extends BestBlock {
-  msg: 'system.interval',
-  txcount: Types.TransactionCount,
-  peers: Types.PeerCount,
-  status: 'Idle' | string, // TODO: 'Idle' | ...?
+  msg: 'system.interval';
+  txcount: Types.TransactionCount;
+  peers: Types.PeerCount;
+  status: 'Idle' | string; // TODO: 'Idle' | ...?
 }
 
-interface NodeStart extends BestBlock {
-  msg: 'node.start',
+export interface NodeStart extends BestBlock {
+  msg: 'node.start';
 }
 
-interface BlockImport extends BestBlock {
-  msg: 'block.import',
+export interface BlockImport extends BestBlock {
+  msg: 'block.import';
 }
 
 // Union type
 export type Message = MessageBase & (
-  SystemConnected |
-  SystemInterval  |
-  NodeStart       |
-  BlockImport
+  | SystemConnected
+  | SystemInterval
+  | NodeStart
+  | BlockImport
 );
 
 
