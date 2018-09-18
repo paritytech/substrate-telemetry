@@ -3,7 +3,7 @@ import Identicon from 'polkadot-identicon';
 import { formatNumber, trimHash, milliOrSecond, secondsWithPrecision } from '../../utils';
 import { State as AppState } from '../../state';
 import { SEMVER_PATTERN } from './';
-import { Ago, Icon } from '../';
+import { /*Ago,*/ Icon } from '../';
 
 import nodeIcon from '../../icons/server.svg';
 import nodeValidatorIcon from '../../icons/shield.svg';
@@ -14,7 +14,9 @@ import blockIcon from '../../icons/package.svg';
 import blockHashIcon from '../../icons/file-binary.svg';
 import blockTimeIcon from '../../icons/history.svg';
 import propagationTimeIcon from '../../icons/dashboard.svg';
-import lastTimeIcon from '../../icons/watch.svg';
+// import lastTimeIcon from '../../icons/watch.svg';
+import cpuIcon from '../../icons/microchip-solid.svg';
+import memoryIcon from '../../icons/memory-solid.svg';
 
 import './Row.css';
 
@@ -28,11 +30,13 @@ export default class Row extends React.Component<AppState.Node, {}> {
           <th style={{ width: 240 }}><Icon src={nodeTypeIcon} alt="Implementation" /></th>
           <th style={{ width: 26 }}><Icon src={peersIcon} alt="Peer Count" /></th>
           <th style={{ width: 26 }}><Icon src={transactionsIcon} alt="Transactions in Queue" /></th>
+          <th style={{ width: 26 }}><Icon src={cpuIcon} alt="% CPU use" /></th>
+          <th style={{ width: 26 }}><Icon src={memoryIcon} alt="Memory use" /></th>
           <th style={{ width: 88 }}><Icon src={blockIcon} alt="Block" /></th>
           <th style={{ width: 154 }}><Icon src={blockHashIcon} alt="Block Hash" /></th>
           <th style={{ width: 80 }}><Icon src={blockTimeIcon} alt="Block Time" /></th>
           <th style={{ width: 58 }}><Icon src={propagationTimeIcon} alt="Block Propagation Time" /></th>
-          <th style={{ width: 100 }}><Icon src={lastTimeIcon} alt="Last Block Time" /></th>
+          {/* <th style={{ width: 100 }}><Icon src={lastTimeIcon} alt="Last Block Time" /></th> */}
         </tr>
       </thead>
     )
@@ -42,8 +46,8 @@ export default class Row extends React.Component<AppState.Node, {}> {
     const { nodeDetails, blockDetails, nodeStats } = this.props;
 
     const [name, implementation, version, validator] = nodeDetails;
-    const [height, hash, blockTime, blockTimestamp, propagationTime] = blockDetails;
-    const [peers, txcount] = nodeStats;
+    const [height, hash, blockTime, /*blockTimestamp*/, propagationTime] = blockDetails;
+    const [peers, txcount, memory, cpu] = nodeStats;
     const [semver] = version.match(SEMVER_PATTERN) || [version];
 
     let className = 'Node-Row';
@@ -59,11 +63,13 @@ export default class Row extends React.Component<AppState.Node, {}> {
         <td><span title={`${implementation} v${version}`}>{implementation} v{semver}</span></td>
         <td>{peers}</td>
         <td>{txcount}</td>
+        <td>{cpu ? `${(cpu * 100).toFixed(1)}%` : '-'}</td>
+        <td>{memory ? <span title={`${memory}kb`}>{memory / 1024 | 0}mb</span> : '-'}</td>
         <td>#{formatNumber(height)}</td>
         <td><span title={hash}>{trimHash(hash, 16)}</span></td>
         <td>{secondsWithPrecision(blockTime/1000)}</td>
         <td>{propagationTime === null ? '∞' : milliOrSecond(propagationTime as number)}</td>
-        <td><Ago when={blockTimestamp} /></td>
+        {/* <td><Ago when={blockTimestamp} /></td> */}
       </tr>
     );
   }

@@ -54,6 +54,8 @@ export interface SystemInterval extends BestBlock {
   msg: 'system.interval';
   txcount: Types.TransactionCount;
   peers: Types.PeerCount;
+  memory: Maybe<Types.MemoryUse>;
+  cpu: Maybe<Types.CPUUse>;
   status: 'Idle' | string; // TODO: 'Idle' | ...?
 }
 

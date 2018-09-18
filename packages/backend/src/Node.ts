@@ -37,6 +37,8 @@ export default class Node {
 
   private peers = 0 as Types.PeerCount;
   private txcount = 0 as Types.TransactionCount;
+  private memory = null as Maybe<Types.MemoryUse>;
+  private cpu = null as Maybe<Types.CPUUse>;
 
   private readonly ip: string;
   private readonly socket: WebSocket;
@@ -173,7 +175,7 @@ export default class Node {
   }
 
   public nodeStats(): Types.NodeStats {
-    return [this.peers, this.txcount];
+    return [this.peers, this.txcount, this.memory, this.cpu];
   }
 
   public blockDetails(): Types.BlockDetails {
@@ -223,11 +225,13 @@ export default class Node {
   }
 
   private onSystemInterval(message: SystemInterval) {
-    const { peers, txcount } = message;
+    const { peers, txcount, cpu, memory } = message;
 
-    if (this.peers !== peers || this.txcount !== txcount) {
+    if (this.peers !== peers || this.txcount !== txcount || this.cpu !== cpu || this.memory !== memory) {
       this.peers = peers;
       this.txcount = txcount;
+      this.cpu = cpu;
+      this.memory = memory;
 
       this.events.emit('stats');
     }
