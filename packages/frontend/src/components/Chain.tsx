@@ -7,7 +7,9 @@ import { Types } from '@dotstats/common';
 import blockIcon from '../icons/package.svg';
 import blockTimeIcon from '../icons/history.svg';
 import lastTimeIcon from '../icons/watch.svg';
+import listIcon from '../icons/list-unordered.svg';
 import worldIcon from '../icons/globe.svg';
+import settingsIcon from '../icons/settings.svg';
 
 const MAP_RATIO = 800 / 350;
 const MAP_HEIGHT_ADJUST = 400 / 350;
@@ -21,7 +23,7 @@ export namespace Chain {
   }
 
   export interface State {
-    display: 'map' | 'table';
+    display:  'list' | 'map' | 'settings';
     map: {
       width: number;
       height: number;
@@ -48,8 +50,19 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
   constructor(props: Chain.Props) {
     super(props);
 
+    let display: Chain.State['display'] = 'list';
+
+    switch (window.location.hash) {
+      case '#map':
+        display = 'map';
+        break;
+      case '#settings':
+        display = 'settings';
+        break;
+    }
+
     this.state = {
-      display: window.location.hash === '#map' ? 'map' : 'table',
+      display,
       map: {
         width: 0,
         height: 0,
@@ -71,12 +84,33 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
 
   public render() {
     const { best, blockTimestamp, blockAverage } = this.props.appState;
-    const { display } = this.state;
+    const currentTab = this.state.display;
 
-    const toggleClass = ['Chain-map-toggle'];
+    interface TabProps {
+      label: string;
+      icon: string;
+      display: Chain.State['display'];
+      current: string;
+      hash: string;
+    }
 
-    if (display === 'map') {
-      toggleClass.push('Chain-map-toggle-on');
+    const Tab = (props: TabProps) => {
+      const { label, icon, display, current, hash } = props;
+      const highlight = display === current;
+      const className = highlight ? 'Chain-tab-unit-on Chain-tab-unit' : 'Chain-tab-unit';
+
+      const onClick = () => {
+        console.log(display, current);
+
+        window.location.hash = hash;
+        this.setState({ display });
+      };
+
+      return (
+        <div className={className} onClick={onClick}>
+          <Icon src={icon} alt={label} />
+        </div>
+      );
     }
 
     return (
@@ -85,16 +119,20 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
           <Tile icon={blockIcon} title="Best Block">#{formatNumber(best)}</Tile>
           <Tile icon={blockTimeIcon} title="Average Time">{ blockAverage == null ? '-' : secondsWithPrecision(blockAverage / 1000) }</Tile>
           <Tile icon={lastTimeIcon} title="Last Block"><Ago when={blockTimestamp} /></Tile>
-          <div className={toggleClass.join(' ')}>
-            <Icon src={worldIcon} alt="Toggle Map" onClick={this.toggleMap} />
+          <div className="Chain-tabs">
+            <Tab icon={listIcon} label="List" display="list" hash="" current={currentTab} />
+            <Tab icon={worldIcon} label="Map" display="map" hash="#map" current={currentTab} />
+            <Tab icon={settingsIcon} label="Settings" display="settings" hash="#settings" current={currentTab} />
           </div>
         </div>
         <div className="Chain-content-container">
           <div className="Chain-content">
           {
-            display === 'table'
-              ? this.renderTable()
-              : this.renderMap()
+            currentTab === 'list'
+              ? this.renderList()
+              : currentTab === 'map'
+              ? this.renderMap()
+              : this.renderSettings()
           }
           </div>
         </div>
@@ -102,14 +140,22 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     );
   }
 
-  private toggleMap = () => {
-    if (this.state.display === 'map') {
-      this.setState({ display: 'table' });
-      window.location.hash = '';
-    } else {
-      this.setState({ display: 'map' });
-      window.location.hash = '#map';
-    }
+  private renderList() {
+    const { settings } = this.props.appState;
+
+    return (
+      <table className="Chain-node-list">
+        <Node.Row.Header settings={settings} />
+        <tbody>
+        {
+          this
+            .nodes()
+            .sort(sortNodes)
+            .map((node) => <Node.Row key={node.id} node={node} settings={settings} />)
+        }
+        </tbody>
+      </table>
+    );
   }
 
   private renderMap() {
@@ -135,19 +181,9 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     );
   }
 
-  private renderTable() {
+  private renderSettings() {
     return (
-      <table className="Chain-node-list">
-        <Node.Row.Header />
-        <tbody>
-        {
-          this
-            .nodes()
-            .sort(sortNodes)
-            .map((node) => <Node.Row key={node.id} {...node} />)
-        }
-        </tbody>
-      </table>
+      <div className="Chain-settings" />
     );
   }
 

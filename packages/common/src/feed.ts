@@ -1,4 +1,5 @@
 import { Opaque, Maybe } from './helpers';
+import { stringify, parse, Stringified } from './stringify';
 import {
   FeedVersion,
   Address,
@@ -123,11 +124,11 @@ export type Message =
   | Variants.PongMessage;
 
 /**
- * Opaque data type to be sent to the feed. Passing through
- * strings means we can only serialize once, no matter how
- * many feed clients are listening in.
+ * Data type to be sent to the feed. Passing through strings means we can only serialize once,
+ * no matter how many feed clients are listening in.
  */
-export type Data = Opaque<string, 'FeedMessage.Data'>;
+export interface SquashedMessages extends Array<Action | Payload> {};
+export type Data = Stringified<SquashedMessages>;
 
 /**
  * Serialize an array of `Message`s to a single JSON string.
@@ -137,7 +138,7 @@ export type Data = Opaque<string, 'FeedMessage.Data'>;
  * Action `string`s are converted to opcodes using the `actionToCode` mapping.
  */
 export function serialize(messages: Array<Message>): Data {
-  const squashed = new Array(messages.length * 2);
+  const squashed: SquashedMessages = new Array(messages.length * 2);
   let index = 0;
 
   messages.forEach((message) => {
@@ -147,20 +148,20 @@ export function serialize(messages: Array<Message>): Data {
     squashed[index++] = payload;
   })
 
-  return JSON.stringify(squashed) as Data;
+  return stringify(squashed);
 }
 
 /**
  * Deserialize data to an array of `Message`s.
  */
 export function deserialize(data: Data): Array<Message> {
-  const json: Array<Action | Payload> = JSON.parse(data);
+  const json = parse(data);
 
   if (!Array.isArray(json) || json.length === 0 || json.length % 2 !== 0) {
     throw new Error('Invalid FeedMessage.Data');
   }
 
-  const messages: Array<Message> = new Array(json.length / 2);
+  const messages = new Array<Message>(json.length / 2);
 
   for (const index of messages.keys()) {
     const [ action, payload ] = json.slice(index * 2);

@@ -8,11 +8,23 @@
   position: relative;
 }
 
-.Chain-map-toggle .Icon {
+
+.Chain-tabs {
   position: absolute;
-  right: 20px;
+  right: 10px;
   bottom: 0;
-  font-size: 32px;
+  height: 40px;
+  width: 200px;
+  text-align: right;
+}
+
+.Chain-tab-unit {
+  display: inline-block;
+}
+
+.Chain-tab-unit .Icon {
+  margin-right: 10px;
+  font-size: 26px;
   padding: 6px;
   background: #222;
   color: #aaa;
@@ -21,7 +33,7 @@
   border-radius: 4px 4px 0 0;
 }
 
-.Chain-map-toggle-on .Icon {
+.Chain-tab-unit-on .Icon {
   color: #fff;
 }
 
