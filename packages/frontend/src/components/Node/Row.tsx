@@ -29,38 +29,146 @@ interface HeaderProps {
   settings: AppState.Settings;
 };
 
+interface Column {
+  label: string;
+  icon: string;
+  width?: number;
+  setting?: keyof AppState.Settings;
+  render: (node: AppState.Node) => React.ReactElement<any> | string;
+}
+
 export default class Row extends React.Component<RowProps, {}> {
+  public static readonly columns: Column[] = [
+    {
+      label: 'Node',
+      icon: nodeIcon,
+      render: ({ nodeDetails }) => nodeDetails[0]
+    },
+    {
+      label: 'Validator',
+      icon: nodeValidatorIcon,
+      width: 26,
+      setting: 'validator',
+      render: ({ nodeDetails }) => {
+        const validator = nodeDetails[3];
+
+        return validator ? <span className="Node-Row-validator" title={validator}><Identicon id={validator} size={16} /></span> : '-';
+      }
+    },
+    {
+      label: 'Implementation',
+      icon: nodeTypeIcon,
+      width: 240,
+      setting: 'implementation',
+      render: ({ nodeDetails }) => {
+        const [, implementation, version] = nodeDetails;
+        const [semver] = version.match(SEMVER_PATTERN) || [version];
+
+        return <span title={`${implementation} v${version}`}>{implementation} v{semver}</span>;
+      }
+    },
+    {
+      label: 'Peer Count',
+      icon: peersIcon,
+      width: 26,
+      setting: 'peers',
+      render: ({ nodeStats }) => `${nodeStats[0]}`
+    },
+    {
+      label: 'Transactions in Queue',
+      icon: transactionsIcon,
+      width: 26,
+      setting: 'txs',
+      render: ({ nodeStats }) => `${nodeStats[1]}`
+    },
+    {
+      label: '% CPU Use',
+      icon: cpuIcon,
+      width: 26,
+      setting: 'cpu',
+      render: ({ nodeStats }) => {
+        const cpu = nodeStats[3];
+
+        return cpu ? `${(cpu * 100).toFixed(1)}%` : '-';
+      }
+    },
+    {
+      label: 'Memory use',
+      icon: memoryIcon,
+      width: 26,
+      setting: 'mem',
+      render: ({ nodeStats }) => {
+        const memory = nodeStats[2];
+
+        return memory ? <span title={`${memory}kb`}>{memory / 1024 | 0}mb</span> : '-';
+      }
+    },
+    {
+      label: 'Block',
+      icon: blockIcon,
+      width: 88,
+      setting: 'blocknumber',
+      render: ({ blockDetails }) => `#${formatNumber(blockDetails[0])}`
+    },
+    {
+      label: 'Block Hash',
+      icon: blockHashIcon,
+      width: 154,
+      setting: 'blockhash',
+      render: ({ blockDetails }) => {
+        const hash = blockDetails[1];
+
+        return <span title={hash}>{trimHash(hash, 16)}</span>;
+      }
+    },
+    {
+      label: 'Block Time',
+      icon: blockTimeIcon,
+      width: 80,
+      setting: 'blocktime',
+      render: ({ blockDetails }) => `${secondsWithPrecision(blockDetails[2]/1000)}`
+    },
+    {
+      label: 'Block Propagation Time',
+      icon: propagationTimeIcon,
+      width: 58,
+      setting: 'blockpropagation',
+      render: ({ blockDetails }) => {
+        const propagationTime = blockDetails[4];
+
+        return propagationTime === null ? '∞' : milliOrSecond(propagationTime as number);
+      }
+    },
+    {
+      label: 'Last Block Time',
+      icon: lastTimeIcon,
+      width: 100,
+      setting: 'blocklasttime',
+      render: ({ blockDetails }) => <Ago when={blockDetails[3]} />
+    },
+  ];
+
   public static Header = (props: HeaderProps) => {
     const { settings } = props;
 
     return (
       <thead>
         <tr>
-          <th><Icon src={nodeIcon} alt="Node" /></th>
-          { settings.validator ? <th style={{ width: 26 }}><Icon src={nodeValidatorIcon} alt="Validator" /></th> : null }
-          { settings.implementation ? <th style={{ width: 240 }}><Icon src={nodeTypeIcon} alt="Implementation" /></th> : null }
-          { settings.peers ? <th style={{ width: 26 }}><Icon src={peersIcon} alt="Peer Count" /></th> : null }
-          { settings.txs ? <th style={{ width: 26 }}><Icon src={transactionsIcon} alt="Transactions in Queue" /></th> : null }
-          { settings.cpu ? <th style={{ width: 26 }}><Icon src={cpuIcon} alt="% CPU use" /></th> : null }
-          { settings.mem ? <th style={{ width: 26 }}><Icon src={memoryIcon} alt="Memory use" /></th> : null }
-          { settings.blocknumber ? <th style={{ width: 88 }}><Icon src={blockIcon} alt="Block" /></th> : null }
-          { settings.blockhash ? <th style={{ width: 154 }}><Icon src={blockHashIcon} alt="Block Hash" /></th> : null }
-          { settings.blocktime ? <th style={{ width: 80 }}><Icon src={blockTimeIcon} alt="Block Time" /></th> : null }
-          { settings.blockpropagation ? <th style={{ width: 58 }}><Icon src={propagationTimeIcon} alt="Block Propagation Time" /></th> : null }
-          { settings.blocklasttime ? <th style={{ width: 100 }}><Icon src={lastTimeIcon} alt="Last Block Time" /></th> : null }
+          {
+            Row.columns
+              .filter(({ setting }) => setting == null || settings[setting])
+              .map(({ icon, width, label }, index) => (
+                <th key={index} style={width ? { width } : undefined}><Icon src={icon} alt={label} /></th>
+              ))
+          }
         </tr>
       </thead>
     )
   }
 
   public render() {
-    const { nodeDetails, blockDetails, nodeStats } = this.props.node;
-    const { settings } = this.props;
-
-    const [name, implementation, version, validator] = nodeDetails;
-    const [height, hash, blockTime, blockTimestamp, propagationTime] = blockDetails;
-    const [peers, txcount, memory, cpu] = nodeStats;
-    const [semver] = version.match(SEMVER_PATTERN) || [version];
+    const { node, settings } = this.props;
+    const propagationTime = node.blockDetails[4];
 
     let className = 'Node-Row';
 
@@ -70,18 +178,11 @@ export default class Row extends React.Component<RowProps, {}> {
 
     return (
       <tr className={className}>
-        <td>{name}</td>
-        { settings.validator ? <td>{validator ? <span className="Node-Row-validator" title={validator}><Identicon id={validator} size={16} /></span> : '-'}</td> : null }
-        { settings.implementation ? <td><span title={`${implementation} v${version}`}>{implementation} v{semver}</span></td> : null }
-        { settings.peers ? <td>{peers}</td> : null }
-        { settings.txs ? <td>{txcount}</td> : null }
-        { settings.cpu ? <td>{cpu ? `${(cpu * 100).toFixed(1)}%` : '-'}</td> : null }
-        { settings.mem ? <td>{memory ? <span title={`${memory}kb`}>{memory / 1024 | 0}mb</span> : '-'}</td> : null }
-        { settings.blocknumber ? <td>#{formatNumber(height)}</td> : null }
-        { settings.blockhash ? <td><span title={hash}>{trimHash(hash, 16)}</span></td> : null }
-        { settings.blocktime ? <td>{secondsWithPrecision(blockTime/1000)}</td> : null }
-        { settings.blockpropagation ? <td>{propagationTime === null ? '∞' : milliOrSecond(propagationTime as number)}</td> : null }
-        { settings.blocklasttime ? <td><Ago when={blockTimestamp} /></td> : null }
+        {
+          Row.columns
+            .filter(({ setting }) => setting == null || settings[setting])
+            .map(({ render }, index) => <td key={index}>{render(node)}</td>)
+        }
       </tr>
     );
   }

@@ -11,6 +11,7 @@ export default class App extends React.Component<{}, State> {
   public state: State;
   private connection: Promise<Connection>;
   private settings: Persistent<State.Settings>;
+  private setSettings: Persistent<State.Settings>['set'];
 
   constructor(props: {}) {
     super(props);
@@ -32,6 +33,8 @@ export default class App extends React.Component<{}, State> {
       },
       (settings) => this.setState({ settings })
     );
+
+    this.setSettings = this.settings.set.bind(this.settings);
 
     this.state = {
       status: 'offline',
@@ -72,7 +75,7 @@ export default class App extends React.Component<{}, State> {
       <div className="App">
         <OfflineIndicator status={status} />
         <Chains chains={chains} subscribed={subscribed} connection={this.connection} />
-        <Chain appState={this.state} />
+        <Chain appState={this.state} setSettings={this.setSettings} />
       </div>
     );
   }

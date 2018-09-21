@@ -56,7 +56,7 @@
 
 .Chain-map {
   min-width: 1350px;
-  background: url('../assets/world-map.svg') no-repeat;
+  background: url('../../assets/world-map.svg') no-repeat;
   background-size: contain;
   background-position: center;
   position: absolute;
@@ -82,4 +82,36 @@
 .Chain-node-list th, .Chain-node-list td {
   text-align: left;
   padding: 0.5em 1em;
+}
+
+.Chain-settings {
+  text-align: center;
+}
+
+.Chain-settings-category {
+  text-align: left;
+  width: 500px;
+  margin: 0 auto;
+  padding: 2em 0;
+}
+
+.Chain-settings-category h2 {
+  padding: 0;
+  margin: 0 0 0.5em 0;
+  font-size: 20px;
+  font-weight: 100;
+}
+
+.Chain-settings-category p {
+  padding: 0;
+  margin: 0 0 0.1em 0;
+  cursor: pointer;
+}
+
+.Chain-settings-category .Icon {
+  margin-right: 10px;
+}
+
+.Chain-settings-disabled {
+  color: #666;
 }
