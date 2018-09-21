@@ -2,26 +2,51 @@ import * as React from 'react';
 import { Types } from '@dotstats/common';
 import { Chains, Chain, Ago, OfflineIndicator } from './components';
 import { Connection } from './Connection';
+import { Persistent } from './Persistent';
 import { State } from './state';
 
 import './App.css';
 
 export default class App extends React.Component<{}, State> {
-  public state: State = {
-    status: 'offline',
-    best: 0 as Types.BlockNumber,
-    blockTimestamp: 0 as Types.Timestamp,
-    blockAverage: null,
-    timeDiff: 0 as Types.Milliseconds,
-    subscribed: null,
-    chains: new Map(),
-    nodes: new Map()
-  };
-
+  public state: State;
   private connection: Promise<Connection>;
+  private settings: Persistent<State.Settings>;
+  private setSettings: Persistent<State.Settings>['set'];
 
   constructor(props: {}) {
     super(props);
+
+    this.settings = new Persistent(
+      'settings',
+      {
+        validator: true,
+        implementation: true,
+        peers: true,
+        txs: true,
+        cpu: true,
+        mem: true,
+        blocknumber: true,
+        blockhash: true,
+        blocktime: true,
+        blockpropagation: true,
+        blocklasttime: false
+      },
+      (settings) => this.setState({ settings })
+    );
+
+    this.setSettings = this.settings.set.bind(this.settings);
+
+    this.state = {
+      status: 'offline',
+      best: 0 as Types.BlockNumber,
+      blockTimestamp: 0 as Types.Timestamp,
+      blockAverage: null,
+      timeDiff: 0 as Types.Milliseconds,
+      subscribed: null,
+      chains: new Map(),
+      nodes: new Map(),
+      settings: this.settings.get(),
+    };
 
     this.connection = Connection.create((changes) => {
       if (changes) {
@@ -50,7 +75,7 @@ export default class App extends React.Component<{}, State> {
       <div className="App">
         <OfflineIndicator status={status} />
         <Chains chains={chains} subscribed={subscribed} connection={this.connection} />
-        <Chain appState={this.state} />
+        <Chain appState={this.state} setSettings={this.setSettings} />
       </div>
     );
   }

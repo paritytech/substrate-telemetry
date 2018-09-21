@@ -1,0 +1,38 @@
+import { Maybe, Stringified, stringify, parse } from '@dotstats/common';
+
+export class Persistent<Data> {
+  private readonly onChange: (value: Data) => void;
+  private readonly key: string;
+  private value: Data;
+
+  constructor(key: string, initial: Data, onChange: (value: Data) => void) {
+    this.key = key;
+    this.onChange = onChange;
+
+    const stored = window.localStorage.getItem(key) as Maybe<Stringified<Data>>;
+
+    if (stored) {
+      this.value = parse(stored);
+    } else {
+      this.value = initial;
+    }
+
+    window.addEventListener('storage', (event) => {
+      if (event.key === this.key) {
+        this.value = parse(event.newValue as any as Stringified<Data>);
+
+        this.onChange(this.value);
+      }
+    });
+  }
+
+  public get(): Data {
+    return this.value;
+  }
+
+  public set<K extends keyof Data>(changes: Pick<Data, K> | Data) {
+    this.value = Object.assign({}, this.value, changes);
+    window.localStorage.setItem(this.key, stringify(this.value) as any as string);
+    this.onChange(this.value);
+  }
+}
