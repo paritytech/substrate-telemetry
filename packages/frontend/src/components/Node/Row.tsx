@@ -89,7 +89,7 @@ export default class Row extends React.Component<RowProps, {}> {
       render: ({ nodeStats }) => {
         const cpu = nodeStats[3];
 
-        return cpu ? `${(cpu * 100).toFixed(1)}%` : '-';
+        return cpu ? `${cpu.toFixed(1)}%` : '-';
       }
     },
     {
