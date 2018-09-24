@@ -60,7 +60,7 @@ export default class Node {
     messages: Array<Message>,
   ) {
     this.ip = ip;
-    this.id = getId(address);
+    this.id = getId(address, name);
     this.name = name;
     this.chain = chain;
     this.config = config;
@@ -205,7 +205,7 @@ export default class Node {
     this.socket.close();
     this.socket.terminate();
 
-    refreshId(this.address, this.id);
+    refreshId(this.address, this.name, this.id);
 
     this.events.emit('disconnect');
   }
