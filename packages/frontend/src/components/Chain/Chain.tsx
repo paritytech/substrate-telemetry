@@ -25,7 +25,7 @@ export namespace Chain {
   export interface Props {
     appState: Readonly<AppState>;
     settings: PersistentObject<AppState.Settings>;
-    pins: PersistentSet<Types.NodeId>;
+    pins: PersistentSet<Types.NodeName>;
   }
 
   export interface State {

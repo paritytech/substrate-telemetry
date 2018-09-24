@@ -35,7 +35,7 @@ export interface State {
   chains: Map<Types.ChainLabel, Types.NodeCount>;
   nodes: Map<Types.NodeId, State.Node>;
   settings: Readonly<State.Settings>;
-  pins: Readonly<Set<Types.NodeId>>;
+  pins: Readonly<Set<Types.NodeName>>;
 }
 
 export type Update = <K extends keyof State>(changes: Pick<State, K> | null) => Readonly<State>;
