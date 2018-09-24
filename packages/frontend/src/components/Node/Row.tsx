@@ -28,7 +28,7 @@ import './Row.css';
 interface RowProps {
   node: AppState.Node;
   settings: AppState.Settings;
-  pins: PersistentSet<Types.NodeId>;
+  pins: PersistentSet<Types.NodeName>;
 };
 
 interface HeaderProps {
@@ -201,11 +201,12 @@ export default class Row extends React.Component<RowProps, {}> {
 
   public toggle = () => {
     const { pins, node } = this.props;
+    const name = node.nodeDetails[0];
 
     if (node.pinned) {
-      pins.delete(node.id)
+      pins.delete(name)
     } else {
-      pins.add(node.id);
+      pins.add(name);
     }
   }
 }

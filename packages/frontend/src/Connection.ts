@@ -8,7 +8,7 @@ const TIMEOUT_BASE = (1000 * 5) as Types.Milliseconds; // 5 seconds
 const TIMEOUT_MAX = (1000 * 60 * 5) as Types.Milliseconds; // 5 minutes
 
 export class Connection {
-  public static async create(pins: PersistentSet<Types.NodeId>, update: Update): Promise<Connection> {
+  public static async create(pins: PersistentSet<Types.NodeName>, update: Update): Promise<Connection> {
     return new Connection(await Connection.socket(), update, pins);
   }
 
@@ -65,9 +65,9 @@ export class Connection {
   private socket: WebSocket;
   private state: Readonly<State>;
   private readonly update: Update;
-  private readonly pins: PersistentSet<Types.NodeId>;
+  private readonly pins: PersistentSet<Types.NodeName>;
 
-  constructor(socket: WebSocket, update: Update, pins: PersistentSet<Types.NodeId>) {
+  constructor(socket: WebSocket, update: Update, pins: PersistentSet<Types.NodeName>) {
     this.socket = socket;
     this.update = update;
     this.pins = pins;
@@ -172,7 +172,7 @@ export class Connection {
 
         case Actions.AddedNode: {
           const [id, nodeDetails, nodeStats, blockDetails, location] = message.payload;
-          const pinned = this.pins.has(id);
+          const pinned = this.pins.has(nodeDetails[0]);
           const node = { pinned, id, nodeDetails, nodeStats, blockDetails, location };
 
           nodes.set(id, node);

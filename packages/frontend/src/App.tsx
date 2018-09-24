@@ -10,7 +10,7 @@ import './App.css';
 export default class App extends React.Component<{}, State> {
   public state: State;
   private readonly settings: PersistentObject<State.Settings>;
-  private readonly pins: PersistentSet<Types.NodeId>;
+  private readonly pins: PersistentSet<Types.NodeName>;
   private readonly connection: Promise<Connection>;
 
   constructor(props: {}) {
@@ -34,11 +34,11 @@ export default class App extends React.Component<{}, State> {
       (settings) => this.setState({ settings })
     );
 
-    this.pins = new PersistentSet<Types.NodeId>('pinned', (pins) => {
+    this.pins = new PersistentSet<Types.NodeName>('pinned_names', (pins) => {
       const { nodes } = this.state;
 
       for (const node of nodes.values()) {
-        node.pinned = pins.has(node.id);
+        node.pinned = pins.has(node.nodeDetails[0]);
       }
 
       this.setState({ nodes, pins });
