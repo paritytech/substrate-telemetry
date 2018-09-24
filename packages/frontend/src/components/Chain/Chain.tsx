@@ -2,7 +2,7 @@ import * as React from 'react';
 import { State as AppState } from '../../state';
 import { formatNumber, secondsWithPrecision, viewport } from '../../utils';
 import { Tab } from './';
-import { Tile, Icon, Node, Ago } from '../';
+import { Tile, Node, Ago, Option } from '../';
 import { Types } from '@dotstats/common';
 import { Persistent } from '../../Persistent';
 
@@ -177,7 +177,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
                   return null;
                 }
 
-                const className = settings[setting] ? '' : 'Chain-settings-disabled';
+                const checked = settings[setting];
 
                 const changeSetting = () => {
                   const change = {};
@@ -187,7 +187,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
                   this.props.setSettings(change);
                 }
 
-                return <p key={index} className={className} onClick={changeSetting}><Icon src={icon} alt={label} /> {label}</p>;
+                return <Option key={index} onClick={changeSetting} icon={icon} label={label} checked={checked} />;
               })
           }
         </div>
