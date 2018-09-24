@@ -11,9 +11,9 @@
 
 .Chain-tabs {
   position: absolute;
-  right: 10px;
+  right: 9px;
   bottom: 0;
-  height: 40px;
+  height: 36px;
   width: 200px;
   text-align: right;
 }
@@ -23,17 +23,16 @@
 }
 
 .Chain-tab-unit .Icon {
-  margin-right: 10px;
-  font-size: 26px;
+  margin-right: 1px;
+  font-size: 24px;
   padding: 6px;
-  background: #222;
-  color: #aaa;
+  background: #ccc;
+  color: #555;
   cursor: pointer;
-  border-top: 2px solid #5e5e5e;
-  border-radius: 4px 4px 0 0;
 }
 
 .Chain-tab-unit-on .Icon {
+  background: #222;
   color: #fff;
 }
 
