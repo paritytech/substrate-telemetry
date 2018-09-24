@@ -2,10 +2,11 @@ import { Persistent } from './';
 
 export class PersistentSet<Item> {
   private readonly inner: Persistent<Item[]>;
-  private value = new Set<Item>();
+  private value: Set<Item>;
 
   constructor(key: string, onChange: (value: Set<Item>) => void) {
     this.inner = new Persistent(key, [], (raw: Readonly<Item[]>) => onChange(this.value = new Set(raw as Item[])));
+    this.value = new Set(this.inner.get() as Item[]);
   }
 
   public get(): Set<Item> {

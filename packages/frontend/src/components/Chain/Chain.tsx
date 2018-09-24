@@ -4,7 +4,7 @@ import { formatNumber, secondsWithPrecision, viewport } from '../../utils';
 import { Tab } from './';
 import { Tile, Node, Ago, Setting } from '../';
 import { Types } from '@dotstats/common';
-import { PersistentObject } from '../../persist';
+import { PersistentObject, PersistentSet } from '../../persist';
 
 import blockIcon from '../../icons/package.svg';
 import blockTimeIcon from '../../icons/history.svg';
@@ -25,6 +25,7 @@ export namespace Chain {
   export interface Props {
     appState: Readonly<AppState>;
     settings: PersistentObject<AppState.Settings>;
+    pins: PersistentSet<Types.NodeId>;
   }
 
   export interface State {
@@ -39,12 +40,16 @@ export namespace Chain {
 }
 
 function sortNodes(a: AppState.Node, b: AppState.Node): number {
-  if (a.blockDetails[0] === b.blockDetails[0]) {
-    const aPropagation = a.blockDetails[4] == null ? Infinity : a.blockDetails[4] as number;
-    const bPropagation = b.blockDetails[4] == null ? Infinity : b.blockDetails[4] as number;
+  if (a.pinned === b.pinned) {
+    if (a.blockDetails[0] === b.blockDetails[0]) {
+      const aPropagation = a.blockDetails[4] == null ? Infinity : a.blockDetails[4] as number;
+      const bPropagation = b.blockDetails[4] == null ? Infinity : b.blockDetails[4] as number;
 
-    // Ascending sort by propagation time
-    return aPropagation - bPropagation;
+      // Ascending sort by propagation time
+      return aPropagation - bPropagation;
+    }
+  } else {
+    return Number(b.pinned) - Number(a.pinned);
   }
 
   // Descending sort by block number
@@ -124,6 +129,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
 
   private renderList() {
     const { settings } = this.props.appState;
+    const { pins } = this.props;
 
     return (
       <table className="Chain-node-list">
@@ -133,7 +139,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
           this
             .nodes()
             .sort(sortNodes)
-            .map((node) => <Node.Row key={node.id} node={node} settings={settings} />)
+            .map((node) => <Node.Row key={node.id} node={node} settings={settings} pins={pins} />)
         }
         </tbody>
       </table>

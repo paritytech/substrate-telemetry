@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Types } from '@dotstats/common';
 import { Chains, Chain, Ago, OfflineIndicator } from './components';
 import { Connection } from './Connection';
-import { PersistentObject } from './persist';
+import { PersistentObject, PersistentSet } from './persist';
 import { State } from './state';
 
 import './App.css';
@@ -10,6 +10,7 @@ import './App.css';
 export default class App extends React.Component<{}, State> {
   public state: State;
   private readonly settings: PersistentObject<State.Settings>;
+  private readonly pins: PersistentSet<Types.NodeId>;
   private readonly connection: Promise<Connection>;
 
   constructor(props: {}) {
@@ -33,6 +34,16 @@ export default class App extends React.Component<{}, State> {
       (settings) => this.setState({ settings })
     );
 
+    this.pins = new PersistentSet<Types.NodeId>('pinned', (pins) => {
+      const { nodes } = this.state;
+
+      for (const node of nodes.values()) {
+        node.pinned = pins.has(node.id);
+      }
+
+      this.setState({ nodes, pins });
+    });
+
     this.state = {
       status: 'offline',
       best: 0 as Types.BlockNumber,
@@ -43,9 +54,10 @@ export default class App extends React.Component<{}, State> {
       chains: new Map(),
       nodes: new Map(),
       settings: this.settings.raw(),
+      pins: this.pins.get(),
     };
 
-    this.connection = Connection.create((changes) => {
+    this.connection = Connection.create(this.pins, (changes) => {
       if (changes) {
         this.setState(changes);
       }
@@ -72,7 +84,7 @@ export default class App extends React.Component<{}, State> {
       <div className="App">
         <OfflineIndicator status={status} />
         <Chains chains={chains} subscribed={subscribed} connection={this.connection} />
-        <Chain appState={this.state} settings={this.settings} />
+        <Chain appState={this.state} settings={this.settings} pins={this.pins} />
       </div>
     );
   }

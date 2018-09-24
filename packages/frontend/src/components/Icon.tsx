@@ -4,7 +4,7 @@ import './Icon.css';
 
 export interface Props {
   src: string;
-  alt: string;
+  alt?: string;
   className?: string;
   onClick?: () => void;
 };
@@ -12,8 +12,10 @@ export interface Props {
 export class Icon extends React.Component<{}, Props> {
   public props: Props;
 
-  public shouldComponentUpdate() {
-    return false;
+  public shouldComponentUpdate(nextProps: Props) {
+    return this.props.src !== nextProps.src
+        || this.props.alt !== nextProps.alt
+        || this.props.className !== nextProps.className;
   }
 
   public render() {

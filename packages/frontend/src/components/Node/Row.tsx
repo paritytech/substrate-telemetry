@@ -1,10 +1,15 @@
 import * as React from 'react';
 import Identicon from 'polkadot-identicon';
+import { Types } from '@dotstats/common';
 import { formatNumber, trimHash, milliOrSecond, secondsWithPrecision } from '../../utils';
 import { State as AppState } from '../../state';
+import { PersistentSet } from '../../persist';
 import { SEMVER_PATTERN } from './';
 import { Ago, Icon } from '../';
 
+import pinIcon from '../../icons/pin.svg';
+import pinOnIcon from '../../icons/check-square-solid.svg';
+import pinOffIcon from '../../icons/square-solid.svg';
 import nodeIcon from '../../icons/server.svg';
 import nodeValidatorIcon from '../../icons/shield.svg';
 import nodeTypeIcon from '../../icons/terminal.svg';
@@ -23,6 +28,7 @@ import './Row.css';
 interface RowProps {
   node: AppState.Node;
   settings: AppState.Settings;
+  pins: PersistentSet<Types.NodeId>;
 };
 
 interface HeaderProps {
@@ -39,6 +45,12 @@ interface Column {
 
 export default class Row extends React.Component<RowProps, {}> {
   public static readonly columns: Column[] = [
+    {
+      label: 'Pin to Top',
+      icon: pinIcon,
+      width: 16,
+      render: ({ pinned }) => <Icon src={pinned ? pinOnIcon : pinOffIcon} />
+    },
     {
       label: 'Node',
       icon: nodeIcon,
@@ -93,7 +105,7 @@ export default class Row extends React.Component<RowProps, {}> {
       }
     },
     {
-      label: 'Memory use',
+      label: 'Memory Use',
       icon: memoryIcon,
       width: 26,
       setting: 'mem',
@@ -177,7 +189,7 @@ export default class Row extends React.Component<RowProps, {}> {
     }
 
     return (
-      <tr className={className}>
+      <tr className={className} onClick={this.toggle}>
         {
           Row.columns
             .filter(({ setting }) => setting == null || settings[setting])
@@ -185,5 +197,15 @@ export default class Row extends React.Component<RowProps, {}> {
         }
       </tr>
     );
+  }
+
+  public toggle = () => {
+    const { pins, node } = this.props;
+
+    if (node.pinned) {
+      pins.delete(node.id)
+    } else {
+      pins.add(node.id);
+    }
   }
 }
