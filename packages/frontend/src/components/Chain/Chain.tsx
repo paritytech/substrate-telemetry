@@ -9,8 +9,8 @@ import { Persistent } from '../../Persistent';
 import blockIcon from '../../icons/package.svg';
 import blockTimeIcon from '../../icons/history.svg';
 import lastTimeIcon from '../../icons/watch.svg';
-import listIcon from '../../icons/list-unordered.svg';
-import worldIcon from '../../icons/globe.svg';
+import listIcon from '../../icons/list-alt-regular.svg';
+import worldIcon from '../../icons/map-pin-solid.svg';
 import settingsIcon from '../../icons/settings.svg';
 
 const MAP_RATIO = 800 / 350;
