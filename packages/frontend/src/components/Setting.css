@@ -1,19 +1,19 @@
-.Option {
+.Setting {
   color: #666;
   padding: 0;
   margin: 0 0 8px 0;
   cursor: pointer;
 }
 
-.Option-on {
+.Setting-on {
   color: #fff;
 }
 
-.Option .Icon {
+.Setting .Icon {
   margin-right: 10px;
 }
 
-.Option-switch {
+.Setting-switch {
   width: 40px;
   height: 18px;
   border-radius: 18px;
@@ -24,12 +24,12 @@
   transition: background-color 0.15s linear, border-color 0.15s linear;
 }
 
-.Option-on .Option-switch {
+.Setting-on .Setting-switch {
   background: #d64ca8;
   border-color: #d64ca8;
 }
 
-.Option-knob {
+.Setting-knob {
   width: 16px;
   height: 16px;
   border: 1px solid #fff;
@@ -42,6 +42,6 @@
   transition: left 0.15s ease-in-out;
 }
 
-.Option-on .Option-knob {
+.Setting-on .Setting-knob {
   left: 22px;
 }

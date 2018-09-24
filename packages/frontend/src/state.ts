@@ -2,6 +2,7 @@ import { Types, Maybe } from '@dotstats/common';
 
 export namespace State {
   export interface Node {
+    pinned: boolean,
     id: Types.NodeId;
     nodeDetails: Types.NodeDetails;
     nodeStats: Types.NodeStats;
@@ -33,7 +34,8 @@ export interface State {
   subscribed: Maybe<Types.ChainLabel>;
   chains: Map<Types.ChainLabel, Types.NodeCount>;
   nodes: Map<Types.NodeId, State.Node>;
-  settings: State.Settings;
+  settings: Readonly<State.Settings>;
+  pins: Readonly<Set<Types.NodeId>>;
 }
 
 export type Update = <K extends keyof State>(changes: Pick<State, K> | null) => Readonly<State>;

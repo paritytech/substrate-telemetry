@@ -1,5 +1,6 @@
 .Node-Row {
   color: #999;
+  cursor: pointer;
 }
 
 .Node-Row-synced {

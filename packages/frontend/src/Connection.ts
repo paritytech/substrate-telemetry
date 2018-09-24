@@ -1,5 +1,6 @@
 import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from '@dotstats/common';
 import { State, Update } from './state';
+import { PersistentSet } from './persist';
 
 const { Actions } = FeedMessage;
 
@@ -7,8 +8,8 @@ const TIMEOUT_BASE = (1000 * 5) as Types.Milliseconds; // 5 seconds
 const TIMEOUT_MAX = (1000 * 60 * 5) as Types.Milliseconds; // 5 minutes
 
 export class Connection {
-  public static async create(update: Update): Promise<Connection> {
-    return new Connection(await Connection.socket(), update);
+  public static async create(pins: PersistentSet<Types.NodeId>, update: Update): Promise<Connection> {
+    return new Connection(await Connection.socket(), update, pins);
   }
 
   private static readonly address = window.location.protocol === 'https:'
@@ -64,10 +65,12 @@ export class Connection {
   private socket: WebSocket;
   private state: Readonly<State>;
   private readonly update: Update;
+  private readonly pins: PersistentSet<Types.NodeId>;
 
-  constructor(socket: WebSocket, update: Update) {
+  constructor(socket: WebSocket, update: Update, pins: PersistentSet<Types.NodeId>) {
     this.socket = socket;
     this.update = update;
+    this.pins = pins;
     this.bindSocket();
   }
 
@@ -169,7 +172,8 @@ export class Connection {
 
         case Actions.AddedNode: {
           const [id, nodeDetails, nodeStats, blockDetails, location] = message.payload;
-          const node = { id, nodeDetails, nodeStats, blockDetails, location };
+          const pinned = this.pins.has(id);
+          const node = { pinned, id, nodeDetails, nodeStats, blockDetails, location };
 
           nodes.set(id, node);
 
