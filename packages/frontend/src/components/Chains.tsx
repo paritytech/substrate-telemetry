@@ -3,7 +3,6 @@ import { Connection } from '../Connection';
 import { Icon } from './Icon';
 import { Types, Maybe } from '@dotstats/common';
 
-import chainIcon from '../icons/link.svg';
 import githubIcon from '../icons/mark-github.svg';
 import './Chains.css';
 
@@ -24,7 +23,6 @@ export class Chains extends React.Component<Chains.Props, {}> {
   public render() {
     return (
       <div className="Chains">
-        <Icon src={chainIcon} alt="Observed Chain" />
         {
           this.chains.map((chain) => this.renderChain(chain))
         }

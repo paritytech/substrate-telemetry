@@ -2,9 +2,9 @@ import * as React from 'react';
 import { State as AppState } from '../../state';
 import { formatNumber, secondsWithPrecision, viewport } from '../../utils';
 import { Tab } from './';
-import { Tile, Node, Ago, Option } from '../';
+import { Tile, Node, Ago, Setting } from '../';
 import { Types } from '@dotstats/common';
-import { Persistent } from '../../Persistent';
+import { PersistentObject } from '../../persist';
 
 import blockIcon from '../../icons/package.svg';
 import blockTimeIcon from '../../icons/history.svg';
@@ -24,7 +24,7 @@ export namespace Chain {
 
   export interface Props {
     appState: Readonly<AppState>;
-    setSettings: Persistent<AppState.Settings>['set'];
+    settings: PersistentObject<AppState.Settings>;
   }
 
   export interface State {
@@ -164,7 +164,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
   }
 
   private renderSettings() {
-    const { settings } = this.props.appState;
+    const { settings } = this.props;
 
     return (
       <div className="Chain-settings">
@@ -177,17 +177,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
                   return null;
                 }
 
-                const checked = settings[setting];
-
-                const changeSetting = () => {
-                  const change = {};
-
-                  change[setting] = !settings[setting];
-
-                  this.props.setSettings(change);
-                }
-
-                return <Option key={index} onClick={changeSetting} icon={icon} label={label} checked={checked} />;
+                return <Setting key={index} setting={setting} settings={settings} icon={icon} label={label} />;
               })
           }
         </div>

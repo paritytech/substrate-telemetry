@@ -5,7 +5,7 @@ export class Persistent<Data> {
   private readonly key: string;
   private value: Data;
 
-  constructor(key: string, initial: Data, onChange: (value: Data) => void) {
+  constructor(key: string, initial: Data, onChange: (value: Readonly<Data>) => void) {
     this.key = key;
     this.onChange = onChange;
 
@@ -26,12 +26,12 @@ export class Persistent<Data> {
     });
   }
 
-  public get(): Data {
+  public get(): Readonly<Data> {
     return this.value;
   }
 
-  public set<K extends keyof Data>(changes: Pick<Data, K> | Data) {
-    this.value = Object.assign({}, this.value, changes);
+  public set(value: Data) {
+    this.value = value;
     window.localStorage.setItem(this.key, stringify(this.value) as any as string);
     this.onChange(this.value);
   }
