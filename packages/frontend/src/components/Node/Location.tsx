@@ -20,6 +20,12 @@ import './Location.css';
 namespace Location {
   export type Quarter = 0 | 1 | 2 | 3;
 
+  export interface Props {
+    node: AppState.Node;
+    position: Position;
+    focused: boolean;
+  }
+
   export interface Position {
     left: number;
     top: number;
@@ -31,13 +37,15 @@ namespace Location {
   }
 }
 
-class Location extends React.Component<AppState.Node & Location.Position, Location.State> {
+class Location extends React.Component<Location.Props, Location.State> {
   public readonly state = { hover: false };
 
   public render() {
-    const { left, top, quarter, location } = this.props;
-    const height = this.props.blockDetails[0];
-    const propagationTime = this.props.blockDetails[4];
+    const { node, position, focused } = this.props;
+    const { left, top, quarter } = position;
+    const { blockDetails, location } = node;
+    const height = blockDetails[0];
+    const propagationTime = blockDetails[4];
 
     if (!location) {
       return null;
@@ -45,10 +53,14 @@ class Location extends React.Component<AppState.Node & Location.Position, Locati
 
     let className = `Node-Location Node-Location-quarter${quarter}`;
 
-    if (propagationTime != null) {
-      className += ' Node-Location-synced';
-    } else if (height % 2 === 1) {
-      className += ' Node-Location-odd';
+    if (focused) {
+      if (propagationTime != null) {
+        className += ' Node-Location-synced';
+      } else if (height % 2 === 1) {
+        className += ' Node-Location-odd';
+      }
+    } else {
+      className += ' Node-Location-dimmed';
     }
 
     return (
@@ -62,8 +74,9 @@ class Location extends React.Component<AppState.Node & Location.Position, Locati
   }
 
   private renderDetails(location: Types.NodeLocation) {
-    const [name, implementation, version, validator] = this.props.nodeDetails;
-    const [height, hash, blockTime, blockTimestamp, propagationTime] = this.props.blockDetails;
+    const { node } = this.props;
+    const [name, implementation, version, validator] = node.nodeDetails;
+    const [height, hash, blockTime, blockTimestamp, propagationTime] = node.blockDetails;
 
     let validatorRow = null;
 

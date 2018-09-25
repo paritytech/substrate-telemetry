@@ -11,8 +11,18 @@
   top: 50%;
   left: 50%;
   cursor: pointer;
-  z-index: 1;
+  z-index: 2;
   transition: border-color 0.25s linear;
+}
+
+.Node-Location-dimmed {
+  width: 2px;
+  height: 2px;
+  margin-left: -1px;
+  margin-top: -1px;
+  z-index: 1;
+  background: #bbb;
+  border: none;
 }
 
 .Node-Location-ping {
@@ -26,7 +36,7 @@
 }
 
 .Node-Location-synced {
-  z-index: 2;
+  z-index: 3;
   border-color: #d64ca8;
 }
 

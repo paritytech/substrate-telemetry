@@ -138,6 +138,17 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     const { settings } = this.props.appState;
     const { pins } = this.props;
     const { filter } = this.state;
+    const nodeFilter = this.getNodeFilter();
+    const nodes = nodeFilter ? this.nodes().filter(nodeFilter) : this.nodes();
+
+    if (nodeFilter && nodes.length === 0) {
+      return (
+        <React.Fragment>
+          {filter != null ? <Filter value={filter} onChange={this.onFilterChange} /> : null}
+          <div className="Chain-no-nodes">¯\_(ツ)_/¯<br />Nothing matches</div>
+        </React.Fragment>
+      );
+    }
 
     return (
       <React.Fragment>
@@ -146,8 +157,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
           <Node.Row.Header settings={settings} />
           <tbody>
           {
-            this
-              .nodes()
+            nodes
               .sort(sortNodes)
               .map((node) => <Node.Row key={node.id} node={node} settings={settings} pins={pins} />)
           }
@@ -159,6 +169,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
 
   private renderMap() {
     const { filter } = this.state;
+    const nodeFilter = this.getNodeFilter();
 
     return (
       <React.Fragment>
@@ -167,16 +178,17 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
         {
           this.nodes().map((node) => {
             const location = node.location;
+            const focused = nodeFilter == null || nodeFilter(node);
 
             if (!location || location[0] == null || location[1] == null) {
               // Skip nodes with unknown location
               return null;
             }
 
-            const { left, top, quarter } = this.pixelPosition(location[0], location[1]);
+            const position = this.pixelPosition(location[0], location[1]);
 
             return (
-              <Node.Location key={node.id} left={left} top={top} quarter={quarter} {...node} />
+              <Node.Location key={node.id} position={position} focused={focused} node={node} />
             );
           })
         }
@@ -208,14 +220,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
   }
 
   private nodes(): AppState.Node[] {
-    const nodes = Array.from(this.props.appState.nodes.values());
-    const { filter } = this.state;
-
-    if (filter) {
-      return nodes.filter(({ nodeDetails }) => nodeDetails[0].toLowerCase().indexOf(filter) !== -1);
-    }
-
-    return nodes;
+    return Array.from(this.props.appState.nodes.values());
   }
 
   private pixelPosition(lat: Types.Latitude, lon: Types.Longitude): Node.Location.Position {
@@ -267,17 +272,33 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
 
   private onKeyPress = (event: KeyboardEvent) => {
     const { filter } = this.state;
+    const key = event.key;
+    const code = event.keyCode;
 
-    if (filter != null && event.keyCode === ESCAPE_KEY) {
+    const escape = filter != null && code === ESCAPE_KEY;
+    const backspace = filter === '' && code === BACKSPACE_KEY;
+    const singleChar = filter == null && key.length === 1;
+
+    if (escape || backspace) {
       this.setState({ filter: null });
-    } else if (filter == null && event.key.length === 1) {
-      this.setState({ filter: event.key.toLowerCase() });
-    } else if (filter === '' && event.keyCode === BACKSPACE_KEY) {
-      this.setState({ filter: null });
+    } else if (singleChar) {
+      this.setState({ filter: key });
     }
   }
 
   private onFilterChange = (filter: string) => {
     this.setState({ filter: filter.toLowerCase() });
+  }
+
+  private getNodeFilter(): Maybe<(node: AppState.Node) => boolean> {
+    const { filter } = this.state;
+
+    if (filter == null) {
+      return null;
+    }
+
+    const filterLC = filter.toLowerCase();
+
+    return ({ nodeDetails }) => nodeDetails[0].indexOf(filterLC) !== -1;
   }
 }
