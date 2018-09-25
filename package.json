@@ -9,7 +9,9 @@
     "packages/*"
   ],
   "scripts": {
+    "deploy": "scripts/deploy.sh",
     "start:frontend": "scripts/start-frontend.sh",
+    "build:frontend": "scripts/build-frontend.sh",
     "start:backend": "scripts/start-backend.sh",
     "build:backend": "scripts/build-backend.sh",
     "check:backend": "tsc -p packages/backend --noEmit",

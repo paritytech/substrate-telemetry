@@ -1,7 +1,7 @@
 import * as WebSocket from 'ws';
 import * as EventEmitter from 'events';
 
-import { noop, timestamp, Maybe, Types, blockAverage } from '@dotstats/common';
+import { noop, timestamp, Maybe, Types, NumStats } from '@dotstats/common';
 import { parseMessage, getBestBlock, Message, BestBlock, SystemInterval } from './message';
 import { locate, Location } from './location';
 import { getId, refreshId } from './nodeId';
@@ -42,7 +42,7 @@ export default class Node {
 
   private readonly ip: string;
   private readonly socket: WebSocket;
-  private blockTimes: Array<number> = new Array(BLOCK_TIME_HISTORY);
+  private blockTimes = new NumStats<Types.Milliseconds>(BLOCK_TIME_HISTORY);
   private lastBlockAt: Maybe<Date> = null;
   private pingStart = 0 as Types.Timestamp;
   private throttle = false;
@@ -189,7 +189,7 @@ export default class Node {
   }
 
   public get average(): Types.Milliseconds {
-    return blockAverage(this.blockTimes);
+    return this.blockTimes.average();
   }
 
   public get localBlockAt(): Types.Milliseconds {
@@ -265,7 +265,7 @@ export default class Node {
       this.height = height;
       this.blockTimestamp = timestamp();
       this.lastBlockAt = time;
-      this.blockTimes[height % BLOCK_TIME_HISTORY] = blockTime;
+      this.blockTimes.push(blockTime);
       this.blockTime = blockTime;
 
       if (blockTime > 100) {
