@@ -287,7 +287,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
   }
 
   private onFilterChange = (filter: string) => {
-    this.setState({ filter: filter.toLowerCase() });
+    this.setState({ filter });
   }
 
   private getNodeFilter(): Maybe<(node: AppState.Node) => boolean> {
@@ -299,6 +299,12 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
 
     const filterLC = filter.toLowerCase();
 
-    return ({ nodeDetails }) => nodeDetails[0].indexOf(filterLC) !== -1;
+    return ({ nodeDetails, location }) => {
+      const city = location && location[2];
+      const matchesName = nodeDetails[0].toLowerCase().indexOf(filterLC) !== -1;
+      const matchesCity = city != null && city.toLowerCase().indexOf(filterLC) !== -1;
+
+      return matchesName || matchesCity;
+    }
   }
 }
