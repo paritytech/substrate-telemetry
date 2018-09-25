@@ -65,6 +65,13 @@
   bottom: 0;
 }
 
+.Chain-no-nodes {
+  font-size: 30px;
+  padding-top: 20vh;
+  text-align: center;
+  font-weight: 300;
+}
+
 .Chain-node-list {
   width: 100%;
   border-collapse: collapse;
