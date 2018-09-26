@@ -20,6 +20,9 @@ import lastTimeIcon from '../../icons/watch.svg';
 import cpuIcon from '../../icons/microchip-solid.svg';
 import memoryIcon from '../../icons/memory-solid.svg';
 
+import parityPolkadotIcon from '../../icons/dot.svg';
+import unknownImplementationIcon from '../../icons/question-solid.svg';
+
 import './Row.css';
 
 interface RowProps {
@@ -61,13 +64,14 @@ export default class Row extends React.Component<RowProps, {}> {
     {
       label: 'Implementation',
       icon: nodeTypeIcon,
-      width: 240,
+      width: 100,
       setting: 'implementation',
       render: ({ nodeDetails }) => {
         const [, implementation, version] = nodeDetails;
         const [semver] = version.match(SEMVER_PATTERN) || [version];
+        const implIcon = implementation === 'parity-polkadot' ? parityPolkadotIcon : unknownImplementationIcon;
 
-        return <span title={`${implementation} v${version}`}>{implementation} v{semver}</span>;
+        return <span title={`${implementation} v${version}`}><Icon src={implIcon} /> v{semver}</span>;
       }
     },
     {
