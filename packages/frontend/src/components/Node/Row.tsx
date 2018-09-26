@@ -1,13 +1,14 @@
 import * as React from 'react';
 import Identicon from 'polkadot-identicon';
 import { Types } from '@dotstats/common';
-import { formatNumber, trimHash, milliOrSecond, secondsWithPrecision } from '../../utils';
+import { formatNumber, milliOrSecond, secondsWithPrecision } from '../../utils';
 import { State as AppState } from '../../state';
 import { PersistentSet } from '../../persist';
 import { SEMVER_PATTERN } from './';
 import { Ago, Icon } from '../';
 
 import nodeIcon from '../../icons/server.svg';
+import nodeLocationIcon from '../../icons/location.svg';
 import nodeValidatorIcon from '../../icons/shield.svg';
 import nodeTypeIcon from '../../icons/terminal.svg';
 import peersIcon from '../../icons/broadcast.svg';
@@ -43,12 +44,18 @@ interface Column {
   render: (node: AppState.Node) => React.ReactElement<any> | string;
 }
 
+function Truncate(props: { text: string }): React.ReactElement<any> {
+  const { text } = props;
+
+  return <div className="Node-Row-truncate" title={text}>{text}</div>;
+}
+
 export default class Row extends React.Component<RowProps, {}> {
   public static readonly columns: Column[] = [
     {
       label: 'Node',
       icon: nodeIcon,
-      render: ({ nodeDetails }) => nodeDetails[0]
+      render: ({ nodeDetails }) => <Truncate text={nodeDetails[0]} />
     },
     {
       label: 'Validator',
@@ -62,16 +69,23 @@ export default class Row extends React.Component<RowProps, {}> {
       }
     },
     {
+      label: 'Location',
+      icon: nodeLocationIcon,
+      width: 140,
+      setting: 'location',
+      render: ({ location }) => location && location[2] ? <Truncate text={location[2]} /> : '-'
+    },
+    {
       label: 'Implementation',
       icon: nodeTypeIcon,
-      width: 100,
+      width: 90,
       setting: 'implementation',
       render: ({ nodeDetails }) => {
         const [, implementation, version] = nodeDetails;
         const [semver] = version.match(SEMVER_PATTERN) || [version];
         const implIcon = implementation === 'parity-polkadot' ? parityPolkadotIcon : unknownImplementationIcon;
 
-        return <span title={`${implementation} v${version}`}><Icon src={implIcon} /> v{semver}</span>;
+        return <span title={`${implementation} v${version}`}><Icon src={implIcon} /> {semver}</span>;
       }
     },
     {
@@ -122,11 +136,7 @@ export default class Row extends React.Component<RowProps, {}> {
       icon: blockHashIcon,
       width: 154,
       setting: 'blockhash',
-      render: ({ blockDetails }) => {
-        const hash = blockDetails[1];
-
-        return <span title={hash}>{trimHash(hash, 16)}</span>;
-      }
+      render: ({ blockDetails }) => <Truncate text={blockDetails[1]} />
     },
     {
       label: 'Block Time',

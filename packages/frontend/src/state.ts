@@ -11,6 +11,7 @@ export namespace State {
   }
 
   export interface Settings {
+    location: boolean;
     validator: boolean;
     implementation: boolean;
     peers: boolean;
