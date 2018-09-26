@@ -85,11 +85,6 @@
   font-family: monospace, sans-serif;
 }
 
-.Chain-node-list th, .Chain-node-list td {
-  text-align: left;
-  padding: 0.35em 1em;
-}
-
 .Chain-settings {
   text-align: center;
 }
