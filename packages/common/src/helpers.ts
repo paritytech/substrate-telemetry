@@ -43,7 +43,7 @@ export function noop() {}
 export class NumStats<T extends number> {
   private readonly stack: Array<T>;
   private readonly history: number;
-  private index: 0;
+  private index = 0;
 
   constructor(history: number) {
     if (history < 1) {
