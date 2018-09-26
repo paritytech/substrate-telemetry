@@ -8,6 +8,21 @@
   padding: 0.35em 13px;
 }
 
+.Node-Row td {
+  position: relative;
+}
+
+.Node-Row .Node-Row-truncate {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  padding: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .Node-Row-synced {
   color: #fff;
 }
