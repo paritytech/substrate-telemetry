@@ -13,8 +13,13 @@
 }
 
 .Node-Row-pinned td:first-child {
-  border-left: 6px solid #d64ca8;
+  border-left: 3px solid #d64ca8;
   padding-left: 10px;
+}
+
+.Node-Row-pinned td:last-child {
+  border-right: 3px solid #d64ca8;
+  padding-right: 10px;
 }
 
 .Node-Row-pinned.Node-Row-synced {
