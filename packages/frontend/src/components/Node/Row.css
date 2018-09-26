@@ -3,8 +3,22 @@
   cursor: pointer;
 }
 
+.Node-Row-Header th, .Node-Row td {
+  text-align: left;
+  padding: 0.35em 13px;
+}
+
 .Node-Row-synced {
   color: #fff;
+}
+
+.Node-Row-pinned td:first-child {
+  border-left: 6px solid #d64ca8;
+  padding-left: 10px;
+}
+
+.Node-Row-pinned.Node-Row-synced {
+  color: #d64ca8;
 }
 
 .Node-Row-validator {

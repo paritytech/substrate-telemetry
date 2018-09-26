@@ -7,9 +7,6 @@ import { PersistentSet } from '../../persist';
 import { SEMVER_PATTERN } from './';
 import { Ago, Icon } from '../';
 
-import pinIcon from '../../icons/pin.svg';
-import pinOnIcon from '../../icons/check-square-solid.svg';
-import pinOffIcon from '../../icons/square-solid.svg';
 import nodeIcon from '../../icons/server.svg';
 import nodeValidatorIcon from '../../icons/shield.svg';
 import nodeTypeIcon from '../../icons/terminal.svg';
@@ -45,12 +42,6 @@ interface Column {
 
 export default class Row extends React.Component<RowProps, {}> {
   public static readonly columns: Column[] = [
-    {
-      label: 'Pin to Top',
-      icon: pinIcon,
-      width: 16,
-      render: ({ pinned }) => <Icon src={pinned ? pinOnIcon : pinOffIcon} />
-    },
     {
       label: 'Node',
       icon: nodeIcon,
@@ -165,7 +156,7 @@ export default class Row extends React.Component<RowProps, {}> {
 
     return (
       <thead>
-        <tr>
+        <tr className="Node-Row-Header">
           {
             Row.columns
               .filter(({ setting }) => setting == null || settings[setting])
@@ -186,6 +177,10 @@ export default class Row extends React.Component<RowProps, {}> {
 
     if (propagationTime != null) {
       className += ' Node-Row-synced';
+    }
+
+    if (node.pinned) {
+      className += ' Node-Row-pinned';
     }
 
     return (
