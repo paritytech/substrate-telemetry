@@ -42,9 +42,9 @@ class Location extends React.Component<Location.Props, Location.State> {
   public render() {
     const { node, position, focused } = this.props;
     const { left, top, quarter } = position;
-    const { height, propagationTime } = node;
+    const { height, propagationTime, city } = node;
 
-    if (!location) {
+    if (!city) {
       return null;
     }
 
@@ -80,7 +80,8 @@ class Location extends React.Component<Location.Props, Location.State> {
       hash,
       blockTime,
       blockTimestamp,
-      propagationTime
+      propagationTime,
+      city,
     } = this.props.node;
 
     let validatorRow = null;
@@ -108,7 +109,7 @@ class Location extends React.Component<Location.Props, Location.State> {
             <td><Icon src={nodeTypeIcon} alt="Implementation" /></td><td colSpan={5}>{implementation} v{version}</td>
           </tr>
           <tr>
-            <td><Icon src={nodeLocationIcon} alt="Location" /></td><td colSpan={5}>{location[2]}</td>
+            <td><Icon src={nodeLocationIcon} alt="Location" /></td><td colSpan={5}>{city}</td>
           </tr>
           <tr>
             <td><Icon src={blockIcon} alt="Block" /></td><td colSpan={5}>#{formatNumber(height)}</td>
