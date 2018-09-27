@@ -22,6 +22,7 @@ import cpuIcon from '../../icons/microchip-solid.svg';
 import memoryIcon from '../../icons/memory-solid.svg';
 
 import parityPolkadotIcon from '../../icons/dot.svg';
+import paritySubstrateIcon from '../../icons/parity-substrate.svg';
 import unknownImplementationIcon from '../../icons/question-solid.svg';
 
 import './Row.css';
@@ -83,7 +84,9 @@ export default class Row extends React.Component<RowProps, {}> {
       render: ({ nodeDetails }) => {
         const [, implementation, version] = nodeDetails;
         const [semver] = version.match(SEMVER_PATTERN) || [version];
-        const implIcon = implementation === 'parity-polkadot' ? parityPolkadotIcon : unknownImplementationIcon;
+        const implIcon = implementation === 'parity-polkadot' ? parityPolkadotIcon
+                       : implementation === 'substrate-node' ? paritySubstrateIcon
+                       : unknownImplementationIcon;
 
         return <span title={`${implementation} v${version}`}><Icon src={implIcon} /> {semver}</span>;
       }
