@@ -268,7 +268,7 @@ export class Connection {
             nodes.clear();
             sortedNodes = [];
 
-            this.state = this.update({ subscribed: null, nodes, chains });
+            this.state = this.update({ subscribed: null, nodes, chains, sortedNodes });
 
             continue messages;
           }
@@ -286,7 +286,7 @@ export class Connection {
           if (this.state.subscribed === message.payload) {
             nodes.clear();
             sortedNodes = [];
-            this.state = this.update({ subscribed: null, nodes });
+            this.state = this.update({ subscribed: null, nodes, sortedNodes });
           }
 
           continue messages;
