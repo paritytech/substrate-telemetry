@@ -2,6 +2,7 @@ import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from '@dotstats/
 import { sortedInsert, sortedIndexOf } from '@dotstats/common';
 import { State, Update, Node } from './state';
 import { PersistentSet } from './persist';
+import { getHashData, setHashData } from './utils';
 
 const { Actions } = FeedMessage;
 
@@ -62,7 +63,7 @@ export class Connection {
   private pingId = 0;
   private pingTimeout: NodeJS.Timer;
   private pingSent: Maybe<Types.Timestamp> = null;
-  private resubscribeTo: Maybe<Types.ChainLabel> = null;
+  private resubscribeTo: Maybe<Types.ChainLabel> = getHashData().chain;
   private socket: WebSocket;
   private state: Readonly<State>;
   private readonly update: Update;
@@ -76,6 +77,7 @@ export class Connection {
   }
 
   public subscribe(chain: Types.ChainLabel) {
+    setHashData({ chain });
     this.socket.send(`subscribe:${chain}`);
   }
 
@@ -317,8 +319,6 @@ export class Connection {
     }
 
     if (resubscribeTo) {
-      this.resubscribeTo = null;
-
       if (chains.has(resubscribeTo)) {
         this.subscribe(resubscribeTo);
         return;

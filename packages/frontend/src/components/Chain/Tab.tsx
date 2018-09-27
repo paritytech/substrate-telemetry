@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Chain } from './';
 import { Icon } from '../';
+import { setHashData } from '../../utils';
 
 import './Tab.css';
 
@@ -10,7 +11,7 @@ export namespace Tab {
     icon: string;
     display: Chain.Display;
     current: string;
-    hash: string;
+    tab: string;
     setDisplay: (display: Chain.Display) => void;
   }
 }
@@ -29,8 +30,8 @@ export class Tab extends React.Component<Tab.Props, {}> {
   }
 
   private onClick = () => {
-    const { hash, display, setDisplay } = this.props;
-    window.location.hash = hash;
+    const { tab, display, setDisplay } = this.props;
+    setHashData({ tab });
     setDisplay(display);
   }
 }

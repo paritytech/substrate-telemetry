@@ -57,3 +57,29 @@ export function secondsWithPrecision(num: number): string {
     default: return intString + 's';
   }
 }
+
+export interface HashData {
+  tab?: string;
+  chain?: Types.ChainLabel;
+};
+
+export function getHashData(): HashData {
+  const { hash } = window.location;
+
+  if (hash[0] !== '#') {
+    return {};
+  }
+
+  const [tab, rawChain] = hash.substr(1).split('/');
+  const chain = decodeURIComponent(rawChain) as Types.ChainLabel;
+
+  return { tab, chain };
+}
+
+export function setHashData(val: HashData) {
+  const update = Object.assign(getHashData(), val);
+
+  const { tab = '', chain = '' } = update;
+
+  window.location.hash = `#${tab}/${encodeURIComponent(chain)}`;
+}
