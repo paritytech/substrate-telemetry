@@ -2,6 +2,8 @@ import * as React from 'react';
 import { Chain } from './';
 import { Icon } from '../';
 
+import './Tab.css';
+
 export namespace Tab {
   export interface Props {
     label: string;
@@ -17,7 +19,7 @@ export class Tab extends React.Component<Tab.Props, {}> {
   public render() {
     const { label, icon, display, current } = this.props;
     const highlight = display === current;
-    const className = highlight ? 'Chain-tab-unit-on Chain-tab-unit' : 'Chain-tab-unit';
+    const className = highlight ? 'Chain-Tab-on Chain-Tab' : 'Chain-Tab';
 
     return (
       <div className={className} onClick={this.onClick}>

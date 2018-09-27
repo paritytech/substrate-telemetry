@@ -3,7 +3,7 @@ import { Types } from '@dotstats/common';
 import { Chains, Chain, Ago, OfflineIndicator } from './components';
 import { Connection } from './Connection';
 import { PersistentObject, PersistentSet } from './persist';
-import { State } from './state';
+import { State, compareNodes } from './state';
 
 import './App.css';
 
@@ -36,13 +36,13 @@ export default class App extends React.Component<{}, State> {
     );
 
     this.pins = new PersistentSet<Types.NodeName>('pinned_names', (pins) => {
-      const { nodes } = this.state;
+      const { nodes, sortedNodes } = this.state;
 
       for (const node of nodes.values()) {
         node.pinned = pins.has(node.nodeDetails[0]);
       }
 
-      this.setState({ nodes, pins });
+      this.setState({ nodes, pins, sortedNodes: sortedNodes.sort(compareNodes) });
     });
 
     this.state = {
@@ -54,6 +54,7 @@ export default class App extends React.Component<{}, State> {
       subscribed: null,
       chains: new Map(),
       nodes: new Map(),
+      sortedNodes: [],
       settings: this.settings.raw(),
       pins: this.pins.get(),
     };

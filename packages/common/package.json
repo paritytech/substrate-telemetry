@@ -10,6 +10,10 @@
     "node": ">=9.5"
   },
   "scripts": {
-    "test": "echo \"Tests only available from root wrapper\""
+    "test": "node ./test | tap-spec"
+  },
+  "devDependencies": {
+    "tap-spec": "^5.0.0",
+    "tape": "^4.9.1"
   }
 }

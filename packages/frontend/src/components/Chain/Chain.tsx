@@ -43,23 +43,6 @@ export namespace Chain {
   }
 }
 
-function sortNodes(a: AppState.Node, b: AppState.Node): number {
-  if (a.pinned === b.pinned) {
-    if (a.blockDetails[0] === b.blockDetails[0]) {
-      const aPropagation = a.blockDetails[4] == null ? Infinity : a.blockDetails[4] as number;
-      const bPropagation = b.blockDetails[4] == null ? Infinity : b.blockDetails[4] as number;
-
-      // Ascending sort by propagation time
-      return aPropagation - bPropagation;
-    }
-  } else {
-    return Number(b.pinned) - Number(a.pinned);
-  }
-
-  // Descending sort by block number
-  return b.blockDetails[0] - a.blockDetails[0];
-}
-
 export class Chain extends React.Component<Chain.Props, Chain.State> {
   constructor(props: Chain.Props) {
     super(props);
@@ -157,9 +140,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
           <Node.Row.Header settings={settings} />
           <tbody>
           {
-            nodes
-              .sort(sortNodes)
-              .map((node) => <Node.Row key={node.id} node={node} settings={settings} pins={pins} />)
+            nodes.map((node) => <Node.Row key={node.id} node={node} settings={settings} pins={pins} />)
           }
           </tbody>
         </table>
@@ -220,7 +201,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
   }
 
   private nodes(): AppState.Node[] {
-    return Array.from(this.props.appState.nodes.values());
+    return this.props.appState.sortedNodes;
   }
 
   private pixelPosition(lat: Types.Latitude, lon: Types.Longitude): Node.Location.Position {

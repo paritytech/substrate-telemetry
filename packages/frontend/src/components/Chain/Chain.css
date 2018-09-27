@@ -8,32 +8,12 @@
   position: relative;
 }
 
-
 .Chain-tabs {
   position: absolute;
-  right: 9px;
-  bottom: 0;
-  height: 36px;
+  right: 5px;
+  bottom: 10px;
   width: 200px;
   text-align: right;
-}
-
-.Chain-tab-unit {
-  display: inline-block;
-}
-
-.Chain-tab-unit .Icon {
-  margin-right: 1px;
-  font-size: 24px;
-  padding: 6px;
-  background: #ccc;
-  color: #555;
-  cursor: pointer;
-}
-
-.Chain-tab-unit-on .Icon {
-  background: #222;
-  color: #fff;
 }
 
 .Chain-content-container {
