@@ -112,3 +112,81 @@ export class NumStats<T extends number> {
     return this.index < this.history ? this.stack.slice(0, this.index) : this.stack;
   }
 }
+
+/**
+ * Insert an item into a sorted array using binary search.
+ *
+ * @type   {T}                item    type
+ * @param  {T}                item    to be inserted
+ * @param  {Array<T>}         array   to be modified
+ * @param  {(a, b) => number} compare function
+ *
+ * @return {number}                   insertion index
+ */
+export function sortedInsert<T>(item: T, into: Array<T>, compare: (a: T, b: T) => number): number {
+  if (into.length === 0) {
+    into.push(item);
+
+    return 0;
+  }
+
+  let min = 0;
+  let max = into.length - 1;
+
+  while (min !== max) {
+    const guess = (min + max) / 2 | 0;
+
+    if (compare(item, into[guess]) < 0) {
+      max = Math.max(min, guess - 1);
+    } else {
+      min = Math.min(max, guess + 1);
+    }
+  }
+
+  let insert = compare(item, into[min]) <= 0 ? min : min + 1;
+
+  into.splice(insert, 0, item);
+
+  return insert;
+}
+
+/**
+ * Find an index of an element within a sorted array. This should be substantially
+ * faster than `indexOf` for large arrays.
+ *
+ * @type  {T}                item    type
+ * @param {T}                item    to find
+ * @param {Array<T>}         array   to look through
+ * @param {(a, b) => number} compare function
+ *
+ * @return {number}                  index of the element, `-1` if not found
+ */
+export function sortedIndexOf<T>(item:T, within: Array<T>, compare: (a: T, b: T) => number): number {
+  if (within.length === 0) {
+    return -1;
+  }
+
+  let min = 0;
+  let max = within.length - 1;
+
+  while (min !== max) {
+    const guess = (min + max) / 2 | 0;
+    const other = within[guess];
+
+    if (item === other) {
+      return guess;
+    }
+
+    if (compare(item, other) < 0) {
+      max = Math.max(min, guess - 1);
+    } else {
+      min = Math.min(max, guess + 1);
+    }
+  }
+
+  if (item === within[min]) {
+    return min;
+  }
+
+  return -1;
+}

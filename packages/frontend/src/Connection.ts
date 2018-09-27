@@ -1,5 +1,6 @@
 import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from '@dotstats/common';
-import { State, Update } from './state';
+import { sortedInsert, sortedIndexOf } from '@dotstats/common';
+import { State, Update, compareNodes } from './state';
 import { PersistentSet } from './persist';
 
 const { Actions } = FeedMessage;
@@ -140,9 +141,8 @@ export class Connection {
 
   private handleMessages = (event: MessageEvent) => {
     const data = event.data as FeedMessage.Data;
-    const nodes = this.state.nodes;
-    const chains = this.state.chains;
-    const changes = { nodes, chains };
+    const { nodes, chains } = this.state;
+    let { sortedNodes } = this.state;
 
     messages: for (const message of FeedMessage.deserialize(data)) {
       switch (message.action) {
@@ -176,14 +176,32 @@ export class Connection {
           const node = { pinned, id, nodeDetails, nodeStats, blockDetails, location };
 
           nodes.set(id, node);
+          sortedInsert(node, sortedNodes, compareNodes);
+
+          if (nodes.size !== sortedNodes.length) {
+            console.error('Node count in sorted array is wrong!');
+          }
 
           break;
         }
 
         case Actions.RemovedNode: {
-          nodes.delete(message.payload);
+          const id = message.payload;
+          const node = nodes.get(id);
 
-          break;
+          if (node) {
+            nodes.delete(id);
+            const index = sortedIndexOf(node, sortedNodes, compareNodes);
+            sortedNodes.splice(index, 1);
+
+            if (nodes.size !== sortedNodes.length) {
+              console.error('Node count in sorted array is wrong!');
+            }
+
+            break;
+          }
+
+          continue messages;
         }
 
         case Actions.LocatedNode: {
@@ -191,7 +209,7 @@ export class Connection {
           const node = nodes.get(id);
 
           if (!node) {
-            return;
+            continue messages;
           }
 
           node.location = [latitude, longitude, city];
@@ -204,10 +222,11 @@ export class Connection {
           const node = nodes.get(id);
 
           if (!node) {
-            return;
+            continue messages;
           }
 
           node.blockDetails = blockDetails;
+          sortedNodes = sortedNodes.sort(compareNodes);
 
           break;
         }
@@ -245,6 +264,7 @@ export class Connection {
 
           if (this.state.subscribed === message.payload) {
             nodes.clear();
+            sortedNodes = [];
 
             this.state = this.update({ subscribed: null, nodes, chains });
 
@@ -263,6 +283,7 @@ export class Connection {
         case Actions.UnsubscribedFrom: {
           if (this.state.subscribed === message.payload) {
             nodes.clear();
+            sortedNodes = [];
             this.state = this.update({ subscribed: null, nodes });
           }
 
@@ -281,7 +302,7 @@ export class Connection {
       }
     }
 
-    this.state = this.update(changes);
+    this.state = this.update({ nodes, chains, sortedNodes });
 
     this.autoSubscribe();
   }
