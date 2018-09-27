@@ -268,6 +268,8 @@ export class Connection {
             nodes.clear();
             sortedNodes = [];
             this.state = this.update({ subscribed: null, nodes, chains, sortedNodes });
+
+            continue messages;
           }
 
           break;
