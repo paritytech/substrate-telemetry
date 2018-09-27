@@ -3,7 +3,7 @@ import { Types } from '@dotstats/common';
 import { Chains, Chain, Ago, OfflineIndicator } from './components';
 import { Connection } from './Connection';
 import { PersistentObject, PersistentSet } from './persist';
-import { State, compareNodes } from './state';
+import { State, Node } from './state';
 
 import './App.css';
 
@@ -39,10 +39,10 @@ export default class App extends React.Component<{}, State> {
       const { nodes, sortedNodes } = this.state;
 
       for (const node of nodes.values()) {
-        node.pinned = pins.has(node.nodeDetails[0]);
+        node.pinned = pins.has(node.name);
       }
 
-      this.setState({ nodes, pins, sortedNodes: sortedNodes.sort(compareNodes) });
+      this.setState({ nodes, pins, sortedNodes: sortedNodes.sort(Node.compare) });
     });
 
     this.state = {

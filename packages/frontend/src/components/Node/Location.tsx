@@ -1,9 +1,8 @@
 import * as React from 'react';
 import Identicon from 'polkadot-identicon';
-import { Types } from '@dotstats/common';
 import { formatNumber, trimHash, milliOrSecond, secondsWithPrecision } from '../../utils';
 import { Ago, Icon } from '../';
-import { State as AppState } from '../../state';
+import { Node } from '../../state';
 
 import nodeIcon from '../../icons/server.svg';
 import nodeValidatorIcon from '../../icons/shield.svg';
@@ -21,7 +20,7 @@ namespace Location {
   export type Quarter = 0 | 1 | 2 | 3;
 
   export interface Props {
-    node: AppState.Node;
+    node: Node;
     position: Position;
     focused: boolean;
   }
@@ -43,9 +42,7 @@ class Location extends React.Component<Location.Props, Location.State> {
   public render() {
     const { node, position, focused } = this.props;
     const { left, top, quarter } = position;
-    const { blockDetails, location } = node;
-    const height = blockDetails[0];
-    const propagationTime = blockDetails[4];
+    const { height, propagationTime } = node;
 
     if (!location) {
       return null;
@@ -66,17 +63,25 @@ class Location extends React.Component<Location.Props, Location.State> {
     return (
       <div className={className} style={{ left, top }} onMouseOver={this.onMouseOver} onMouseOut={this.onMouseOut}>
       {
-        this.state.hover ? this.renderDetails(location) : null
+        this.state.hover ? this.renderDetails() : null
       }
         <div className="Node-Location-ping" />
       </div>
     );
   }
 
-  private renderDetails(location: Types.NodeLocation) {
-    const { node } = this.props;
-    const [name, implementation, version, validator] = node.nodeDetails;
-    const [height, hash, blockTime, blockTimestamp, propagationTime] = node.blockDetails;
+  private renderDetails() {
+    const {
+      name,
+      implementation,
+      version,
+      validator,
+      height,
+      hash,
+      blockTime,
+      blockTimestamp,
+      propagationTime
+    } = this.props.node;
 
     let validatorRow = null;
 
@@ -115,7 +120,7 @@ class Location extends React.Component<Location.Props, Location.State> {
             <td><Icon src={blockTimeIcon} alt="Block Time" /></td>
             <td style={{ width: 80 }}>{secondsWithPrecision(blockTime/1000)}</td>
             <td><Icon src={propagationTimeIcon} alt="Block Propagation Time" /></td>
-            <td style={{ width: 58 }}>{propagationTime === null ? '∞' : milliOrSecond(propagationTime as number)}</td>
+            <td style={{ width: 58 }}>{propagationTime == null ? '∞' : milliOrSecond(propagationTime)}</td>
             <td><Icon src={lastTimeIcon} alt="Last Block Time" /></td>
             <td style={{ minWidth: 82 }}><Ago when={blockTimestamp} /></td>
           </tr>

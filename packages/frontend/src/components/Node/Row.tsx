@@ -2,7 +2,7 @@ import * as React from 'react';
 import Identicon from 'polkadot-identicon';
 import { Types } from '@dotstats/common';
 import { formatNumber, milliOrSecond, secondsWithPrecision } from '../../utils';
-import { State as AppState } from '../../state';
+import { State as AppState, Node } from '../../state';
 import { PersistentSet } from '../../persist';
 import { SEMVER_PATTERN } from './';
 import { Ago, Icon } from '../';
@@ -28,7 +28,7 @@ import unknownImplementationIcon from '../../icons/question-solid.svg';
 import './Row.css';
 
 interface RowProps {
-  node: AppState.Node;
+  node: Node;
   settings: AppState.Settings;
   pins: PersistentSet<Types.NodeName>;
 };
@@ -42,7 +42,7 @@ interface Column {
   icon: string;
   width?: number;
   setting?: keyof AppState.Settings;
-  render: (node: AppState.Node) => React.ReactElement<any> | string;
+  render: (node: Node) => React.ReactElement<any> | string;
 }
 
 function Truncate(props: { text: string }): React.ReactElement<any> {
@@ -56,16 +56,14 @@ export default class Row extends React.Component<RowProps, {}> {
     {
       label: 'Node',
       icon: nodeIcon,
-      render: ({ nodeDetails }) => <Truncate text={nodeDetails[0]} />
+      render: ({ name }) => <Truncate text={name} />
     },
     {
       label: 'Validator',
       icon: nodeValidatorIcon,
       width: 26,
       setting: 'validator',
-      render: ({ nodeDetails }) => {
-        const validator = nodeDetails[3];
-
+      render: ({ validator }) => {
         return validator ? <span className="Node-Row-validator" title={validator}><Identicon id={validator} size={16} /></span> : '-';
       }
     },
@@ -74,15 +72,14 @@ export default class Row extends React.Component<RowProps, {}> {
       icon: nodeLocationIcon,
       width: 140,
       setting: 'location',
-      render: ({ location }) => location && location[2] ? <Truncate text={location[2]} /> : '-'
+      render: ({ city }) => city ? <Truncate text={city} /> : '-'
     },
     {
       label: 'Implementation',
       icon: nodeTypeIcon,
       width: 90,
       setting: 'implementation',
-      render: ({ nodeDetails }) => {
-        const [, implementation, version] = nodeDetails;
+      render: ({ implementation, version }) => {
         const [semver] = version.match(SEMVER_PATTERN) || [version];
         const implIcon = implementation === 'parity-polkadot' ? parityPolkadotIcon
                        : implementation === 'substrate-node' ? paritySubstrateIcon
@@ -96,75 +93,63 @@ export default class Row extends React.Component<RowProps, {}> {
       icon: peersIcon,
       width: 26,
       setting: 'peers',
-      render: ({ nodeStats }) => `${nodeStats[0]}`
+      render: ({ peers }) => `${peers}`
     },
     {
       label: 'Transactions in Queue',
       icon: transactionsIcon,
       width: 26,
       setting: 'txs',
-      render: ({ nodeStats }) => `${nodeStats[1]}`
+      render: ({ txs }) => `${txs}`
     },
     {
       label: '% CPU Use',
       icon: cpuIcon,
       width: 26,
       setting: 'cpu',
-      render: ({ nodeStats }) => {
-        const cpu = nodeStats[3];
-
-        return cpu ? `${cpu.toFixed(1)}%` : '-';
-      }
+      render: ({ cpu }) => cpu ? `${cpu.toFixed(1)}%` : '-'
     },
     {
       label: 'Memory Use',
       icon: memoryIcon,
       width: 26,
       setting: 'mem',
-      render: ({ nodeStats }) => {
-        const memory = nodeStats[2];
-
-        return memory ? <span title={`${memory}kb`}>{memory / 1024 | 0}mb</span> : '-';
-      }
+      render: ({ mem }) => mem ? <span title={`${mem}kb`}>{mem / 1024 | 0}mb</span> : '-'
     },
     {
       label: 'Block',
       icon: blockIcon,
       width: 88,
       setting: 'blocknumber',
-      render: ({ blockDetails }) => `#${formatNumber(blockDetails[0])}`
+      render: ({ height }) => `#${formatNumber(height)}`
     },
     {
       label: 'Block Hash',
       icon: blockHashIcon,
       width: 154,
       setting: 'blockhash',
-      render: ({ blockDetails }) => <Truncate text={blockDetails[1]} />
+      render: ({ hash }) => <Truncate text={hash} />
     },
     {
       label: 'Block Time',
       icon: blockTimeIcon,
       width: 80,
       setting: 'blocktime',
-      render: ({ blockDetails }) => `${secondsWithPrecision(blockDetails[2]/1000)}`
+      render: ({ blockTime }) => `${secondsWithPrecision(blockTime/1000)}`
     },
     {
       label: 'Block Propagation Time',
       icon: propagationTimeIcon,
       width: 58,
       setting: 'blockpropagation',
-      render: ({ blockDetails }) => {
-        const propagationTime = blockDetails[4];
-
-        return propagationTime === null ? '∞' : milliOrSecond(propagationTime as number);
-      }
+      render: ({ propagationTime }) => propagationTime == null ? '∞' : milliOrSecond(propagationTime)
     },
     {
       label: 'Last Block Time',
       icon: lastTimeIcon,
       width: 100,
       setting: 'blocklasttime',
-      render: ({ blockDetails }) => <Ago when={blockDetails[3]} />
+      render: ({ blockTimestamp }) => <Ago when={blockTimestamp} />
     },
   ];
 
@@ -188,11 +173,10 @@ export default class Row extends React.Component<RowProps, {}> {
 
   public render() {
     const { node, settings } = this.props;
-    const propagationTime = node.blockDetails[4];
 
     let className = 'Node-Row';
 
-    if (propagationTime != null) {
+    if (node.propagationTime != null) {
       className += ' Node-Row-synced';
     }
 
@@ -213,12 +197,11 @@ export default class Row extends React.Component<RowProps, {}> {
 
   public toggle = () => {
     const { pins, node } = this.props;
-    const name = node.nodeDetails[0];
 
     if (node.pinned) {
-      pins.delete(name)
+      pins.delete(node.name)
     } else {
-      pins.add(name);
+      pins.add(node.name);
     }
   }
 }
