@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Types, Maybe } from '@dotstats/common';
 import { State as AppState, Node as NodeState } from '../../state';
-import { formatNumber, secondsWithPrecision, viewport } from '../../utils';
+import { formatNumber, secondsWithPrecision, viewport, getHashData } from '../../utils';
 import { Tab, Filter } from './';
 import { Tile, Node, Ago, Setting } from '../';
 import { PersistentObject, PersistentSet } from '../../persist';
@@ -49,11 +49,11 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
 
     let display: Chain.Display = 'list';
 
-    switch (window.location.hash) {
-      case '#map':
+    switch (getHashData().tab) {
+      case 'map':
         display = 'map';
         break;
-      case '#settings':
+      case 'settings':
         display = 'settings';
         break;
     }
@@ -93,9 +93,9 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
           <Tile icon={blockTimeIcon} title="Average Time">{ blockAverage == null ? '-' : secondsWithPrecision(blockAverage / 1000) }</Tile>
           <Tile icon={lastTimeIcon} title="Last Block"><Ago when={blockTimestamp} /></Tile>
           <div className="Chain-tabs">
-            <Tab icon={listIcon} label="List" display="list" hash="" current={currentTab} setDisplay={this.setDisplay} />
-            <Tab icon={worldIcon} label="Map" display="map" hash="#map" current={currentTab} setDisplay={this.setDisplay} />
-            <Tab icon={settingsIcon} label="Settings" display="settings" hash="#settings" current={currentTab} setDisplay={this.setDisplay} />
+            <Tab icon={listIcon} label="List" display="list" tab="" current={currentTab} setDisplay={this.setDisplay} />
+            <Tab icon={worldIcon} label="Map" display="map" tab="map" current={currentTab} setDisplay={this.setDisplay} />
+            <Tab icon={settingsIcon} label="Settings" display="settings" tab="settings" current={currentTab} setDisplay={this.setDisplay} />
           </div>
         </div>
         <div className="Chain-content-container">
