@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Types, Maybe } from '@dotstats/common';
-import { State as AppState } from '../../state';
+import { State as AppState, Node as NodeState } from '../../state';
 import { formatNumber, secondsWithPrecision, viewport } from '../../utils';
 import { Tab, Filter } from './';
 import { Tile, Node, Ago, Setting } from '../';
@@ -158,15 +158,15 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
         <div className="Chain-map">
         {
           this.nodes().map((node) => {
-            const location = node.location;
+            const { lat, lon } = node;
             const focused = nodeFilter == null || nodeFilter(node);
 
-            if (!location || location[0] == null || location[1] == null) {
+            if (lat == null || lon == null) {
               // Skip nodes with unknown location
               return null;
             }
 
-            const position = this.pixelPosition(location[0], location[1]);
+            const position = this.pixelPosition(lat, lon);
 
             return (
               <Node.Location key={node.id} position={position} focused={focused} node={node} />
@@ -200,7 +200,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     );
   }
 
-  private nodes(): AppState.Node[] {
+  private nodes(): NodeState[] {
     return this.props.appState.sortedNodes;
   }
 
@@ -271,7 +271,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     this.setState({ filter });
   }
 
-  private getNodeFilter(): Maybe<(node: AppState.Node) => boolean> {
+  private getNodeFilter(): Maybe<(node: NodeState) => boolean> {
     const { filter } = this.state;
 
     if (filter == null) {
@@ -280,9 +280,8 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
 
     const filterLC = filter.toLowerCase();
 
-    return ({ nodeDetails, location }) => {
-      const city = location && location[2];
-      const matchesName = nodeDetails[0].toLowerCase().indexOf(filterLC) !== -1;
+    return ({ name, city }) => {
+      const matchesName = name.toLowerCase().indexOf(filterLC) !== -1;
       const matchesCity = city != null && city.toLowerCase().indexOf(filterLC) !== -1;
 
       return matchesName || matchesCity;

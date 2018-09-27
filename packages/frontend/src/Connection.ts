@@ -1,6 +1,6 @@
 import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from '@dotstats/common';
 import { sortedInsert, sortedIndexOf } from '@dotstats/common';
-import { State, Update, compareNodes } from './state';
+import { State, Update, Node } from './state';
 import { PersistentSet } from './persist';
 
 const { Actions } = FeedMessage;
@@ -163,7 +163,7 @@ export class Connection {
         case Actions.BestBlock: {
           const [best, blockTimestamp, blockAverage] = message.payload;
 
-          nodes.forEach((node) => node.blockDetails[4] = null);
+          nodes.forEach((node) => node.propagationTime = null);
 
           this.state = this.update({ best, blockTimestamp, blockAverage });
 
@@ -173,10 +173,10 @@ export class Connection {
         case Actions.AddedNode: {
           const [id, nodeDetails, nodeStats, blockDetails, location] = message.payload;
           const pinned = this.pins.has(nodeDetails[0]);
-          const node = { pinned, id, nodeDetails, nodeStats, blockDetails, location };
+          const node = new Node(pinned, id, nodeDetails, nodeStats, blockDetails, location);
 
           nodes.set(id, node);
-          sortedInsert(node, sortedNodes, compareNodes);
+          sortedInsert(node, sortedNodes, Node.compare);
 
           if (nodes.size !== sortedNodes.length) {
             console.error('Node count in sorted array is wrong!');
@@ -191,7 +191,7 @@ export class Connection {
 
           if (node) {
             nodes.delete(id);
-            const index = sortedIndexOf(node, sortedNodes, compareNodes);
+            const index = sortedIndexOf(node, sortedNodes, Node.compare);
             sortedNodes.splice(index, 1);
 
             if (nodes.size !== sortedNodes.length) {
@@ -205,14 +205,16 @@ export class Connection {
         }
 
         case Actions.LocatedNode: {
-          const [id, latitude, longitude, city] = message.payload;
+          const [id, lat, lon, city] = message.payload;
           const node = nodes.get(id);
 
           if (!node) {
             continue messages;
           }
 
-          node.location = [latitude, longitude, city];
+          node.lat = lat;
+          node.lon = lon;
+          node.city = city;
 
           break;
         }
@@ -225,8 +227,8 @@ export class Connection {
             continue messages;
           }
 
-          node.blockDetails = blockDetails;
-          sortedNodes = sortedNodes.sort(compareNodes);
+          node.updateBlock(blockDetails);
+          sortedNodes = sortedNodes.sort(Node.compare);
 
           break;
         }
@@ -239,7 +241,7 @@ export class Connection {
             return;
           }
 
-          node.nodeStats = nodeStats;
+          node.updateStats(nodeStats);
 
           break;
         }

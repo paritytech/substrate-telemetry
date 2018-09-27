@@ -1,3 +1,5 @@
+import { Types } from '@dotstats/common';
+
 export interface Viewport {
   width: number;
   height: number;
@@ -36,7 +38,7 @@ export function trimHash(hash: string, length: number): string {
   return hash.substr(0, side) + '..' + hash.substr(-side, side);
 }
 
-export function milliOrSecond(num: number): string {
+export function milliOrSecond(num: Types.Milliseconds | Types.PropagationTime): string {
   if (num < 10000) {
     return `${num}ms`;
   }
