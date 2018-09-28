@@ -90,7 +90,7 @@ export default class Row extends React.Component<RowProps, {}> {
       icon: nodeLocationIcon,
       width: 140,
       setting: 'location',
-      render: ({ city }) => city ? <Truncate text={city} /> : '-'
+      render: ({ city }) => city ? <Truncate position="left" text={city} /> : '-'
     },
     {
       label: 'Implementation',
