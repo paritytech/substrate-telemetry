@@ -29,8 +29,42 @@
   border-right: 6px transparent solid;
 }
 
+.Tooltip-left {
+  left: 10px;
+  transform: none;
+}
+
+.Tooltip-left::after {
+  left: 3px;
+  margin: 0;
+}
+
+.Tooltip-right {
+  left: initial;
+  right: 10px;
+  transform: none;
+}
+
+.Tooltip-right::after {
+  left: initial;
+  right: 3px;
+  margin: 0;
+}
+
 .Tooltip-container {
   position: relative;
+}
+
+.Tooltip-container-inline {
+  display: inline-block;
+}
+
+.Tooltip-container-inline .Tooltip-left {
+  left: 0;
+}
+
+.Tooltip-container-inline .Tooltip-right {
+  right: 0;
 }
 
 .Tooltip-container:hover .Tooltip {

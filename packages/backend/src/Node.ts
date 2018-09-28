@@ -7,6 +7,8 @@ import { locate, Location } from './location';
 import { getId, refreshId } from './nodeId';
 
 const BLOCK_TIME_HISTORY = 10;
+const MEMORY_RECORDS = 20;
+const CPU_RECORDS = 20;
 const TIMEOUT = (1000 * 60 * 1) as Types.Milliseconds; // 1 minute
 
 export interface NodeEvents {
@@ -37,8 +39,8 @@ export default class Node {
 
   private peers = 0 as Types.PeerCount;
   private txcount = 0 as Types.TransactionCount;
-  private memory = null as Maybe<Types.MemoryUse>;
-  private cpu = null as Maybe<Types.CPUUse>;
+  private memory = Array<Types.MemoryUse>();
+  private cpu = Array<Types.CPUUse>();
 
   private readonly ip: string;
   private readonly socket: WebSocket;
@@ -227,14 +229,28 @@ export default class Node {
   private onSystemInterval(message: SystemInterval) {
     const { peers, txcount, cpu, memory } = message;
 
-    if (this.peers !== peers || this.txcount !== txcount || this.cpu !== cpu || this.memory !== memory) {
-      this.peers = peers;
-      this.txcount = txcount;
-      this.cpu = cpu;
-      this.memory = memory;
+    this.peers = peers;
+    this.txcount = txcount;
 
-      this.events.emit('stats');
+    if (cpu) {
+      if (this.cpu.length === CPU_RECORDS) {
+        this.cpu.copyWithin(0, 1);
+        this.cpu[CPU_RECORDS-1] = cpu;
+      } else {
+        this.cpu.push(cpu);
+      }
     }
+
+    if (memory) {
+      if (this.memory.length === MEMORY_RECORDS) {
+        this.memory.copyWithin(0, 1);
+        this.memory[MEMORY_RECORDS-1] = memory;
+      } else {
+        this.memory.push(memory);
+      }
+    }
+
+    this.events.emit('stats');
   }
 
   private updateLatency(now: Types.Timestamp) {

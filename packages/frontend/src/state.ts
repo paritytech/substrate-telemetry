@@ -27,8 +27,8 @@ export class Node {
   public pinned: boolean;
   public peers: Types.PeerCount;
   public txs: Types.TransactionCount;
-  public mem: Maybe<Types.MemoryUse>;
-  public cpu: Maybe<Types.CPUUse>;
+  public mem: Types.MemoryUse[];
+  public cpu: Types.CPUUse[];
 
   public height: Types.BlockNumber;
   public hash: Types.BlockHash;

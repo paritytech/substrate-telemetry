@@ -5,7 +5,9 @@ import './Tooltip.css';
 export namespace Tooltip {
   export interface Props {
     text: string;
+    inline?: boolean;
     className?: string;
+    position?: 'left' | 'right' | 'center';
     onInit?: (update: UpdateCallback) => void;
   }
 
@@ -22,17 +24,26 @@ export class Tooltip extends React.Component<Tooltip.Props, {}> {
   }
 
   public render() {
-    const { text } = this.props;
+    const { text, inline, className, position } = this.props;
 
-    let className = 'Tooltip-container';
+    let containerClass = 'Tooltip-container';
+    let tooltipClass = 'Tooltip';
 
-    if (this.props.className) {
-      className += ' ' + this.props.className;
+    if (className) {
+      containerClass += ' ' + className;
+    }
+
+    if (inline) {
+      containerClass += ' Tooltip-container-inline';
+    }
+
+    if (position && position !== 'center') {
+      tooltipClass += ` Tooltip-${position}`;
     }
 
     return (
-      <div className={className}>
-        <div className="Tooltip" ref={this.onRef}>{text}</div>
+      <div className={containerClass}>
+        <div className={tooltipClass} ref={this.onRef}>{text}</div>
         {this.props.children}
       </div>
     );

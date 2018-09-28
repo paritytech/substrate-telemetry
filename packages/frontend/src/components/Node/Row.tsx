@@ -45,14 +45,24 @@ interface Column {
   render: (node: Node) => React.ReactElement<any> | string;
 }
 
-function Truncate(props: { text: string }): React.ReactElement<any> {
-  const { text } = props;
+function Truncate(props: { text: string, position?: 'left' | 'right' | 'center' }): React.ReactElement<any> {
+  const { text, position } = props;
 
-  return <Tooltip text={text} className="Node-Row-Tooltip"><div className="Node-Row-truncate">{text}</div></Tooltip>;
+  return (
+    <Tooltip text={text} position={position} className="Node-Row-Tooltip">
+      <div className="Node-Row-truncate">{text}</div>
+    </Tooltip>
+  );
 }
 
 function formatMemory(kbs: number): string {
-  return `${kbs} KB`;
+  const mbs = kbs / 1024 | 0;
+
+  if (mbs >= 1000) {
+    return `${(mbs / 1024).toFixed(1)} GB`;
+  } else {
+    return `${mbs} MB`;
+  }
 }
 
 function formatCPU(cpu: number): string {
@@ -64,7 +74,7 @@ export default class Row extends React.Component<RowProps, {}> {
     {
       label: 'Node',
       icon: nodeIcon,
-      render: ({ name }) => <Truncate text={name} />
+      render: ({ name }) => <Truncate text={name} position="left" />
     },
     {
       label: 'Validator',
@@ -119,8 +129,15 @@ export default class Row extends React.Component<RowProps, {}> {
       icon: cpuIcon,
       width: 32,
       setting: 'cpu',
-      // render: ({ cpu }) => cpu ? `${cpu.toFixed(1)}%` : '-'
-      render: ({  }) => <Sparkline width={40} height={16} stroke={1} format={formatCPU} values={[1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5)} />
+      render: ({ cpu }) => {
+        if (cpu.length < 3) {
+          return '-';
+        }
+
+        return (
+          <Sparkline width={40} height={16} stroke={1} format={formatCPU} values={cpu} />
+        );
+      }
     },
     {
       label: 'Memory Use',
@@ -128,21 +145,13 @@ export default class Row extends React.Component<RowProps, {}> {
       width: 32,
       setting: 'mem',
       render: ({ mem }) => {
-        if (!mem) {
+        if (mem.length < 3) {
           return '-';
         }
 
         return (
-          <Sparkline width={40} height={16} stroke={1} format={formatMemory} values={[1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5)} />
+          <Sparkline width={40} height={16} stroke={1} format={formatMemory} values={mem} />
         );
-
-        // const mbs = mem / 1024 | 0;
-
-        // return (
-        //   <span title={`${mem}kb`}>
-        //     {mbs >= 1000 ? `${(mbs / 1024).toFixed(1)}GB` : `${mbs}MB`}
-        //   </span>
-        // );
       }
     },
     {
@@ -157,7 +166,7 @@ export default class Row extends React.Component<RowProps, {}> {
       icon: blockHashIcon,
       width: 154,
       setting: 'blockhash',
-      render: ({ hash }) => <Truncate text={hash} />
+      render: ({ hash }) => <Truncate position="right" text={hash} />
     },
     {
       label: 'Block Time',
@@ -184,18 +193,24 @@ export default class Row extends React.Component<RowProps, {}> {
 
   public static Header = (props: HeaderProps) => {
     const { settings } = props;
+    const columns = Row.columns.filter(({ setting }) => setting == null || settings[setting]);
+    const last = columns.length - 1;
 
     return (
       <thead>
         <tr className="Node-Row-Header">
           {
-            Row.columns
-              .filter(({ setting }) => setting == null || settings[setting])
-              .map(({ icon, width, label }, index) => (
+            columns.map(({ icon, width, label }, index) => {
+              const position = index === 0 ? 'left'
+                             : index === last ? 'right'
+                             : 'center';
+
+              return (
                 <th key={index} style={width ? { width } : undefined}>
-                  <Tooltip text={label}><Icon src={icon} /></Tooltip>
+                  <Tooltip text={label} inline={true} position={position}><Icon src={icon} /></Tooltip>
                 </th>
-              ))
+              )
+            })
           }
         </tr>
       </thead>

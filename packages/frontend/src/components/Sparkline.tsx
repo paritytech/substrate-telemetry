@@ -25,12 +25,29 @@ export class Sparkline extends React.Component<Sparkline.Props, {}> {
     });
   }
 
+  public shouldComponentUpdate(nextProps: Sparkline.Props): boolean {
+    const { stroke, width, height, format } = this.props;
+
+    if (stroke !== nextProps.stroke || width !== nextProps.width || height !== nextProps.height || format !== nextProps.format) {
+      return true;
+    }
+
+    if (this.props.values !== nextProps.values) {
+      sparkline(this.el, nextProps.values, {
+        interactive: true,
+        onmousemove: this.onMouseMove,
+      });
+    }
+
+    return false;
+  }
+
   public render() {
     const { stroke, width, height } = this.props;
 
     return (
       <Tooltip text="-" onInit={this.onTooltipInit}>
-        <svg className="Sparkline" ref={this.onRef} width={width} height={height} stroke-width={stroke} />
+        <svg className="Sparkline" ref={this.onRef} width={width} height={height} strokeWidth={stroke} />
       </Tooltip>
     );
   }
