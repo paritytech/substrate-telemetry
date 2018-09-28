@@ -81,72 +81,11 @@ export class Connection {
     this.socket.send(`subscribe:${chain}`);
   }
 
-  private bindSocket() {
-    this.ping();
-
-    this.state = this.update({
-      status: 'online',
-      nodes: new Map()
-    });
-
-    if (this.state.subscribed) {
-      this.resubscribeTo = this.state.subscribed;
-      this.state = this.update({ subscribed: null });
-    }
-
-    this.socket.addEventListener('message', this.handleMessages);
-    this.socket.addEventListener('close', this.handleDisconnect);
-    this.socket.addEventListener('error', this.handleDisconnect);
-  }
-
-  private ping = () => {
-    if (this.pingSent) {
-      this.handleDisconnect();
-      return;
-    }
-
-    this.pingId += 1;
-    this.pingSent = timestamp();
-    this.socket.send(`ping:${this.pingId}`);
-
-    this.pingTimeout = setTimeout(this.ping, 30000);
-  }
-
-  private pong(id: number) {
-    if (!this.pingSent) {
-      console.error('Received a pong without sending a ping first');
-
-      this.handleDisconnect();
-      return;
-    }
-
-    if (id !== this.pingId) {
-      console.error('pingId differs');
-
-      this.handleDisconnect();
-    }
-
-    const latency = timestamp() - this.pingSent;
-    this.pingSent = null;
-
-    console.log('latency', latency);
-  }
-
-  private clean() {
-    clearTimeout(this.pingTimeout);
-    this.pingSent = null;
-
-    this.socket.removeEventListener('message', this.handleMessages);
-    this.socket.removeEventListener('close', this.handleDisconnect);
-    this.socket.removeEventListener('error', this.handleDisconnect);
-  }
-
-  private handleMessages = (event: MessageEvent) => {
-    const data = event.data as FeedMessage.Data;
+  public handleMessages = (messages: FeedMessage.Message[]) => {
     const { nodes, chains } = this.state;
     let { sortedNodes } = this.state;
 
-    messages: for (const message of FeedMessage.deserialize(data)) {
+    messages: for (const message of messages) {
       switch (message.action) {
         case Actions.FeedVersion: {
           if (message.payload !== VERSION) {
@@ -310,9 +249,77 @@ export class Connection {
     this.autoSubscribe();
   }
 
+  private bindSocket() {
+    this.ping();
+
+    this.state = this.update({
+      status: 'online',
+      nodes: new Map()
+    });
+
+    if (this.state.subscribed) {
+      this.resubscribeTo = this.state.subscribed;
+      this.state = this.update({ subscribed: null });
+    }
+
+    this.socket.addEventListener('message', this.handleFeedData);
+    this.socket.addEventListener('close', this.handleDisconnect);
+    this.socket.addEventListener('error', this.handleDisconnect);
+  }
+
+  private ping = () => {
+    if (this.pingSent) {
+      this.handleDisconnect();
+      return;
+    }
+
+    this.pingId += 1;
+    this.pingSent = timestamp();
+    this.socket.send(`ping:${this.pingId}`);
+
+    this.pingTimeout = setTimeout(this.ping, 30000);
+  }
+
+  private pong(id: number) {
+    if (!this.pingSent) {
+      console.error('Received a pong without sending a ping first');
+
+      this.handleDisconnect();
+      return;
+    }
+
+    if (id !== this.pingId) {
+      console.error('pingId differs');
+
+      this.handleDisconnect();
+    }
+
+    const latency = timestamp() - this.pingSent;
+    this.pingSent = null;
+
+    console.log('latency', latency);
+  }
+
+  private clean() {
+    clearTimeout(this.pingTimeout);
+    this.pingSent = null;
+
+    this.socket.removeEventListener('message', this.handleFeedData);
+    this.socket.removeEventListener('close', this.handleDisconnect);
+    this.socket.removeEventListener('error', this.handleDisconnect);
+  }
+
+  private handleFeedData = (event: MessageEvent) => {
+    const data = event.data as FeedMessage.Data;
+
+    this.handleMessages(FeedMessage.deserialize(data));
+  }
+
   private autoSubscribe() {
     const { subscribed, chains } = this.state;
     const { resubscribeTo } = this;
+
+    let foo = 10 as WebSocket;
 
     if (subscribed) {
       return;
