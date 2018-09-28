@@ -12,7 +12,7 @@ export namespace Filter {
 export class Filter extends React.Component<Filter.Props, {}> {
   private filterInput: HTMLInputElement;
 
-  public componentDidMount(){
+  public componentDidMount() {
     this.filterInput.focus();
   }
 

@@ -1,0 +1,6 @@
+.Sparkline {
+  fill: currentcolor; /* rgba(255,255,255,0.5); */
+  fill-opacity: 0.5;
+  stroke: currentcolor;
+  margin: 0 -14px 0 -4px;
+}
