@@ -10,6 +10,7 @@
       "tsx",
       "js"
     ],
+    "setupFiles": ["jest-localstorage-mock"],
     "transform": {
       "\\.(ts|tsx)$": "ts-jest"
     },
@@ -42,6 +43,8 @@
     "enzyme": "^3.6.0",
     "enzyme-adapter-react-16": "^1.5.0",
     "jest": "^23.6.0",
+    "jest-localstorage-mock": "^2.2.0",
+    "mock-socket": "^8.0.2",
     "react-test-renderer": "^16.5.2",
     "ts-jest": "^23.10.2",
     "typescript": "^2.9.2"

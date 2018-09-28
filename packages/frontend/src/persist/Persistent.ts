@@ -11,6 +11,8 @@ export class Persistent<Data> {
 
     const stored = window.localStorage.getItem(key) as Maybe<Stringified<Data>>;
 
+    console.log('stored => ', stored);
+
     if (stored) {
       this.value = parse(stored);
     } else {

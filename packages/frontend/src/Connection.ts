@@ -319,8 +319,6 @@ export class Connection {
     const { subscribed, chains } = this.state;
     const { resubscribeTo } = this;
 
-    let foo = 10 as WebSocket;
-
     if (subscribed) {
       return;
     }

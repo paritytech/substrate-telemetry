@@ -2,7 +2,7 @@ import * as Enzyme from './enzyme';
 const { shallow, mount } = Enzyme;
 
 import * as sinon from 'sinon';
-import { WebSocket, Server } from 'mock-socket';
+import { WebSocket as ws, Server } from 'mock-socket';
 
 import { Types, FeedMessage } from '../../common';
 
@@ -12,12 +12,13 @@ import { PersistentObject, PersistentSet } from '../src/persist';
 
 describe('Connection.ts', () => {
   const fakeWebSocketURL = 'ws://localhost:8080';
-  const mockServer = new Server(fakeWebSocketURL);
+  const mockServer = (new Server(fakeWebSocketURL)) as any as WebSocket;
 
   let state: State;
   let connection: Promise<Connection>;
+  let handleMessages;
 
-  const settings: Settings = {
+  const settings: State.Settings = {
     location: false,
     validator: false,
     implementation: false,
@@ -32,7 +33,7 @@ describe('Connection.ts', () => {
     blocklasttime: false
   }
 
-  beforeAll(() => {
+  beforeAll(async () => {
     state = {
       status: 'offline',
       best: 0 as Types.BlockNumber,
@@ -43,30 +44,21 @@ describe('Connection.ts', () => {
       chains: new Map(),
       nodes: new Map(),
       sortedNodes: [],
-      settings: { settings },
-      pins: []
+      settings,
+      pins: new Set()
     } as State;
 
-    const pins: PersistentSet<Types.NodeName> = new PersistentSet<Types.NodeName>('key', (p) => {
-      // stub pins function
-      // const { nodes, sortedNodes } = this.state;
-      //
-      // for (const node of nodes.values()) {
-      //   node.pinned = pins.has(node.name);
-      // }
-
-      // this.setState({ nodes, pins, sortedNodes: sortedNodes.sort(Node.compare) });
-    });
+    const pins: PersistentSet<Types.NodeName> = new PersistentSet<Types.NodeName>('key', (p, q) => {});
 
     const update: Update = () => {
       // stub update function
       return state as Readonly<State>;
     };
 
-    connection = sinon.stub(Connection, 'create')
-                      .returns(new Connection(mockServer, update, pins))
+    connection = Promise.resolve(sinon.stub(Connection, 'create')
+                      .returns(new Connection(mockServer, update, pins)) as any as Connection)
 
-    handleMessages = sinon.spy(connection, 'handleMessages');
+    handleMessages = sinon.spy(await connection, 'handleMessages');
   });
 
   afterEach(() => {
@@ -74,9 +66,9 @@ describe('Connection.ts', () => {
     sinon.restore();
   })
 
-  test.only('handle Feed Version message state update', () => {
+  test.only('handle Feed Version message state update', async () => {
     // { action: 'FeedVersion', payload: null }
-    expect(connection.handleMessages).toHaveBeenCalled();
+    expect((await connection).handleMessages).toHaveBeenCalled();
   })
 
 
