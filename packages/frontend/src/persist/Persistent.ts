@@ -11,16 +11,20 @@ export class Persistent<Data> {
 
     const stored = window.localStorage.getItem(key) as Maybe<Stringified<Data>>;
 
-    console.log('stored => ', stored);
-
     if (stored) {
-      this.value = parse(stored);
+      try {
+        this.value = parse(stored);
+      } catch (err) {
+        this.value = initial;
+      }
     } else {
       this.value = initial;
     }
 
     window.addEventListener('storage', (event) => {
       if (event.key === this.key) {
+        console.log('event => ', event);
+        process.exit(0);
         this.value = parse(event.newValue as any as Stringified<Data>);
 
         this.onChange(this.value);

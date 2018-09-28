@@ -2,7 +2,7 @@ import * as Enzyme from './enzyme';
 const { shallow, mount } = Enzyme;
 
 import * as sinon from 'sinon';
-import { WebSocket as ws, Server } from 'mock-socket';
+import { Server } from 'mock-socket';
 
 import { Types, FeedMessage } from '../../common';
 
@@ -12,11 +12,22 @@ import { PersistentObject, PersistentSet } from '../src/persist';
 
 describe('Connection.ts', () => {
   const fakeWebSocketURL = 'ws://localhost:8080';
-  const mockServer = (new Server(fakeWebSocketURL)) as any as WebSocket;
+  const mockServer = new Server(fakeWebSocketURL);
+
+  mockServer.on('connection', (socket: any) => {
+    console.log('Got connection!');
+
+    socket.on('message', (message: any) => {
+      console.log(message);
+    });
+
+    socket.send('[0,15,8,["BBQ Birch",6],8,["Krumme Lanke",57]]');
+  });
 
   let state: State;
-  let connection: Promise<Connection>;
-  let handleMessages;
+  let connection: Connection;
+  let handleMessages: any;
+  let update: any;
 
   const settings: State.Settings = {
     location: false,
@@ -48,27 +59,49 @@ describe('Connection.ts', () => {
       pins: new Set()
     } as State;
 
-    const pins: PersistentSet<Types.NodeName> = new PersistentSet<Types.NodeName>('key', (p, q) => {});
+    const pins: PersistentSet<Types.NodeName> = new PersistentSet<Types.NodeName>('key', ((p) => {}));
 
-    const update: Update = () => {
+    update = jest.fn((changes) => {
+      console.log(changes);
+
+      state = Object.assign({}, state, changes);
+
       // stub update function
       return state as Readonly<State>;
-    };
+    }) as Update;
 
-    connection = Promise.resolve(sinon.stub(Connection, 'create')
-                      .returns(new Connection(mockServer, update, pins)) as any as Connection)
+    connection = await Connection.create(pins, update);
 
-    handleMessages = sinon.spy(await connection, 'handleMessages');
+    const before = connection.handleMessages;
+
+    connection.handleMessages = jest.fn(connection.handleMessages);
+
+    // console.log('handle after', connection.handleMessages === handleMessages, connection.handleMessages === before);
   });
 
   afterEach(() => {
     // clear stubs and fakes after each test case
-    sinon.restore();
+    // sinon.restore();
+    // connection.handleMessages.restore();
   })
 
   test.only('handle Feed Version message state update', async () => {
-    // { action: 'FeedVersion', payload: null }
-    expect((await connection).handleMessages).toHaveBeenCalled();
+    connection.handleMessages([
+      {
+        action: 0,
+        payload: 15
+      }, {
+        action: 8,
+        payload: ["BBQ Birch", 6],
+      }, {
+        action: 8,
+        payload: ["Krumme Lanke", 57]
+      }
+    ] as any as FeedMessage.Message[])
+
+    expect(update).toHaveBeenCalled();
+
+    console.log(state);
   })
 
 
