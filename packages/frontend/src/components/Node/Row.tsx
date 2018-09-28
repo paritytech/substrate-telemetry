@@ -66,7 +66,12 @@ function formatMemory(kbs: number): string {
 }
 
 function formatCPU(cpu: number): string {
-  return `${cpu.toFixed(1)}%`;
+  const fractionDigits = cpu > 100 ? 0
+                       : cpu > 10 ? 1
+                       : cpu > 1 ? 2
+                       : 3;
+
+  return `${cpu.toFixed(fractionDigits)}%`;
 }
 
 export default class Row extends React.Component<RowProps, {}> {
@@ -127,7 +132,7 @@ export default class Row extends React.Component<RowProps, {}> {
     {
       label: '% CPU Use',
       icon: cpuIcon,
-      width: 32,
+      width: 40,
       setting: 'cpu',
       render: ({ cpu }) => {
         if (cpu.length < 3) {
@@ -135,14 +140,14 @@ export default class Row extends React.Component<RowProps, {}> {
         }
 
         return (
-          <Sparkline width={40} height={16} stroke={1} format={formatCPU} values={cpu} />
+          <Sparkline width={48} height={16} stroke={1} format={formatCPU} values={cpu} />
         );
       }
     },
     {
       label: 'Memory Use',
       icon: memoryIcon,
-      width: 32,
+      width: 40,
       setting: 'mem',
       render: ({ mem }) => {
         if (mem.length < 3) {
@@ -150,7 +155,7 @@ export default class Row extends React.Component<RowProps, {}> {
         }
 
         return (
-          <Sparkline width={40} height={16} stroke={1} format={formatMemory} values={mem} />
+          <Sparkline width={48} height={16} stroke={1} format={formatMemory} values={mem} />
         );
       }
     },
