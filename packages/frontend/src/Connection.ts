@@ -182,6 +182,7 @@ export class Connection {
 
           if (nodes.size !== sortedNodes.length) {
             console.error('Node count in sorted array is wrong!');
+            sortedNodes = Array.from(nodes.values()).sort(Node.compare);
           }
 
           break;
@@ -198,6 +199,7 @@ export class Connection {
 
             if (nodes.size !== sortedNodes.length) {
               console.error('Node count in sorted array is wrong!');
+              sortedNodes = Array.from(nodes.values()).sort(Node.compare);
             }
 
             break;

@@ -5,6 +5,7 @@
   "license": "GPL-3.0",
   "description": "Polkadot Telemetry frontend",
   "dependencies": {
+    "@fnando/sparkline": "^0.3.10",
     "polkadot-identicon": "^1.1.0",
     "react": "16.4.0",
     "react-dom": "16.4.0",

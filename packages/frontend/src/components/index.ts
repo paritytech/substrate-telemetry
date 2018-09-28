@@ -5,6 +5,8 @@ export * from './Tile';
 export * from './Ago';
 export * from './OfflineIndicator';
 export * from './Setting';
+export * from './Sparkline';
+export * from './Tooltip';
 
 import * as Node from './Node';
 

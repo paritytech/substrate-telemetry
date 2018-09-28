@@ -23,6 +23,11 @@
   text-overflow: ellipsis;
 }
 
+.Node-Row .Node-Row-Tooltip {
+  position: initial;
+  padding: inherit;
+}
+
 .Node-Row-synced {
   color: #fff;
 }

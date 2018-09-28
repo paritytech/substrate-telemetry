@@ -5,7 +5,7 @@ import { formatNumber, milliOrSecond, secondsWithPrecision } from '../../utils';
 import { State as AppState, Node } from '../../state';
 import { PersistentSet } from '../../persist';
 import { SEMVER_PATTERN } from './';
-import { Ago, Icon } from '../';
+import { Ago, Icon, Tooltip, Sparkline } from '../';
 
 import nodeIcon from '../../icons/server.svg';
 import nodeLocationIcon from '../../icons/location.svg';
@@ -48,7 +48,15 @@ interface Column {
 function Truncate(props: { text: string }): React.ReactElement<any> {
   const { text } = props;
 
-  return <div className="Node-Row-truncate" title={text}>{text}</div>;
+  return <Tooltip text={text} className="Node-Row-Tooltip"><div className="Node-Row-truncate">{text}</div></Tooltip>;
+}
+
+function formatMemory(kbs: number): string {
+  return `${kbs} KB`;
+}
+
+function formatCPU(cpu: number): string {
+  return `${cpu.toFixed(1)}%`;
 }
 
 export default class Row extends React.Component<RowProps, {}> {
@@ -64,7 +72,7 @@ export default class Row extends React.Component<RowProps, {}> {
       width: 26,
       setting: 'validator',
       render: ({ validator }) => {
-        return validator ? <span className="Node-Row-validator" title={validator}><Identicon id={validator} size={16} /></span> : '-';
+        return validator ? <Tooltip text={validator}><span className="Node-Row-validator"><Identicon id={validator} size={16} /></span></Tooltip> : '-';
       }
     },
     {
@@ -85,7 +93,11 @@ export default class Row extends React.Component<RowProps, {}> {
                        : implementation === 'substrate-node' ? paritySubstrateIcon
                        : unknownImplementationIcon;
 
-        return <span title={`${implementation} v${version}`}><Icon src={implIcon} /> {semver}</span>;
+        return (
+          <Tooltip text={`${implementation} v${version}`}>
+            <Icon src={implIcon} /> {semver}
+          </Tooltip>
+        );
       }
     },
     {
@@ -105,16 +117,33 @@ export default class Row extends React.Component<RowProps, {}> {
     {
       label: '% CPU Use',
       icon: cpuIcon,
-      width: 26,
+      width: 32,
       setting: 'cpu',
-      render: ({ cpu }) => cpu ? `${cpu.toFixed(1)}%` : '-'
+      // render: ({ cpu }) => cpu ? `${cpu.toFixed(1)}%` : '-'
+      render: ({  }) => <Sparkline width={40} height={16} stroke={1} format={formatCPU} values={[1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5)} />
     },
     {
       label: 'Memory Use',
       icon: memoryIcon,
-      width: 26,
+      width: 32,
       setting: 'mem',
-      render: ({ mem }) => mem ? <span title={`${mem}kb`}>{mem / 1024 | 0}mb</span> : '-'
+      render: ({ mem }) => {
+        if (!mem) {
+          return '-';
+        }
+
+        return (
+          <Sparkline width={40} height={16} stroke={1} format={formatMemory} values={[1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5)} />
+        );
+
+        // const mbs = mem / 1024 | 0;
+
+        // return (
+        //   <span title={`${mem}kb`}>
+        //     {mbs >= 1000 ? `${(mbs / 1024).toFixed(1)}GB` : `${mbs}MB`}
+        //   </span>
+        // );
+      }
     },
     {
       label: 'Block',
@@ -163,7 +192,9 @@ export default class Row extends React.Component<RowProps, {}> {
             Row.columns
               .filter(({ setting }) => setting == null || settings[setting])
               .map(({ icon, width, label }, index) => (
-                <th key={index} style={width ? { width } : undefined}><Icon src={icon} alt={label} /></th>
+                <th key={index} style={width ? { width } : undefined}>
+                  <Tooltip text={label}><Icon src={icon} /></Tooltip>
+                </th>
               ))
           }
         </tr>
