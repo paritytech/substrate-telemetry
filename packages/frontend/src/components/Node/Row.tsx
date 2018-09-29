@@ -22,7 +22,7 @@ import cpuIcon from '../../icons/microchip-solid.svg';
 import memoryIcon from '../../icons/memory-solid.svg';
 
 import parityPolkadotIcon from '../../icons/dot.svg';
-import paritySubstrateIcon from '../../icons/parity-substrate.svg';
+import paritySubstrateIcon from '../../icons/substrate.svg';
 import unknownImplementationIcon from '../../icons/question-solid.svg';
 
 import './Row.css';
