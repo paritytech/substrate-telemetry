@@ -86,7 +86,8 @@ export class Connection {
 
     this.state = this.update({
       status: 'online',
-      nodes: new Map()
+      nodes: new Map(),
+      sortedNodes: [],
     });
 
     if (this.state.subscribed) {
