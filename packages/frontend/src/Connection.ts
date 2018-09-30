@@ -14,11 +14,11 @@ export class Connection {
     return new Connection(await Connection.socket(), update, pins);
   }
 
-  private static readonly address = window.location.protocol === 'https:'
-                                      ? `wss://${window.location.hostname}/feed/`
-                                      : `ws://${window.location.hostname}:8080`;
+  // private static readonly address = window.location.protocol === 'https:'
+  //                                     ? `wss://${window.location.hostname}/feed/`
+  //                                     : `ws://${window.location.hostname}:8080`;
 
-  // private static readonly address = 'wss://telemetry.polkadot.io/feed/';
+  private static readonly address = 'wss://telemetry.polkadot.io/feed/';
 
   private static async socket(): Promise<WebSocket> {
     let socket = await Connection.trySocket();
