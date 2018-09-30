@@ -1,6 +1,7 @@
 declare module '@fnando/sparkline' {
   namespace sparkline {
     export interface Options {
+      minScale?: number;
       spotRadius?: number;
       cursorWidth?: number;
       interactive?: boolean;
