@@ -27,32 +27,33 @@ function clearCache() {
 
 clearCache();
 
-export function getId(pubkey: Maybe<Types.Address>, name: Types.NodeName): Types.NodeId {
-  let cachekey: Types.Address | SaltedName;
+export function getId(_pubkey: Maybe<Types.Address>, _name: Types.NodeName): Types.NodeId {
+  // let cachekey: Types.Address | SaltedName;
 
-  if (pubkey) {
-    const cached = idCache.get(pubkey);
+  // if (pubkey) {
+  //   const cached = idCache.get(pubkey);
 
-    if (cached) {
-      return cached.id;
-    }
+  //   if (cached) {
+  //     return cached.id;
+  //   }
 
-    cachekey = pubkey;
-  } else {
-    cachekey = `name:${name}` as SaltedName;
-  }
+  //   cachekey = pubkey;
+  // } else {
+  //   cachekey = `name:${name}` as SaltedName;
+  // }
 
   const id = nextId();
-  const ts = timestamp();
+  // const ts = timestamp();
 
-  idCache.set(cachekey, { id, ts });
+  // idCache.set(cachekey, { id, ts });
 
   return id;
 }
 
-export function refreshId(pubkey: Maybe<Types.Address>, name: Types.NodeName, id: Types.NodeId) {
-  const cachekey = pubkey ? pubkey : `name:${name}` as SaltedName;
-  const ts = timestamp();
+export function refreshId(_pubkey: Maybe<Types.Address>, _name: Types.NodeName, _id: Types.NodeId) {
+  // const cachekey = pubkey ? pubkey : `name:${name}` as SaltedName;
+  // const cachekey = `name:${name}` as SaltedName;
+  // const ts = timestamp();
 
-  idCache.set(cachekey, { id, ts });
+  // idCache.set(cachekey, { id, ts });
 }
