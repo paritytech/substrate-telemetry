@@ -10,6 +10,7 @@ export namespace Sparkline {
     width: number;
     height: number;
     values: number[];
+    minScale?: number;
     format?: (value: number) => string;
   }
 }
@@ -26,7 +27,7 @@ export class Sparkline extends React.Component<Sparkline.Props, {}> {
   }
 
   public shouldComponentUpdate(nextProps: Sparkline.Props): boolean {
-    const { stroke, width, height, format } = this.props;
+    const { stroke, width, height, minScale, format } = this.props;
 
     if (stroke !== nextProps.stroke || width !== nextProps.width || height !== nextProps.height || format !== nextProps.format) {
       return true;
@@ -34,6 +35,7 @@ export class Sparkline extends React.Component<Sparkline.Props, {}> {
 
     if (this.props.values !== nextProps.values) {
       sparkline(this.el, nextProps.values, {
+        minScale,
         interactive: true,
         onmousemove: this.onMouseMove,
       });

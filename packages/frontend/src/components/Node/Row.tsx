@@ -140,7 +140,7 @@ export default class Row extends React.Component<RowProps, {}> {
         }
 
         return (
-          <Sparkline width={48} height={16} stroke={1} format={formatCPU} values={cpu} />
+          <Sparkline width={48} height={16} stroke={1} format={formatCPU} values={cpu} minScale={100} />
         );
       }
     },
