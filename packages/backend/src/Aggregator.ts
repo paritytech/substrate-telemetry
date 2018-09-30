@@ -33,8 +33,8 @@ export default class Aggregator {
       const chain = this.chains.get(label);
 
       if (chain) {
-        chain.addFeed(feed);
         feed.sendMessage(Feed.subscribedTo(label));
+        chain.addFeed(feed);
       }
     });
 

@@ -281,7 +281,10 @@ export class Connection {
         }
 
         case Actions.SubscribedTo: {
-          this.state = this.update({ subscribed: message.payload });
+          nodes.clear();
+          sortedNodes = [];
+
+          this.state = this.update({ subscribed: message.payload, nodes, sortedNodes });
 
           continue messages;
         }
