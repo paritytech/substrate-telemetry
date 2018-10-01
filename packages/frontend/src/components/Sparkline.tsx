@@ -21,6 +21,8 @@ export class Sparkline extends React.Component<Sparkline.Props, {}> {
 
   public componentDidMount() {
     sparkline(this.el, this.props.values, {
+      spotRadius: 0.1,
+      minScale: this.props.minScale,
       interactive: true,
       onmousemove: this.onMouseMove,
     });
@@ -35,6 +37,7 @@ export class Sparkline extends React.Component<Sparkline.Props, {}> {
 
     if (this.props.values !== nextProps.values) {
       sparkline(this.el, nextProps.values, {
+        spotRadius: 0.1,
         minScale,
         interactive: true,
         onmousemove: this.onMouseMove,
