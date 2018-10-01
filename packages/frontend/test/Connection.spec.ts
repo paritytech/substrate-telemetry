@@ -1,7 +1,6 @@
 import * as Enzyme from './enzyme';
 const { shallow, mount } = Enzyme;
 
-import * as sinon from 'sinon';
 import { Server } from 'mock-socket';
 
 import { Types, FeedMessage, timestamp, VERSION } from '../../common';
