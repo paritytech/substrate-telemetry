@@ -1,6 +1,6 @@
 import * as React from 'react';
 import Identicon from 'polkadot-identicon';
-import { Types } from '@dotstats/common';
+import { Types, Maybe, timestamp } from '@dotstats/common';
 import { formatNumber, milliOrSecond, secondsWithPrecision } from '../../utils';
 import { State as AppState, Node } from '../../state';
 import { PersistentSet } from '../../persist';
@@ -55,23 +55,37 @@ function Truncate(props: { text: string, position?: 'left' | 'right' | 'center' 
   );
 }
 
-function formatMemory(kbs: number): string {
+function formatStamp(stamp: Types.Timestamp): string {
+  const passed = (timestamp() - stamp) / 1000 | 0;
+
+  const hours = Math.round(passed / 3600);
+  const minutes = Math.round((passed % 3600) / 60);
+  const seconds = (passed % 60) | 0;
+
+  return hours ? `${hours}h ago`
+       : minutes ? `${minutes}m ago`
+       : `${seconds}s ago`;
+}
+
+function formatMemory(kbs: number, stamp: Maybe<Types.Timestamp>): string {
+  const ago = stamp ? ` (${formatStamp(stamp)})` : '';
   const mbs = kbs / 1024 | 0;
 
   if (mbs >= 1000) {
-    return `${(mbs / 1024).toFixed(1)} GB`;
+    return `${(mbs / 1024).toFixed(1)} GB${ago}`;
   } else {
-    return `${mbs} MB`;
+    return `${mbs} MB${ago}`;
   }
 }
 
-function formatCPU(cpu: number): string {
+function formatCPU(cpu: number, stamp: Maybe<Types.Timestamp>): string {
+  const ago = stamp ? ` (${formatStamp(stamp)})` : '';
   const fractionDigits = cpu > 100 ? 0
                        : cpu > 10 ? 1
                        : cpu > 1 ? 2
                        : 3;
 
-  return `${cpu.toFixed(fractionDigits)}%`;
+  return `${cpu.toFixed(fractionDigits)}%${ago}`;
 }
 
 export default class Row extends React.Component<RowProps, {}> {
@@ -134,13 +148,13 @@ export default class Row extends React.Component<RowProps, {}> {
       icon: cpuIcon,
       width: 40,
       setting: 'cpu',
-      render: ({ cpu }) => {
+      render: ({ cpu, chartstamps }) => {
         if (cpu.length < 3) {
           return '-';
         }
 
         return (
-          <Sparkline width={44} height={16} stroke={1} format={formatCPU} values={cpu} minScale={100} />
+          <Sparkline width={44} height={16} stroke={1} format={formatCPU} values={cpu} stamps={chartstamps} minScale={100} />
         );
       }
     },
@@ -149,13 +163,13 @@ export default class Row extends React.Component<RowProps, {}> {
       icon: memoryIcon,
       width: 40,
       setting: 'mem',
-      render: ({ mem }) => {
+      render: ({ mem, chartstamps }) => {
         if (mem.length < 3) {
           return '-';
         }
 
         return (
-          <Sparkline width={44} height={16} stroke={1} format={formatMemory} values={mem} />
+          <Sparkline width={44} height={16} stroke={1} format={formatMemory} values={mem} stamps={chartstamps} />
         );
       }
     },
