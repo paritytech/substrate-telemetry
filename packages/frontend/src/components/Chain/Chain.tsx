@@ -252,6 +252,10 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
   }
 
   private onKeyPress = (event: KeyboardEvent) => {
+    if (event.ctrlKey) {
+      return;
+    }
+
     const { filter } = this.state;
     const key = event.key;
     const code = event.keyCode;

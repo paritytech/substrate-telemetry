@@ -27,8 +27,9 @@ export class Node {
   public pinned: boolean;
   public peers: Types.PeerCount;
   public txs: Types.TransactionCount;
-  public mem: Maybe<Types.MemoryUse>;
-  public cpu: Maybe<Types.CPUUse>;
+  public mem: Types.MemoryUse[];
+  public cpu: Types.CPUUse[];
+  public chartstamps: Types.Timestamp[];
 
   public height: Types.BlockNumber;
   public hash: Types.BlockHash;
@@ -45,6 +46,7 @@ export class Node {
     id: Types.NodeId,
     nodeDetails: Types.NodeDetails,
     nodeStats: Types.NodeStats,
+    nodeHardware: Types.NodeHardware,
     blockDetails: Types.BlockDetails,
     location: Maybe<Types.NodeLocation>
   ) {
@@ -59,6 +61,7 @@ export class Node {
     this.validator = validator;
 
     this.updateStats(nodeStats);
+    this.updateHardware(nodeHardware);
     this.updateBlock(blockDetails);
 
     if (location) {
@@ -67,12 +70,18 @@ export class Node {
   }
 
   public updateStats(stats: Types.NodeStats) {
-    const [peers, txs, mem, cpu] = stats;
+    const [peers, txs] = stats;
 
     this.peers = peers;
     this.txs = txs;
+  }
+
+  public updateHardware(hardware: Types.NodeHardware) {
+    const [mem, cpu, chartstamps] = hardware;
+
     this.mem = mem;
     this.cpu = cpu;
+    this.chartstamps = chartstamps;
   }
 
   public updateBlock(block: Types.BlockDetails) {

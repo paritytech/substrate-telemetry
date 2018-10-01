@@ -112,15 +112,16 @@ export class Connection {
         }
 
         case Actions.AddedNode: {
-          const [id, nodeDetails, nodeStats, blockDetails, location] = message.payload;
+          const [id, nodeDetails, nodeStats, nodeHardware, blockDetails, location] = message.payload;
           const pinned = this.pins.has(nodeDetails[0]);
-          const node = new Node(pinned, id, nodeDetails, nodeStats, blockDetails, location);
+          const node = new Node(pinned, id, nodeDetails, nodeStats, nodeHardware, blockDetails, location);
 
           nodes.set(id, node);
           sortedInsert(node, sortedNodes, Node.compare);
 
           if (nodes.size !== sortedNodes.length) {
             console.error('Node count in sorted array is wrong!');
+            sortedNodes = Array.from(nodes.values()).sort(Node.compare);
           }
 
           break;
@@ -137,6 +138,7 @@ export class Connection {
 
             if (nodes.size !== sortedNodes.length) {
               console.error('Node count in sorted array is wrong!');
+              sortedNodes = Array.from(nodes.values()).sort(Node.compare);
             }
 
             break;
@@ -187,6 +189,19 @@ export class Connection {
           break;
         }
 
+        case Actions.NodeHardware: {
+          const [id, nodeHardware] = message.payload;
+          const node = nodes.get(id);
+
+          if (!node) {
+            return;
+          }
+
+          node.updateHardware(nodeHardware);
+
+          break;
+        }
+
         case Actions.TimeSync: {
           this.state = this.update({
             timeDiff: (timestamp() - message.payload) as Types.Milliseconds
@@ -217,7 +232,10 @@ export class Connection {
         }
 
         case Actions.SubscribedTo: {
-          this.state = this.update({ subscribed: message.payload });
+          nodes.clear();
+          sortedNodes = [];
+
+          this.state = this.update({ subscribed: message.payload, nodes, sortedNodes });
 
           continue messages;
         }

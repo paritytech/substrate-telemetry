@@ -5,8 +5,11 @@ import { noop, timestamp, Maybe, Types, NumStats } from '@dotstats/common';
 import { parseMessage, getBestBlock, Message, BestBlock, SystemInterval } from './message';
 import { locate, Location } from './location';
 import { getId, refreshId } from './nodeId';
+import { MeanList } from './MeanList';
 
 const BLOCK_TIME_HISTORY = 10;
+const MEMORY_RECORDS = 20;
+const CPU_RECORDS = 20;
 const TIMEOUT = (1000 * 60 * 1) as Types.Milliseconds; // 1 minute
 
 export interface NodeEvents {
@@ -37,8 +40,9 @@ export default class Node {
 
   private peers = 0 as Types.PeerCount;
   private txcount = 0 as Types.TransactionCount;
-  private memory = null as Maybe<Types.MemoryUse>;
-  private cpu = null as Maybe<Types.CPUUse>;
+  private memory = new MeanList<Types.MemoryUse>();
+  private cpu = new MeanList<Types.CPUUse>();
+  private chartstamps = new MeanList<Types.Timestamp>();
 
   private readonly ip: string;
   private readonly socket: WebSocket;
@@ -175,7 +179,11 @@ export default class Node {
   }
 
   public nodeStats(): Types.NodeStats {
-    return [this.peers, this.txcount, this.memory, this.cpu];
+    return [this.peers, this.txcount];
+  }
+
+  public nodeHardware(): Types.NodeHardware {
+    return [this.memory.get(), this.cpu.get(), this.chartstamps.get()];
   }
 
   public blockDetails(): Types.BlockDetails {
@@ -227,13 +235,21 @@ export default class Node {
   private onSystemInterval(message: SystemInterval) {
     const { peers, txcount, cpu, memory } = message;
 
-    if (this.peers !== peers || this.txcount !== txcount || this.cpu !== cpu || this.memory !== memory) {
+    if (this.peers !== peers || this.txcount !== txcount) {
       this.peers = peers;
       this.txcount = txcount;
-      this.cpu = cpu;
-      this.memory = memory;
 
       this.events.emit('stats');
+    }
+
+    if (cpu != null && memory != null) {
+      const cpuChange = this.cpu.push(cpu);
+      const memChange = this.memory.push(memory);
+      const stampChange = this.chartstamps.push(timestamp());
+
+      if (cpuChange || memChange || stampChange) {
+        this.events.emit('hardware');
+      }
     }
   }
 

@@ -1,11 +1,11 @@
 import * as React from 'react';
 import Identicon from 'polkadot-identicon';
-import { Types } from '@dotstats/common';
+import { Types, Maybe, timestamp } from '@dotstats/common';
 import { formatNumber, milliOrSecond, secondsWithPrecision } from '../../utils';
 import { State as AppState, Node } from '../../state';
 import { PersistentSet } from '../../persist';
 import { SEMVER_PATTERN } from './';
-import { Ago, Icon } from '../';
+import { Ago, Icon, Tooltip, Sparkline } from '../';
 
 import nodeIcon from '../../icons/server.svg';
 import nodeLocationIcon from '../../icons/location.svg';
@@ -22,7 +22,7 @@ import cpuIcon from '../../icons/microchip-solid.svg';
 import memoryIcon from '../../icons/memory-solid.svg';
 
 import parityPolkadotIcon from '../../icons/dot.svg';
-import paritySubstrateIcon from '../../icons/parity-substrate.svg';
+import paritySubstrateIcon from '../../icons/substrate.svg';
 import unknownImplementationIcon from '../../icons/question-solid.svg';
 
 import './Row.css';
@@ -45,10 +45,47 @@ interface Column {
   render: (node: Node) => React.ReactElement<any> | string;
 }
 
-function Truncate(props: { text: string }): React.ReactElement<any> {
-  const { text } = props;
+function Truncate(props: { text: string, position?: 'left' | 'right' | 'center' }): React.ReactElement<any> {
+  const { text, position } = props;
 
-  return <div className="Node-Row-truncate" title={text}>{text}</div>;
+  return (
+    <Tooltip text={text} position={position} className="Node-Row-Tooltip">
+      <div className="Node-Row-truncate">{text}</div>
+    </Tooltip>
+  );
+}
+
+function formatStamp(stamp: Types.Timestamp): string {
+  const passed = (timestamp() - stamp) / 1000 | 0;
+
+  const hours = passed / 3600 | 0;
+  const minutes = (passed % 3600) / 60 | 0;
+  const seconds = (passed % 60) | 0;
+
+  return hours ? `${hours}h ago`
+       : minutes ? `${minutes}m ago`
+       : `${seconds}s ago`;
+}
+
+function formatMemory(kbs: number, stamp: Maybe<Types.Timestamp>): string {
+  const ago = stamp ? ` (${formatStamp(stamp)})` : '';
+  const mbs = kbs / 1024 | 0;
+
+  if (mbs >= 1000) {
+    return `${(mbs / 1024).toFixed(1)} GB${ago}`;
+  } else {
+    return `${mbs} MB${ago}`;
+  }
+}
+
+function formatCPU(cpu: number, stamp: Maybe<Types.Timestamp>): string {
+  const ago = stamp ? ` (${formatStamp(stamp)})` : '';
+  const fractionDigits = cpu > 100 ? 0
+                       : cpu > 10 ? 1
+                       : cpu > 1 ? 2
+                       : 3;
+
+  return `${cpu.toFixed(fractionDigits)}%${ago}`;
 }
 
 export default class Row extends React.Component<RowProps, {}> {
@@ -56,7 +93,7 @@ export default class Row extends React.Component<RowProps, {}> {
     {
       label: 'Node',
       icon: nodeIcon,
-      render: ({ name }) => <Truncate text={name} />
+      render: ({ name }) => <Truncate text={name} position="left" />
     },
     {
       label: 'Validator',
@@ -64,7 +101,7 @@ export default class Row extends React.Component<RowProps, {}> {
       width: 26,
       setting: 'validator',
       render: ({ validator }) => {
-        return validator ? <span className="Node-Row-validator" title={validator}><Identicon id={validator} size={16} /></span> : '-';
+        return validator ? <Tooltip text={validator}><span className="Node-Row-validator"><Identicon id={validator} size={16} /></span></Tooltip> : '-';
       }
     },
     {
@@ -72,7 +109,7 @@ export default class Row extends React.Component<RowProps, {}> {
       icon: nodeLocationIcon,
       width: 140,
       setting: 'location',
-      render: ({ city }) => city ? <Truncate text={city} /> : '-'
+      render: ({ city }) => city ? <Truncate position="left" text={city} /> : '-'
     },
     {
       label: 'Implementation',
@@ -85,7 +122,11 @@ export default class Row extends React.Component<RowProps, {}> {
                        : implementation === 'substrate-node' ? paritySubstrateIcon
                        : unknownImplementationIcon;
 
-        return <span title={`${implementation} v${version}`}><Icon src={implIcon} /> {semver}</span>;
+        return (
+          <Tooltip text={`${implementation} v${version}`}>
+            <Icon src={implIcon} /> {semver}
+          </Tooltip>
+        );
       }
     },
     {
@@ -105,16 +146,32 @@ export default class Row extends React.Component<RowProps, {}> {
     {
       label: '% CPU Use',
       icon: cpuIcon,
-      width: 26,
+      width: 40,
       setting: 'cpu',
-      render: ({ cpu }) => cpu ? `${cpu.toFixed(1)}%` : '-'
+      render: ({ cpu, chartstamps }) => {
+        if (cpu.length < 3) {
+          return '-';
+        }
+
+        return (
+          <Sparkline width={44} height={16} stroke={1} format={formatCPU} values={cpu} stamps={chartstamps} minScale={100} />
+        );
+      }
     },
     {
       label: 'Memory Use',
       icon: memoryIcon,
-      width: 26,
+      width: 40,
       setting: 'mem',
-      render: ({ mem }) => mem ? <span title={`${mem}kb`}>{mem / 1024 | 0}mb</span> : '-'
+      render: ({ mem, chartstamps }) => {
+        if (mem.length < 3) {
+          return '-';
+        }
+
+        return (
+          <Sparkline width={44} height={16} stroke={1} format={formatMemory} values={mem} stamps={chartstamps} />
+        );
+      }
     },
     {
       label: 'Block',
@@ -128,7 +185,7 @@ export default class Row extends React.Component<RowProps, {}> {
       icon: blockHashIcon,
       width: 154,
       setting: 'blockhash',
-      render: ({ hash }) => <Truncate text={hash} />
+      render: ({ hash }) => <Truncate position="right" text={hash} />
     },
     {
       label: 'Block Time',
@@ -155,16 +212,24 @@ export default class Row extends React.Component<RowProps, {}> {
 
   public static Header = (props: HeaderProps) => {
     const { settings } = props;
+    const columns = Row.columns.filter(({ setting }) => setting == null || settings[setting]);
+    const last = columns.length - 1;
 
     return (
       <thead>
         <tr className="Node-Row-Header">
           {
-            Row.columns
-              .filter(({ setting }) => setting == null || settings[setting])
-              .map(({ icon, width, label }, index) => (
-                <th key={index} style={width ? { width } : undefined}><Icon src={icon} alt={label} /></th>
-              ))
+            columns.map(({ icon, width, label }, index) => {
+              const position = index === 0 ? 'left'
+                             : index === last ? 'right'
+                             : 'center';
+
+              return (
+                <th key={index} style={width ? { width } : undefined}>
+                  <Tooltip text={label} inline={true} position={position}><Icon src={icon} /></Tooltip>
+                </th>
+              )
+            })
           }
         </tr>
       </thead>

@@ -16,6 +16,10 @@
     esutils "^2.0.2"
     js-tokens "^3.0.0"
 
+"@fnando/sparkline@maciejhirsz/sparkline":
+  version "0.3.10"
+  resolved "https://codeload.github.com/maciejhirsz/sparkline/tar.gz/2bdb002b171436be078a84f1e4e617a44ef1fb42"
+
 "@tanem/svg-injector@^1.2.0":
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/@tanem/svg-injector/-/svg-injector-1.2.1.tgz#3120e90246d0eb3c4fc6c61586a6f028a3c658ae"
