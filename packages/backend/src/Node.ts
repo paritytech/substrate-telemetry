@@ -179,7 +179,11 @@ export default class Node {
   }
 
   public nodeStats(): Types.NodeStats {
-    return [this.peers, this.txcount, this.memory.get(), this.cpu.get(), this.chartstamps.get()];
+    return [this.peers, this.txcount];
+  }
+
+  public nodeHardware(): Types.NodeHardware {
+    return [this.memory.get(), this.cpu.get(), this.chartstamps.get()];
   }
 
   public blockDetails(): Types.BlockDetails {
@@ -231,16 +235,22 @@ export default class Node {
   private onSystemInterval(message: SystemInterval) {
     const { peers, txcount, cpu, memory } = message;
 
-    this.peers = peers;
-    this.txcount = txcount;
+    if (this.peers !== peers || this.txcount !== txcount) {
+      this.peers = peers;
+      this.txcount = txcount;
 
-    if (cpu != null && memory != null) {
-      this.cpu.push(cpu);
-      this.memory.push(memory);
-      this.chartstamps.push(timestamp());
+      this.events.emit('stats');
     }
 
-    this.events.emit('stats');
+    if (cpu != null && memory != null) {
+      const cpuChange = this.cpu.push(cpu);
+      const memChange = this.memory.push(memory);
+      const stampChange = this.chartstamps.push(timestamp());
+
+      if (cpuChange || memChange || stampChange) {
+        this.events.emit('hardware');
+      }
+    }
   }
 
   private updateLatency(now: Types.Timestamp) {

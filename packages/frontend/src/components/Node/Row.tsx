@@ -58,8 +58,8 @@ function Truncate(props: { text: string, position?: 'left' | 'right' | 'center' 
 function formatStamp(stamp: Types.Timestamp): string {
   const passed = (timestamp() - stamp) / 1000 | 0;
 
-  const hours = Math.round(passed / 3600);
-  const minutes = Math.round((passed % 3600) / 60);
+  const hours = passed / 3600 | 0;
+  const minutes = (passed % 3600) / 60 | 0;
   const seconds = (passed % 60) | 0;
 
   return hours ? `${hours}h ago`

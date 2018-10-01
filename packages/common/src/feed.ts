@@ -10,6 +10,7 @@ import {
   NodeCount,
   NodeDetails,
   NodeStats,
+  NodeHardware,
   NodeLocation,
   BlockNumber,
   BlockDetails,
@@ -26,12 +27,13 @@ export const Actions = {
   LocatedNode      : 0x04 as 0x04,
   ImportedBlock    : 0x05 as 0x05,
   NodeStats        : 0x06 as 0x06,
-  TimeSync         : 0x07 as 0x07,
-  AddedChain       : 0x08 as 0x08,
-  RemovedChain     : 0x09 as 0x09,
-  SubscribedTo     : 0x0A as 0x0A,
-  UnsubscribedFrom : 0x0B as 0x0B,
-  Pong             : 0x0C as 0x0C,
+  NodeHardware     : 0x07 as 0x07,
+  TimeSync         : 0x08 as 0x08,
+  AddedChain       : 0x09 as 0x09,
+  RemovedChain     : 0x0A as 0x0A,
+  SubscribedTo     : 0x0B as 0x0B,
+  UnsubscribedFrom : 0x0C as 0x0C,
+  Pong             : 0x0D as 0x0D,
 };
 
 export type Action = typeof Actions[keyof typeof Actions];
@@ -54,7 +56,7 @@ export namespace Variants {
 
   export interface AddedNodeMessage extends MessageBase {
     action: typeof Actions.AddedNode;
-    payload: [NodeId, NodeDetails, NodeStats, BlockDetails, Maybe<NodeLocation>];
+    payload: [NodeId, NodeDetails, NodeStats, NodeHardware, BlockDetails, Maybe<NodeLocation>];
   }
 
   export interface RemovedNodeMessage extends MessageBase {
@@ -75,6 +77,11 @@ export namespace Variants {
   export interface NodeStatsMessage extends MessageBase {
     action: typeof Actions.NodeStats;
     payload: [NodeId, NodeStats];
+  }
+
+  export interface NodeHardwareMessage extends MessageBase {
+    action: typeof Actions.NodeHardware;
+    payload: [NodeId, NodeHardware];
   }
 
   export interface TimeSyncMessage extends MessageBase {
@@ -116,6 +123,7 @@ export type Message =
   | Variants.LocatedNodeMessage
   | Variants.ImportedBlockMessage
   | Variants.NodeStatsMessage
+  | Variants.NodeHardwareMessage
   | Variants.TimeSyncMessage
   | Variants.AddedChainMessage
   | Variants.RemovedChainMessage

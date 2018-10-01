@@ -7,12 +7,22 @@ export class MeanList<T extends number> {
   private means = Array<T>(20).fill(0 as T);
   private ticksPerMean = 1;
 
-  public push(val: T) {
+  /**
+   * Push a new value, returns true if a new mean value was produced
+   *
+   * @param  {T}       value
+   *
+   * @return {boolean}
+   */
+  public push(val: T): boolean {
     this.period[this.periodIndex++] = val;
 
     if (this.periodIndex === this.ticksPerMean) {
       this.pushMean();
+      return true;
     }
+
+    return false;
   }
 
   public get(): Array<T> {

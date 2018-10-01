@@ -46,6 +46,7 @@ export class Node {
     id: Types.NodeId,
     nodeDetails: Types.NodeDetails,
     nodeStats: Types.NodeStats,
+    nodeHardware: Types.NodeHardware,
     blockDetails: Types.BlockDetails,
     location: Maybe<Types.NodeLocation>
   ) {
@@ -60,6 +61,7 @@ export class Node {
     this.validator = validator;
 
     this.updateStats(nodeStats);
+    this.updateHardware(nodeHardware);
     this.updateBlock(blockDetails);
 
     if (location) {
@@ -68,10 +70,15 @@ export class Node {
   }
 
   public updateStats(stats: Types.NodeStats) {
-    const [peers, txs, mem, cpu, chartstamps] = stats;
+    const [peers, txs] = stats;
 
     this.peers = peers;
     this.txs = txs;
+  }
+
+  public updateHardware(hardware: Types.NodeHardware) {
+    const [mem, cpu, chartstamps] = hardware;
+
     this.mem = mem;
     this.cpu = cpu;
     this.chartstamps = chartstamps;
