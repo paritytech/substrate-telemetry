@@ -25,5 +25,5 @@ export type CPUUse = Opaque<number, 'CPUUse'>;
 
 export type BlockDetails = [BlockNumber, BlockHash, Milliseconds, Timestamp, Maybe<PropagationTime>];
 export type NodeDetails = [NodeName, NodeImplementation, NodeVersion, Maybe<Address>];
-export type NodeStats = [PeerCount, TransactionCount, Array<MemoryUse>, Array<CPUUse>];
+export type NodeStats = [PeerCount, TransactionCount, Array<MemoryUse>, Array<CPUUse>, Array<Timestamp>];
 export type NodeLocation = [Latitude, Longitude, City];

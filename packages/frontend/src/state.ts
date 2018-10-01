@@ -29,6 +29,7 @@ export class Node {
   public txs: Types.TransactionCount;
   public mem: Types.MemoryUse[];
   public cpu: Types.CPUUse[];
+  public chartstamps: Types.Timestamp[];
 
   public height: Types.BlockNumber;
   public hash: Types.BlockHash;
@@ -67,12 +68,13 @@ export class Node {
   }
 
   public updateStats(stats: Types.NodeStats) {
-    const [peers, txs, mem, cpu] = stats;
+    const [peers, txs, mem, cpu, chartstamps] = stats;
 
     this.peers = peers;
     this.txs = txs;
     this.mem = mem;
     this.cpu = cpu;
+    this.chartstamps = chartstamps;
   }
 
   public updateBlock(block: Types.BlockDetails) {

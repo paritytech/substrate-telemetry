@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { Types, Maybe } from "@dotstats/common";
 import sparkline from "@fnando/sparkline";
 import { Tooltip } from './';
 
@@ -10,8 +11,9 @@ export namespace Sparkline {
     width: number;
     height: number;
     values: number[];
+    stamps?: Types.Timestamp[];
     minScale?: number;
-    format?: (value: number) => string;
+    format?: (value: number, stamp: Maybe<Types.Timestamp>) => string;
   }
 }
 
@@ -21,6 +23,8 @@ export class Sparkline extends React.Component<Sparkline.Props, {}> {
 
   public componentDidMount() {
     sparkline(this.el, this.props.values, {
+      spotRadius: 0.1,
+      minScale: this.props.minScale,
       interactive: true,
       onmousemove: this.onMouseMove,
     });
@@ -35,6 +39,7 @@ export class Sparkline extends React.Component<Sparkline.Props, {}> {
 
     if (this.props.values !== nextProps.values) {
       sparkline(this.el, nextProps.values, {
+        spotRadius: 0.1,
         minScale,
         interactive: true,
         onmousemove: this.onMouseMove,
@@ -62,9 +67,9 @@ export class Sparkline extends React.Component<Sparkline.Props, {}> {
     this.update = update;
   }
 
-  private onMouseMove = (event: MouseEvent, data: { value: number }) => {
-    const { format } = this.props;
-    const str = format ? format(data.value) : `${data.value}`;
+  private onMouseMove = (event: MouseEvent, data: { value: number, index: number }) => {
+    const { format, stamps } = this.props;
+    const str = format ? format(data.value, stamps ? stamps[data.index] : null) : `${data.value}`;
     this.update(str);
   }
 }
