@@ -174,9 +174,9 @@ export class Connection {
         }
 
         case Actions.AddedNode: {
-          const [id, nodeDetails, nodeStats, blockDetails, location] = message.payload;
+          const [id, nodeDetails, nodeStats, nodeHardware, blockDetails, location] = message.payload;
           const pinned = this.pins.has(nodeDetails[0]);
-          const node = new Node(pinned, id, nodeDetails, nodeStats, blockDetails, location);
+          const node = new Node(pinned, id, nodeDetails, nodeStats, nodeHardware, blockDetails, location);
 
           nodes.set(id, node);
           sortedInsert(node, sortedNodes, Node.compare);
@@ -247,6 +247,19 @@ export class Connection {
           }
 
           node.updateStats(nodeStats);
+
+          break;
+        }
+
+        case Actions.NodeHardware: {
+          const [id, nodeHardware] = message.payload;
+          const node = nodes.get(id);
+
+          if (!node) {
+            return;
+          }
+
+          node.updateHardware(nodeHardware);
 
           break;
         }

@@ -45,7 +45,7 @@ export default class Feed {
   public static addedNode(node: Node): FeedMessage.Message {
     return {
       action: Actions.AddedNode,
-      payload: [node.id, node.nodeDetails(), node.nodeStats(), node.blockDetails(), node.nodeLocation()]
+      payload: [node.id, node.nodeDetails(), node.nodeStats(), node.nodeHardware(), node.blockDetails(), node.nodeLocation()]
     };
   }
 
@@ -74,6 +74,13 @@ export default class Feed {
     return {
       action: Actions.NodeStats,
       payload: [node.id, node.nodeStats()]
+    };
+  }
+
+  public static hardware(node: Node): FeedMessage.Message {
+    return {
+      action: Actions.NodeHardware,
+      payload: [node.id, node.nodeHardware()]
     };
   }
 
