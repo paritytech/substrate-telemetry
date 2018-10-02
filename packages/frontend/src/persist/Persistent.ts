@@ -23,8 +23,6 @@ export class Persistent<Data> {
 
     window.addEventListener('storage', (event) => {
       if (event.key === this.key) {
-        console.log('event => ', event);
-        process.exit(0);
         this.value = parse(event.newValue as any as Stringified<Data>);
 
         this.onChange(this.value);
