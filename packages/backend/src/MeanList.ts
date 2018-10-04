@@ -1,8 +1,8 @@
 import { Maybe, Types, timestamp } from '@dotstats/common';
 
 export class MeanList<T extends number> {
-  private periodIndex = 0;
-  private period = Array<T>(32).fill(0 as T);
+  private periodCount = 0;
+  private periodSum = 0;
   private meanIndex = 0;
   private means = Array<T>(20).fill(0 as T);
   private ticksPerMean = 1;
@@ -15,9 +15,14 @@ export class MeanList<T extends number> {
    * @return {boolean}
    */
   public push(val: T): boolean {
-    this.period[this.periodIndex++] = val;
+    if (this.meanIndex === 20 && this.ticksPerMean < 32) {
+      this.squashMeans();
+    }
 
-    if (this.periodIndex === this.ticksPerMean) {
+    this.periodSum += val as number;
+    this.periodCount += 1;
+
+    if (this.periodCount === this.ticksPerMean) {
       this.pushMean();
       return true;
     }
@@ -34,27 +39,17 @@ export class MeanList<T extends number> {
   }
 
   private pushMean() {
-    let sum = 0;
+    const mean = (this.periodSum / this.periodCount) as T;
 
-    for (let i = 0; i < this.periodIndex; i++) {
-      sum += this.period[i] as number;
-    }
-
-    const mean = (sum / this.periodIndex) as T;
-
-    if (this.meanIndex === 20) {
-      if (this.ticksPerMean === 32) {
-        this.means.copyWithin(0, 1);
-        this.means[20] = mean;
-      } else {
-        this.squashMeans();
-        this.means[this.meanIndex++] = mean;
-      }
+    if (this.meanIndex === 20 && this.ticksPerMean === 32) {
+      this.means.copyWithin(0, 1);
+      this.means[19] = mean;
     } else {
       this.means[this.meanIndex++] = mean;
     }
 
-    this.periodIndex = 0;
+    this.periodSum = 0;
+    this.periodCount = 0;
   }
 
   private squashMeans() {
