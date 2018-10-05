@@ -85,7 +85,10 @@ export class Connection {
     const { nodes, chains } = this.state;
     let { sortedNodes } = this.state;
 
-    messages: for (const message of messages) {
+    // TODO: boolean flags are code smell, find a cleaner way to do this
+    let dirty = false;
+
+    for (const message of messages) {
       switch (message.action) {
         case Actions.FeedVersion: {
           if (message.payload !== VERSION) {
@@ -98,17 +101,17 @@ export class Connection {
             return;
           }
 
-          continue messages;
+          break;
         }
 
         case Actions.BestBlock: {
           const [best, blockTimestamp, blockAverage] = message.payload;
 
-          nodes.forEach((node) => node.propagationTime = null);
+          nodes.forEach((node) => node.newBestBlock());
 
           this.state = this.update({ best, blockTimestamp, blockAverage });
 
-          continue messages;
+          break;
         }
 
         case Actions.AddedNode: {
@@ -123,6 +126,8 @@ export class Connection {
             console.error('Node count in sorted array is wrong!');
             sortedNodes = Array.from(nodes.values()).sort(Node.compare);
           }
+
+          dirty = true;
 
           break;
         }
@@ -140,11 +145,11 @@ export class Connection {
               console.error('Node count in sorted array is wrong!');
               sortedNodes = Array.from(nodes.values()).sort(Node.compare);
             }
-
-            break;
           }
 
-          continue messages;
+          dirty = true;
+
+          break;
         }
 
         case Actions.LocatedNode: {
@@ -152,12 +157,10 @@ export class Connection {
           const node = nodes.get(id);
 
           if (!node) {
-            continue messages;
+            break;
           }
 
-          node.lat = lat;
-          node.lon = lon;
-          node.city = city;
+          node.updateLocation([lat, lon, city]);
 
           break;
         }
@@ -167,11 +170,13 @@ export class Connection {
           const node = nodes.get(id);
 
           if (!node) {
-            continue messages;
+            break;
           }
 
           node.updateBlock(blockDetails);
           sortedNodes = sortedNodes.sort(Node.compare);
+
+          dirty = true;
 
           break;
         }
@@ -181,7 +186,7 @@ export class Connection {
           const node = nodes.get(id);
 
           if (!node) {
-            return;
+            break;
           }
 
           node.updateStats(nodeStats);
@@ -207,12 +212,14 @@ export class Connection {
             timeDiff: (timestamp() - message.payload) as Types.Milliseconds
           });
 
-          continue messages;
+          break;
         }
 
         case Actions.AddedChain: {
           const [label, nodeCount] = message.payload;
           chains.set(label, nodeCount);
+
+          dirty = true;
 
           break;
         }
@@ -224,9 +231,9 @@ export class Connection {
             nodes.clear();
             sortedNodes = [];
             this.state = this.update({ subscribed: null, nodes, chains, sortedNodes });
-
-            continue messages;
           }
+
+          dirty = true;
 
           break;
         }
@@ -237,7 +244,9 @@ export class Connection {
 
           this.state = this.update({ subscribed: message.payload, nodes, sortedNodes });
 
-          continue messages;
+          dirty = true;
+
+          break;
         }
 
         case Actions.UnsubscribedFrom: {
@@ -247,22 +256,26 @@ export class Connection {
             this.state = this.update({ subscribed: null, nodes, sortedNodes });
           }
 
-          continue messages;
+          dirty = true;
+
+          break;
         }
 
         case Actions.Pong: {
           this.pong(Number(message.payload));
 
-          continue messages;
+          break;
         }
 
         default: {
-          continue messages;
+          break;
         }
       }
     }
 
-    this.state = this.update({ nodes, chains, sortedNodes });
+    if (dirty) {
+      this.state = this.update({ nodes, chains, sortedNodes });
+    }
 
     this.autoSubscribe();
   }
