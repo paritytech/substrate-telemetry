@@ -41,6 +41,8 @@ export class Node {
   public lon: Maybe<Types.Longitude>;
   public city: Maybe<Types.City>;
 
+  private readonly subscribtions = new Set<(node: Node) => void>();
+
   constructor(
     pinned: boolean,
     id: Types.NodeId,
@@ -74,6 +76,8 @@ export class Node {
 
     this.peers = peers;
     this.txs = txs;
+
+    this.trigger();
   }
 
   public updateHardware(hardware: Types.NodeHardware) {
@@ -82,6 +86,8 @@ export class Node {
     this.mem = mem;
     this.cpu = cpu;
     this.chartstamps = chartstamps;
+
+    this.trigger();
   }
 
   public updateBlock(block: Types.BlockDetails) {
@@ -92,6 +98,8 @@ export class Node {
     this.blockTime = blockTime;
     this.blockTimestamp = blockTimestamp;
     this.propagationTime = propagationTime;
+
+    this.trigger();
   }
 
   public updateLocation(location: Types.NodeLocation) {
@@ -100,6 +108,29 @@ export class Node {
     this.lat = lat;
     this.lon = lon;
     this.city = city;
+
+    this.trigger();
+  }
+
+  public newBestBlock() {
+    if (this.propagationTime != null) {
+      this.propagationTime = null;
+      this.trigger();
+    }
+  }
+
+  public subscribe(handler: (node: Node) => void) {
+    this.subscribtions.add(handler);
+  }
+
+  public unsubscribe(handler: (node: Node) => void) {
+    this.subscribtions.delete(handler);
+  }
+
+  private trigger() {
+    for (const handler of this.subscribtions.values()) {
+      handler(this);
+    }
   }
 }
 

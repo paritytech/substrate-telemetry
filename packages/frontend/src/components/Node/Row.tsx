@@ -33,6 +33,10 @@ interface RowProps {
   pins: PersistentSet<Types.NodeName>;
 };
 
+interface RowState {
+  update: number;
+};
+
 interface HeaderProps {
   settings: AppState.Settings;
 };
@@ -88,7 +92,7 @@ function formatCPU(cpu: number, stamp: Maybe<Types.Timestamp>): string {
   return `${cpu.toFixed(fractionDigits)}%${ago}`;
 }
 
-export default class Row extends React.Component<RowProps, {}> {
+export default class Row extends React.Component<RowProps, RowState> {
   public static readonly columns: Column[] = [
     {
       label: 'Node',
@@ -236,6 +240,24 @@ export default class Row extends React.Component<RowProps, {}> {
     )
   }
 
+  public state = { update: 0 };
+
+  public componentDidMount() {
+    const { node } = this.props;
+
+    node.subscribe(this.onUpdate);
+  }
+
+  public componentWillUnmount() {
+    const { node } = this.props;
+
+    node.unsubscribe(this.onUpdate);
+  }
+
+  public shouldComponentUpdate(nextProps: RowProps, nextState: RowState): boolean {
+    return this.props.node.id !== nextProps.node.id || this.state.update !== nextState.update;
+  }
+
   public render() {
     const { node, settings } = this.props;
 
@@ -268,5 +290,9 @@ export default class Row extends React.Component<RowProps, {}> {
     } else {
       pins.add(node.name);
     }
+  }
+
+  private onUpdate = () => {
+    this.setState({ update: this.state.update + 1 });
   }
 }
