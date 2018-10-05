@@ -17,6 +17,6 @@
     "check:backend": "tsc -p packages/backend --noEmit",
     "build:common": "tsc -p packages/common",
     "check:common": "tsc -p packages/common --noEmit",
-    "test:common": "scripts/test-common.sh"
+    "test": "scripts/test.sh"
   }
 }
