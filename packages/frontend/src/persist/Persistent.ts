@@ -12,7 +12,11 @@ export class Persistent<Data> {
     const stored = window.localStorage.getItem(key) as Maybe<Stringified<Data>>;
 
     if (stored) {
-      this.value = parse(stored);
+      try {
+        this.value = parse(stored);
+      } catch (err) {
+        this.value = initial;
+      }
     } else {
       this.value = initial;
     }
