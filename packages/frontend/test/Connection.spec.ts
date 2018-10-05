@@ -88,7 +88,7 @@ describe('Connection.ts', () => {
   test('handle Feed Version message state update', async () => {
     connection.handleMessages([
       {
-        action: 0,
+        action: Actions.FeedVersion,
         payload: VERSION
       }
     ] as any as FeedMessage.Message[])
@@ -102,10 +102,10 @@ describe('Connection.ts', () => {
 
     connection.handleMessages([
       {
-        action: 1,
+        action: Actions.BestBlock,
         payload: [1, time, 0],
       }, {
-        action: 1,
+        action: Actions.BestBlock,
         payload: [1, time, 123456789]
       }
     ] as any as FeedMessage.Message[]);
@@ -124,8 +124,8 @@ describe('Connection.ts', () => {
       */
       connection.handleMessages([
         {
-          action: 2,
-          payload: [1, ['Sample Node', 'Sampling', '1.2.3', '0x123456789012345'], [12, 84, 38, 78], [1, 'aoaiuhsf9o2ih389r', 777, time, 829]],
+          action: Actions.AddedNode,
+          payload: [1, ['Sample Node', 'Sampling', '1.2.3', '0x123456789012345'], [12, 84], [[38], [78], [5]], [1, 'aoaiuhsf9o2ih389r', 777, time, 829]],
         }
       ] as any as FeedMessage.Message[]);
 
@@ -147,8 +147,8 @@ describe('Connection.ts', () => {
       expect(firstNode.validator).toBe('0x123456789012345');
       expect(firstNode.peers).toBe(12);
       expect(firstNode.txs).toBe(84);
-      expect(firstNode.mem).toBe(38);
-      expect(firstNode.cpu).toBe(78);
+      expect(firstNode.mem).toEqual([38]);
+      expect(firstNode.cpu).toEqual([78]);
       expect(firstNode.height).toBe(1);
       expect(firstNode.hash).toBe('aoaiuhsf9o2ih389r');
       expect(firstNode.blockTime).toBe(777);
@@ -165,7 +165,7 @@ describe('Connection.ts', () => {
 
       connection.handleMessages([
         {
-          action: 0x04,
+          action: Actions.LocatedNode,
           payload: [1, 30.828, 101.4111, 'Kuala Lumpur']
         }
       ] as any as FeedMessage.Message[]);
@@ -188,7 +188,7 @@ describe('Connection.ts', () => {
     test('handle Time Sync message state update', () => {
       connection.handleMessages([
         {
-          action: 0x07,
+          action: Actions.TimeSync,
           payload: time + 12345432
         }
       ] as any as FeedMessage.Message[]);
@@ -211,7 +211,7 @@ describe('Connection.ts', () => {
       */
       connection.handleMessages([
         {
-          action: 0x05,
+          action: Actions.ImportedBlock,
           payload: ["BBQ Birch", [1, 'ABCDEFGH12345678', 123, time, 48292010]],
         }
       ] as any as FeedMessage.Message[]);
@@ -236,8 +236,8 @@ describe('Connection.ts', () => {
           validator: '0x123456789012345',
           peers: 12,
           txs: 84,
-          mem: 38,
-          cpu: 78,
+          mem: [38],
+          cpu: [78],
           height: 1,
           hash: 'aoaiuhsf9o2ih389r',
           blockTime: 777,
@@ -255,7 +255,7 @@ describe('Connection.ts', () => {
       */
       connection.handleMessages([
         {
-          action: 3,
+          action: Actions.RemovedNode,
           payload: 1
         }
       ] as any as FeedMessage.Message[]);
@@ -269,10 +269,10 @@ describe('Connection.ts', () => {
     test('handle Added Chain message state update', () => {
       connection.handleMessages([
         {
-          action: 8,
+          action: Actions.AddedChain,
           payload: ["BBQ Birch", 6],
         }, {
-          action: 8,
+          action: Actions.AddedChain,
           payload: ["Krumme Lanke", 57]
         }
       ] as any as FeedMessage.Message[]);
@@ -302,7 +302,7 @@ describe('Connection.ts', () => {
       test('handle Subscribed To message state update', () => {
         connection.handleMessages([
           {
-            action: 0x0A,
+            action: Actions.SubscribedTo,
             payload: 'BBQ Birch'
           }
         ] as any as FeedMessage.Message[]);
@@ -312,7 +312,7 @@ describe('Connection.ts', () => {
 
         connection.handleMessages([
           {
-            action: 0x0A,
+            action: Actions.SubscribedTo,
             payload: 'Krumme Lanke'
           }
         ] as any as FeedMessage.Message[]);
@@ -324,7 +324,7 @@ describe('Connection.ts', () => {
       test('handle Unsubscribed From message state update', () => {
         connection.handleMessages([
           {
-            action: 0x0B,
+            action: Actions.UnsubscribedFrom,
             payload: 'Krumme Lanke'
           }
         ] as any as FeedMessage.Message[]);
@@ -337,10 +337,10 @@ describe('Connection.ts', () => {
     test('handle Removed Chain message state update', () => {
       connection.handleMessages([
         {
-          action: 9,
+          action: Actions.RemovedChain,
           payload: 'BBQ Birch'
         }, {
-          action: 9,
+          action: Actions.RemovedChain,
           payload: 'Krumme Lanke'
         }
       ] as any as FeedMessage.Message[]);
