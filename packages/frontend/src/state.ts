@@ -119,6 +119,13 @@ export class Node {
     }
   }
 
+  public setPinned(pinned: boolean) {
+    if (this.pinned !== pinned) {
+      this.pinned = pinned;
+      this.trigger();
+    }
+  }
+
   public subscribe(handler: (node: Node) => void) {
     this.subscribtions.add(handler);
   }
