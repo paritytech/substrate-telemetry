@@ -123,6 +123,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     const { filter } = this.state;
     const nodeFilter = this.getNodeFilter();
     const nodes = nodeFilter ? this.nodes().filter(nodeFilter) : this.nodes();
+    const columns = Node.Row.columns.filter(({ setting }) => setting == null || settings[setting]);
 
     if (nodeFilter && nodes.length === 0) {
       return (
@@ -137,10 +138,10 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
       <React.Fragment>
         {filter != null ? <Filter value={filter} onChange={this.onFilterChange} /> : null}
         <table className="Chain-node-list">
-          <Node.Row.Header settings={settings} />
+          <Node.Row.Header columns={columns} />
           <tbody>
           {
-            nodes.map((node) => <Node.Row key={node.id} node={node} settings={settings} pins={pins} />)
+            nodes.map((node) => <Node.Row key={node.id} node={node} pins={pins} columns={columns} />)
           }
           </tbody>
         </table>

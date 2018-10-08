@@ -4,7 +4,7 @@ import { Types, Maybe, timestamp } from '@dotstats/common';
 import { formatNumber, milliOrSecond, secondsWithPrecision } from '../../utils';
 import { State as AppState, Node } from '../../state';
 import { PersistentSet } from '../../persist';
-import { SEMVER_PATTERN } from './';
+import { SEMVER_PATTERN, Truncate } from './';
 import { Ago, Icon, Tooltip, Sparkline } from '../';
 
 import nodeIcon from '../../icons/server.svg';
@@ -29,8 +29,8 @@ import './Row.css';
 
 interface RowProps {
   node: Node;
-  settings: AppState.Settings;
   pins: PersistentSet<Types.NodeName>;
+  columns: Column[];
 };
 
 interface RowState {
@@ -38,7 +38,7 @@ interface RowState {
 };
 
 interface HeaderProps {
-  settings: AppState.Settings;
+  columns: Column[];
 };
 
 interface Column {
@@ -47,16 +47,6 @@ interface Column {
   width?: number;
   setting?: keyof AppState.Settings;
   render: (node: Node) => React.ReactElement<any> | string;
-}
-
-function Truncate(props: { text: string, position?: 'left' | 'right' | 'center' }): React.ReactElement<any> {
-  const { text, position } = props;
-
-  return (
-    <Tooltip text={text} position={position} className="Node-Row-Tooltip">
-      <div className="Node-Row-truncate">{text}</div>
-    </Tooltip>
-  );
 }
 
 function formatStamp(stamp: Types.Timestamp): string {
@@ -215,8 +205,8 @@ export default class Row extends React.Component<RowProps, RowState> {
   ];
 
   public static Header = (props: HeaderProps) => {
-    const { settings } = props;
-    const columns = Row.columns.filter(({ setting }) => setting == null || settings[setting]);
+    const { columns } = props;
+
     const last = columns.length - 1;
 
     return (
@@ -259,7 +249,7 @@ export default class Row extends React.Component<RowProps, RowState> {
   }
 
   public render() {
-    const { node, settings } = this.props;
+    const { node, columns } = this.props;
 
     let className = 'Node-Row';
 
@@ -274,9 +264,7 @@ export default class Row extends React.Component<RowProps, RowState> {
     return (
       <tr className={className} onClick={this.toggle}>
         {
-          Row.columns
-            .filter(({ setting }) => setting == null || settings[setting])
-            .map(({ render }, index) => <td key={index}>{render(node)}</td>)
+          columns.map(({ render }, index) => <td key={index}>{render(node)}</td>)
         }
       </tr>
     );
