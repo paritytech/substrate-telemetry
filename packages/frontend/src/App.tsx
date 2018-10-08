@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Types } from '@dotstats/common';
+import { Types, SortedCollection } from '@dotstats/common';
 import { Chains, Chain, Ago, OfflineIndicator } from './components';
 import { Connection } from './Connection';
 import { PersistentObject, PersistentSet } from './persist';
@@ -36,13 +36,11 @@ export default class App extends React.Component<{}, State> {
     );
 
     this.pins = new PersistentSet<Types.NodeName>('pinned_names', (pins) => {
-      const { nodes, sortedNodes } = this.state;
+      const { nodes } = this.state;
 
-      for (const node of nodes.values()) {
-        node.setPinned(pins.has(node.name));
-      }
+      nodes.mutEachAndSort((node) => node.setPinned(pins.has(node.name)));
 
-      this.setState({ nodes, pins, sortedNodes: sortedNodes.sort(Node.compare) });
+      this.setState({ nodes, pins });
     });
 
     this.state = {
@@ -53,8 +51,7 @@ export default class App extends React.Component<{}, State> {
       timeDiff: 0 as Types.Milliseconds,
       subscribed: null,
       chains: new Map(),
-      nodes: new Map(),
-      sortedNodes: [],
+      nodes: new SortedCollection(Node.compare),
       settings: this.settings.raw(),
       pins: this.pins.get(),
     };

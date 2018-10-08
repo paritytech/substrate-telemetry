@@ -74,21 +74,20 @@ test('sortedInsert indexes', (assert) => {
 
 test('sortedIndexOf', (assert) => {
   const { sortedIndexOf } = common;
-  const cmp = (a, b) => a - b;
+  const cmp = (a, b) => a.value - b.value;
+  const array = [];
 
-  assert.equals(sortedIndexOf(1, [1,2,3,4,5,6,7,8,9], cmp), 0, 'Found 1');
-  assert.equals(sortedIndexOf(2, [1,2,3,4,5,6,7,8,9], cmp), 1, 'Found 2');
-  assert.equals(sortedIndexOf(3, [1,2,3,4,5,6,7,8,9], cmp), 2, 'Found 3');
-  assert.equals(sortedIndexOf(4, [1,2,3,4,5,6,7,8,9], cmp), 3, 'Found 4');
-  assert.equals(sortedIndexOf(5, [1,2,3,4,5,6,7,8,9], cmp), 4, 'Found 5');
-  assert.equals(sortedIndexOf(6, [1,2,3,4,5,6,7,8,9], cmp), 5, 'Found 6');
-  assert.equals(sortedIndexOf(7, [1,2,3,4,5,6,7,8,9], cmp), 6, 'Found 7');
-  assert.equals(sortedIndexOf(8, [1,2,3,4,5,6,7,8,9], cmp), 7, 'Found 8');
-  assert.equals(sortedIndexOf(9, [1,2,3,4,5,6,7,8,9], cmp), 8, 'Found 9');
+  for (let i = 1; i <= 1000; i++) {
+    array.push({ value: i >> 1 });
+  }
 
-  assert.equals(sortedIndexOf(0, [1,2,3,4,5,6,7,8,9], cmp), -1, 'No 0');
-  assert.equals(sortedIndexOf(10, [1,2,3,4,5,6,7,8,9], cmp), -1, 'No 10');
-  assert.equals(sortedIndexOf(5.5, [1,2,3,4,5,6,7,8,9], cmp), -1, 'No 5.5');
+  for (let i = 0; i < 50; i++) {
+    let index = Math.random() * 1000 | 0;
+
+    item = array[index];
+
+    assert.equals(sortedIndexOf(item, array, cmp), array.indexOf(item), `Correct for ${item.value}`);
+  }
 
   assert.end();
 });

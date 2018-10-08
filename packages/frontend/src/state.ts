@@ -1,4 +1,4 @@
-import { Types, Maybe } from '@dotstats/common';
+import { Types, Maybe, SortedCollection } from '@dotstats/common';
 
 export class Node {
   public static compare(a: Node, b: Node): number {
@@ -23,6 +23,9 @@ export class Node {
   public readonly implementation: Types.NodeImplementation;
   public readonly version: Types.NodeVersion;
   public readonly validator: Maybe<Types.Address>;
+
+  // Managed by SortedNodes collection
+  public index = -1;
 
   public pinned: boolean;
   public peers: Types.PeerCount;
@@ -166,8 +169,7 @@ export interface State {
   timeDiff: Types.Milliseconds;
   subscribed: Maybe<Types.ChainLabel>;
   chains: Map<Types.ChainLabel, Types.NodeCount>;
-  nodes: Map<Types.NodeId, Node>;
-  sortedNodes: Node[];
+  nodes: SortedCollection<Types.NodeId, Node>;
   settings: Readonly<State.Settings>;
   pins: Readonly<Set<Types.NodeName>>;
 }
