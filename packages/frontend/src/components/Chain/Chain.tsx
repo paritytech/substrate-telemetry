@@ -201,7 +201,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
   }
 
   private nodes(): NodeState[] {
-    return this.props.appState.sortedNodes;
+    return this.props.appState.nodes.sorted();
   }
 
   private pixelPosition(lat: Types.Latitude, lon: Types.Longitude): Node.Location.Position {

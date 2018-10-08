@@ -3,7 +3,7 @@ const { shallow, mount } = Enzyme;
 
 import { Server } from 'mock-socket';
 
-import { Types, FeedMessage, timestamp, VERSION } from '../../common';
+import { Types, FeedMessage, timestamp, VERSION, SortedCollection } from '../../common';
 
 import { Node, Update, State } from '../src/state';
 import { Connection } from '../src/Connection';
@@ -54,8 +54,7 @@ describe('Connection.ts', () => {
       timeDiff: 0 as Types.Milliseconds,
       subscribed: null,
       chains: new Map(),
-      nodes: new Map(),
-      sortedNodes: [],
+      nodes: new SortedCollection(Node.compare),
       settings,
       pins: new Set()
     } as State;
@@ -133,13 +132,7 @@ describe('Connection.ts', () => {
       expect(state.status).toBe('online');
       expect(state.nodes).toBeDefined();
 
-      const nodes = [];
-
-      for (const node of state.nodes.values()) {
-        nodes.push(node);
-      }
-
-      const firstNode = nodes[0];
+      const firstNode = state.nodes.sorted()[0];
 
       expect(firstNode.id).toBe(1);
       expect(firstNode.name).toBe('Sample Node');
@@ -172,13 +165,7 @@ describe('Connection.ts', () => {
 
       expect(update).toHaveBeenCalled();
 
-      const nodes = [];
-
-      for (const node of state.nodes.values()) {
-        nodes.push(node);
-      }
-
-      const firstNode = nodes[0];
+      const firstNode = state.nodes.sorted()[0];
 
       expect(firstNode.lat).toEqual(30.828)
       expect(firstNode.lon).toEqual(101.4111)
@@ -193,13 +180,7 @@ describe('Connection.ts', () => {
         }
       ] as any as FeedMessage.Message[]);
 
-      const nodes = [];
-
-      for (const node of state.nodes.values()) {
-        nodes.push(node);
-      }
-
-      const firstNode = nodes[0];
+      const firstNode = state.nodes.sorted()[0];
 
       expect(firstNode.blockTimestamp).toBe(time);
     })
@@ -216,15 +197,7 @@ describe('Connection.ts', () => {
         }
       ] as any as FeedMessage.Message[]);
 
-      expect(state.sortedNodes).toBeDefined();
-
-      const sortedNodes = [];
-
-      for (const node of state.sortedNodes) {
-        sortedNodes.push(node);
-      }
-
-      const firstSortedNode = sortedNodes[0];
+      const firstSortedNode = state.nodes.sorted()[0];
 
       expect(firstSortedNode.pinned).toBeFalsy();
       expect(firstSortedNode).toMatchObject({
@@ -261,7 +234,7 @@ describe('Connection.ts', () => {
       ] as any as FeedMessage.Message[]);
 
       expect(update).toHaveBeenCalled();
-      expect(state.nodes.keys()).toMatchObject({});
+      expect(state.nodes.sorted()).toEqual([]);
     })
   })
 

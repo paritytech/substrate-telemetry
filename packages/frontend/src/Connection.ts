@@ -1,5 +1,4 @@
 import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from '@dotstats/common';
-import { sortedInsert, sortedIndexOf } from '@dotstats/common';
 import { State, Update, Node } from './state';
 import { PersistentSet } from './persist';
 import { getHashData, setHashData } from './utils';
@@ -83,10 +82,7 @@ export class Connection {
 
   public handleMessages = (messages: FeedMessage.Message[]) => {
     const { nodes, chains } = this.state;
-    let { sortedNodes } = this.state;
-
-    // TODO: boolean flags are code smell, find a cleaner way to do this
-    let dirty = false;
+    const ref = nodes.ref();
 
     for (const message of messages) {
       switch (message.action) {
@@ -107,7 +103,7 @@ export class Connection {
         case Actions.BestBlock: {
           const [best, blockTimestamp, blockAverage] = message.payload;
 
-          nodes.forEach((node) => node.newBestBlock());
+          nodes.mutEach((node) => node.newBestBlock());
 
           this.state = this.update({ best, blockTimestamp, blockAverage });
 
@@ -119,90 +115,47 @@ export class Connection {
           const pinned = this.pins.has(nodeDetails[0]);
           const node = new Node(pinned, id, nodeDetails, nodeStats, nodeHardware, blockDetails, location);
 
-          nodes.set(id, node);
-          sortedInsert(node, sortedNodes, Node.compare);
-
-          if (nodes.size !== sortedNodes.length) {
-            console.error('Node count in sorted array is wrong!');
-            sortedNodes = Array.from(nodes.values()).sort(Node.compare);
-          }
-
-          dirty = true;
+          nodes.add(node);
 
           break;
         }
 
         case Actions.RemovedNode: {
           const id = message.payload;
-          const node = nodes.get(id);
 
-          if (node) {
-            nodes.delete(id);
-            const index = sortedIndexOf(node, sortedNodes, Node.compare);
-            sortedNodes.splice(index, 1);
-
-            if (nodes.size !== sortedNodes.length) {
-              console.error('Node count in sorted array is wrong!');
-              sortedNodes = Array.from(nodes.values()).sort(Node.compare);
-            }
-          }
-
-          dirty = true;
+          nodes.remove(id);
 
           break;
         }
 
         case Actions.LocatedNode: {
           const [id, lat, lon, city] = message.payload;
-          const node = nodes.get(id);
 
-          if (!node) {
-            break;
-          }
-
-          node.updateLocation([lat, lon, city]);
+          nodes.mut(id, (node) => node.updateLocation([lat, lon, city]));
 
           break;
         }
 
         case Actions.ImportedBlock: {
           const [id, blockDetails] = message.payload;
-          const node = nodes.get(id);
 
-          if (!node) {
-            break;
-          }
-
-          node.updateBlock(blockDetails);
-          sortedNodes = sortedNodes.sort(Node.compare);
-
-          dirty = true;
+          nodes.mutAndSort(id, (node) => node.updateBlock(blockDetails));
 
           break;
         }
 
         case Actions.NodeStats: {
           const [id, nodeStats] = message.payload;
-          const node = nodes.get(id);
 
-          if (!node) {
-            break;
-          }
-
-          node.updateStats(nodeStats);
+          nodes.mut(id, (node) => node.updateStats(nodeStats));
 
           break;
         }
 
         case Actions.NodeHardware: {
           const [id, nodeHardware] = message.payload;
-          const node = nodes.get(id);
 
-          if (!node) {
-            return;
-          }
-
-          node.updateHardware(nodeHardware);
+          nodes.mut(id, (node) => node.updateHardware(nodeHardware));
 
           break;
         }
@@ -219,7 +172,7 @@ export class Connection {
           const [label, nodeCount] = message.payload;
           chains.set(label, nodeCount);
 
-          dirty = true;
+          this.state = this.update({ chains });
 
           break;
         }
@@ -229,22 +182,16 @@ export class Connection {
 
           if (this.state.subscribed === message.payload) {
             nodes.clear();
-            sortedNodes = [];
-            this.state = this.update({ subscribed: null, nodes, chains, sortedNodes });
+            this.state = this.update({ subscribed: null, nodes, chains });
           }
-
-          dirty = true;
 
           break;
         }
 
         case Actions.SubscribedTo: {
           nodes.clear();
-          sortedNodes = [];
 
-          this.state = this.update({ subscribed: message.payload, nodes, sortedNodes });
-
-          dirty = true;
+          this.state = this.update({ subscribed: message.payload, nodes });
 
           break;
         }
@@ -252,11 +199,9 @@ export class Connection {
         case Actions.UnsubscribedFrom: {
           if (this.state.subscribed === message.payload) {
             nodes.clear();
-            sortedNodes = [];
-            this.state = this.update({ subscribed: null, nodes, sortedNodes });
-          }
 
-          dirty = true;
+            this.state = this.update({ subscribed: null, nodes });
+          }
 
           break;
         }
@@ -273,8 +218,8 @@ export class Connection {
       }
     }
 
-    if (dirty) {
-      this.state = this.update({ nodes, chains, sortedNodes });
+    if (nodes.hasChangedSince(ref)) {
+      this.state = this.update({ nodes });
     }
 
     this.autoSubscribe();
@@ -283,9 +228,13 @@ export class Connection {
   private bindSocket() {
     this.ping();
 
+    if (this.state) {
+      const { nodes } = this.state;
+      nodes.clear();
+    }
+
     this.state = this.update({
       status: 'online',
-      nodes: new Map()
     });
 
     if (this.state.subscribed) {
