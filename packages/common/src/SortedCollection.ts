@@ -1,4 +1,4 @@
-import { Maybe } from './helpers';
+import { Maybe, Opaque } from './helpers';
 
 export type Compare<T> = (a: T, b: T) => number;
 
@@ -85,22 +85,30 @@ export function sortedIndexOf<T>(item:T, within: Array<T>, compare: Compare<T>):
   return -1;
 }
 
+export namespace SortedCollection {
+  export type StateRef = Opaque<number, 'SortedCollection.StateRef'>;
+}
+
 export class SortedCollection<Id, Item extends { id: Id }> {
   private readonly map = new Map<Id, Item>();
   private readonly compare: Compare<Item>;
 
   private list = Array<Item>();
-  private changed = false;
+  private changeRef = 0;
 
   constructor(compare: Compare<Item>) {
     this.compare = compare;
+  }
+
+  public ref(): SortedCollection.StateRef {
+    return this.changeRef as SortedCollection.StateRef;
   }
 
   public add(item: Item) {
     this.map.set(item.id, item);
     sortedInsert(item, this.list, this.compare);
 
-    this.changed = true;
+    this.changeRef += 1;
   }
 
   public remove(id: Id) {
@@ -114,7 +122,7 @@ export class SortedCollection<Id, Item extends { id: Id }> {
     this.list.splice(index, 1);
     this.map.delete(id);
 
-    this.changed = true;
+    this.changeRef += 1;
   }
 
   public get(id: Id): Maybe<Item> {
@@ -150,7 +158,9 @@ export class SortedCollection<Id, Item extends { id: Id }> {
 
     const newIndex = sortedInsert(item, this.list, this.compare);
 
-    this.changed = newIndex !== index || this.changed;
+    if (newIndex !== index) {
+      this.changeRef += 1;
+    }
   }
 
   public mutEach(mutator: (item: Item) => void) {
@@ -166,14 +176,10 @@ export class SortedCollection<Id, Item extends { id: Id }> {
     this.map.clear();
     this.list = [];
 
-    this.changed = true;
+    this.changeRef += 1;
   }
 
-  public hasChanged(): boolean {
-    const changed = this.changed;
-
-    this.changed = false;
-
-    return changed;
+  public hasChangedSince(ref: SortedCollection.StateRef): boolean {
+    return this.changeRef > ref;
   }
 }

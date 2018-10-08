@@ -82,6 +82,7 @@ export class Connection {
 
   public handleMessages = (messages: FeedMessage.Message[]) => {
     const { nodes, chains } = this.state;
+    const ref = nodes.ref();
 
     for (const message of messages) {
       switch (message.action) {
@@ -217,7 +218,7 @@ export class Connection {
       }
     }
 
-    if (nodes.hasChanged()) {
+    if (nodes.hasChangedSince(ref)) {
       this.state = this.update({ nodes });
     }
 
