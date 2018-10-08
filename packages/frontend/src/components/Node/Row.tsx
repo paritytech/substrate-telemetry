@@ -206,7 +206,6 @@ export default class Row extends React.Component<RowProps, RowState> {
 
   public static Header = (props: HeaderProps) => {
     const { columns } = props;
-
     const last = columns.length - 1;
 
     return (
