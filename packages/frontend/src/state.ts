@@ -24,9 +24,6 @@ export class Node {
   public readonly version: Types.NodeVersion;
   public readonly validator: Maybe<Types.Address>;
 
-  // Managed by SortedNodes collection
-  public index = -1;
-
   public pinned: boolean;
   public peers: Types.PeerCount;
   public txs: Types.TransactionCount;
