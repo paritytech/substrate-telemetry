@@ -46,6 +46,10 @@
   color: #d64ca8;
 }
 
+.Node-Row:hover {
+  background-color: #161616;
+}
+
 .Node-Row-validator {
   display: block;
   width: 16px;

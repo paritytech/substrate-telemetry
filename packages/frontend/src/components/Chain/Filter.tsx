@@ -1,4 +1,7 @@
 import * as React from 'react';
+import { Icon } from '../';
+
+import searchIcon from '../../icons/search.svg';
 
 import './Filter.css';
 
@@ -21,6 +24,7 @@ export class Filter extends React.Component<Filter.Props, {}> {
 
     return (
       <div className="Chain-Filter">
+        <Icon src={searchIcon} />
         <input ref={this.onRef} value={value} onChange={this.onChange} />
       </div>
     );
