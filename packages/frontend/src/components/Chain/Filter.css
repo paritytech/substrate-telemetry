@@ -6,7 +6,7 @@
   width: 400px;
   font-size: 30px;
   margin-left: -210px;
-  padding: 10px;
+  padding: 10px 10px 10px 60px;
   border-radius: 4px;
   background: #111;
   color: #fff;
@@ -18,10 +18,17 @@
   margin: 0;
   border: none;
   outline: none;
-  width: 400px;
+  width: 350px;
   font-size: 30px;
   background: #111;
   color: #fff;
   font-family: Roboto, Helvetica, Arial, sans-serif;
   font-weight: 300;
+}
+
+.Chain-Filter .Icon {
+  position: absolute;
+  left: 13px;
+  top: 17px;
+  font-size: 30px;
 }
