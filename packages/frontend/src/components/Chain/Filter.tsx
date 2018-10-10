@@ -21,13 +21,12 @@ export class Filter extends React.Component<Filter.Props, {}> {
   }
 
   public shouldComponentUpdate(nextProps: Filter.Props): boolean {
-    if (this.props.onChange !== nextProps.onChange) {
-      return true;
+    if (this.props.value === nextProps.value && this.props.onChange === nextProps.onChange) {
+      return false;
     }
 
     if (this.props.value == null) {
       this.filterInput.focus();
-      return true;
     }
 
     return true;
