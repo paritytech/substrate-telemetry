@@ -20,10 +20,6 @@ export class Filter extends React.Component<Filter.Props, {}> {
   private timer: NodeJS.Timer;
 
   public componentDidMount() {
-    if (!this.filterInput) {
-      return;
-    }
-
     this.filterInput.focus();
   }
 
