@@ -128,7 +128,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     if (nodeFilter && nodes.length === 0) {
       return (
         <React.Fragment>
-          {filter != null ? <Filter value={filter} onChange={this.onFilterChange} /> : null}
+          <Filter value={filter} onChange={this.onFilterChange} />
           <div className="Chain-no-nodes">¯\_(ツ)_/¯<br />Nothing matches</div>
         </React.Fragment>
       );
@@ -136,7 +136,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
 
     return (
       <React.Fragment>
-        {filter != null ? <Filter value={filter} onChange={this.onFilterChange} /> : null}
+        <Filter value={filter} onChange={this.onFilterChange} />
         <table className="Chain-node-list">
           <Node.Row.Header columns={columns} />
           <tbody>
