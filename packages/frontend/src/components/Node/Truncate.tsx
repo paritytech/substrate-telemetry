@@ -3,17 +3,18 @@ import { Tooltip } from '../';
 
 namespace Truncate {
   export interface Props {
-    text: string,
-    position?: Tooltip.Props['position']
+    text: string;
+    copy?: boolean;
+    position?: Tooltip.Props['position'];
   }
 }
 
 class Truncate extends React.Component<Truncate.Props, {}> {
   public render() {
-    const { text, position } = this.props;
+    const { text, position, copy } = this.props;
 
     return (
-      <Tooltip text={text} position={position} className="Node-Row-Tooltip">
+      <Tooltip text={text} position={position} copy={copy} className="Node-Row-Tooltip">
         <div className="Node-Row-truncate">{text}</div>
       </Tooltip>
     );

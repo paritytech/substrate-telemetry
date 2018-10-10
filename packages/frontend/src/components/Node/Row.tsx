@@ -92,10 +92,10 @@ export default class Row extends React.Component<RowProps, RowState> {
     {
       label: 'Validator',
       icon: nodeValidatorIcon,
-      width: 26,
+      width: 16,
       setting: 'validator',
       render: ({ validator }) => {
-        return validator ? <Tooltip text={validator}><span className="Node-Row-validator"><Identicon id={validator} size={16} /></span></Tooltip> : '-';
+        return validator ? <Tooltip text={validator} copy={true}><span className="Node-Row-validator"><Identicon id={validator} size={16} /></span></Tooltip> : '-';
       }
     },
     {
@@ -179,7 +179,7 @@ export default class Row extends React.Component<RowProps, RowState> {
       icon: blockHashIcon,
       width: 154,
       setting: 'blockhash',
-      render: ({ hash }) => <Truncate position="right" text={hash} />
+      render: ({ hash }) => <Truncate position="right" text={hash} copy={true} />
     },
     {
       label: 'Block Time',
