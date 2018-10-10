@@ -18,7 +18,6 @@ const MAP_HEIGHT_ADJUST = 400 / 350;
 const HEADER = 148;
 
 const ESCAPE_KEY = 27;
-const BACKSPACE_KEY = 8;
 
 import './Chain.css';
 
@@ -74,12 +73,12 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     this.calculateMapDimensions();
 
     window.addEventListener('resize', this.calculateMapDimensions);
-    window.addEventListener('keyup', this.onKeyPress);
+    window.addEventListener('keyup', this.onKeyUp);
   }
 
   public componentWillUnmount() {
     window.removeEventListener('resize', this.calculateMapDimensions);
-    window.removeEventListener('keyup', this.onKeyPress);
+    window.removeEventListener('keyup', this.onKeyUp);
   }
 
   public render() {
@@ -252,20 +251,18 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     this.setState({ map: { top, left, width, height }});
   }
 
-  private onKeyPress = (event: KeyboardEvent) => {
+  private onKeyUp = (event: KeyboardEvent) => {
     if (event.ctrlKey) {
       return;
     }
 
     const { filter } = this.state;
     const key = event.key;
-    const code = event.keyCode;
 
-    const escape = filter != null && code === ESCAPE_KEY;
-    const backspace = filter === '' && code === BACKSPACE_KEY;
+    const escape = filter != null && event.keyCode === ESCAPE_KEY;
     const singleChar = filter == null && key.length === 1;
 
-    if (escape || backspace) {
+    if (escape) {
       this.setState({ filter: null });
     } else if (singleChar) {
       this.setState({ filter: key });
