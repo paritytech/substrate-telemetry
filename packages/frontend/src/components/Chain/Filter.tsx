@@ -17,14 +17,9 @@ const ESCAPE_KEY = 27;
 
 export class Filter extends React.Component<Filter.Props, {}> {
   private filterInput: HTMLInputElement;
-  private timer: NodeJS.Timer;
 
   public componentDidMount() {
     this.filterInput.focus();
-  }
-
-  public componentWillUnmout() {
-    clearTimeout(this.timer);
   }
 
   public shouldComponentUpdate(nextProps: Filter.Props): boolean {
@@ -76,8 +71,7 @@ export class Filter extends React.Component<Filter.Props, {}> {
 
   private onBlur = (event: React.FocusEvent<HTMLInputElement>) => {
     if (this.props.value == null) {
-      clearTimeout(this.timer);
-      this.timer = setTimeout(() => this.filterInput.focus(), 50);
+      this.filterInput.focus();
     }
   }
 }
