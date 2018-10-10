@@ -1,16 +1,17 @@
 import * as WebSocket from 'ws';
 import * as EventEmitter from 'events';
 
-import { noop, timestamp, Maybe, Types, NumStats } from '@dotstats/common';
+import { noop, timestamp, idGenerator, Maybe, Types, NumStats } from '@dotstats/common';
 import { parseMessage, getBestBlock, Message, BestBlock, SystemInterval } from './message';
 import { locate, Location } from './location';
-import { getId, refreshId } from './nodeId';
 import { MeanList } from './MeanList';
 
 const BLOCK_TIME_HISTORY = 10;
 const MEMORY_RECORDS = 20;
 const CPU_RECORDS = 20;
 const TIMEOUT = (1000 * 60 * 1) as Types.Milliseconds; // 1 minute
+
+const nextId = idGenerator<Types.NodeId>();
 
 export interface NodeEvents {
   on(event: 'location', fn: (location: Location) => void): void;
@@ -64,7 +65,7 @@ export default class Node {
     messages: Array<Message>,
   ) {
     this.ip = ip;
-    this.id = getId(address, name);
+    this.id = nextId();
     this.name = name;
     this.chain = chain;
     this.config = config;
@@ -212,8 +213,6 @@ export default class Node {
     this.socket.removeAllListeners();
     this.socket.close();
     this.socket.terminate();
-
-    refreshId(this.address, this.name, this.id);
 
     this.events.emit('disconnect');
   }
