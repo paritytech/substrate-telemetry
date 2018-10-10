@@ -16,10 +16,6 @@ export namespace Filter {
 export class Filter extends React.Component<Filter.Props, {}> {
   private filterInput: HTMLInputElement;
 
-  public componentDidMount() {
-    this.filterInput.focus();
-  }
-
   public shouldComponentUpdate(nextProps: Filter.Props): boolean {
     if (this.props.value === nextProps.value && this.props.onChange === nextProps.onChange) {
       return false;
