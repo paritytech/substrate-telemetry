@@ -9,12 +9,18 @@ import './Filter.css';
 export namespace Filter {
   export interface Props {
     value: Maybe<string>;
-    onChange: (value: string) => void;
+    onChange: (value: Maybe<string>) => void;
   }
 }
 
+const ESCAPE_KEY = 27;
+
 export class Filter extends React.Component<Filter.Props, {}> {
   private filterInput: HTMLInputElement;
+
+  public componentDidMount() {
+    this.filterInput.focus();
+  }
 
   public shouldComponentUpdate(nextProps: Filter.Props): boolean {
     if (this.props.value === nextProps.value && this.props.onChange === nextProps.onChange) {
@@ -40,7 +46,7 @@ export class Filter extends React.Component<Filter.Props, {}> {
     return (
       <div className={className}>
         <Icon src={searchIcon} />
-        <input ref={this.onRef} value={value || ''} onChange={this.onChange} />
+        <input ref={this.onRef} value={value || ''} onChange={this.onChange} onKeyUp={this.onKeyUp} onBlur={this.onBlur} />
       </div>
     );
   }
@@ -52,6 +58,20 @@ export class Filter extends React.Component<Filter.Props, {}> {
   private onChange = () => {
     const { value } = this.filterInput;
 
-    this.props.onChange(value);
+    this.props.onChange(value === '' ? null : value);
+  }
+
+  private onKeyUp = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    event.stopPropagation();
+
+    if (event.keyCode === ESCAPE_KEY) {
+      this.props.onChange(null);
+    }
+  }
+
+  private onBlur = (event: React.FocusEvent<HTMLInputElement>) => {
+    if (this.props.value == null) {
+      this.filterInput.focus();
+    }
   }
 }

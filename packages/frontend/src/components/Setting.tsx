@@ -22,13 +22,13 @@ export class Setting extends React.Component<Setting.Props, {}> {
     const className = checked ? "Setting Setting-on" : "Setting";
 
     return (
-      <p className={className} onClick={this.toggle}>
+      <div className={className} onClick={this.toggle}>
         <Icon src={icon} alt={label} />
         {label}
         <span className="Setting-switch">
           <span className="Setting-knob" />
         </span>
-      </p>
+      </div>
     );
   }
 
