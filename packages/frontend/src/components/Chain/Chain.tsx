@@ -16,6 +16,8 @@ import settingsIcon from '../../icons/settings.svg';
 const MAP_RATIO = 800 / 350;
 const MAP_HEIGHT_ADJUST = 400 / 350;
 const HEADER = 148;
+const TH_HEIGHT = 35;
+const TR_HEIGHT = 31;
 
 const ESCAPE_KEY = 27;
 
@@ -70,14 +72,14 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
   }
 
   public componentWillMount() {
-    this.calculateMapDimensions();
+    this.onResize();
 
-    window.addEventListener('resize', this.calculateMapDimensions);
+    window.addEventListener('resize', this.onResize);
     window.addEventListener('keyup', this.onKeyUp);
   }
 
   public componentWillUnmount() {
-    window.removeEventListener('resize', this.calculateMapDimensions);
+    window.removeEventListener('resize', this.onResize);
     window.removeEventListener('keyup', this.onKeyUp);
   }
 
@@ -133,8 +135,10 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
       );
     }
 
+    const height = TH_HEIGHT + nodes.length * TR_HEIGHT;
+
     return (
-      <React.Fragment>
+      <div style={{ height }}>
         <Filter value={filter} onChange={this.onFilterChange} />
         <table className="Chain-node-list">
           <Node.Row.Header columns={columns} />
@@ -144,7 +148,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
           }
           </tbody>
         </table>
-      </React.Fragment>
+      </div>
     );
   }
 
@@ -225,7 +229,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     return { left, top, quarter };
   }
 
-  private calculateMapDimensions: () => void = () => {
+  private onResize: () => void = () => {
     const vp = viewport();
 
     vp.width = Math.max(1350, vp.width);

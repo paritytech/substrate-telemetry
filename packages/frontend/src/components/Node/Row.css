@@ -5,11 +5,16 @@
 
 .Node-Row-Header th, .Node-Row td {
   text-align: left;
-  padding: 0.35em 13px;
+  padding: 6px 13px;
+  height: 19px;
 }
 
 .Node-Row td {
   position: relative;
+}
+
+.Node-Row-Header th {
+  height: 23px;
 }
 
 .Node-Row .Node-Row-truncate {
