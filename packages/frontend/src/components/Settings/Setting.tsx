@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { Icon } from './';
-import { State } from '../state';
-import { PersistentObject } from '../persist';
+import { Icon } from '../';
+import { State } from '../../state';
+import { PersistentObject } from '../../persist';
 
 import './Setting.css';
 

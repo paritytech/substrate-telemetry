@@ -32,3 +32,35 @@
   color: #fff;
   box-shadow: rgba(0,0,0,0.5) 0 3px 30px;
 }
+
+.Chain-map {
+  min-width: 1350px;
+  background: url('../../assets/world-map.svg') no-repeat;
+  background-size: contain;
+  background-position: center;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+
+.List-no-nodes {
+  font-size: 30px;
+  padding-top: 20vh;
+  text-align: center;
+  font-weight: 300;
+}
+
+.List table {
+  width: 100%;
+  border-spacing: 0;
+}
+
+.List thead {
+  background: #3c3c3b;
+}
+
+.List tbody {
+  font-family: monospace, sans-serif;
+}

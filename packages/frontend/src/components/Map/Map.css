@@ -1,0 +1,11 @@
+.Map {
+  min-width: 1350px;
+  background: url('../../assets/world-map.svg') no-repeat;
+  background-size: contain;
+  background-position: center;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}

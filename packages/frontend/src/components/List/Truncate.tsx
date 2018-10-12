@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Tooltip } from '../';
 
-namespace Truncate {
+export namespace Truncate {
   export interface Props {
     text: string;
     copy?: boolean;
@@ -9,13 +9,13 @@ namespace Truncate {
   }
 }
 
-class Truncate extends React.Component<Truncate.Props, {}> {
+export class Truncate extends React.Component<Truncate.Props, {}> {
   public render() {
     const { text, position, copy } = this.props;
 
     return (
-      <Tooltip text={text} position={position} copy={copy} className="Node-Row-Tooltip">
-        <div className="Node-Row-truncate">{text}</div>
+      <Tooltip text={text} position={position} copy={copy} className="Row-Tooltip">
+        <div className="Row-truncate">{text}</div>
       </Tooltip>
     );
   }
@@ -24,5 +24,3 @@ class Truncate extends React.Component<Truncate.Props, {}> {
     return this.props.text !== nextProps.text || this.props.position !== nextProps.position;
   }
 }
-
-export default Truncate;
