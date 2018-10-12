@@ -29,19 +29,21 @@ import './Row.css';
 
 const SEMVER_PATTERN = /^\d+\.\d+\.\d+/;
 
-interface RowProps {
-  node: Node;
-  pins: PersistentSet<Types.NodeName>;
-  columns: Column[];
-};
+export namespace Row {
+  export interface Props {
+    node: Node;
+    pins: PersistentSet<Types.NodeName>;
+    columns: Column[];
+  }
 
-interface RowState {
-  update: number;
-};
+  export interface State {
+    update: number;
+  }
+}
 
 interface HeaderProps {
   columns: Column[];
-};
+}
 
 interface Column {
   label: string;
@@ -84,7 +86,7 @@ function formatCPU(cpu: number, stamp: Maybe<Types.Timestamp>): string {
   return `${cpu.toFixed(fractionDigits)}%${ago}`;
 }
 
-export default class Row extends React.Component<RowProps, RowState> {
+export class Row extends React.Component<Row.Props, Row.State> {
   public static readonly columns: Column[] = [
     {
       label: 'Node',
@@ -245,7 +247,7 @@ export default class Row extends React.Component<RowProps, RowState> {
     node.unsubscribe(this.onUpdate);
   }
 
-  public shouldComponentUpdate(nextProps: RowProps, nextState: RowState): boolean {
+  public shouldComponentUpdate(nextProps: Row.Props, nextState: Row.State): boolean {
     return this.props.node.id !== nextProps.node.id || this.state.update !== nextState.update;
   }
 
