@@ -16,7 +16,7 @@ import lastTimeIcon from '../../icons/watch.svg';
 
 import './Location.css';
 
-namespace Location {
+export namespace Location {
   export type Quarter = 0 | 1 | 2 | 3;
 
   export interface Props {
@@ -36,7 +36,7 @@ namespace Location {
   }
 }
 
-class Location extends React.Component<Location.Props, Location.State> {
+export class Location extends React.Component<Location.Props, Location.State> {
   public readonly state = { hover: false };
 
   public render() {
@@ -48,16 +48,16 @@ class Location extends React.Component<Location.Props, Location.State> {
       return null;
     }
 
-    let className = `Node-Location Node-Location-quarter${quarter}`;
+    let className = `Location Location-quarter${quarter}`;
 
     if (focused) {
       if (propagationTime != null) {
-        className += ' Node-Location-synced';
+        className += ' Location-synced';
       } else if (height % 2 === 1) {
-        className += ' Node-Location-odd';
+        className += ' Location-odd';
       }
     } else {
-      className += ' Node-Location-dimmed';
+      className += ' Location-dimmed';
     }
 
     return (
@@ -65,7 +65,7 @@ class Location extends React.Component<Location.Props, Location.State> {
       {
         this.state.hover ? this.renderDetails() : null
       }
-        <div className="Node-Location-ping" />
+        <div className="Location-ping" />
       </div>
     );
   }
@@ -92,14 +92,14 @@ class Location extends React.Component<Location.Props, Location.State> {
           <td><Icon src={nodeValidatorIcon} alt="Node" /></td>
           <td colSpan={5}>
             {trimHash(validator, 30)}
-            <span className="Node-Location-validator"><Identicon id={validator} size={16} /></span>
+            <span className="Location-validator"><Identicon id={validator} size={16} /></span>
           </td>
         </tr>
       );
     }
 
     return (
-      <table className="Node-Location-details Node-Location-details">
+      <table className="Location-details Location-details">
         <tbody>
           <tr>
             <td><Icon src={nodeIcon} alt="Node" /></td><td colSpan={5}>{name}</td>
@@ -138,5 +138,3 @@ class Location extends React.Component<Location.Props, Location.State> {
     this.setState({ hover: false });
   }
 }
-
-export default Location;

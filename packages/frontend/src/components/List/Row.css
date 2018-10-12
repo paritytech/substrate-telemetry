@@ -1,23 +1,23 @@
-.Node-Row {
+.Row {
   color: #999;
   cursor: pointer;
 }
 
-.Node-Row-Header th, .Node-Row td {
+.Row-Header th, .Row td {
   text-align: left;
   padding: 6px 13px;
   height: 19px;
 }
 
-.Node-Row td {
+.Row td {
   position: relative;
 }
 
-.Node-Row-Header th {
+.Row-Header th {
   height: 23px;
 }
 
-.Node-Row .Node-Row-truncate {
+.Row .Row-truncate {
   position: absolute;
   left: 0;
   right: 0;
@@ -28,40 +28,40 @@
   text-overflow: ellipsis;
 }
 
-.Node-Row .Node-Row-Tooltip {
+.Row .Row-Tooltip {
   position: initial;
   padding: inherit;
 }
 
-.Node-Row-synced {
+.Row-synced {
   color: #fff;
 }
 
-.Node-Row-pinned td:first-child {
+.Row-pinned td:first-child {
   border-left: 3px solid #d64ca8;
   padding-left: 10px;
 }
 
-.Node-Row-pinned td:last-child {
+.Row-pinned td:last-child {
   border-right: 3px solid #d64ca8;
   padding-right: 10px;
 }
 
-.Node-Row-pinned.Node-Row-synced {
+.Row-pinned.Row-synced {
   color: #d64ca8;
 }
 
-.Node-Row:hover {
+.Row:hover {
   background-color: #161616;
 }
 
-.Node-Row-validator {
+.Row-validator {
   display: block;
   width: 16px;
   height: 16px;
   cursor: pointer;
 }
 
-.Node-Row-validator:hover {
+.Row-validator:hover {
   transform: scale(2);
 }

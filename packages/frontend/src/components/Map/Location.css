@@ -1,5 +1,5 @@
 
-.Node-Location {
+.Location {
   width: 6px;
   height: 6px;
   background: transparent;
@@ -15,7 +15,7 @@
   transition: border-color 0.25s linear;
 }
 
-.Node-Location-dimmed {
+.Location-dimmed {
   width: 2px;
   height: 2px;
   margin-left: -1px;
@@ -25,34 +25,34 @@
   border: none;
 }
 
-.Node-Location-ping {
+.Location-ping {
   pointer-events: none;
   position: absolute;
   display: none;
 }
 
-.Node-Location-odd {
+.Location-odd {
   border-color: #bbb;
 }
 
-.Node-Location-synced {
+.Location-synced {
   z-index: 3;
   border-color: #d64ca8;
 }
 
-.Node-Location-synced .Node-Location-ping {
+.Location-synced .Location-ping {
   border: 1px solid #fff;
   border-radius: 30px;
   display: block;
   animation: ping 1s forwards;
 }
 
-.Node-Location:hover {
+.Location:hover {
   z-index: 4;
   border-color: #fff;
 }
 
-.Node-Location-details {
+.Location-details {
   min-width: 335px;
   position: absolute;
   font-family: monospace, sans-serif;
@@ -62,38 +62,38 @@
   border-collapse: collapse;
 }
 
-.Node-Location-quarter0 .Node-Location-details {
+.Location-quarter0 .Location-details {
   left: 16px;
   top: -4px;
 }
 
-.Node-Location-quarter1 .Node-Location-details {
+.Location-quarter1 .Location-details {
   right: 16px;
   top: -4px;
 }
 
-.Node-Location-quarter2 .Node-Location-details {
+.Location-quarter2 .Location-details {
   left: 16px;
   bottom: -4px;
 }
 
-.Node-Location-quarter3 .Node-Location-details {
+.Location-quarter3 .Location-details {
   right: 16px;
   bottom: -4px;
 }
 
-.Node-Location-details td {
+.Location-details td {
   text-align: left;
   padding: 0.5em 1em;
 }
 
-.Node-Location-details td:nth-child(odd) {
+.Location-details td:nth-child(odd) {
   width: 16px;
   text-align: center;
   padding-right: 0.2em;
 }
 
-.Node-Location-details td:nth-child(even) {
+.Location-details td:nth-child(even) {
   padding-left: 0.2em;
 }
 
@@ -117,7 +117,7 @@
   }
 }
 
-.Node-Location-validator {
+.Location-validator {
   display: inline-block;
   width: 16px;
   height: 16px;

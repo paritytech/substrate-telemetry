@@ -4,7 +4,7 @@ import { Types, Maybe, timestamp } from '@dotstats/common';
 import { formatNumber, milliOrSecond, secondsWithPrecision } from '../../utils';
 import { State as AppState, Node } from '../../state';
 import { PersistentSet } from '../../persist';
-import { SEMVER_PATTERN, Truncate } from './';
+import { Truncate } from './';
 import { Ago, Icon, Tooltip, Sparkline } from '../';
 
 import nodeIcon from '../../icons/server.svg';
@@ -26,6 +26,8 @@ import paritySubstrateIcon from '../../icons/substrate.svg';
 import unknownImplementationIcon from '../../icons/question-solid.svg';
 
 import './Row.css';
+
+const SEMVER_PATTERN = /^\d+\.\d+\.\d+/;
 
 interface RowProps {
   node: Node;
@@ -95,7 +97,7 @@ export default class Row extends React.Component<RowProps, RowState> {
       width: 16,
       setting: 'validator',
       render: ({ validator }) => {
-        return validator ? <Tooltip text={validator} copy={true}><span className="Node-Row-validator"><Identicon id={validator} size={16} /></span></Tooltip> : '-';
+        return validator ? <Tooltip text={validator} copy={true}><span className="Row-validator"><Identicon id={validator} size={16} /></span></Tooltip> : '-';
       }
     },
     {
@@ -210,7 +212,7 @@ export default class Row extends React.Component<RowProps, RowState> {
 
     return (
       <thead>
-        <tr className="Node-Row-Header">
+        <tr className="Row-Header">
           {
             columns.map(({ icon, width, label }, index) => {
               const position = index === 0 ? 'left'
@@ -250,14 +252,14 @@ export default class Row extends React.Component<RowProps, RowState> {
   public render() {
     const { node, columns } = this.props;
 
-    let className = 'Node-Row';
+    let className = 'Row';
 
     if (node.propagationTime != null) {
-      className += ' Node-Row-synced';
+      className += ' Row-synced';
     }
 
     if (node.pinned) {
-      className += ' Node-Row-pinned';
+      className += ' Row-pinned';
     }
 
     return (

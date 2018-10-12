@@ -1,9 +1,9 @@
 import * as React from 'react';
 import { Types, Maybe } from '@dotstats/common';
 import { State as AppState, Node as NodeState } from '../../state';
-import { formatNumber, secondsWithPrecision, viewport, getHashData } from '../../utils';
+import { formatNumber, secondsWithPrecision, getHashData } from '../../utils';
 import { Tab, Filter } from './';
-import { Tile, Node, Ago, Setting } from '../';
+import { Tile, Ago, List, Map, Settings } from '../';
 import { PersistentObject, PersistentSet } from '../../persist';
 
 import blockIcon from '../../icons/package.svg';
@@ -12,12 +12,6 @@ import lastTimeIcon from '../../icons/watch.svg';
 import listIcon from '../../icons/list-alt-regular.svg';
 import worldIcon from '../../icons/location.svg';
 import settingsIcon from '../../icons/settings.svg';
-
-const MAP_RATIO = 800 / 350;
-const MAP_HEIGHT_ADJUST = 400 / 350;
-const HEADER = 148;
-const TH_HEIGHT = 35;
-const TR_HEIGHT = 31;
 
 const ESCAPE_KEY = 27;
 
@@ -35,12 +29,6 @@ export namespace Chain {
   export interface State {
     display: Display;
     filter: Maybe<string>;
-    map: {
-      width: number;
-      height: number;
-      top: number;
-      left: number;
-    }
   }
 }
 
@@ -62,30 +50,21 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     this.state = {
       display,
       filter: null,
-      map: {
-        width: 0,
-        height: 0,
-        top: 0,
-        left: 0
-      }
     };
   }
 
   public componentWillMount() {
-    this.onResize();
-
-    window.addEventListener('resize', this.onResize);
     window.addEventListener('keyup', this.onKeyUp);
   }
 
   public componentWillUnmount() {
-    window.removeEventListener('resize', this.onResize);
     window.removeEventListener('keyup', this.onKeyUp);
   }
 
   public render() {
-    const { best, blockTimestamp, blockAverage } = this.props.appState;
-    const currentTab = this.state.display;
+    const { appState } = this.props;
+    const { best, blockTimestamp, blockAverage } = appState;
+    const { display: currentTab } = this.state;
 
     return (
       <div className="Chain">
@@ -101,159 +80,37 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
         </div>
         <div className="Chain-content-container">
           <div className="Chain-content">
-          {
-            currentTab === 'list'
-              ? this.renderList()
-              : currentTab === 'map'
-              ? this.renderMap()
-              : this.renderSettings()
-          }
+            {this.renderContent()}
           </div>
         </div>
       </div>
     );
   }
 
-  private setDisplay = (display: Chain.Display) => {
-    this.setState({ display });
-  };
+  private renderContent() {
+    const { display, filter } = this.state;
 
-  private renderList() {
-    const { settings } = this.props.appState;
-    const { pins } = this.props;
-    const { filter } = this.state;
-    const nodeFilter = this.getNodeFilter();
-    const nodes = nodeFilter ? this.nodes().filter(nodeFilter) : this.nodes();
-    const columns = Node.Row.columns.filter(({ setting }) => setting == null || settings[setting]);
-
-    if (nodeFilter && nodes.length === 0) {
-      return (
-        <React.Fragment>
-          <Filter value={filter} onChange={this.onFilterChange} />
-          <div className="Chain-no-nodes">¯\_(ツ)_/¯<br />Nothing matches</div>
-        </React.Fragment>
-      );
+    if (display === 'settings') {
+      return <Settings settings={this.props.settings} />;
     }
 
-    const height = TH_HEIGHT + nodes.length * TR_HEIGHT;
-
-    return (
-      <div style={{ height }}>
-        <Filter value={filter} onChange={this.onFilterChange} />
-        <table className="Chain-node-list">
-          <Node.Row.Header columns={columns} />
-          <tbody>
-          {
-            nodes.map((node) => <Node.Row key={node.id} node={node} pins={pins} columns={columns} />)
-          }
-          </tbody>
-        </table>
-      </div>
-    );
-  }
-
-  private renderMap() {
-    const { filter } = this.state;
-    const nodeFilter = this.getNodeFilter();
+    const { appState, pins } = this.props;
 
     return (
       <React.Fragment>
-        {filter != null ? <Filter value={filter} onChange={this.onFilterChange} /> : null}
-        <div className="Chain-map">
+        <Filter value={filter} onChange={this.onFilterChange} />
         {
-          this.nodes().map((node) => {
-            const { lat, lon } = node;
-            const focused = nodeFilter == null || nodeFilter(node);
-
-            if (lat == null || lon == null) {
-              // Skip nodes with unknown location
-              return null;
-            }
-
-            const position = this.pixelPosition(lat, lon);
-
-            return (
-              <Node.Location key={node.id} position={position} focused={focused} node={node} />
-            );
-          })
+          display === 'list'
+            ? <List filter={this.getNodeFilter()} appState={appState} pins={pins} />
+            : <Map filter={this.getNodeFilter()} appState={appState} />
         }
-        </div>
       </React.Fragment>
     );
   }
 
-  private renderSettings() {
-    const { settings } = this.props;
-
-    return (
-      <div className="Chain-settings">
-        <div className="Chain-settings-category">
-          <h2>Visible Columns</h2>
-          {
-            Node.Row.columns
-              .map(({ label, icon, setting }, index) => {
-                if (!setting) {
-                  return null;
-                }
-
-                return <Setting key={index} setting={setting} settings={settings} icon={icon} label={label} />;
-              })
-          }
-        </div>
-      </div>
-    );
-  }
-
-  private nodes(): NodeState[] {
-    return this.props.appState.nodes.sorted();
-  }
-
-  private pixelPosition(lat: Types.Latitude, lon: Types.Longitude): Node.Location.Position {
-    const { map } = this.state;
-
-    // Longitude ranges -180 (west) to +180 (east)
-    // Latitude ranges +90 (north) to -90 (south)
-    const left = Math.round(((180 + lon) / 360) * map.width + map.left);
-    const top = Math.round(((90 - lat) / 180) * map.height + map.top) * MAP_HEIGHT_ADJUST;
-
-    let quarter: Node.Location.Quarter = 0;
-
-    if (lon > 0) {
-      quarter = (quarter | 1) as Node.Location.Quarter;
-    }
-
-    if (lat < 0) {
-      quarter = (quarter | 2) as Node.Location.Quarter;
-    }
-
-    return { left, top, quarter };
-  }
-
-  private onResize: () => void = () => {
-    const vp = viewport();
-
-    vp.width = Math.max(1350, vp.width);
-    vp.height -= HEADER;
-
-    const ratio = vp.width / vp.height;
-
-    let top = 0;
-    let left = 0;
-    let width = 0;
-    let height = 0;
-
-    if (ratio >= MAP_RATIO) {
-      width = Math.round(vp.height * MAP_RATIO);
-      height = Math.round(vp.height);
-      left = (vp.width - width) / 2;
-    } else {
-      width = Math.round(vp.width);
-      height = Math.round(vp.width / MAP_RATIO);
-      top = (vp.height - height) / 2;
-    }
-
-    this.setState({ map: { top, left, width, height }});
-  }
+  private setDisplay = (display: Chain.Display) => {
+    this.setState({ display });
+  };
 
   private onKeyUp = (event: KeyboardEvent) => {
     if (event.ctrlKey) {
