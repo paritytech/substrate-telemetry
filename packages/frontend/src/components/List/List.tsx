@@ -3,10 +3,12 @@ import { Types, Maybe } from '@dotstats/common';
 import { State as AppState, Node } from '../../state';
 import { Row } from './';
 import { PersistentSet } from '../../persist';
+import { viewport } from '../../utils'
 
-// const HEADER = 148;
+const HEADER = 148;
 const TH_HEIGHT = 35;
 const TR_HEIGHT = 31;
+const ROW_MARGIN = 5;
 
 import './List.css';
 
@@ -16,9 +18,36 @@ export namespace List {
     appState: Readonly<AppState>;
     pins: PersistentSet<Types.NodeName>;
   }
+
+  export interface State {
+    viewportHeight: number;
+    listStart: number;
+    listEnd: number;
+  }
 }
 
 export class List extends React.Component<List.Props, {}> {
+  public state = {
+    viewportHeight: viewport().height,
+    listStart: 0,
+    listEnd: 0,
+  };
+
+  private relativeTop = -1;
+  private scrolling = false;
+
+  public componentDidMount() {
+    this.onScroll();
+
+    window.addEventListener('resize', this.onResize);
+    window.addEventListener('scroll', this.onScroll);
+  }
+
+  public componentWillUnmount() {
+    window.removeEventListener('resize', this.onResize);
+    window.removeEventListener('scroll', this.onScroll);
+  }
+
   public render() {
     const { settings } = this.props.appState;
     const { pins, filter } = this.props;
@@ -36,13 +65,18 @@ export class List extends React.Component<List.Props, {}> {
       }
     }
 
-    const height = TH_HEIGHT + nodes.length * TR_HEIGHT;
+    const { listStart, listEnd } = this.state;
+
+    const height = (TH_HEIGHT + nodes.length * TR_HEIGHT);
+    const transform = `translateY(${listStart * TR_HEIGHT}px)`;
+
+    nodes = nodes.slice(listStart, listEnd);
 
     return (
       <div className="List" style={{ height }}>
         <table>
           <Row.Header columns={columns} />
-          <tbody>
+          <tbody style={{ transform }}>
           {
             nodes.map((node) => <Row key={node.id} node={node} pins={pins} columns={columns} />)
           }
@@ -51,4 +85,46 @@ export class List extends React.Component<List.Props, {}> {
       </div>
     );
   }
+
+  private onScroll = () => {
+    if (this.scrolling) {
+      return;
+    }
+
+    const relativeTop = divisibleBy(window.scrollY - (HEADER + TR_HEIGHT), TR_HEIGHT * ROW_MARGIN);
+
+    if (this.relativeTop === relativeTop) {
+      return;
+    }
+
+    this.relativeTop = relativeTop;
+    this.scrolling = true;
+
+    window.requestAnimationFrame(this.onScrollRAF);
+  }
+
+  private onScrollRAF = () => {
+    const { relativeTop } = this;
+    const { viewportHeight } = this.state;
+    const top = Math.max(relativeTop, 0);
+    const height = relativeTop < 0 ? viewportHeight + relativeTop : viewportHeight;
+    const listStart = Math.max((top / TR_HEIGHT | 0) - ROW_MARGIN, 0);
+    const listEnd = listStart + ROW_MARGIN * 2 + Math.ceil(height / TR_HEIGHT);
+
+    if (listStart !== this.state.listStart || listEnd !== this.state.listEnd) {
+      this.setState({ listStart, listEnd });
+    }
+
+    this.scrolling = false;
+  }
+
+  private onResize = () => {
+    const viewportHeight = viewport().height;
+
+    this.setState({ viewportHeight });
+  }
+}
+
+function divisibleBy(n: number, dividor: number): number {
+  return n - n % dividor;
 }
