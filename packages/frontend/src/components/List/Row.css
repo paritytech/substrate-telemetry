@@ -1,0 +1,67 @@
+.Row {
+  color: #999;
+  cursor: pointer;
+}
+
+.Row-Header th, .Row td {
+  text-align: left;
+  padding: 6px 13px;
+  height: 19px;
+}
+
+.Row td {
+  position: relative;
+}
+
+.Row-Header th {
+  height: 23px;
+}
+
+.Row .Row-truncate {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  padding: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.Row .Row-Tooltip {
+  position: initial;
+  padding: inherit;
+}
+
+.Row-synced {
+  color: #fff;
+}
+
+.Row-pinned td:first-child {
+  border-left: 3px solid #d64ca8;
+  padding-left: 10px;
+}
+
+.Row-pinned td:last-child {
+  border-right: 3px solid #d64ca8;
+  padding-right: 10px;
+}
+
+.Row-pinned.Row-synced {
+  color: #d64ca8;
+}
+
+.Row:hover {
+  background-color: #161616;
+}
+
+.Row-validator {
+  display: block;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.Row-validator:hover {
+  transform: scale(2);
+}

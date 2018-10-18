@@ -1,29 +1,62 @@
 import * as React from 'react';
-import { Types } from '@dotstats/common';
+import { Types, SortedCollection } from '@dotstats/common';
 import { Chains, Chain, Ago, OfflineIndicator } from './components';
 import { Connection } from './Connection';
-import { State } from './state';
+import { PersistentObject, PersistentSet } from './persist';
+import { State, Node } from './state';
 
 import './App.css';
 
 export default class App extends React.Component<{}, State> {
-  public state: State = {
-    status: 'offline',
-    best: 0 as Types.BlockNumber,
-    blockTimestamp: 0 as Types.Timestamp,
-    blockAverage: null,
-    timeDiff: 0 as Types.Milliseconds,
-    subscribed: null,
-    chains: new Map(),
-    nodes: new Map()
-  };
-
-  private connection: Promise<Connection>;
+  public state: State;
+  private readonly settings: PersistentObject<State.Settings>;
+  private readonly pins: PersistentSet<Types.NodeName>;
+  private readonly connection: Promise<Connection>;
 
   constructor(props: {}) {
     super(props);
 
-    this.connection = Connection.create((changes) => {
+    this.settings = new PersistentObject(
+      'settings',
+      {
+        validator: true,
+        location: true,
+        implementation: true,
+        peers: true,
+        txs: true,
+        cpu: true,
+        mem: true,
+        blocknumber: true,
+        blockhash: true,
+        blocktime: true,
+        blockpropagation: true,
+        blocklasttime: false
+      },
+      (settings) => this.setState({ settings })
+    );
+
+    this.pins = new PersistentSet<Types.NodeName>('pinned_names', (pins) => {
+      const { nodes } = this.state;
+
+      nodes.mutEachAndSort((node) => node.setPinned(pins.has(node.name)));
+
+      this.setState({ nodes, pins });
+    });
+
+    this.state = {
+      status: 'offline',
+      best: 0 as Types.BlockNumber,
+      blockTimestamp: 0 as Types.Timestamp,
+      blockAverage: null,
+      timeDiff: 0 as Types.Milliseconds,
+      subscribed: null,
+      chains: new Map(),
+      nodes: new SortedCollection(Node.compare),
+      settings: this.settings.raw(),
+      pins: this.pins.get(),
+    };
+
+    this.connection = Connection.create(this.pins, (changes) => {
       if (changes) {
         this.setState(changes);
       }
@@ -50,7 +83,7 @@ export default class App extends React.Component<{}, State> {
       <div className="App">
         <OfflineIndicator status={status} />
         <Chains chains={chains} subscribed={subscribed} connection={this.connection} />
-        <Chain appState={this.state} />
+        <Chain appState={this.state} settings={this.settings} pins={this.pins} />
       </div>
     );
   }

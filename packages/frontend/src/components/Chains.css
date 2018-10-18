@@ -7,10 +7,6 @@
   position: relative;
 }
 
-.Chains .Icon {
-  margin-right: 1em;
-}
-
 .Chains-chain {
   padding: 0 12px;
   background: #bbb;
@@ -36,14 +32,11 @@
 }
 
 .Chains-fork-me .Icon {
-  font-size: 24px;
+  font-size: 28px;
   margin: 0;
-  height: 24px;
-  width: 24px;
-  background: #3c3c3b;
-  border: 2px solid #3c3c3b;
-  border-radius: 24px;
-  color: #ccc;
+  height: 28px;
+  width: 28px;
+  color: #3c3c3b;
 }
 
 .Chains-node-count {

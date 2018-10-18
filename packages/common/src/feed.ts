@@ -1,6 +1,8 @@
 import { Opaque, Maybe } from './helpers';
+import { stringify, parse, Stringified } from './stringify';
 import {
   FeedVersion,
+  Address,
   Latitude,
   Longitude,
   City,
@@ -8,6 +10,7 @@ import {
   NodeCount,
   NodeDetails,
   NodeStats,
+  NodeHardware,
   NodeLocation,
   BlockNumber,
   BlockDetails,
@@ -24,12 +27,13 @@ export const Actions = {
   LocatedNode      : 0x04 as 0x04,
   ImportedBlock    : 0x05 as 0x05,
   NodeStats        : 0x06 as 0x06,
-  TimeSync         : 0x07 as 0x07,
-  AddedChain       : 0x08 as 0x08,
-  RemovedChain     : 0x09 as 0x09,
-  SubscribedTo     : 0x0A as 0x0A,
-  UnsubscribedFrom : 0x0B as 0x0B,
-  Pong             : 0x0C as 0x0C,
+  NodeHardware     : 0x07 as 0x07,
+  TimeSync         : 0x08 as 0x08,
+  AddedChain       : 0x09 as 0x09,
+  RemovedChain     : 0x0A as 0x0A,
+  SubscribedTo     : 0x0B as 0x0B,
+  UnsubscribedFrom : 0x0C as 0x0C,
+  Pong             : 0x0D as 0x0D,
 };
 
 export type Action = typeof Actions[keyof typeof Actions];
@@ -52,7 +56,7 @@ export namespace Variants {
 
   export interface AddedNodeMessage extends MessageBase {
     action: typeof Actions.AddedNode;
-    payload: [NodeId, NodeDetails, NodeStats, BlockDetails, Maybe<NodeLocation>];
+    payload: [NodeId, NodeDetails, NodeStats, NodeHardware, BlockDetails, Maybe<NodeLocation>];
   }
 
   export interface RemovedNodeMessage extends MessageBase {
@@ -73,6 +77,11 @@ export namespace Variants {
   export interface NodeStatsMessage extends MessageBase {
     action: typeof Actions.NodeStats;
     payload: [NodeId, NodeStats];
+  }
+
+  export interface NodeHardwareMessage extends MessageBase {
+    action: typeof Actions.NodeHardware;
+    payload: [NodeId, NodeHardware];
   }
 
   export interface TimeSyncMessage extends MessageBase {
@@ -114,6 +123,7 @@ export type Message =
   | Variants.LocatedNodeMessage
   | Variants.ImportedBlockMessage
   | Variants.NodeStatsMessage
+  | Variants.NodeHardwareMessage
   | Variants.TimeSyncMessage
   | Variants.AddedChainMessage
   | Variants.RemovedChainMessage
@@ -122,11 +132,11 @@ export type Message =
   | Variants.PongMessage;
 
 /**
- * Opaque data type to be sent to the feed. Passing through
- * strings means we can only serialize once, no matter how
- * many feed clients are listening in.
+ * Data type to be sent to the feed. Passing through strings means we can only serialize once,
+ * no matter how many feed clients are listening in.
  */
-export type Data = Opaque<string, 'FeedMessage.Data'>;
+export interface SquashedMessages extends Array<Action | Payload> {};
+export type Data = Stringified<SquashedMessages>;
 
 /**
  * Serialize an array of `Message`s to a single JSON string.
@@ -136,7 +146,7 @@ export type Data = Opaque<string, 'FeedMessage.Data'>;
  * Action `string`s are converted to opcodes using the `actionToCode` mapping.
  */
 export function serialize(messages: Array<Message>): Data {
-  const squashed = new Array(messages.length * 2);
+  const squashed: SquashedMessages = new Array(messages.length * 2);
   let index = 0;
 
   messages.forEach((message) => {
@@ -146,20 +156,20 @@ export function serialize(messages: Array<Message>): Data {
     squashed[index++] = payload;
   })
 
-  return JSON.stringify(squashed) as Data;
+  return stringify(squashed);
 }
 
 /**
  * Deserialize data to an array of `Message`s.
  */
 export function deserialize(data: Data): Array<Message> {
-  const json: Array<Action | Payload> = JSON.parse(data);
+  const json = parse(data);
 
   if (!Array.isArray(json) || json.length === 0 || json.length % 2 !== 0) {
     throw new Error('Invalid FeedMessage.Data');
   }
 
-  const messages: Array<Message> = new Array(json.length / 2);
+  const messages = new Array<Message>(json.length / 2);
 
   for (const index of messages.keys()) {
     const [ action, payload ] = json.slice(index * 2);

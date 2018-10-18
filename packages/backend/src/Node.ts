@@ -1,11 +1,14 @@
 import * as WebSocket from 'ws';
 import * as EventEmitter from 'events';
 
-import { noop, timestamp, Maybe, Types, idGenerator, blockAverage } from '@dotstats/common';
+import { noop, timestamp, idGenerator, Maybe, Types, NumStats } from '@dotstats/common';
 import { parseMessage, getBestBlock, Message, BestBlock, SystemInterval } from './message';
 import { locate, Location } from './location';
+import { MeanList } from './MeanList';
 
 const BLOCK_TIME_HISTORY = 10;
+const MEMORY_RECORDS = 20;
+const CPU_RECORDS = 20;
 const TIMEOUT = (1000 * 60 * 1) as Types.Milliseconds; // 1 minute
 
 const nextId = idGenerator<Types.NodeId>();
@@ -21,6 +24,8 @@ export default class Node {
   public readonly chain: Types.ChainLabel;
   public readonly implementation: Types.NodeImplementation;
   public readonly version: Types.NodeVersion;
+  public readonly address: Maybe<Types.Address>;
+  public readonly authority: boolean;
 
   public readonly events = new EventEmitter() as EventEmitter & NodeEvents;
 
@@ -36,10 +41,13 @@ export default class Node {
 
   private peers = 0 as Types.PeerCount;
   private txcount = 0 as Types.TransactionCount;
+  private memory = new MeanList<Types.MemoryUse>();
+  private cpu = new MeanList<Types.CPUUse>();
+  private chartstamps = new MeanList<Types.Timestamp>();
 
   private readonly ip: string;
   private readonly socket: WebSocket;
-  private blockTimes: Array<number> = new Array(BLOCK_TIME_HISTORY);
+  private blockTimes = new NumStats<Types.Milliseconds>(BLOCK_TIME_HISTORY);
   private lastBlockAt: Maybe<Date> = null;
   private pingStart = 0 as Types.Timestamp;
   private throttle = false;
@@ -52,6 +60,8 @@ export default class Node {
     config: string,
     implentation: Types.NodeImplementation,
     version: Types.NodeVersion,
+    address: Maybe<Types.Address>,
+    authority: boolean,
     messages: Array<Message>,
   ) {
     this.ip = ip;
@@ -61,6 +71,8 @@ export default class Node {
     this.config = config;
     this.implementation = implentation;
     this.version = version;
+    this.address = address;
+    this.authority = authority;
     this.lastMessage = timestamp();
     this.socket = socket;
 
@@ -91,10 +103,12 @@ export default class Node {
       this.pingStart = 0 as Types.Timestamp;
     });
 
-    // Handle cached messages
-    for (const message of messages) {
-      this.onMessage(message);
-    }
+    process.nextTick(() => {
+      // Handle cached messages
+      for (const message of messages) {
+        this.onMessage(message);
+      }
+    });
 
     locate(ip).then((location) => {
       if (!location) {
@@ -126,9 +140,9 @@ export default class Node {
         if (message.msg === "system.connected") {
           cleanup();
 
-          const { name, chain, config, implementation, version } = message;
+          const { name, chain, config, implementation, version, pubkey, authority } = message;
 
-          resolve(new Node(ip, socket, name, chain, config, implementation, version, messages));
+          resolve(new Node(ip, socket, name, chain, config, implementation, version, pubkey, authority === true, messages));
         } else {
           if (messages.length === 10) {
             messages.shift();
@@ -160,11 +174,17 @@ export default class Node {
   }
 
   public nodeDetails(): Types.NodeDetails {
-    return [this.name, this.implementation, this.version];
+    const authority = this.authority ? this.address : null;
+
+    return [this.name, this.implementation, this.version, authority];
   }
 
   public nodeStats(): Types.NodeStats {
     return [this.peers, this.txcount];
+  }
+
+  public nodeHardware(): Types.NodeHardware {
+    return [this.memory.get(), this.cpu.get(), this.chartstamps.get()];
   }
 
   public blockDetails(): Types.BlockDetails {
@@ -178,7 +198,7 @@ export default class Node {
   }
 
   public get average(): Types.Milliseconds {
-    return blockAverage(this.blockTimes);
+    return this.blockTimes.average();
   }
 
   public get localBlockAt(): Types.Milliseconds {
@@ -212,13 +232,23 @@ export default class Node {
   }
 
   private onSystemInterval(message: SystemInterval) {
-    const { peers, txcount } = message;
+    const { peers, txcount, cpu, memory } = message;
 
     if (this.peers !== peers || this.txcount !== txcount) {
       this.peers = peers;
       this.txcount = txcount;
 
       this.events.emit('stats');
+    }
+
+    if (cpu != null && memory != null) {
+      const cpuChange = this.cpu.push(cpu);
+      const memChange = this.memory.push(memory);
+      const stampChange = this.chartstamps.push(timestamp());
+
+      if (cpuChange || memChange || stampChange) {
+        this.events.emit('hardware');
+      }
     }
   }
 
@@ -250,7 +280,7 @@ export default class Node {
       this.height = height;
       this.blockTimestamp = timestamp();
       this.lastBlockAt = time;
-      this.blockTimes[height % BLOCK_TIME_HISTORY] = blockTime;
+      this.blockTimes.push(blockTime);
       this.blockTime = blockTime;
 
       if (blockTime > 100) {

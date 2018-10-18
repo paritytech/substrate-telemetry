@@ -1,0 +1,19 @@
+.List-no-nodes {
+  font-size: 30px;
+  padding-top: 20vh;
+  text-align: center;
+  font-weight: 300;
+}
+
+.List table {
+  width: 100%;
+  border-spacing: 0;
+}
+
+.List thead {
+  background: #3c3c3b;
+}
+
+.List tbody {
+  font-family: monospace, sans-serif;
+}

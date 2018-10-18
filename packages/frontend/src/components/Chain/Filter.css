@@ -1,0 +1,38 @@
+.Filter {
+  position: fixed;
+  z-index: 100;
+  bottom: 20px;
+  left: 50%;
+  width: 400px;
+  font-size: 30px;
+  margin-left: -210px;
+  padding: 10px 10px 10px 60px;
+  border-radius: 4px;
+  background: #111;
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+
+.Filter-hidden {
+  bottom: -300px;
+}
+
+.Filter input {
+  padding: 0;
+  margin: 0;
+  border: none;
+  outline: none;
+  width: 350px;
+  font-size: 30px;
+  background: #111;
+  color: #fff;
+  font-family: Roboto, Helvetica, Arial, sans-serif;
+  font-weight: 300;
+}
+
+.Filter .Icon {
+  position: absolute;
+  left: 13px;
+  top: 17px;
+  font-size: 30px;
+}

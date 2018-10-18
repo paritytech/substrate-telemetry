@@ -9,12 +9,15 @@
     "packages/*"
   ],
   "scripts": {
+    "deploy": "scripts/deploy.sh",
     "start:frontend": "scripts/start-frontend.sh",
+    "build:frontend": "scripts/build-frontend.sh",
     "start:backend": "scripts/start-backend.sh",
     "build:backend": "scripts/build-backend.sh",
     "check:backend": "tsc -p packages/backend --noEmit",
     "build:common": "tsc -p packages/common",
     "check:common": "tsc -p packages/common --noEmit",
     "cleanup": "rm -rf packages/frontend/build packages/backend/build packages/common/build node_modules packages/frontend/node_modules packages/backend/node_modules packages/common/node_modules"
+    "test": "scripts/test.sh"
   }
 }

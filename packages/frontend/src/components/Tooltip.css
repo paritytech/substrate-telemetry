@@ -1,0 +1,90 @@
+.Tooltip {
+  background: #000;
+  color: #fff;
+  font-family: Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  padding: 3px 5px;
+  border-radius: 2px;
+  position: absolute;
+  white-space: nowrap;
+  top: -32px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  pointer-events: none;
+  transition: color 0.15s ease-in-out;
+}
+
+.Tooltip::after {
+  content: ' ';
+  width: 0;
+  height: 0;
+  display: block;
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  margin-left: -6px;
+  border-top: 6px #000 solid;
+  border-left: 6px transparent solid;
+  border-right: 6px transparent solid;
+  pointer-events: none;
+}
+
+.Tooltip-left {
+  left: 10px;
+  transform: none;
+}
+
+.Tooltip-left::after {
+  left: 3px;
+  margin: 0;
+}
+
+.Tooltip-right {
+  left: initial;
+  right: 10px;
+  transform: none;
+}
+
+.Tooltip-right::after {
+  left: initial;
+  right: 3px;
+  margin: 0;
+}
+
+.Tooltip.Tooltip-copied {
+  color: #888;
+}
+
+.Tooltip-container {
+  position: relative;
+}
+
+.Tooltip-container-inline {
+  display: inline-block;
+}
+
+.Tooltip-container-inline .Tooltip-left {
+  left: 0;
+}
+
+.Tooltip-container-inline .Tooltip-right {
+  right: 0;
+}
+
+.Tooltip-container:hover .Tooltip {
+  display: block;
+  animation: show 0.15s forwards;
+}
+
+@keyframes show {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}

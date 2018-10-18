@@ -2,7 +2,7 @@ import * as EventEmitter from 'events';
 import Node from './Node';
 import Feed from './Feed';
 import FeedSet from './FeedSet';
-import { Maybe, Types, FeedMessage, blockAverage } from '@dotstats/common';
+import { Maybe, Types, FeedMessage, NumStats } from '@dotstats/common';
 
 const BLOCK_TIME_HISTORY = 10;
 
@@ -16,7 +16,7 @@ export default class Chain {
   public height = 0 as Types.BlockNumber;
   public blockTimestamp = 0 as Types.Timestamp;
 
-  private blockTimes: Array<number> = new Array(BLOCK_TIME_HISTORY).fill(0);
+  private blockTimes = new NumStats<Types.Milliseconds>(BLOCK_TIME_HISTORY);
   private averageBlockTime: Maybe<Types.Milliseconds> = null;
 
   constructor(label: Types.ChainLabel) {
@@ -44,6 +44,7 @@ export default class Chain {
 
     node.events.on('block', () => this.updateBlock(node));
     node.events.on('stats', () => this.feeds.broadcast(Feed.stats(node)));
+    node.events.on('hardware', () => this.feeds.broadcast(Feed.hardware(node)));
     node.events.on('location', (location) => this.feeds.broadcast(Feed.locatedNode(node, location)));
 
     this.updateBlock(node);
@@ -110,9 +111,9 @@ export default class Chain {
   }
 
   private updateAverageBlockTime(height: Types.BlockNumber, now: Types.Timestamp) {
-    this.blockTimes[height % BLOCK_TIME_HISTORY] = now - this.blockTimestamp;
+    this.blockTimes.push((now - this.blockTimestamp) as Types.Milliseconds);
 
     // We are guaranteed that count > 0
-    this.averageBlockTime = blockAverage(this.blockTimes);
+    this.averageBlockTime = this.blockTimes.average();
   }
 }

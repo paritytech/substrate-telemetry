@@ -1,0 +1,24 @@
+
+.Chain-Tab {
+  display: inline-block;
+}
+
+.Chain-Tab .Icon {
+  margin-right: 5px;
+  font-size: 24px;
+  padding: 6px;
+  color: #555;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 40px;
+  transition: background-color 0.15s linear;
+}
+
+.Chain-Tab:hover .Icon {
+  background: #ccc;
+}
+
+.Chain-Tab-on .Icon, .Chain-Tab-on:hover .Icon {
+  background: #d64ca8;
+  color: #fff;
+}

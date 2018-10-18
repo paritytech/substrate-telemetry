@@ -1,3 +1,5 @@
+import { Types } from '@dotstats/common';
+
 export interface Viewport {
   width: number;
   height: number;
@@ -36,7 +38,7 @@ export function trimHash(hash: string, length: number): string {
   return hash.substr(0, side) + '..' + hash.substr(-side, side);
 }
 
-export function milliOrSecond(num: number): string {
+export function milliOrSecond(num: Types.Milliseconds | Types.PropagationTime): string {
   if (num < 10000) {
     return `${num}ms`;
   }
@@ -54,4 +56,30 @@ export function secondsWithPrecision(num: number): string {
     case 3: return num.toFixed(1) + 's';
     default: return intString + 's';
   }
+}
+
+export interface HashData {
+  tab?: string;
+  chain?: Types.ChainLabel;
+};
+
+export function getHashData(): HashData {
+  const { hash } = window.location;
+
+  if (hash[0] !== '#') {
+    return {};
+  }
+
+  const [tab, rawChain] = hash.substr(1).split('/');
+  const chain = decodeURIComponent(rawChain) as Types.ChainLabel;
+
+  return { tab, chain };
+}
+
+export function setHashData(val: HashData) {
+  const update = Object.assign(getHashData(), val);
+
+  const { tab = '', chain = '' } = update;
+
+  window.location.hash = `#${tab}/${encodeURIComponent(chain)}`;
 }
