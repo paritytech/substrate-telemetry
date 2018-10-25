@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Types, Maybe } from '@dotstats/common';
+import { Filter } from '../';
 import { State as AppState, Node } from '../../state';
 import { Location } from './';
 import { viewport } from '../../utils';
@@ -12,11 +13,11 @@ import './Map.css';
 
 export namespace Map {
   export interface Props {
-    filter: Maybe<(node: Node) => boolean>;
     appState: Readonly<AppState>;
   }
 
   export interface State {
+    filter: Maybe<(node: Node) => boolean>;
     width: number;
     height: number;
     top: number;
@@ -25,7 +26,8 @@ export namespace Map {
 }
 
 export class Map extends React.Component<Map.Props, Map.State> {
-  public state = {
+  public state: Map.State = {
+    filter: null,
     width: 0,
     height: 0,
     top: 0,
@@ -43,29 +45,34 @@ export class Map extends React.Component<Map.Props, Map.State> {
   }
 
   public render() {
-    const { filter, appState } = this.props;
+    const { appState } = this.props;
+    const { filter } = this.state;
     const nodes = appState.nodes.sorted();
 
     return (
-      <div className="Map">
-      {
-        nodes.map((node) => {
-          const { lat, lon } = node;
-          const focused = filter == null || filter(node);
+      <React.Fragment>
+        <div className="Map">
+        {
+          nodes.map((node) => {
+            const { lat, lon } = node;
 
-          if (lat == null || lon == null) {
-            // Skip nodes with unknown location
-            return null;
-          }
+            const focused = filter == null || filter(node);
 
-          const position = this.pixelPosition(lat, lon);
+            if (lat == null || lon == null) {
+              // Skip nodes with unknown location
+              return null;
+            }
 
-          return (
-            <Location key={node.id} position={position} focused={focused} node={node} />
-          );
-        })
-      }
-      </div>
+            const position = this.pixelPosition(lat, lon);
+
+            return (
+              <Location key={node.id} position={position} focused={focused} node={node} />
+            );
+          })
+        }
+        </div>
+        <Filter onChange={this.onFilterChange} />
+      </React.Fragment>
     );
   }
 
@@ -114,5 +121,9 @@ export class Map extends React.Component<Map.Props, Map.State> {
     }
 
     this.setState({ top, left, width, height });
+  }
+
+  private onFilterChange = (filter: Maybe<(node: Node) => boolean>) => {
+    this.setState({ filter });
   }
 }
