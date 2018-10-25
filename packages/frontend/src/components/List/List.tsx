@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Types, Maybe } from '@dotstats/common';
+import { Filter } from '../';
 import { State as AppState, Node } from '../../state';
 import { Row } from './';
 import { PersistentSet } from '../../persist';
@@ -14,12 +15,12 @@ import './List.css';
 
 export namespace List {
   export interface Props {
-    filter: Maybe<(node: Node) => boolean>;
     appState: Readonly<AppState>;
     pins: PersistentSet<Types.NodeName>;
   }
 
   export interface State {
+    filter: Maybe<(node: Node) => boolean>;
     viewportHeight: number;
     listStart: number;
     listEnd: number;
@@ -28,6 +29,7 @@ export namespace List {
 
 export class List extends React.Component<List.Props, {}> {
   public state = {
+    filter: null,
     viewportHeight: viewport().height,
     listStart: 0,
     listEnd: 0,
@@ -50,7 +52,8 @@ export class List extends React.Component<List.Props, {}> {
 
   public render() {
     const { settings } = this.props.appState;
-    const { pins, filter } = this.props;
+    const { pins } = this.props;
+    const { filter } = this.state;
     const columns = Row.columns.filter(({ setting }) => setting == null || settings[setting]);
 
     let nodes = this.props.appState.nodes.sorted();
@@ -60,7 +63,10 @@ export class List extends React.Component<List.Props, {}> {
 
       if (nodes.length === 0) {
         return (
-          <div className="List List-no-nodes">¯\_(ツ)_/¯<br />Nothing matches</div>
+          <React.Fragment>
+            <div className="List List-no-nodes">¯\_(ツ)_/¯<br />Nothing matches</div>
+            <Filter onChange={this.onFilterChange} />
+          </React.Fragment>
         );
       }
     }
@@ -73,16 +79,19 @@ export class List extends React.Component<List.Props, {}> {
     nodes = nodes.slice(listStart, listEnd);
 
     return (
-      <div className="List" style={{ height }}>
-        <table>
-          <Row.Header columns={columns} />
-          <tbody style={{ transform }}>
-          {
-            nodes.map((node) => <Row key={node.id} node={node} pins={pins} columns={columns} />)
-          }
-          </tbody>
-        </table>
-      </div>
+      <React.Fragment>
+        <div className="List" style={{ height }}>
+          <table>
+            <Row.Header columns={columns} />
+            <tbody style={{ transform }}>
+            {
+              nodes.map((node) => <Row key={node.id} node={node} pins={pins} columns={columns} />)
+            }
+            </tbody>
+          </table>
+        </div>
+        <Filter onChange={this.onFilterChange} />
+      </React.Fragment>
     );
   }
 
@@ -122,6 +131,10 @@ export class List extends React.Component<List.Props, {}> {
     const viewportHeight = viewport().height;
 
     this.setState({ viewportHeight });
+  }
+
+  private onFilterChange = (filter: Maybe<(node: Node) => boolean>) => {
+    this.setState({ filter });
   }
 }
 

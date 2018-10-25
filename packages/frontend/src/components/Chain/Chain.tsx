@@ -1,8 +1,8 @@
 import * as React from 'react';
-import { Types, Maybe } from '@dotstats/common';
-import { State as AppState, Node as NodeState } from '../../state';
+import { Types } from '@dotstats/common';
+import { State as AppState } from '../../state';
 import { formatNumber, secondsWithPrecision, getHashData } from '../../utils';
-import { Tab, Filter } from './';
+import { Tab } from './';
 import { Tile, Ago, List, Map, Settings } from '../';
 import { PersistentObject, PersistentSet } from '../../persist';
 
@@ -12,8 +12,6 @@ import lastTimeIcon from '../../icons/watch.svg';
 import listIcon from '../../icons/list-alt-regular.svg';
 import worldIcon from '../../icons/location.svg';
 import settingsIcon from '../../icons/settings.svg';
-
-const ESCAPE_KEY = 27;
 
 import './Chain.css';
 
@@ -28,7 +26,6 @@ export namespace Chain {
 
   export interface State {
     display: Display;
-    filter: Maybe<string>;
   }
 }
 
@@ -49,16 +46,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
 
     this.state = {
       display,
-      filter: null,
     };
-  }
-
-  public componentWillMount() {
-    window.addEventListener('keyup', this.onKeyUp);
-  }
-
-  public componentWillUnmount() {
-    window.removeEventListener('keyup', this.onKeyUp);
   }
 
   public render() {
@@ -88,7 +76,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
   }
 
   private renderContent() {
-    const { display, filter } = this.state;
+    const { display } = this.state;
 
     if (display === 'settings') {
       return <Settings settings={this.props.settings} />;
@@ -97,57 +85,13 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     const { appState, pins } = this.props;
 
     return (
-      <React.Fragment>
-        <Filter value={filter} onChange={this.onFilterChange} />
-        {
-          display === 'list'
-            ? <List filter={this.getNodeFilter()} appState={appState} pins={pins} />
-            : <Map filter={this.getNodeFilter()} appState={appState} />
-        }
-      </React.Fragment>
+      display === 'list'
+        ? <List appState={appState} pins={pins} />
+        : <Map appState={appState} />
     );
   }
 
   private setDisplay = (display: Chain.Display) => {
     this.setState({ display });
   };
-
-  private onKeyUp = (event: KeyboardEvent) => {
-    if (event.ctrlKey) {
-      return;
-    }
-
-    const { filter } = this.state;
-    const key = event.key;
-
-    const escape = filter != null && event.keyCode === ESCAPE_KEY;
-    const singleChar = filter == null && key.length === 1;
-
-    if (escape) {
-      this.setState({ filter: null });
-    } else if (singleChar) {
-      this.setState({ filter: key });
-    }
-  }
-
-  private onFilterChange = (filter: string) => {
-    this.setState({ filter });
-  }
-
-  private getNodeFilter(): Maybe<(node: NodeState) => boolean> {
-    const { filter } = this.state;
-
-    if (filter == null) {
-      return null;
-    }
-
-    const filterLC = filter.toLowerCase();
-
-    return ({ name, city }) => {
-      const matchesName = name.toLowerCase().indexOf(filterLC) !== -1;
-      const matchesCity = city != null && city.toLowerCase().indexOf(filterLC) !== -1;
-
-      return matchesName || matchesCity;
-    }
-  }
 }

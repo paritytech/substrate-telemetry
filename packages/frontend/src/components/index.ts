@@ -9,3 +9,4 @@ export * from './Ago';
 export * from './OfflineIndicator';
 export * from './Sparkline';
 export * from './Tooltip';
+export * from './Filter';
