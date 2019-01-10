@@ -23,6 +23,7 @@ import memoryIcon from '../../icons/memory-solid.svg';
 
 import parityPolkadotIcon from '../../icons/dot.svg';
 import paritySubstrateIcon from '../../icons/substrate.svg';
+import airalabRobonomicsIcon from '../../icons/robonomics.svg';
 import unknownImplementationIcon from '../../icons/question-solid.svg';
 
 import './Row.css';
@@ -118,6 +119,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
         const [semver] = version.match(SEMVER_PATTERN) || [version];
         const implIcon = implementation === 'parity-polkadot' ? parityPolkadotIcon
                        : implementation === 'substrate-node' ? paritySubstrateIcon
+                       : implementation === 'robonomics-node' ? airalabRobonomicsIcon
                        : unknownImplementationIcon;
 
         return (
