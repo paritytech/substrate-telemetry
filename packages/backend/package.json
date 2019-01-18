@@ -16,9 +16,9 @@
     "@types/node": "^10.3.3",
     "@types/ws": "^5.1.2",
     "express": "^4.16.3",
-    "iplocation": "^5.0.1",
+    "iplocation": "^6.1.0",
     "typescript": "^2.9.2",
-    "ws": "5.2.0"
+    "ws": "6.1.2"
   },
   "devDependencies": {
     "tap-spec": "^5.0.0",

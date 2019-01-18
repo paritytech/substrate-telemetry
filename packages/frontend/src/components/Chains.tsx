@@ -26,7 +26,7 @@ export class Chains extends React.Component<Chains.Props, {}> {
         {
           this.chains.map((chain) => this.renderChain(chain))
         }
-        <a className="Chains-fork-me" href="https://github.com/polkadot-js/dotstats" target="_blank">
+        <a className="Chains-fork-me" href="https://github.com/paritytech/substrate-telemetry" target="_blank">
           <Icon src={githubIcon} alt="Fork Me!" />
         </a>
       </div>
