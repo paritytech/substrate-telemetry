@@ -1,4 +1,4 @@
-import * as iplocation from 'iplocation';
+import iplocation from 'iplocation';
 import { Maybe, Types } from '@dotstats/common';
 
 export interface Location {
