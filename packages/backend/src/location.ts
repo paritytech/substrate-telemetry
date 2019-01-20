@@ -25,7 +25,7 @@ export async function locate(ip: string): Promise<Maybe<Location>> {
   const cached = cache.get(ip);
 
   return new Promise<Maybe<Location>>((resolve, _) => {
-    iplocation(ip, (err, result) => {
+    iplocation(ip, [], (err, result) => {
       if (err) {
         console.error(`Couldn't locate ${ip}`);
 
