@@ -18,7 +18,7 @@ declare module 'iplocation' {
     }
   }
 
-  function iplocation(ip: string, callback: (err: Error, result: iplocation.LocationData) => void): void;
+  function iplocation(ip: string, providers: any[], callback: (err: Error, result: iplocation.LocationData) => void): void;
 
   export = iplocation;
 }
