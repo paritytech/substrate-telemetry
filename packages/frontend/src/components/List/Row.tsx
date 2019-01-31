@@ -82,10 +82,12 @@ function formatMemory(kbs: number, stamp: Maybe<Types.Timestamp>): string {
 function formatBandwidth(bps: number, stamp: Maybe<Types.Timestamp>): string {
   const ago = stamp ? ` (${formatStamp(stamp)})` : '';
 
-  if (bps >= 1000) {
+  if (bps >= 1024 * 1024) {
+    return `${(bps / (1024 * 1024)).toFixed(1)} MB/s${ago}`;
+  } else if (bps >= 1000) {
     return `${(bps / 1024).toFixed(1)} kB/s${ago}`;
   } else {
-    return `${bps} B/s${ago}`;
+    return `${bps | 0} B/s${ago}`;
   }
 }
 
