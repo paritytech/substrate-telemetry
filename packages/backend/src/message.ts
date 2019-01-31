@@ -57,6 +57,8 @@ export interface SystemInterval extends BestBlock {
   memory: Maybe<Types.MemoryUse>;
   cpu: Maybe<Types.CPUUse>;
   status: 'Idle' | string; // TODO: 'Idle' | ...?
+  bandwidth_upload: Maybe<Types.BytesPerSecond>;
+  bandwidth_download: Maybe<Types.BytesPerSecond>;
 }
 
 export interface NodeStart extends BestBlock {

@@ -14,7 +14,11 @@ export class MeanList<T extends number> {
    *
    * @return {boolean}
    */
-  public push(val: T): boolean {
+  public push(val: Maybe<T>): boolean {
+    if (val == null) {
+      return false;
+    } 
+
     if (this.meanIndex === 20 && this.ticksPerMean < 32) {
       this.squashMeans();
     }

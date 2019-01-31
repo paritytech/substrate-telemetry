@@ -26,6 +26,8 @@ export default class App extends React.Component<{}, State> {
         txs: true,
         cpu: true,
         mem: true,
+        upload: false,
+        download: false,
         blocknumber: true,
         blockhash: true,
         blocktime: true,
