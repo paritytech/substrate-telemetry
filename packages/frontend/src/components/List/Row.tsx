@@ -20,6 +20,8 @@ import propagationTimeIcon from '../../icons/dashboard.svg';
 import lastTimeIcon from '../../icons/watch.svg';
 import cpuIcon from '../../icons/microchip-solid.svg';
 import memoryIcon from '../../icons/memory-solid.svg';
+import uploadIcon from '../../icons/cloud-upload.svg';
+import downloadIcon from '../../icons/cloud-download.svg';
 
 import parityPolkadotIcon from '../../icons/dot.svg';
 import paritySubstrateIcon from '../../icons/substrate.svg';
@@ -74,6 +76,16 @@ function formatMemory(kbs: number, stamp: Maybe<Types.Timestamp>): string {
     return `${(mbs / 1024).toFixed(1)} GB${ago}`;
   } else {
     return `${mbs} MB${ago}`;
+  }
+}
+
+function formatBandwidth(bps: number, stamp: Maybe<Types.Timestamp>): string {
+  const ago = stamp ? ` (${formatStamp(stamp)})` : '';
+
+  if (bps >= 1000) {
+    return `${(bps / 1024).toFixed(1)} kB/s${ago}`;
+  } else {
+    return `${bps} B/s${ago}`;
   }
 }
 
@@ -170,6 +182,36 @@ export class Row extends React.Component<Row.Props, Row.State> {
 
         return (
           <Sparkline width={44} height={16} stroke={1} format={formatMemory} values={mem} stamps={chartstamps} />
+        );
+      }
+    },
+    {
+      label: 'Upload Bandwidth',
+      icon: uploadIcon,
+      width: 40,
+      setting: 'upload',
+      render: ({ upload, chartstamps }) => {
+        if (upload.length < 3) {
+          return '-';
+        }
+
+        return (
+          <Sparkline width={44} height={16} stroke={1} format={formatBandwidth} values={upload} stamps={chartstamps} />
+        );
+      }
+    },
+    {
+      label: 'Download Bandwidth',
+      icon: downloadIcon,
+      width: 40,
+      setting: 'download',
+      render: ({ download, chartstamps }) => {
+        if (download.length < 3) {
+          return '-';
+        }
+
+        return (
+          <Sparkline width={44} height={16} stroke={1} format={formatBandwidth} values={download} stamps={chartstamps} />
         );
       }
     },

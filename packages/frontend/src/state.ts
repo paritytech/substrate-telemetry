@@ -29,6 +29,8 @@ export class Node {
   public txs: Types.TransactionCount;
   public mem: Types.MemoryUse[];
   public cpu: Types.CPUUse[];
+  public upload: Types.BytesPerSecond[];
+  public download: Types.BytesPerSecond[];
   public chartstamps: Types.Timestamp[];
 
   public height: Types.BlockNumber;
@@ -81,10 +83,12 @@ export class Node {
   }
 
   public updateHardware(hardware: Types.NodeHardware) {
-    const [mem, cpu, chartstamps] = hardware;
+    const [mem, cpu, upload, download, chartstamps] = hardware;
 
     this.mem = mem;
     this.cpu = cpu;
+    this.upload = upload;
+    this.download = download;
     this.chartstamps = chartstamps;
 
     this.trigger();
@@ -150,6 +154,8 @@ export namespace State {
     txs: boolean;
     cpu: boolean;
     mem: boolean;
+    upload: boolean;
+    download: boolean;
     blocknumber: boolean;
     blockhash: boolean;
     blocktime: boolean;

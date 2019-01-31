@@ -22,9 +22,10 @@ export type Longitude = Opaque<number, 'Longitude'>;
 export type City = Opaque<string, 'City'>;
 export type MemoryUse = Opaque<number, 'MemoryUse'>;
 export type CPUUse = Opaque<number, 'CPUUse'>;
+export type BytesPerSecond = Opaque<number, 'BytesPerSecond'>;
 
 export type BlockDetails = [BlockNumber, BlockHash, Milliseconds, Timestamp, Maybe<PropagationTime>];
 export type NodeDetails = [NodeName, NodeImplementation, NodeVersion, Maybe<Address>];
 export type NodeStats = [PeerCount, TransactionCount];
-export type NodeHardware = [Array<MemoryUse>, Array<CPUUse>, Array<Timestamp>];
+export type NodeHardware = [Array<MemoryUse>, Array<CPUUse>, Array<BytesPerSecond>, Array<BytesPerSecond>, Array<Timestamp>];
 export type NodeLocation = [Latitude, Longitude, City];

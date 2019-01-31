@@ -43,6 +43,8 @@ export default class Node {
   private txcount = 0 as Types.TransactionCount;
   private memory = new MeanList<Types.MemoryUse>();
   private cpu = new MeanList<Types.CPUUse>();
+  private upload = new MeanList<Types.BytesPerSecond>();
+  private download = new MeanList<Types.BytesPerSecond>();
   private chartstamps = new MeanList<Types.Timestamp>();
 
   private readonly ip: string;
@@ -184,7 +186,7 @@ export default class Node {
   }
 
   public nodeHardware(): Types.NodeHardware {
-    return [this.memory.get(), this.cpu.get(), this.chartstamps.get()];
+    return [this.memory.get(), this.cpu.get(), this.upload.get(), this.download.get(), this.chartstamps.get()];
   }
 
   public blockDetails(): Types.BlockDetails {
@@ -232,7 +234,9 @@ export default class Node {
   }
 
   private onSystemInterval(message: SystemInterval) {
-    const { peers, txcount, cpu, memory } = message;
+    const { peers, txcount, cpu, memory, bandwidth_download: download, bandwidth_upload: upload } = message;
+
+    console.log('bandwidth', download, upload);
 
     if (this.peers !== peers || this.txcount !== txcount) {
       this.peers = peers;
@@ -244,9 +248,13 @@ export default class Node {
     if (cpu != null && memory != null) {
       const cpuChange = this.cpu.push(cpu);
       const memChange = this.memory.push(memory);
+
+      const uploadChange = this.upload.push(upload);
+      const downloadChange = this.download.push(download);
+
       const stampChange = this.chartstamps.push(timestamp());
 
-      if (cpuChange || memChange || stampChange) {
+      if (cpuChange || memChange || uploadChange || downloadChange || stampChange) {
         this.events.emit('hardware');
       }
     }
