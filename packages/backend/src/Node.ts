@@ -236,8 +236,6 @@ export default class Node {
   private onSystemInterval(message: SystemInterval) {
     const { peers, txcount, cpu, memory, bandwidth_download: download, bandwidth_upload: upload } = message;
 
-    console.log('bandwidth', download, upload);
-
     if (this.peers !== peers || this.txcount !== txcount) {
       this.peers = peers;
       this.txcount = txcount;
