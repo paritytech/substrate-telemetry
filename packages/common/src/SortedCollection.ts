@@ -50,7 +50,7 @@ export function sortedInsert<T>(item: T, into: Array<T>, compare: Compare<T>): n
  *
  * @return {number}                  index of the element, `-1` if not found
  */
-export function sortedIndexOf<T>(item:T, within: Array<T>, compare: Compare<T>): number {
+export function sortedIndexOf<T>(item: T, within: Array<T>, compare: Compare<T>): number {
   if (within.length === 0) {
     return -1;
   }

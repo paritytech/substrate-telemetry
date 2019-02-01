@@ -1,6 +1,6 @@
 import { Maybe, Types, timestamp } from '@dotstats/common';
 
-export class MeanList<T extends number> {
+export default class MeanList<T extends number> {
   private periodCount = 0;
   private periodSum = 0;
   private meanIndex = 0;

@@ -7,6 +7,7 @@ import { Tile, Ago, List, Map, Settings } from '../';
 import { PersistentObject, PersistentSet } from '../../persist';
 
 import blockIcon from '../../icons/package.svg';
+import finalizedIcon from '../../icons/milestone.svg';
 import blockTimeIcon from '../../icons/history.svg';
 import lastTimeIcon from '../../icons/watch.svg';
 import listIcon from '../../icons/list-alt-regular.svg';
@@ -51,13 +52,14 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
 
   public render() {
     const { appState } = this.props;
-    const { best, blockTimestamp, blockAverage } = appState;
+    const { best, finalized, blockTimestamp, blockAverage } = appState;
     const { display: currentTab } = this.state;
 
     return (
       <div className="Chain">
         <div className="Chain-header">
           <Tile icon={blockIcon} title="Best Block">#{formatNumber(best)}</Tile>
+          <Tile icon={finalizedIcon} title="Finalized Block">#{formatNumber(finalized)}</Tile>
           <Tile icon={blockTimeIcon} title="Average Time">{ blockAverage == null ? '-' : secondsWithPrecision(blockAverage / 1000) }</Tile>
           <Tile icon={lastTimeIcon} title="Last Block"><Ago when={blockTimestamp} /></Tile>
           <div className="Chain-tabs">

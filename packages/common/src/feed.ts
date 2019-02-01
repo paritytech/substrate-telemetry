@@ -13,6 +13,7 @@ import {
   NodeHardware,
   NodeLocation,
   BlockNumber,
+  BlockHash,
   BlockDetails,
   Timestamp,
   Milliseconds,
@@ -22,18 +23,20 @@ import {
 export const Actions = {
   FeedVersion      : 0x00 as 0x00,
   BestBlock        : 0x01 as 0x01,
-  AddedNode        : 0x02 as 0x02,
-  RemovedNode      : 0x03 as 0x03,
-  LocatedNode      : 0x04 as 0x04,
-  ImportedBlock    : 0x05 as 0x05,
-  NodeStats        : 0x06 as 0x06,
-  NodeHardware     : 0x07 as 0x07,
-  TimeSync         : 0x08 as 0x08,
-  AddedChain       : 0x09 as 0x09,
-  RemovedChain     : 0x0A as 0x0A,
-  SubscribedTo     : 0x0B as 0x0B,
-  UnsubscribedFrom : 0x0C as 0x0C,
-  Pong             : 0x0D as 0x0D,
+  BestFinalized    : 0x02 as 0x02,
+  AddedNode        : 0x03 as 0x03,
+  RemovedNode      : 0x04 as 0x04,
+  LocatedNode      : 0x05 as 0x05,
+  ImportedBlock    : 0x06 as 0x06,
+  FinalizedBlock   : 0x07 as 0x07,
+  NodeStats        : 0x08 as 0x08,
+  NodeHardware     : 0x09 as 0x09,
+  TimeSync         : 0x0A as 0x0A,
+  AddedChain       : 0x0B as 0x0B,
+  RemovedChain     : 0x0C as 0x0C,
+  SubscribedTo     : 0x0D as 0x0D,
+  UnsubscribedFrom : 0x0E as 0x0E,
+  Pong             : 0x0F as 0x0F,
 };
 
 export type Action = typeof Actions[keyof typeof Actions];
@@ -54,6 +57,11 @@ export namespace Variants {
     payload: [BlockNumber, Timestamp, Maybe<Milliseconds>];
   }
 
+  export interface BestFinalizedBlockMessage extends MessageBase {
+    action: typeof Actions.BestFinalized;
+    payload: [BlockNumber, BlockHash];
+  }
+
   export interface AddedNodeMessage extends MessageBase {
     action: typeof Actions.AddedNode;
     payload: [NodeId, NodeDetails, NodeStats, NodeHardware, BlockDetails, Maybe<NodeLocation>];
@@ -72,6 +80,11 @@ export namespace Variants {
   export interface ImportedBlockMessage extends MessageBase {
     action: typeof Actions.ImportedBlock;
     payload: [NodeId, BlockDetails];
+  }
+
+  export interface FinalizedBlockMessage extends MessageBase {
+    action: typeof Actions.FinalizedBlock;
+    payload: [NodeId, BlockNumber, BlockHash];
   }
 
   export interface NodeStatsMessage extends MessageBase {
@@ -118,10 +131,12 @@ export namespace Variants {
 export type Message =
   | Variants.FeedVersionMessage
   | Variants.BestBlockMessage
+  | Variants.BestFinalizedBlockMessage
   | Variants.AddedNodeMessage
   | Variants.RemovedNodeMessage
   | Variants.LocatedNodeMessage
   | Variants.ImportedBlockMessage
+  | Variants.FinalizedBlockMessage
   | Variants.NodeStatsMessage
   | Variants.NodeHardwareMessage
   | Variants.TimeSyncMessage

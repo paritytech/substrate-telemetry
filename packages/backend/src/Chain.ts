@@ -2,6 +2,7 @@ import * as EventEmitter from 'events';
 import Node from './Node';
 import Feed from './Feed';
 import FeedSet from './FeedSet';
+import Block from './Block';
 import { Maybe, Types, FeedMessage, NumStats } from '@dotstats/common';
 
 const BLOCK_TIME_HISTORY = 10;
@@ -14,6 +15,7 @@ export default class Chain {
   public readonly label: Types.ChainLabel;
 
   public height = 0 as Types.BlockNumber;
+  public finalized = Block.ZERO;
   public blockTimestamp = 0 as Types.Timestamp;
 
   private blockTimes = new NumStats<Types.Milliseconds>(BLOCK_TIME_HISTORY);
@@ -43,11 +45,13 @@ export default class Chain {
     });
 
     node.events.on('block', () => this.updateBlock(node));
+    node.events.on('finalized', () => this.updateFinalized(node));
     node.events.on('stats', () => this.feeds.broadcast(Feed.stats(node)));
     node.events.on('hardware', () => this.feeds.broadcast(Feed.hardware(node)));
     node.events.on('location', (location) => this.feeds.broadcast(Feed.locatedNode(node, location)));
 
     this.updateBlock(node);
+    this.updateFinalized(node);
   }
 
   public addFeed(feed: Feed) {
@@ -58,9 +62,11 @@ export default class Chain {
 
     feed.sendMessage(Feed.timeSync());
     feed.sendMessage(Feed.bestBlock(this.height, this.blockTimestamp, this.averageBlockTime));
+    feed.sendMessage(Feed.bestFinalizedBlock(this.finalized));
 
     for (const node of this.nodes.values()) {
       feed.sendMessage(Feed.addedNode(node));
+      feed.sendMessage(Feed.finalized(node));
     }
   }
 
@@ -81,9 +87,11 @@ export default class Chain {
   }
 
   private updateBlock(node: Node) {
-    if (node.height > this.height) {
+    const height = node.best.number;
+
+    if (height > this.height) {
       // New best block
-      const { height, blockTimestamp } = node;
+      const { blockTimestamp } = node;
 
       if (this.blockTimestamp) {
         this.updateAverageBlockTime(height, blockTimestamp);
@@ -100,14 +108,24 @@ export default class Chain {
       this.feeds.broadcast(Feed.bestBlock(this.height, this.blockTimestamp, this.averageBlockTime));
 
       console.log(`[${this.label}] New block ${this.height}`);
-    } else if (node.height === this.height) {
+    } else if (height === this.height) {
       // Caught up to best block
       node.propagationTime = (node.blockTimestamp - this.blockTimestamp) as Types.PropagationTime;
     }
 
     this.feeds.broadcast(Feed.imported(node));
 
-    console.log(`[${this.label}] ${node.name} imported ${node.height}, block time: ${node.blockTime / 1000}s, average: ${node.average / 1000}s | latency ${node.latency}`);
+    console.log(`[${this.label}] ${node.name} imported ${height}, block time: ${node.blockTime / 1000}s, average: ${node.average / 1000}s | latency ${node.latency}`);
+  }
+
+  private updateFinalized(node: Node) {
+    if (node.finalized.gt(this.finalized)) {
+      this.finalized = node.finalized;
+
+      this.feeds.broadcast(Feed.bestFinalizedBlock(this.finalized));
+    }
+
+    this.feeds.broadcast(Feed.finalized(node));
   }
 
   private updateAverageBlockTime(height: Types.BlockNumber, now: Types.Timestamp) {

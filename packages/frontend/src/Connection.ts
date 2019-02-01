@@ -110,6 +110,14 @@ export class Connection {
           break;
         }
 
+        case Actions.BestFinalized: {
+          const [finalized /*, hash */] = message.payload;
+
+          this.state = this.update({ finalized });
+
+          break;
+        }
+
         case Actions.AddedNode: {
           const [id, nodeDetails, nodeStats, nodeHardware, blockDetails, location] = message.payload;
           const pinned = this.pins.has(nodeDetails[0]);
@@ -140,6 +148,14 @@ export class Connection {
           const [id, blockDetails] = message.payload;
 
           nodes.mutAndSort(id, (node) => node.updateBlock(blockDetails));
+
+          break;
+        }
+
+        case Actions.FinalizedBlock: {
+          const [id, height, hash] = message.payload;
+
+          nodes.mut(id, (node) => node.updateFinalized(height, hash));
 
           break;
         }

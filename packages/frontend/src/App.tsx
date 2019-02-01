@@ -31,6 +31,8 @@ export default class App extends React.Component<{}, State> {
         blocknumber: true,
         blockhash: true,
         blocktime: true,
+        finalized: false,
+        finalizedhash: false,
         blockpropagation: true,
         blocklasttime: false
       },
@@ -48,6 +50,7 @@ export default class App extends React.Component<{}, State> {
     this.state = {
       status: 'offline',
       best: 0 as Types.BlockNumber,
+      finalized: 0 as Types.BlockNumber,
       blockTimestamp: 0 as Types.Timestamp,
       blockAverage: null,
       timeDiff: 0 as Types.Milliseconds,

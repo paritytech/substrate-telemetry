@@ -14,6 +14,7 @@ import nodeTypeIcon from '../../icons/terminal.svg';
 import peersIcon from '../../icons/broadcast.svg';
 import transactionsIcon from '../../icons/inbox.svg';
 import blockIcon from '../../icons/package.svg';
+import finalizedIcon from '../../icons/milestone.svg';
 import blockHashIcon from '../../icons/file-binary.svg';
 import blockTimeIcon from '../../icons/history.svg';
 import propagationTimeIcon from '../../icons/dashboard.svg';
@@ -232,6 +233,20 @@ export class Row extends React.Component<Row.Props, Row.State> {
       width: 154,
       setting: 'blockhash',
       render: ({ hash }) => <Truncate position="right" text={hash} copy={true} />
+    },
+    {
+      label: 'Finalized Block',
+      icon: finalizedIcon,
+      width: 88,
+      setting: 'finalized',
+      render: ({ finalized }) => `#${formatNumber(finalized)}`
+    },
+    {
+      label: 'Finalized Block Hash',
+      icon: blockHashIcon,
+      width: 154,
+      setting: 'finalizedhash',
+      render: ({ finalizedHash }) => <Truncate position="right" text={finalizedHash} copy={true} />
     },
     {
       label: 'Block Time',

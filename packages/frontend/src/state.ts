@@ -39,6 +39,9 @@ export class Node {
   public blockTimestamp: Types.Timestamp;
   public propagationTime: Maybe<Types.PropagationTime>;
 
+  public finalized = 0 as Types.BlockNumber;
+  public finalizedHash = '' as Types.BlockHash;
+
   public lat: Maybe<Types.Latitude>;
   public lon: Maybe<Types.Longitude>;
   public city: Maybe<Types.City>;
@@ -106,6 +109,11 @@ export class Node {
     this.trigger();
   }
 
+  public updateFinalized(height: Types.BlockNumber, hash: Types.BlockHash) {
+    this.finalized = height;
+    this.finalizedHash = hash;
+  }
+
   public updateLocation(location: Types.NodeLocation) {
     const [lat, lon, city] = location;
 
@@ -158,6 +166,8 @@ export namespace State {
     download: boolean;
     blocknumber: boolean;
     blockhash: boolean;
+    finalized: boolean;
+    finalizedhash: boolean;
     blocktime: boolean;
     blockpropagation: boolean;
     blocklasttime: boolean;
@@ -167,6 +177,7 @@ export namespace State {
 export interface State {
   status: 'online' | 'offline' | 'upgrade-requested';
   best: Types.BlockNumber;
+  finalized: Types.BlockNumber;
   blockTimestamp: Types.Timestamp;
   blockAverage: Maybe<Types.Milliseconds>;
   timeDiff: Types.Milliseconds;
