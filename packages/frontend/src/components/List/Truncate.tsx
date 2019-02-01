@@ -13,6 +13,10 @@ export class Truncate extends React.Component<Truncate.Props, {}> {
   public render() {
     const { text, position, copy } = this.props;
 
+    if (!text) {
+      return '-';
+    }
+
     return (
       <Tooltip text={text} position={position} copy={copy} className="Row-Tooltip">
         <div className="Row-truncate">{text}</div>

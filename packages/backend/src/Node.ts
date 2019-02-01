@@ -4,7 +4,8 @@ import * as EventEmitter from 'events';
 import { noop, timestamp, idGenerator, Maybe, Types, NumStats } from '@dotstats/common';
 import { parseMessage, getBestBlock, Message, BestBlock, SystemInterval } from './message';
 import { locate, Location } from './location';
-import { MeanList } from './MeanList';
+import MeanList from './MeanList';
+import Block from './Block';
 
 const BLOCK_TIME_HISTORY = 10;
 const MEMORY_RECORDS = 20;
@@ -32,8 +33,8 @@ export default class Node {
   public location: Maybe<Location> = null;
   public lastMessage: Types.Timestamp;
   public config: string;
-  public best = '' as Types.BlockHash;
-  public height = 0 as Types.BlockNumber;
+  public best = Block.ZERO;
+  public finalized = Block.ZERO;
   public latency = 0 as Types.Milliseconds;
   public blockTime = 0 as Types.Milliseconds;
   public blockTimestamp = 0 as Types.Timestamp;
@@ -190,7 +191,7 @@ export default class Node {
   }
 
   public blockDetails(): Types.BlockDetails {
-    return [this.height, this.best, this.blockTime, this.blockTimestamp, this.propagationTime];
+    return [this.best.number, this.best.hash, this.blockTime, this.blockTimestamp, this.propagationTime];
   }
 
   public nodeLocation(): Maybe<Types.NodeLocation> {
@@ -234,13 +235,28 @@ export default class Node {
   }
 
   private onSystemInterval(message: SystemInterval) {
-    const { peers, txcount, cpu, memory, bandwidth_download: download, bandwidth_upload: upload } = message;
+    const { 
+      peers, 
+      txcount, 
+      cpu, 
+      memory, 
+      bandwidth_download: download,
+      bandwidth_upload: upload,
+      finalized_height: finalized,
+      finalized_hash: finalizedHash
+    } = message;
 
     if (this.peers !== peers || this.txcount !== txcount) {
       this.peers = peers;
       this.txcount = txcount;
 
       this.events.emit('stats');
+    }
+
+    if (finalized != null && finalizedHash != null && finalized > this.finalized.number) {
+      this.finalized = new Block(finalized, finalizedHash);
+
+      this.events.emit('finalized');
     }
 
     if (cpu != null && memory != null) {
@@ -279,11 +295,10 @@ export default class Node {
   private updateBestBlock(update: BestBlock) {
     const { height, ts: time, best } = update;
 
-    if (this.best !== best && this.height <= height) {
+    if (this.best.hash !== best && this.best.number <= height) {
       const blockTime = this.getBlockTime(time);
 
-      this.best = best;
-      this.height = height;
+      this.best = new Block(height, best);
       this.blockTimestamp = timestamp();
       this.lastBlockAt = time;
       this.blockTimes.push(blockTime);

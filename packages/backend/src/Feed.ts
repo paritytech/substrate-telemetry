@@ -2,6 +2,7 @@ import * as WebSocket from 'ws';
 import * as EventEmitter from 'events';
 import Node from './Node';
 import Chain from './Chain';
+import Block from './Block';
 import { VERSION, timestamp, Maybe, FeedMessage, Types, idGenerator } from '@dotstats/common';
 import { Location } from './location';
 
@@ -42,6 +43,13 @@ export default class Feed {
     };
   }
 
+  public static bestFinalizedBlock(block: Block): FeedMessage.Message {
+    return {
+      action: Actions.BestFinalized,
+      payload: [block.number, block.hash]
+    };
+  }
+
   public static addedNode(node: Node): FeedMessage.Message {
     return {
       action: Actions.AddedNode,
@@ -67,6 +75,13 @@ export default class Feed {
     return {
       action: Actions.ImportedBlock,
       payload: [node.id, node.blockDetails()]
+    };
+  }
+
+  public static finalized(node: Node): FeedMessage.Message {
+    return {
+      action: Actions.FinalizedBlock,
+      payload: [node.id, node.finalized.number, node.finalized.hash]
     };
   }
 
