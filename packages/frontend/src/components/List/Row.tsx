@@ -31,6 +31,8 @@ import unknownImplementationIcon from '../../icons/question-solid.svg';
 import './Row.css';
 
 const SEMVER_PATTERN = /^\d+\.\d+\.\d+/;
+const BANDWIDTH_SCALE = 1024 * 1024;
+const MEMORY_SCALE = 2 * 1024 * 1024;
 
 export namespace Row {
   export interface Props {
@@ -183,7 +185,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
         }
 
         return (
-          <Sparkline width={44} height={16} stroke={1} format={formatMemory} values={mem} stamps={chartstamps} />
+          <Sparkline width={44} height={16} stroke={1} format={formatMemory} values={mem} stamps={chartstamps} minScale={MEMORY_SCALE} />
         );
       }
     },
@@ -198,7 +200,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
         }
 
         return (
-          <Sparkline width={44} height={16} stroke={1} format={formatBandwidth} values={upload} stamps={chartstamps} />
+          <Sparkline width={44} height={16} stroke={1} format={formatBandwidth} values={upload} stamps={chartstamps} minScale={BANDWIDTH_SCALE} />
         );
       }
     },
@@ -213,7 +215,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
         }
 
         return (
-          <Sparkline width={44} height={16} stroke={1} format={formatBandwidth} values={download} stamps={chartstamps} />
+          <Sparkline width={44} height={16} stroke={1} format={formatBandwidth} values={download} stamps={chartstamps} minScale={BANDWIDTH_SCALE} />
         );
       }
     },
