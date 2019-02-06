@@ -4650,6 +4650,11 @@ isomorphic-fetch@^2.1.1, isomorphic-fetch@^2.2.1:
     node-fetch "^1.0.1"
     whatwg-fetch ">=0.10.0"
 
+isomorphic-ws@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/isomorphic-ws/-/isomorphic-ws-4.0.1.tgz#55fd4cd6c5e6491e76dc125938dd863f5cd4f2dc"
+  integrity sha512-BhBvN2MBpWTaSHdWRb/bwdZJ1WaehQ2L1KngkCkfLUGF0mAWAT1sQUQacEmQ0jXkFw/czDXPNQSL5u2/Krsz1w==
+
 isstream@~0.1.2:
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/isstream/-/isstream-0.1.2.tgz#47e63f7af55afa6f92e1500e690eb8b8529c099a"
@@ -6449,18 +6454,18 @@ onetime@^2.0.0:
   dependencies:
     mimic-fn "^1.0.0"
 
-oo7-react@^0.8.8:
-  version "0.8.8"
-  resolved "https://registry.yarnpkg.com/oo7-react/-/oo7-react-0.8.8.tgz#4a2e77fcd2e0c89b5f99b7cbdd1a7a58c59683ca"
-  integrity sha512-jjQ58/pfVuwBcteVINjKYQCdf20EEnxi/g+Xc+pz6Ot9p1ALEiPGEdw8dmf1ucfbaUmGDUiT5HcueAaw+5cXGQ==
+oo7-react@^0.8.10:
+  version "0.8.10"
+  resolved "https://registry.yarnpkg.com/oo7-react/-/oo7-react-0.8.10.tgz#c04bd418d87f3b5bd32949cefb116eee5a4bb86c"
+  integrity sha512-kLP9umZt5StkWlZ2TahDIMTg9umsPzMFeXoIi5ClujwrQD+2uRqLaYWiPDprzYlSMpOZgQ0oqZtBW6tUCdG8GA==
   dependencies:
-    oo7 "^0.7.7"
+    oo7 "^0.7.9"
     react "^16.5.2"
 
-oo7-substrate@^0.3.20:
-  version "0.3.20"
-  resolved "https://registry.yarnpkg.com/oo7-substrate/-/oo7-substrate-0.3.20.tgz#17dc31ec74356f3a6417140770317b466470f449"
-  integrity sha512-FIwbD+I0LUR78C2zNy8TdbQ/aaDYpzvZDCcLjsZxUomp0mjcx8ZL3CN1AcGZtN/KKKeg/pLctar6eCx3kO4q6A==
+oo7-substrate@^0.4.12:
+  version "0.4.12"
+  resolved "https://registry.yarnpkg.com/oo7-substrate/-/oo7-substrate-0.4.12.tgz#f27ffa10b0143e75ba2677ddbebbaf9aa5096078"
+  integrity sha512-oz0UePdDViE8y9oLgWBImwhIRkElcaqHmG9dIAnHd12O1FPWGos1LHeDSKVblXfvtiAs18n2OMe5JJTNBGd6yQ==
   dependencies:
     base-x "^3.0.4"
     bip39 "^2.5.0"
@@ -6468,15 +6473,19 @@ oo7-substrate@^0.3.20:
     bs58 "^4.0.1"
     change-case "^3.0.2"
     isomorphic-fetch "^2.2.1"
-    oo7 "^0.7.7"
+    isomorphic-ws "^4.0.1"
+    oo7 "^0.7.9"
     ss58 "^1.0.2"
+    text-encoding "^0.7.0"
+    text-encoding-polyfill "^0.6.7"
     tweetnacl "^1.0.0"
+    ws "^6.1.2"
     xxhashjs "^0.2.2"
 
-oo7@^0.7.7:
-  version "0.7.7"
-  resolved "https://registry.yarnpkg.com/oo7/-/oo7-0.7.7.tgz#c569178b616dc700ab3cb8d685251ed063617126"
-  integrity sha512-+sNGi5sIFHpBOhQHpWQB3iwpzFQ9M9bGJtUk2aCeVJVYM0hpez3uklySbOQpJ+kv4PwZ+4eapkq8Vs2lReq5jg==
+oo7@^0.7.9:
+  version "0.7.9"
+  resolved "https://registry.yarnpkg.com/oo7/-/oo7-0.7.9.tgz#ea9c14121fd3a24934b12d58b5f2a185a9609059"
+  integrity sha512-QcK4x8xY+rZeBBqS1HDe+kyf0g1XEdiqXcEIJl7dBxau+ICU8bGdcJ+d+POMj8/fRH6o9oyaIe2QujytxzERLg==
 
 opn@5.2.0:
   version "5.2.0"
@@ -6819,15 +6828,15 @@ pn@^1.1.0:
   resolved "https://registry.yarnpkg.com/pn/-/pn-1.1.0.tgz#e2f4cef0e219f463c179ab37463e4e1ecdccbafb"
   integrity sha512-2qHaIQr2VLRFoxe2nASzsV6ef4yOOH+Fi9FBOVH6cqeSgUnoyySPZkxzLuzd+RYOQTRpROA0ztTMqxROKSb/nA==
 
-polkadot-identicon@^1.1.0:
-  version "1.1.21"
-  resolved "https://registry.yarnpkg.com/polkadot-identicon/-/polkadot-identicon-1.1.21.tgz#b69b2d0afbbdfc015c8a4aa4361467561c908030"
-  integrity sha512-pwdE4IwZ17/5RgU1Ngy8OJyULa1yLB55h5pXNJg0+QTPCK3PVuWn3oj466fhb4+izThQpsaHX/tCgzMfDIbQvA==
+polkadot-identicon@^1.1.36:
+  version "1.1.36"
+  resolved "https://registry.yarnpkg.com/polkadot-identicon/-/polkadot-identicon-1.1.36.tgz#ef14ebdc788367b20acf05a1613c806211fd44d0"
+  integrity sha512-wDOpqHG39t41R0mHj7PqMHnZGRgPfjtxMMBGaKTO05cp+xwOtamDUdx2e0LaG4KYZaq8KbkDXK9XKdASTGuDKw==
   dependencies:
     blake2js "^1.0.0"
-    oo7 "^0.7.7"
-    oo7-react "^0.8.8"
-    oo7-substrate "^0.3.20"
+    oo7 "^0.7.9"
+    oo7-react "^0.8.10"
+    oo7-substrate "^0.4.12"
     react "^16.4.2"
     ss58 "^1.0.0"
 
@@ -7572,7 +7581,7 @@ react@16.4.0:
     object-assign "^4.1.1"
     prop-types "^15.6.0"
 
-react@^16.4.2, react@^16.5.2:
+react@^16.4.2:
   version "16.7.0"
   resolved "https://registry.yarnpkg.com/react/-/react-16.7.0.tgz#b674ec396b0a5715873b350446f7ea0802ab6381"
   integrity sha512-StCz3QY8lxTb5cl2HJxjwLFOXPIFQp+p+hxQfc8WE0QiLfCtIlKj8/+5tjjKm8uSTlAW+fCPaavGFS06V9Ar3A==
@@ -7581,6 +7590,16 @@ react@^16.4.2, react@^16.5.2:
     object-assign "^4.1.1"
     prop-types "^15.6.2"
     scheduler "^0.12.0"
+
+react@^16.5.2:
+  version "16.8.0"
+  resolved "https://registry.yarnpkg.com/react/-/react-16.8.0.tgz#8533f0e4af818f448a276eae71681d09e8dd970a"
+  integrity sha512-g+nikW2D48kqgWSPwNo0NH9tIGG3DsQFlrtrQ1kj6W77z5ahyIHG0w8kPpz4Sdj6gyLnz0lEd/xsjOoGge2MYQ==
+  dependencies:
+    loose-envify "^1.1.0"
+    object-assign "^4.1.1"
+    prop-types "^15.6.2"
+    scheduler "^0.13.0"
 
 read-pkg-up@^1.0.1:
   version "1.0.1"
@@ -8061,6 +8080,14 @@ scheduler@^0.12.0:
   version "0.12.0"
   resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.12.0.tgz#8ab17699939c0aedc5a196a657743c496538647b"
   integrity sha512-t7MBR28Akcp4Jm+QoR63XgAi9YgCUmgvDHqf5otgAj4QvdoBE4ImCX0ffehefePPG+aitiYHp0g/mW6s4Tp+dw==
+  dependencies:
+    loose-envify "^1.1.0"
+    object-assign "^4.1.1"
+
+scheduler@^0.13.0:
+  version "0.13.0"
+  resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.13.0.tgz#e701f62e1b3e78d2bbb264046d4e7260f12184dd"
+  integrity sha512-w7aJnV30jc7OsiZQNPVmBc+HooZuvQZIZIShKutC3tnMFMkcwVN9CZRRSSNw03OnSCKmEkK8usmwcw6dqBaLzw==
   dependencies:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
@@ -8826,6 +8853,16 @@ test-exclude@^4.2.1:
     read-pkg-up "^1.0.1"
     require-main-filename "^1.0.1"
 
+text-encoding-polyfill@^0.6.7:
+  version "0.6.7"
+  resolved "https://registry.yarnpkg.com/text-encoding-polyfill/-/text-encoding-polyfill-0.6.7.tgz#4d27de0153e4c86eb2631ffd74c2f3f57969a9ec"
+  integrity sha512-/DZ1XJqhbqRkCop6s9ZFu8JrFRwmVuHg4quIRm+ziFkR3N3ec6ck6yBvJ1GYeEQZhLVwRW0rZE+C3SSJpy0RTg==
+
+text-encoding@^0.7.0:
+  version "0.7.0"
+  resolved "https://registry.yarnpkg.com/text-encoding/-/text-encoding-0.7.0.tgz#f895e836e45990624086601798ea98e8f36ee643"
+  integrity sha512-oJQ3f1hrOnbRLOcwKz0Liq2IcrvDeZRHXhd9RgLrsT+DjWY/nty1Hi7v3dtkaEYbPYe0mUoOfzRrMwfXXwgPUA==
+
 text-table@0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/text-table/-/text-table-0.2.0.tgz#7f5ee823ae805207c00af2df4a84ec3fcfa570b4"
@@ -9098,9 +9135,9 @@ tweetnacl@^0.14.3, tweetnacl@~0.14.0:
   integrity sha1-WuaBd/GS1EViadEIr6k/+HQ/T2Q=
 
 tweetnacl@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/tweetnacl/-/tweetnacl-1.0.0.tgz#713d8b818da42068740bf68386d0479e66fc8a7b"
-  integrity sha1-cT2LgY2kIGh0C/aDhtBHnmb8ins=
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/tweetnacl/-/tweetnacl-1.0.1.tgz#2594d42da73cd036bd0d2a54683dd35a6b55ca17"
+  integrity sha512-kcoMoKTPYnoeS50tzoqjPY3Uv9axeuuFAZY9M/9zFnhoVvRfxz9K29IMPD7jGmt2c8SW7i3gT9WqDl2+nV7p4A==
 
 type-check@~0.3.2:
   version "0.3.2"
@@ -9703,6 +9740,13 @@ ws@^5.2.0:
   version "5.2.2"
   resolved "https://registry.yarnpkg.com/ws/-/ws-5.2.2.tgz#dffef14866b8e8dc9133582514d1befaf96e980f"
   integrity sha512-jaHFD6PFv6UgoIVda6qZllptQsMlDEJkTQcybzzXDYM1XO9Y8em691FGMPmM46WGyLU4z9KMgQN+qrux/nhlHA==
+  dependencies:
+    async-limiter "~1.0.0"
+
+ws@^6.1.2:
+  version "6.1.3"
+  resolved "https://registry.yarnpkg.com/ws/-/ws-6.1.3.tgz#d2d2e5f0e3c700ef2de89080ebc0ac6e1bf3a72d"
+  integrity sha512-tbSxiT+qJI223AP4iLfQbkbxkwdFcneYinM2+x46Gx2wgvbaOMO36czfdfVUBRTHvzAMRhDd98sA5d/BuWbQdg==
   dependencies:
     async-limiter "~1.0.0"
 
