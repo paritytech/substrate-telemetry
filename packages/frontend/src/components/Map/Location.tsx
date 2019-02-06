@@ -92,7 +92,7 @@ export class Location extends React.Component<Location.Props, Location.State> {
           <td><Icon src={nodeValidatorIcon} alt="Node" /></td>
           <td colSpan={5}>
             {trimHash(validator, 30)}
-            <span className="Location-validator"><Identicon id={validator} size={16} /></span>
+            <span className="Location-validator"><Identicon account={validator} size={16} /></span>
           </td>
         </tr>
       );

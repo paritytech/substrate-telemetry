@@ -117,7 +117,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
       width: 16,
       setting: 'validator',
       render: ({ validator }) => {
-        return validator ? <Tooltip text={validator} copy={true}><span className="Row-validator"><Identicon id={validator} size={16} /></span></Tooltip> : '-';
+        return validator ? <Tooltip text={validator} copy={true}><span className="Row-validator"><Identicon account={validator} size={16} /></span></Tooltip> : '-';
       }
     },
     {

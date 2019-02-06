@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@fnando/sparkline": "maciejhirsz/sparkline",
-    "polkadot-identicon": "^1.1.0",
+    "polkadot-identicon": "^1.1.36",
     "react": "16.4.0",
     "react-dom": "16.4.0",
     "react-scripts-ts": "2.17.0",
