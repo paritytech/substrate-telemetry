@@ -70,8 +70,12 @@ export class Ago extends React.Component<Ago.Props, Ago.State> {
       agoStr = `${ago.toFixed(1)}s`;
     } else if (ago < 60) {
       agoStr = `${ago | 0}s`;
-    } else {
+    } else if (ago < 3600) {
       agoStr = `${ ago / 60 | 0}m`;
+    } else if (ago < 3600 * 24) {
+      agoStr = `${ ago / 3600 | 0}h`;
+    } else {
+      agoStr = `${ ago / (3600 * 24) | 0}d`;
     }
 
     return <span title={new Date(this.props.when).toUTCString()}>{agoStr} ago</span>
