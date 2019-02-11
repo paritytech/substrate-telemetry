@@ -133,7 +133,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
       width: 90,
       setting: 'implementation',
       render: ({ implementation, version }) => {
-        const [semver] = version.match(SEMVER_PATTERN) || [version];
+        const [semver] = version.match(SEMVER_PATTERN) || ['?.?.?'];
         const implIcon = implementation === 'parity-polkadot' ? parityPolkadotIcon
                        : implementation === 'substrate-node' ? paritySubstrateIcon
                        : implementation === 'robonomics-node' ? airalabRobonomicsIcon
