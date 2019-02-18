@@ -21,7 +21,7 @@ const ipv4 = /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/;
 
 incomingTelemetry.on('connection', async (socket, req) => {
   try {
-    const [ip] = ( req.headers['x-forwarded-for'] || req.connection.remoteAddress || '0.0.0.0' )
+    const [ ip ] = (req.headers['x-forwarded-for'] || req.connection.remoteAddress || '0.0.0.0')
       .toString()
       .match(ipv4) || ['0.0.0.0'];
 
