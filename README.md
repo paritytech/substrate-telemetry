@@ -22,4 +22,11 @@ yarn start:frontend
 ./target/debug/polkadot --dev --telemetry-url ws://localhost:1024
 ```
 
+### Run via Docker
+To run via docker make sure that you have Docker Desktop
+  - If you dont you can download for you OS here [Docker Desktop](https://www.docker.com/products/docker-desktop)
+```
+docker-compose up --build -d
+```
+  - If you want to makes ui changes, there is no need to rebuild the image as the files are being copied in via volumes.
 Now navigate to localhost:3000 in your browser to view the app.

@@ -12,5 +12,5 @@ RUN yarn
 COPY . .
 
 # Frontend is exposing 3000
-# Backeend is exposing 8080
+# Backend is exposing 8080
 # No need for expose, if using docker-compose & docker run -p 3000:3000
