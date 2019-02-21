@@ -3,8 +3,8 @@ import Node from './Node';
 import Feed from './Feed';
 import Aggregator from './Aggregator';
 
-const WS_PORT_TELEMETRY_SERVER = 1024;
-const WS_PORT_FEED_SERVER = 8080;
+const WS_PORT_TELEMETRY_SERVER = process.env.TELEMETRY_SERVER || 1024;
+const WS_PORT_FEED_SERVER = process.env.FEED_SERVER || 8080;
 
 const aggregator = new Aggregator();
 
@@ -47,4 +47,3 @@ logClients();
 telemetryFeed.on('connection', (socket: WebSocket) => {
   aggregator.addFeed(new Feed(socket));
 });
-
