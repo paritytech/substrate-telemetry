@@ -126,6 +126,7 @@ export default class Chain {
 
   private downgradeBlock() {
     let height = 0 as Types.BlockNumber;
+    let finalized = Block.ZERO;
 
     for (const node of this.nodes) {
       if (this.height === node.best.number) {
@@ -135,10 +136,16 @@ export default class Chain {
       if (node.best.number > height) {
         height = node.best.number;
       }
+
+      if (node.finalized.number > finalized.number) {
+        finalized = node.finalized;
+      }
     }
 
     this.height = height;
+    this.finalized = finalized;
     this.feeds.broadcast(Feed.bestBlock(this.height, this.blockTimestamp, this.averageBlockTime));
+    this.feeds.broadcast(Feed.bestFinalizedBlock(this.finalized));
   }
 
   private updateFinalized(node: Node) {
