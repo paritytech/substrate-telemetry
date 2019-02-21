@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Connection } from '../Connection';
 import { Icon } from './Icon';
 import { Types, Maybe } from '@dotstats/common';
+import stable from 'stable';
 
 import githubIcon from '../icons/mark-github.svg';
 import './Chains.css';
@@ -48,11 +49,11 @@ export class Chains extends React.Component<Chains.Props, {}> {
   }
 
   private get chains(): ChainData[] {
-    return Array
-      .from(this.props.chains.entries())
-      .sort((a, b) => {
-        return b[1] - a[1];
-      })
+    return stable
+      .inplace(
+        Array.from(this.props.chains.entries()),
+        (a, b) => b[1] - a[1]
+      )
       .map(([label, nodeCount]) => ({ label, nodeCount }));
   }
 
