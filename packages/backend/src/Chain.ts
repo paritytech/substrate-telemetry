@@ -35,14 +35,7 @@ export default class Chain {
     this.nodes.add(node);
     this.feeds.broadcast(Feed.addedNode(node));
 
-    node.events.once('disconnect', () => {
-      node.events.removeAllListeners();
-
-      this.nodes.delete(node);
-      this.feeds.broadcast(Feed.removedNode(node));
-
-      this.events.emit('disconnect', this.nodeCount);
-    });
+    node.events.once('disconnect', () => this.removeNode(node));
 
     node.events.on('block', () => this.updateBlock(node));
     node.events.on('finalized', () => this.updateFinalized(node));
@@ -52,6 +45,19 @@ export default class Chain {
 
     this.updateBlock(node);
     this.updateFinalized(node);
+  }
+
+  public removeNode(node: Node) {
+    node.events.removeAllListeners();
+
+    this.nodes.delete(node);
+    this.feeds.broadcast(Feed.removedNode(node));
+
+    this.events.emit('disconnect', this.nodeCount);
+
+    if (this.height === node.best.number) {
+      this.downgradeBlock();
+    }
   }
 
   public addFeed(feed: Feed) {
@@ -116,6 +122,23 @@ export default class Chain {
     this.feeds.broadcast(Feed.imported(node));
 
     console.log(`[${this.label}] ${node.name} imported ${height}, block time: ${node.blockTime / 1000}s, average: ${node.average / 1000}s | latency ${node.latency}`);
+  }
+
+  private downgradeBlock() {
+    let height = 0 as Types.BlockNumber;
+
+    for (const node of this.nodes) {
+      if (this.height === node.best.number) {
+        return;
+      }
+
+      if (node.best.number > height) {
+        height = node.best.number;
+      }
+    }
+
+    this.height = height;
+    this.feeds.broadcast(Feed.bestBlock(this.height, this.blockTimestamp, this.averageBlockTime));
   }
 
   private updateFinalized(node: Node) {
