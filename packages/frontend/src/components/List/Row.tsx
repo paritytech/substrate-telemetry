@@ -26,6 +26,7 @@ import downloadIcon from '../../icons/cloud-download.svg';
 
 import parityPolkadotIcon from '../../icons/dot.svg';
 import paritySubstrateIcon from '../../icons/substrate.svg';
+import polkadotJsIcon from '../../icons/polkadot-js.svg';
 import airalabRobonomicsIcon from '../../icons/robonomics.svg';
 import unknownImplementationIcon from '../../icons/question-solid.svg';
 
@@ -34,6 +35,12 @@ import './Row.css';
 const SEMVER_PATTERN = /^\d+\.\d+\.\d+/;
 const BANDWIDTH_SCALE = 1024 * 1024;
 const MEMORY_SCALE = 2 * 1024 * 1024;
+const ICONS = {
+  'parity-polkadot': parityPolkadotIcon,
+  'polkadot-js': polkadotJsIcon,
+  'robonomics-node': airalabRobonomicsIcon,
+  'substrate-node': paritySubstrateIcon
+};
 
 export namespace Row {
   export interface Props {
@@ -134,10 +141,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
       setting: 'implementation',
       render: ({ implementation, version }) => {
         const [semver] = version.match(SEMVER_PATTERN) || ['?.?.?'];
-        const implIcon = implementation === 'parity-polkadot' ? parityPolkadotIcon
-                       : implementation === 'substrate-node' ? paritySubstrateIcon
-                       : implementation === 'robonomics-node' ? airalabRobonomicsIcon
-                       : unknownImplementationIcon;
+        const implIcon = ICONS[implementation] || unknownImplementationIcon;
 
         return (
           <Tooltip text={`${implementation} v${version}`}>
