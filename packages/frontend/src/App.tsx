@@ -22,6 +22,7 @@ export default class App extends React.Component<{}, State> {
         validator: true,
         location: true,
         implementation: true,
+        networkId: false,
         peers: true,
         txs: true,
         cpu: true,

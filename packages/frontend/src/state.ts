@@ -23,6 +23,7 @@ export class Node {
   public readonly implementation: Types.NodeImplementation;
   public readonly version: Types.NodeVersion;
   public readonly validator: Maybe<Types.Address>;
+  public readonly networkId: Maybe<Types.NetworkId>;
 
   public pinned: boolean;
   public peers: Types.PeerCount;
@@ -57,7 +58,7 @@ export class Node {
     blockDetails: Types.BlockDetails,
     location: Maybe<Types.NodeLocation>
   ) {
-    const [name, implementation, version, validator] = nodeDetails;
+    const [name, implementation, version, validator, networkId] = nodeDetails;
 
     this.pinned = pinned;
 
@@ -66,6 +67,7 @@ export class Node {
     this.implementation = implementation;
     this.version = version;
     this.validator = validator;
+    this.networkId = networkId;
 
     this.updateStats(nodeStats);
     this.updateHardware(nodeHardware);
@@ -158,6 +160,7 @@ export namespace State {
     location: boolean;
     validator: boolean;
     implementation: boolean;
+    networkId: boolean;
     peers: boolean;
     txs: boolean;
     cpu: boolean;

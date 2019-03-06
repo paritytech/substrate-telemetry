@@ -48,6 +48,7 @@ export interface SystemConnected {
   version: Types.NodeVersion;
   pubkey: Maybe<Types.Address>;
   authority: Maybe<boolean>;
+  network_id: Maybe<Types.NetworkId>;
 }
 
 export interface SystemInterval extends BestBlock {

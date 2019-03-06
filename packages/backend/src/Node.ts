@@ -26,6 +26,7 @@ export default class Node {
   public readonly implementation: Types.NodeImplementation;
   public readonly version: Types.NodeVersion;
   public readonly address: Maybe<Types.Address>;
+  public readonly networkId: Maybe<Types.NetworkId>;
   public readonly authority: boolean;
 
   public readonly events = new EventEmitter() as EventEmitter & NodeEvents;
@@ -64,6 +65,7 @@ export default class Node {
     implentation: Types.NodeImplementation,
     version: Types.NodeVersion,
     address: Maybe<Types.Address>,
+    networkId: Maybe<Types.NetworkId>,
     authority: boolean,
     messages: Array<Message>,
   ) {
@@ -76,6 +78,7 @@ export default class Node {
     this.version = version;
     this.address = address;
     this.authority = authority;
+    this.networkId = networkId;
     this.lastMessage = timestamp();
     this.socket = socket;
 
@@ -143,9 +146,9 @@ export default class Node {
         if (message.msg === "system.connected") {
           cleanup();
 
-          const { name, chain, config, implementation, version, pubkey, authority } = message;
+          const { name, chain, config, implementation, version, pubkey, authority, network_id: networkId } = message;
 
-          resolve(new Node(ip, socket, name, chain, config, implementation, version, pubkey, authority === true, messages));
+          resolve(new Node(ip, socket, name, chain, config, implementation, version, pubkey, networkId, authority === true, messages));
         } else {
           if (messages.length === 10) {
             messages.shift();
@@ -179,7 +182,7 @@ export default class Node {
   public nodeDetails(): Types.NodeDetails {
     const authority = this.authority ? this.address : null;
 
-    return [this.name, this.implementation, this.version, authority];
+    return [this.name, this.implementation, this.version, authority, this.networkId];
   }
 
   public nodeStats(): Types.NodeStats {
@@ -235,11 +238,11 @@ export default class Node {
   }
 
   private onSystemInterval(message: SystemInterval) {
-    const { 
-      peers, 
-      txcount, 
-      cpu, 
-      memory, 
+    const {
+      peers,
+      txcount,
+      cpu,
+      memory,
       bandwidth_download: download,
       bandwidth_upload: upload,
       finalized_height: finalized,

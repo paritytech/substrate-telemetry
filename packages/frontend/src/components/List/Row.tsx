@@ -11,6 +11,7 @@ import nodeIcon from '../../icons/server.svg';
 import nodeLocationIcon from '../../icons/location.svg';
 import nodeValidatorIcon from '../../icons/shield.svg';
 import nodeTypeIcon from '../../icons/terminal.svg';
+import networkIdIcon from '../../icons/fingerprint.svg';
 import peersIcon from '../../icons/broadcast.svg';
 import transactionsIcon from '../../icons/inbox.svg';
 import blockIcon from '../../icons/package.svg';
@@ -149,6 +150,13 @@ export class Row extends React.Component<Row.Props, Row.State> {
           </Tooltip>
         );
       }
+    },
+    {
+      label: 'Network ID',
+      icon: networkIdIcon,
+      width: 90,
+      setting: 'networkId',
+      render: ({ networkId }) => networkId ? <Truncate position="left" text={networkId} /> : '-'
     },
     {
       label: 'Peer Count',
