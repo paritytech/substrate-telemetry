@@ -31,6 +31,7 @@ export default class Node {
 
   public readonly events = new EventEmitter() as EventEmitter & NodeEvents;
 
+  public networkState: Types.NetworkState;
   public location: Maybe<Location> = null;
   public lastMessage: Types.Timestamp;
   public config: string;
@@ -79,6 +80,7 @@ export default class Node {
     this.address = address;
     this.authority = authority;
     this.networkId = networkId;
+    this.networkState = "Not received yet";
     this.lastMessage = timestamp();
     this.socket = socket;
 
@@ -239,6 +241,7 @@ export default class Node {
 
   private onSystemInterval(message: SystemInterval) {
     const {
+      network_state,
       peers,
       txcount,
       cpu,
@@ -248,6 +251,10 @@ export default class Node {
       finalized_height: finalized,
       finalized_hash: finalizedHash
     } = message;
+
+    if (this.networkState !== network_state && network_state) {
+      this.networkState = network_state;
+    };
 
     if (this.peers !== peers || this.txcount !== txcount) {
       this.peers = peers;

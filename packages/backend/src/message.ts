@@ -53,6 +53,7 @@ export interface SystemConnected {
 
 export interface SystemInterval extends BestBlock {
   msg: 'system.interval';
+  network_state: Types.NetworkState;
   txcount: Types.TransactionCount;
   peers: Types.PeerCount;
   memory: Maybe<Types.MemoryUse>;
