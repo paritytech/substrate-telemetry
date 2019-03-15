@@ -6,8 +6,8 @@ import { Tab } from './';
 import { Tile, Ago, List, Map, Settings } from '../';
 import { PersistentObject, PersistentSet } from '../../persist';
 
-import blockIcon from '../../icons/package.svg';
-import finalizedIcon from '../../icons/milestone.svg';
+import blockIcon from '../../icons/cube.svg';
+import finalizedIcon from '../../icons/cube-alt.svg';
 import blockTimeIcon from '../../icons/history.svg';
 import lastTimeIcon from '../../icons/watch.svg';
 import listIcon from '../../icons/list-alt-regular.svg';
