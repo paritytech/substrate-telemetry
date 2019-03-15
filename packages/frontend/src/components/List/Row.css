@@ -38,21 +38,21 @@
 }
 
 .Row-pinned td:first-child {
-  border-left: 3px solid #d64ca8;
+  border-left: 3px solid #E6007A;
   padding-left: 10px;
 }
 
 .Row-pinned td:last-child {
-  border-right: 3px solid #d64ca8;
+  border-right: 3px solid #E6007A;
   padding-right: 10px;
 }
 
 .Row-pinned.Row-synced {
-  color: #d64ca8;
+  color: #E6007A;
 }
 
 .Row:hover {
-  background-color: #161616;
+  background-color: #1E1E1E;
 }
 
 .Row-validator {
