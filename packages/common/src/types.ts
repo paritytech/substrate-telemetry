@@ -24,6 +24,7 @@ export type MemoryUse = Opaque<number, 'MemoryUse'>;
 export type CPUUse = Opaque<number, 'CPUUse'>;
 export type BytesPerSecond = Opaque<number, 'BytesPerSecond'>;
 export type NetworkId = Opaque<string, 'NetworkId'>;
+export type NetworkState = Opaque<string, 'NetworkState'>;
 
 export type BlockDetails = [BlockNumber, BlockHash, Milliseconds, Timestamp, Maybe<PropagationTime>];
 export type NodeDetails = [NodeName, NodeImplementation, NodeVersion, Maybe<Address>, Maybe<NetworkId>];
