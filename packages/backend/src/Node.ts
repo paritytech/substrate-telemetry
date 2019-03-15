@@ -31,7 +31,7 @@ export default class Node {
 
   public readonly events = new EventEmitter() as EventEmitter & NodeEvents;
 
-  public networkState: Types.NetworkState;
+  public networkState: Maybe<Types.NetworkState> = null;
   public location: Maybe<Location> = null;
   public lastMessage: Types.Timestamp;
   public config: string;
@@ -80,7 +80,6 @@ export default class Node {
     this.address = address;
     this.authority = authority;
     this.networkId = networkId;
-    this.networkState = "Not received yet";
     this.lastMessage = timestamp();
     this.socket = socket;
 
