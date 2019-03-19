@@ -1,1 +1,1 @@
-yarn run build:common && yarn run build:backend && yarn run build:frontend && pm2 restart all
+yarn build:all && pm2 restart all
