@@ -1,5 +1,5 @@
 const test = require('tape');
-const { MeanList } = require('../build/MeanList');
+const MeanList = require('../build/MeanList').default;
 
 test('MeanList', (assert) => {
   let list = new MeanList();
