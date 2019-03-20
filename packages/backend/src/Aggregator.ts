@@ -48,7 +48,7 @@ export default class Aggregator {
     });
   }
 
-  private getChain(label: Types.ChainLabel): Chain {
+  public getChain(label: Types.ChainLabel): Chain {
     const chain = this.chains.get(label);
 
     if (chain) {

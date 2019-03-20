@@ -1,7 +1,10 @@
+import * as http from 'http';
+import * as url from 'url';
 import * as WebSocket from 'ws';
 import Node from './Node';
 import Feed from './Feed';
 import Aggregator from './Aggregator';
+import {Types} from '@dotstats/common';
 
 const WS_PORT_TELEMETRY_SERVER = Number(process.env.TELEMETRY_SERVER || 1024);
 const WS_PORT_FEED_SERVER = Number(process.env.FEED_SERVER || 8080);
@@ -47,3 +50,29 @@ logClients();
 telemetryFeed.on('connection', (socket: WebSocket) => {
   aggregator.addFeed(new Feed(socket));
 });
+
+http.createServer((request, response) => {
+  const incoming_url = request.url || "";
+  const parsed_url = url.parse(incoming_url, true);
+  const path = parsed_url.path || "";
+  if (path.startsWith("/network_state/")) {
+    const [chain_id, str_node_id] = path.split('/').slice(2);
+    console.log(chain_id, str_node_id);
+    const node_id = Number(str_node_id);
+    const chain = aggregator.getChain(chain_id as Types.ChainLabel);
+    const nodeList = Array.from(chain.nodeList());
+    console.log(nodeList)
+    const node = nodeList.filter((node) => node.id == node_id)[0];
+    console.log(node)
+    let json;
+    if (node) {
+      json = JSON.stringify(node.networkState);
+    } else {
+      json = ""
+    }
+
+    response.writeHead(200, {"Content-Type": "application/json"});
+    response.write(json);
+  }
+  response.end();
+}).listen(8081);

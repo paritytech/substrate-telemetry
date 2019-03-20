@@ -281,6 +281,13 @@ export class Row extends React.Component<Row.Props, Row.State> {
       setting: 'blocklasttime',
       render: ({ blockTimestamp }) => <Ago when={blockTimestamp} />
     },
+    {
+      label: 'NetworkState',
+      icon: networkIdIcon,
+      width: 100,
+      setting: 'networkstate',
+      render: ({ id }) => React.createElement('a', {href: `/network_state/0/${id}/`, target: "_blank"}, "Network state"),
+    },
   ];
 
   public static Header = (props: HeaderProps) => {
