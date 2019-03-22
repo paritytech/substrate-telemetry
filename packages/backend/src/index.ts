@@ -54,7 +54,7 @@ telemetryFeed.on('connection', (socket: WebSocket) => {
 http.createServer((request, response) => {
   const incoming_url = request.url || "";
   const parsed_url = url.parse(incoming_url, true);
-  const path = decodeURIComponent(parsed_url.path || "");
+  const path = decodeURI(parsed_url.path || "");
   if (path.startsWith("/network_state/")) {
     const [chainLabel, strNodeId] = path.split('/').slice(2);
     const chain = aggregator.getExistingChain(chainLabel as Types.ChainLabel);
