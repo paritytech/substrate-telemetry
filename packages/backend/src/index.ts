@@ -54,25 +54,19 @@ telemetryFeed.on('connection', (socket: WebSocket) => {
 http.createServer((request, response) => {
   const incoming_url = request.url || "";
   const parsed_url = url.parse(incoming_url, true);
-  const path = parsed_url.path || "";
+  const path = decodeURIComponent(parsed_url.path || "");
   if (path.startsWith("/network_state/")) {
-    const [chain_id, str_node_id] = path.split('/').slice(2);
-    console.log(chain_id, str_node_id);
-    const node_id = Number(str_node_id);
-    const chain = aggregator.getChain(chain_id as Types.ChainLabel);
-    const nodeList = Array.from(chain.nodeList());
-    console.log(nodeList)
-    const node = nodeList.filter((node) => node.id == node_id)[0];
-    console.log(node)
-    let json;
-    if (node) {
-      json = JSON.stringify(node.networkState);
-    } else {
-      json = ""
+    const [chainLabel, strNodeId] = path.split('/').slice(2);
+    const chain = aggregator.getExistingChain(chainLabel as Types.ChainLabel);
+    if (chain) {
+      const nodeList = Array.from(chain.nodeList());
+      const nodeId = Number(strNodeId);
+      const node = nodeList.filter((node) => node.id == nodeId)[0];
+      if (node) {
+        response.writeHead(200, {"Content-Type": "application/json"});
+        response.write(node.networkState);
+      }
     }
-
-    response.writeHead(200, {"Content-Type": "application/json"});
-    response.write(json);
   }
   response.end();
 }).listen(8081);
