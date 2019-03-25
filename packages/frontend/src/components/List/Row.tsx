@@ -1,7 +1,7 @@
 import * as React from 'react';
 import Identicon from 'polkadot-identicon';
 import { Types, Maybe, timestamp } from '@dotstats/common';
-import { formatNumber, milliOrSecond, secondsWithPrecision } from '../../utils';
+import { formatNumber, getHashData, milliOrSecond, secondsWithPrecision } from '../../utils';
 import { State as AppState, Node } from '../../state';
 import { PersistentSet } from '../../persist';
 import { Truncate } from './';
@@ -280,6 +280,17 @@ export class Row extends React.Component<Row.Props, Row.State> {
       width: 100,
       setting: 'blocklasttime',
       render: ({ blockTimestamp }) => <Ago when={blockTimestamp} />
+    },
+    {
+      label: 'NetworkState',
+      icon: networkIdIcon,
+      width: 100,
+      setting: 'networkstate',
+      render: ({ id }) => {
+        const chainLabel = getHashData().chain;
+        const uri = encodeURI(`/network_state/${chainLabel}/${id}/`);
+        return React.createElement('a', {href: uri, target: "_blank"}, "Network state");
+      },
     },
   ];
 

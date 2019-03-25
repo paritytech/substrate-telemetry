@@ -2,7 +2,7 @@ import Chain from './Chain';
 import Node from './Node';
 import Feed from './Feed';
 import FeedSet from './FeedSet';
-import { Types, FeedMessage, timestamp } from '@dotstats/common';
+import { Types, FeedMessage, Maybe, timestamp } from '@dotstats/common';
 
 export default class Aggregator {
   private readonly chains = new Map<Types.ChainLabel, Chain>();
@@ -46,6 +46,10 @@ export default class Aggregator {
         feed.sendMessage(Feed.unsubscribedFrom(label));
       }
     });
+  }
+
+  public getExistingChain(label: Types.ChainLabel) : Maybe<Chain> {
+    return this.chains.get(label);
   }
 
   private getChain(label: Types.ChainLabel): Chain {

@@ -174,6 +174,7 @@ export namespace State {
     blocktime: boolean;
     blockpropagation: boolean;
     blocklasttime: boolean;
+    networkstate: boolean;
   }
 }
 
