@@ -24,6 +24,8 @@ import cpuIcon from '../../icons/microchip-solid.svg';
 import memoryIcon from '../../icons/memory-solid.svg';
 import uploadIcon from '../../icons/cloud-upload.svg';
 import downloadIcon from '../../icons/cloud-download.svg';
+import networkIcon from '../../icons/network.svg';
+import externalLinkIcon from '../../icons/link-external.svg';
 
 import parityPolkadotIcon from '../../icons/dot.svg';
 import paritySubstrateIcon from '../../icons/substrate.svg';
@@ -111,6 +113,10 @@ function formatCPU(cpu: number, stamp: Maybe<Types.Timestamp>): string {
 
   return `${cpu.toFixed(fractionDigits)}%${ago}`;
 }
+
+const URI_BASE = window.location.protocol === 'https:'
+                                    ? `/network_state/`
+                                    : `http://${window.location.hostname}:8081/network_state/`;
 
 export class Row extends React.Component<Row.Props, Row.State> {
   public static readonly columns: Column[] = [
@@ -283,13 +289,18 @@ export class Row extends React.Component<Row.Props, Row.State> {
     },
     {
       label: 'NetworkState',
-      icon: networkIdIcon,
-      width: 100,
+      icon: networkIcon,
+      width: 16,
       setting: 'networkstate',
       render: ({ id }) => {
         const chainLabel = getHashData().chain;
-        const uri = encodeURI(`/network_state/${chainLabel}/${id}/`);
-        return React.createElement('a', {href: uri, target: "_blank"}, "Network state");
+
+        if (!chainLabel) {
+          return '-';
+        }
+
+        const uri = `${URI_BASE}${encodeURIComponent(chainLabel)}/${id}/`;
+        return <a href={uri} target="_blank"><Icon src={externalLinkIcon} /></a>;
       },
     },
   ];
