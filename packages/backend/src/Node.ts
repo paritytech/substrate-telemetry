@@ -2,7 +2,19 @@ import * as WebSocket from 'ws';
 import * as EventEmitter from 'events';
 
 import { noop, timestamp, idGenerator, Maybe, Types, NumStats } from '@dotstats/common';
-import { parseMessage, getBestBlock, Message, BestBlock, SystemInterval } from './message';
+import { BlockHash, BlockNumber, ConsensusView } from "@dotstats/common/build/types";
+import {
+  parseMessage,
+  getBestBlock,
+  Message,
+  BestBlock,
+  SystemInterval,
+  AfgFinalized,
+  AfgReceivedPrecommit,
+  AfgReceivedPrevote,
+  AfgAuthoritySet,
+  NotifyFinalized,
+} from './message';
 import { locate, Location } from './location';
 import MeanList from './MeanList';
 import Block from './Block';
@@ -11,6 +23,7 @@ const BLOCK_TIME_HISTORY = 10;
 const MEMORY_RECORDS = 20;
 const CPU_RECORDS = 20;
 const TIMEOUT = (1000 * 60 * 1) as Types.Milliseconds; // 1 minute
+const MAX_BLOCKS_IN_NODE_CACHE = 5;
 
 const nextId = idGenerator<Types.NodeId>();
 
@@ -56,6 +69,16 @@ export default class Node {
   private lastBlockAt: Maybe<Date> = null;
   private pingStart = 0 as Types.Timestamp;
   private throttle = false;
+
+  // how this node views itself and others
+  public consensusCache: ConsensusView = {} as ConsensusView;
+
+  private alreadyPrevote = false;
+  private alreadyPrecommit = false;
+  private alreadyFinalized = false;
+
+  private authorities: Types.Authorities = [] as Types.Authorities;
+  private authoritySetId: Types.AuthoritySetId = 0 as Types.AuthoritySetId;
 
   constructor(
     ip: string,
@@ -182,8 +205,9 @@ export default class Node {
 
   public nodeDetails(): Types.NodeDetails {
     const authority = this.authority ? this.address : null;
+    const addr = this.address ? this.address : '' as Types.Address;
 
-    return [this.name, this.implementation, this.version, authority, this.networkId];
+    return [this.name, addr, this.implementation, this.version, authority, this.networkId];
   }
 
   public nodeStats(): Types.NodeStats {
@@ -236,6 +260,22 @@ export default class Node {
     if (message.msg === 'system.interval') {
       this.onSystemInterval(message);
     }
+
+    if (message.msg === 'notify.finalized') {
+      this.onNotifyFinalized(message);
+    }
+    if (message.msg === 'afg.finalized') {
+      this.onAfgFinalized(message);
+    }
+    if (message.msg === 'afg.received_precommit') {
+      this.onAfgReceivedPrecommit(message);
+    }
+    if (message.msg === 'afg.received_prevote') {
+      this.onAfgReceivedPrevote(message);
+    }
+    if (message.msg === 'afg.authority_set') {
+      this.onAfgAuthoritySet(message);
+    }
   }
 
   private onSystemInterval(message: SystemInterval) {
@@ -283,6 +323,224 @@ export default class Node {
     }
   }
 
+  public initialiseConsensusView(height: BlockNumber, id1_: string) {
+    let id1 = id1_;
+    if (!(height in this.consensusCache)) {
+      this.consensusCache[height] = {};
+    }
+    if (!(id1 in this.consensusCache[height])) {
+      this.consensusCache[height][id1] = {} as Types.ConsensusInfo;
+    }
+  }
+
+  public resetCache() {
+    this.consensusCache = {} as ConsensusView;
+  }
+
+  public isAuthority(): boolean {
+    return this.authority;
+  }
+
+  private onNotifyFinalized(message: NotifyFinalized) {
+    const {
+      best: best,
+      height: height,
+    } = message;
+
+    let addr = String(this.address);
+    this.initialiseConsensusView(height as BlockNumber, addr);
+    this.consensusCache[height as BlockNumber][addr].FinalizedHash = best;
+    this.events.emit('consensus-info');
+  }
+
+  public markFinalized(finalizedHeight: BlockNumber, finalizedHash: BlockHash) {
+    let addr = String(this.address);
+
+    this.initialiseConsensusView(finalizedHeight, addr);
+    this.consensusCache[finalizedHeight][addr].Finalized = true;
+    this.consensusCache[finalizedHeight][addr].FinalizedHash = finalizedHash;
+    this.consensusCache[finalizedHeight][addr].FinalizedHeight = finalizedHeight;
+
+    // this is extrapolated. if this app was just started up we
+    // might not yet have received prevotes/precommits. but
+    // those are a necessary precontion for finalization, so
+    // we can set them and display them in the ui.
+    this.consensusCache[finalizedHeight][addr].Prevote = true;
+    this.consensusCache[finalizedHeight][addr].Precommit = true;
+
+    this.truncateBlockCache();
+  }
+
+  public markImplicitlyFinalized(finalizedHeight: BlockNumber) {
+    let addr = String(this.address);
+
+    this.initialiseConsensusView(finalizedHeight, addr);
+    this.consensusCache[finalizedHeight][addr].Finalized = true;
+    this.consensusCache[finalizedHeight][addr].FinalizedHeight = finalizedHeight;
+    this.consensusCache[finalizedHeight][addr].ImplicitFinalized = true;
+
+    // this is extrapolated. if this app was just started up we
+    // might not yet have received prevotes/precommits. but
+    // those are a necessary precontion for finalization, so
+    // we can set them and display them in the ui.
+    this.consensusCache[finalizedHeight][addr].Prevote = true;
+    this.consensusCache[finalizedHeight][addr].Precommit = true;
+    this.consensusCache[finalizedHeight][addr].ImplicitPrevote = true;
+    this.consensusCache[finalizedHeight][addr].ImplicitPrecommit = true;
+  }
+
+  private truncateBlockCache() {
+    let list = Object.keys(this.consensusCache).reverse();
+    list.map((_, i) => {
+      if (i > MAX_BLOCKS_IN_NODE_CACHE) {
+        delete this.consensusCache[i];
+      }
+    });
+  }
+
+  private onAfgReceivedPrecommit(message: AfgReceivedPrecommit) {
+    const {
+      target_number: targetNumber,
+      target_hash: targetHash,
+    } = message;
+    const voter = String(message.voter.replace(/"/g, ''));
+
+    this.initialiseConsensusView(targetNumber as BlockNumber, voter);
+    this.consensusCache[targetNumber as BlockNumber][voter].Precommit = true;
+
+    // this node voted for this chain and all the blocks before the current
+    // one as well. if there no commits yet registered for the prior block
+    // close the gap to the last block by creating initial block objects.
+    let to = targetNumber;
+    this.backfill(voter, to as BlockNumber, (i) => {
+      // the function denotes when we stop backfilling the cache
+      i = i as BlockNumber;
+      const info = this.consensusCache[i][voter];
+      if (info.Precommit || info.ImplicitPrecommit) {
+        return false;
+      }
+
+      this.consensusCache[i][voter].ImplicitPrecommit = true;
+      this.consensusCache[i][voter].ImplicitPointer = to;
+
+      let firstBlockReached = String(i) === Object.keys(this.consensusCache)[0];
+      if (!this.alreadyPrecommit && firstBlockReached) {
+        this.alreadyPrecommit = true;
+        return false;
+      }
+
+      return true;
+    });
+
+    this.events.emit('consensus-info');
+  }
+
+  private onAfgReceivedPrevote(message: AfgReceivedPrevote) {
+    const {
+      target_number: targetNumber,
+      target_hash: targetHash,
+    } = message;
+    const voter = String(message.voter.replace(/"/g, ''));
+
+    this.initialiseConsensusView(targetNumber as BlockNumber, voter);
+    this.consensusCache[targetNumber as BlockNumber][voter].Prevote = true;
+
+    let to = targetNumber;
+    this.backfill(voter, to as BlockNumber, (i) => {
+      // the function denotes when we stop backfilling the cache
+      i = i as BlockNumber;
+      const info = this.consensusCache[i][voter];
+      if (info.Prevote || info.ImplicitPrevote) {
+        return false;
+      }
+
+      this.consensusCache[i][voter].ImplicitPrevote = true;
+      this.consensusCache[i][voter].ImplicitPointer = to;
+
+      let firstBlockReached = String(i) === Object.keys(this.consensusCache)[0];
+      if (!this.alreadyPrevote && firstBlockReached) {
+        this.alreadyPrevote =  true;
+        return false;
+      }
+
+      return true;
+    });
+
+    this.events.emit('consensus-info');
+  }
+
+  private onAfgAuthoritySet(message: AfgAuthoritySet) {
+    const {
+      authority_set_id: authoritySetId,
+      hash,
+      number,
+    } = message;
+
+    // we manually parse the authorities message, because the array was formatted as a
+    // string by substrate before sending it.
+    let authorities = JSON.parse(String(message.authorities)) as Types.Authorities;
+
+    if (JSON.stringify(this.authorities) !== String(message.authorities) ||
+        this.authoritySetId !== authoritySetId) {
+      this.events.emit('authority-set-changed', authorities, authoritySetId, number, hash);
+    }
+  }
+
+  // fill the block cache back from the `to` number to the last block.
+  // the function `f` is used to evaluate if we should continue backfilling.
+  private backfill(voter_: string, to: BlockNumber, f: Maybe<(i: BlockNumber) => boolean>) {
+    // if this is the first block in the cache then we don't fill latter blocks
+    if (Object.keys(this.consensusCache).length < 1) {
+      return to;
+    }
+
+    let cont = true;
+    while (cont && to-- > 0) {
+      if (this.consensusCache[to] !== undefined) {
+        // we reached the next block prior to this
+        return to;
+      }
+
+      this.initialiseConsensusView(to, voter_);
+      cont = f ? f(to) : true;
+    }
+
+    return to;
+  }
+
+  private onAfgFinalized(message: AfgFinalized) {
+    const {
+      finalized_number: finalizedNumber,
+      finalized_hash: finalizedHash,
+    } = message;
+
+    this.markFinalized(finalizedNumber, finalizedHash);
+
+    let to = finalizedNumber;
+    let addr = String(this.address);
+    this.backfill(addr, to as BlockNumber, (i) => {
+      i = i as BlockNumber;
+      let addr = String(this.address);
+      const info = this.consensusCache[i][addr];
+      if (info.Finalized || info.ImplicitFinalized) {
+        return false;
+      }
+
+      this.markImplicitlyFinalized(i);
+      this.consensusCache[i][addr].ImplicitPointer = to;
+
+      let firstBlockReached = String(i) === Object.keys(this.consensusCache)[0];
+      if (!this.alreadyFinalized && firstBlockReached) {
+        this.alreadyFinalized = true;
+        return false;
+      }
+
+      return true;
+    });
+
+    this.events.emit('consensus-info');
+  }
+
   private updateLatency(now: Types.Timestamp) {
     // if (this.pingStart) {
     //   console.error(`${this.name} timed out on ping message.`);
@@ -323,6 +581,9 @@ export default class Node {
           this.throttle = false;
         }, 1000);
       }
+
+      const target = this.best.number as BlockNumber;
+      this.backfill(String(this.address), target, null);
     }
   }
 

@@ -1,0 +1,144 @@
+.ConsensusList {
+  opacity: 0;
+}
+
+.ConsensusList table {
+  border-spacing: 0px;
+}
+
+.flexContainerLargeRow {
+  opacity: 1.0 !important;
+  display: flex;
+  align-items: stretch;
+  flex-direction: row;
+}
+
+.flexContainerLargeRow .firstInRow {
+  width: 100%
+}
+
+.flexContainerLargeRow .firstInRow .emptylegend,
+.flexContainerLargeRow .firstInRow .nameLegend {
+  width: 99%;
+  flex-grow: 1000000000;
+  align-self: stretch;
+}
+
+.flexContainerSmallRow {
+  opacity: 1.0 !important;
+  display: flex;
+  align-items: stretch;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.flexContainerSmallRow div {
+  align-self: stretch;
+  flex: 1;
+}
+
+.flexContainerSmallRow table .legend {
+  width: 100%;
+}
+
+.ConsensusList {
+  margin-bottom: 2px;
+}
+
+.allRows {
+  width: 100%;
+  min-width: 1350px;
+  min-height: 100%;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+}
+
+.SmallRow {
+  float: left;
+  clear: both;
+  font-size: 8px !important;
+  width: 100%;
+}
+
+.SmallRow svg {
+  width: 14px;
+  height: 14px;
+}
+
+.hatching svg {
+  width: 12px !important;
+  height: 12px !important;
+}
+
+.SmallRow .hatching svg {
+  width: 10px !important;
+  height: 10px !important;
+}
+
+.matrixXLegend .Tooltip-container {
+  height: auto !important;
+}
+
+.legend {
+  text-align: center !important;
+}
+
+.nameLegend {
+  border-right: none;
+  border-bottom: 1px dotted #555;
+}
+
+.SmallRow .nameLegend {
+  display: none;
+}
+
+.SmallRow .finalizedInfo .Tooltip-container {
+  float: none;
+  display: inline-block !important;
+  vertical-align: middle;
+}
+
+.SmallRow .finalizedInfo {
+  min-height: 40px;
+  min-width: 40px;
+}
+
+.SmallRow .explicit,
+.SmallRow .implicit {
+  height: 12px;
+}
+
+.SmallRow .finalizedInfo .explicit,
+.SmallRow .finalizedInfo .implicit {
+  margin-right: 6px;
+}
+
+.nodeAddress {
+  margin-top: 4px;
+}
+
+.first_false .legend .nodeAddress,
+.SmallRow .legend .nodeAddress,
+th.finalizedInfo .Tooltip-container {
+  float: none !important;
+  text-align: center !important;
+}
+
+.noStretchOnLastRow::after {
+  content: '';
+  flex-grow: 1000000000;
+}
+
+.flexContainerLargeRow .noStretchOnLastRow .firstInRow table {
+  width: auto !important;
+}
+
+.flexContainerLargeRow .noStretchOnLastRow .firstInRow .emptylegend {
+  width: auto !important;
+}
+
+.flexContainerLargeRow .noStretchOnLastRow .firstInRow {
+  width: auto !important;
+}
+

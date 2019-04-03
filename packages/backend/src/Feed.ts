@@ -5,6 +5,7 @@ import Chain from './Chain';
 import Block from './Block';
 import { VERSION, timestamp, Maybe, FeedMessage, Types, idGenerator } from '@dotstats/common';
 import { Location } from './location';
+import { Authorities, AuthoritySetId, ConsensusInfo } from "@dotstats/common/build/types";
 
 const nextId = idGenerator<Types.FeedId>();
 const { Actions } = FeedMessage;
@@ -82,6 +83,20 @@ export default class Feed {
     return {
       action: Actions.FinalizedBlock,
       payload: [node.id, node.finalized.number, node.finalized.hash]
+    };
+  }
+
+  public static consensusInfo(blocks: ConsensusInfo): FeedMessage.Message {
+    return {
+      action: Actions.ConsensusInfo,
+      payload: blocks
+    };
+  }
+
+  public static authoritySet(authorities: Authorities, authoritySetId: AuthoritySetId): FeedMessage.Message {
+    return {
+      action: Actions.AuthoritySet,
+      payload: [authorities, authoritySetId]
     };
   }
 

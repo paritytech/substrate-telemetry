@@ -33,3 +33,7 @@ docker-compose up --build -d
   - If you want to makes UI changes, there is no need to rebuild the image as the files are being copied in via volumes.
   
 Now navigate to localhost:3000 in your browser to view the app.
+
+## Attributions
+
+The [Grandpa icon](https://thenounproject.com/term/bald/1737132/) is by Cezary Lopacinski from the Noun Project

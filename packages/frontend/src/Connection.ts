@@ -160,6 +160,23 @@ export class Connection {
           break;
         }
 
+        case Actions.ConsensusInfo: {
+          const consensusInfo = message.payload;
+
+          this.state = this.update({ consensusInfo });
+
+          break;
+        }
+
+        case Actions.AuthoritySet: {
+          const [authorities, authoritySetId] = message.payload;
+
+          this.state = this.update({ authorities: authorities as Types.Authorities,
+            authoritySetId });
+
+          break;
+        }
+
         case Actions.NodeStats: {
           const [id, nodeStats] = message.payload;
 

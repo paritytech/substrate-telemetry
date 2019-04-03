@@ -19,6 +19,7 @@ export class Node {
   }
 
   public readonly id: Types.NodeId;
+  public readonly address: Types.Address;
   public readonly name: Types.NodeName;
   public readonly implementation: Types.NodeImplementation;
   public readonly version: Types.NodeVersion;
@@ -41,6 +42,7 @@ export class Node {
   public propagationTime: Maybe<Types.PropagationTime>;
 
   public finalized = 0 as Types.BlockNumber;
+  public consensusInfo: Types.ConsensusInfo;
   public finalizedHash = '' as Types.BlockHash;
 
   public lat: Maybe<Types.Latitude>;
@@ -58,12 +60,13 @@ export class Node {
     blockDetails: Types.BlockDetails,
     location: Maybe<Types.NodeLocation>
   ) {
-    const [name, implementation, version, validator, networkId] = nodeDetails;
+    const [name, address, implementation, version, validator, networkId] = nodeDetails;
 
     this.pinned = pinned;
 
     this.id = id;
     this.name = name;
+    this.address = address;
     this.implementation = implementation;
     this.version = version;
     this.validator = validator;
@@ -114,6 +117,10 @@ export class Node {
   public updateFinalized(height: Types.BlockNumber, hash: Types.BlockHash) {
     this.finalized = height;
     this.finalizedHash = hash;
+  }
+
+  public updateConsensusInfo(consensusInfo: Types.ConsensusInfo) {
+    this.consensusInfo = consensusInfo;
   }
 
   public updateLocation(location: Types.NodeLocation) {
@@ -182,6 +189,10 @@ export interface State {
   status: 'online' | 'offline' | 'upgrade-requested';
   best: Types.BlockNumber;
   finalized: Types.BlockNumber;
+  consensusInfo: Types.ConsensusInfo;
+  authorities: Types.Address[];
+  authoritySetId: Types.AuthoritySetId;
+  authoritySetBlockNumber: Types.BlockNumber;
   blockTimestamp: Types.Timestamp;
   blockAverage: Maybe<Types.Milliseconds>;
   timeDiff: Types.Milliseconds;

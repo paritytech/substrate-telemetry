@@ -4,11 +4,14 @@ import Feed from './Feed';
 import FeedSet from './FeedSet';
 import Block from './Block';
 import { Maybe, Types, FeedMessage, NumStats } from '@dotstats/common';
+import { BlockNumber, ConsensusInfo } from "@dotstats/common/build/types";
 
 const BLOCK_TIME_HISTORY = 10;
+const MAX_BLOCKS_IN_CHAIN_CACHE = 5;
 
 export default class Chain {
   private nodes = new Set<Node>();
+  private chainConsensusCache: Types.ConsensusInfo = {} as ConsensusInfo;
   private feeds = new FeedSet();
 
   public readonly events = new EventEmitter();
@@ -39,6 +42,9 @@ export default class Chain {
 
     node.events.on('block', () => this.updateBlock(node));
     node.events.on('finalized', () => this.updateFinalized(node));
+    node.events.on('consensus-info', () => this.updateConsensusInfo(node));
+    node.events.on('authority-set-changed', (authorities, authoritySetId, blockNumber, blockHash) =>
+        this.authoritySetChanged(node, authorities, authoritySetId));
     node.events.on('stats', () => this.feeds.broadcast(Feed.stats(node)));
     node.events.on('hardware', () => this.feeds.broadcast(Feed.hardware(node)));
     node.events.on('location', (location) => this.feeds.broadcast(Feed.locatedNode(node, location)));
@@ -120,6 +126,7 @@ export default class Chain {
     }
 
     this.feeds.broadcast(Feed.imported(node));
+    this.updateConsensusInfo(node);
 
     console.log(`[${this.label}] ${node.name} imported ${height}, block time: ${node.blockTime / 1000}s, average: ${node.average / 1000}s | latency ${node.latency}`);
   }
@@ -156,6 +163,49 @@ export default class Chain {
     }
 
     this.feeds.broadcast(Feed.finalized(node));
+
+    this.updateConsensusInfo(node);
+  }
+
+  private initialiseConsensusView(height: BlockNumber, id1: string, id2: string) {
+    if (this.chainConsensusCache[height] === undefined) {
+      this.chainConsensusCache[height] = {};
+    }
+    if (this.chainConsensusCache[height][id1] === undefined) {
+      this.chainConsensusCache[height][id1] = {};
+      this.chainConsensusCache[height][id1][id2] = {} as Types.ConsensusInfo;
+    }
+    if (this.chainConsensusCache[height][id1][id2] === undefined) {
+      this.chainConsensusCache[height][id1][id2] = {} as Types.ConsensusInfo;
+    }
+  }
+
+  private updateConsensusInfo(node: Node) {
+    let height;
+    for (height in node.consensusCache) {
+      if (height !== undefined) {
+        this.initialiseConsensusView(parseInt(height) as BlockNumber, String(node.address), String(node.address));
+        this.chainConsensusCache[height][String(node.address)] = node.consensusCache[height];
+      }
+    }
+
+    this.feeds.broadcast(Feed.consensusInfo(this.chainConsensusCache));
+  }
+
+  private authoritySetChanged(node: Node, authorities: Types.Authorities, authoritySetId: Types.AuthoritySetId) {
+    if (node.isAuthority()) {
+      this.feeds.broadcast(Feed.authoritySet(authorities, authoritySetId));
+
+      if (authoritySetId > 0) {
+        this.restartVis();
+      }
+    }
+  }
+
+  private restartVis() {
+    this.nodes.forEach(node => node.resetCache());
+    this.feeds.broadcast(Feed.consensusInfo(this.chainConsensusCache));
+    this.chainConsensusCache = {} as ConsensusInfo;
   }
 
   private updateAverageBlockTime(height: Types.BlockNumber, now: Types.Timestamp) {

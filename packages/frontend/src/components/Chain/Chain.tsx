@@ -3,7 +3,7 @@ import { Types } from '@dotstats/common';
 import { State as AppState } from '../../state';
 import { formatNumber, secondsWithPrecision, getHashData } from '../../utils';
 import { Tab } from './';
-import { Tile, Ago, List, Map, Settings } from '../';
+import { Tile, Ago, List, Map, Settings, Consensus } from '../';
 import { PersistentObject, PersistentSet } from '../../persist';
 
 import blockIcon from '../../icons/cube.svg';
@@ -13,11 +13,12 @@ import lastTimeIcon from '../../icons/watch.svg';
 import listIcon from '../../icons/list-alt-regular.svg';
 import worldIcon from '../../icons/location.svg';
 import settingsIcon from '../../icons/settings.svg';
+import consensusIcon from '../../icons/grandpa.svg';
 
 import './Chain.css';
 
 export namespace Chain {
-  export type Display = 'list' | 'map' | 'settings';
+  export type Display = 'list' | 'map' | 'settings' | 'consensus';
 
   export interface Props {
     appState: Readonly<AppState>;
@@ -43,6 +44,9 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
       case 'settings':
         display = 'settings';
         break;
+      case 'consensus':
+        display = 'consensus';
+        break;
     }
 
     this.state = {
@@ -65,6 +69,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
           <div className="Chain-tabs">
             <Tab icon={listIcon} label="List" display="list" tab="" current={currentTab} setDisplay={this.setDisplay} />
             <Tab icon={worldIcon} label="Map" display="map" tab="map" current={currentTab} setDisplay={this.setDisplay} />
+            <Tab icon={consensusIcon} label="Consensus" display="consensus" tab="consensus" current={currentTab} setDisplay={this.setDisplay} />
             <Tab icon={settingsIcon} label="Settings" display="settings" tab="settings" current={currentTab} setDisplay={this.setDisplay} />
           </div>
         </div>
@@ -85,6 +90,10 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     }
 
     const { appState, pins } = this.props;
+
+    if (display === 'consensus') {
+      return <Consensus appState={appState} />;
+    }
 
     return (
       display === 'list'

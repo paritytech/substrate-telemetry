@@ -3,6 +3,9 @@ import { stringify, parse, Stringified } from './stringify';
 import {
   FeedVersion,
   Address,
+  Authorities,
+  AuthoritySetId,
+  ConsensusInfo,
   Latitude,
   Longitude,
   City,
@@ -37,6 +40,8 @@ export const Actions = {
   SubscribedTo     : 0x0D as 0x0D,
   UnsubscribedFrom : 0x0E as 0x0E,
   Pong             : 0x0F as 0x0F,
+  ConsensusInfo    : 0x10 as 0x10,
+  AuthoritySet     : 0x11 as 0x11,
 };
 
 export type Action = typeof Actions[keyof typeof Actions];
@@ -85,6 +90,16 @@ export namespace Variants {
   export interface FinalizedBlockMessage extends MessageBase {
     action: typeof Actions.FinalizedBlock;
     payload: [NodeId, BlockNumber, BlockHash];
+  }
+
+  export interface ConsensusInfoMessage extends MessageBase {
+    action: typeof Actions.ConsensusInfo;
+    payload: ConsensusInfo;
+  }
+
+  export interface AuthoritySetMessage extends MessageBase {
+    action: typeof Actions.AuthoritySet;
+    payload: [Authorities, AuthoritySetId];
   }
 
   export interface NodeStatsMessage extends MessageBase {
@@ -137,6 +152,8 @@ export type Message =
   | Variants.LocatedNodeMessage
   | Variants.ImportedBlockMessage
   | Variants.FinalizedBlockMessage
+  | Variants.ConsensusInfoMessage
+  | Variants.AuthoritySetMessage
   | Variants.NodeStatsMessage
   | Variants.NodeHardwareMessage
   | Variants.TimeSyncMessage
