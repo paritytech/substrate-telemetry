@@ -106,11 +106,11 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
 
     let from = 0;
     let to = this.state.countBlocksInLargeRow;
-    const firstLargeRow = this.getLargeRow(lastBlocks.slice(from, to), true);
+    const firstLargeRow = this.getLargeRow(lastBlocks.slice(from, to), 0);
 
     from = to;
     to = to + this.state.countBlocksInLargeRow;
-    const secondLargeRow = this.getLargeRow(lastBlocks.slice(from, to), false);
+    const secondLargeRow = this.getLargeRow(lastBlocks.slice(from, to), 1);
 
     from = to;
     to = to + (this.state.smallBlocksRows * this.state.countBlocksInSmallRow);
@@ -137,7 +137,7 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
         .filter(node => node.address === address)[0]);
   }
 
-  private getLargeRow(blocks: string[], animateOnAppearing: boolean) {
+  private getLargeRow(blocks: string[], id: number) {
     const largeBlockSizeChanged = (isFirstBlock: boolean, rect: BoundingRect) => {
       if (this.initialBlockSizeSet()) {
         return;
@@ -155,12 +155,11 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
 
     return <div
         className={`ConsensusList LargeRow ${flexClass} ${stretchLastRowMajor}`}
-        key={`consensusList_${animateOnAppearing ? 0 : 1}`}>
+        key={`consensusList_${id}`}>
         {blocks.map((height, i) =>
            <ConsensusBlock
              changeBlocks={largeBlockSizeChanged}
              firstInRow={i === 0}
-             animateOnAppearing={animateOnAppearing && i === 0}
              lastInRow={false}
              compact={false}
              key={height}
@@ -200,7 +199,6 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
          return <ConsensusBlock
            changeBlocks={smallBlockSizeChanged}
            firstInRow={i === 0}
-           animateOnAppearing={false}
            lastInRow={lastInRow}
            compact={true}
            key={height}

@@ -171,15 +171,6 @@
   transform: scale(2);
 }
 
-.blockTransition-appear {
-  opacity: 0.01;
-}
-
-.blockTransition-appear.blockTransition-appear-active {
-  opacity: 1;
-  transition: opacity 3s ease-in;
-}
-
 .matrice .Icon ~ .Icon {
   margin-left: -4px;
 }

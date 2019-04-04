@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { CSSTransitionGroup } from 'react-transition-group';
 
 import Measure, {BoundingRect, ContentRect} from 'react-measure';
 import { Types } from '@dotstats/common';
@@ -23,7 +22,6 @@ export namespace ConsensusBlock {
     height: Types.BlockNumber;
     firstInRow: boolean;
     lastInRow: boolean;
-    animateOnAppearing: boolean;
     compact: boolean;
     consensusView: Types.ConsensusView;
     changeBlocks: (first: boolean, boundsRect: BoundingRect) => void;
@@ -70,40 +68,32 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
       <div
         className={`BlockConsensusMatrice ${this.props.firstInRow ? 'firstInRow' : ''} ${this.props.lastInRow ? 'lastInRow' : ''}`}
         key={'block_' + this.props.height}>
-        <CSSTransitionGroup
-          key={'animate_' + this.props.height}
-          transitionName="blockTransition"
-          transitionAppear={this.props.animateOnAppearing}
-          transitionAppearTimeout={3000}
-          transitionEnter={false}
-          transitionLeave={false}>
-          <table ref={measureRef}>
-          <thead>
-          <tr className="Row">
-            {this.props.firstInRow && !this.props.compact ?
-              <th className="emptylegend">&nbsp;</th> : ''}
-            <th className="legend">
-              <Tooltip text={`Block number: ${this.props.height}`}>
-                {this.displayBlockNumber()}
-              </Tooltip>
-            </th>
-            <th className='finalizedInfo'>
-              <Tooltip text={tooltip}>{titleFinal}</Tooltip>
-            </th>
-            {this.props.authorities.map(node =>
-              <th
-                className="matrixXLegend"
-                key={`${this.props.height}_matrice_x_${node.address}`}>
-                {this.getNodeContent(node, false)}
-              </th>)}
-          </tr>
-          </thead>
-          <tbody>
-            {this.props.authorities.map((node, row) =>
-              this.renderMatriceRow(node, this.props.authorities, row))}
-          </tbody>
-          </table>
-        </CSSTransitionGroup>
+        <table ref={measureRef}>
+        <thead>
+        <tr className="Row">
+          {this.props.firstInRow && !this.props.compact ?
+            <th className="emptylegend">&nbsp;</th> : ''}
+          <th className="legend">
+            <Tooltip text={`Block number: ${this.props.height}`}>
+              {this.displayBlockNumber()}
+            </Tooltip>
+          </th>
+          <th className='finalizedInfo'>
+            <Tooltip text={tooltip}>{titleFinal}</Tooltip>
+          </th>
+          {this.props.authorities.map(node =>
+            <th
+              className="matrixXLegend"
+              key={`${this.props.height}_matrice_x_${node.address}`}>
+              {this.getNodeContent(node, false)}
+            </th>)}
+        </tr>
+        </thead>
+        <tbody>
+          {this.props.authorities.map((node, row) =>
+            this.renderMatriceRow(node, this.props.authorities, row))}
+        </tbody>
+        </table>
       </div>)}
     </Measure>);
   }

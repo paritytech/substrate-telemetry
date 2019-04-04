@@ -1,13 +1,8 @@
-.ConsensusList {
-  opacity: 0;
-}
-
 .ConsensusList table {
   border-spacing: 0px;
 }
 
 .flexContainerLargeRow {
-  opacity: 1.0 !important;
   display: flex;
   align-items: stretch;
   flex-direction: row;
@@ -25,7 +20,6 @@
 }
 
 .flexContainerSmallRow {
-  opacity: 1.0 !important;
   display: flex;
   align-items: stretch;
   flex-direction: row;
