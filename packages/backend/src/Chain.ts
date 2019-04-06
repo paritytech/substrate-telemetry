@@ -12,6 +12,7 @@ const MAX_BLOCKS_IN_CHAIN_CACHE = 5;
 export default class Chain {
   private nodes = new Set<Node>();
   private chainConsensusCache: Types.ConsensusInfo = {} as ConsensusInfo;
+  private lastBroadcastCache: Types.ConsensusInfo = {} as ConsensusInfo;
   private feeds = new FeedSet();
 
   public readonly events = new EventEmitter();
@@ -189,7 +190,21 @@ export default class Chain {
       }
     }
 
-    this.feeds.broadcast(Feed.consensusInfo(this.chainConsensusCache));
+    // broadcast only the cache blocks which changed
+    const delta: Types.ConsensusInfo = {} as ConsensusInfo;
+    for (let height in this.chainConsensusCache) {
+      const current = this.chainConsensusCache[height];
+      const old = this.lastBroadcastCache[height];
+
+      if (JSON.stringify(current) !== JSON.stringify(old)) {
+        delta[height] = current;
+        this.lastBroadcastCache[height] = JSON.parse(JSON.stringify(current));
+      }
+    }
+
+    if (Object.keys(delta).length > 0 ) {
+      this.feeds.broadcast(Feed.consensusInfo(delta));
+    }
   }
 
   private authoritySetChanged(node: Node, authorities: Types.Authorities, authoritySetId: Types.AuthoritySetId) {

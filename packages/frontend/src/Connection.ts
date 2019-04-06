@@ -161,9 +161,14 @@ export class Connection {
         }
 
         case Actions.ConsensusInfo: {
-          const consensusInfo = message.payload;
+          const receivedConsensusInfo = message.payload;
+          const updatedConsensusInfo = JSON.parse(JSON.stringify(this.state.consensusInfo));
 
-          this.state = this.update({ consensusInfo });
+          for (const height of Object.keys(receivedConsensusInfo)) {
+            updatedConsensusInfo[height] = receivedConsensusInfo[height];
+          }
+
+          this.state = this.update({ consensusInfo: updatedConsensusInfo });
 
           break;
         }
