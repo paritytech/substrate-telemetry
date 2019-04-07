@@ -182,8 +182,7 @@ export default class Chain {
   }
 
   private updateConsensusInfo(node: Node) {
-    let height;
-    for (height in node.consensusCache) {
+    for (let height in node.consensusCache) {
       if (height !== undefined) {
         this.initialiseConsensusView(parseInt(height) as BlockNumber, String(node.address), String(node.address));
         this.chainConsensusCache[height][String(node.address)] = node.consensusCache[height];

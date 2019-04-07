@@ -276,6 +276,7 @@ export default class Node {
     if (message.msg === 'afg.authority_set') {
       this.onAfgAuthoritySet(message);
     }
+    this.truncateBlockCache();
   }
 
   private onSystemInterval(message: SystemInterval) {
@@ -367,8 +368,6 @@ export default class Node {
     // we can set them and display them in the ui.
     this.consensusCache[finalizedHeight][addr].Prevote = true;
     this.consensusCache[finalizedHeight][addr].Precommit = true;
-
-    this.truncateBlockCache();
   }
 
   public markImplicitlyFinalized(finalizedHeight: BlockNumber) {
@@ -411,17 +410,14 @@ export default class Node {
     // this node voted for this chain and all the blocks before the current
     // one as well. if there no commits yet registered for the prior block
     // close the gap to the last block by creating initial block objects.
-    let to = targetNumber;
-    this.backfill(voter, to as BlockNumber, (i) => {
-      // the function denotes when we stop backfilling the cache
-      i = i as BlockNumber;
+    const mutate = (i: BlockNumber) => {
       const info = this.consensusCache[i][voter];
       if (info.Precommit || info.ImplicitPrecommit) {
         return false;
       }
 
-      this.consensusCache[i][voter].ImplicitPrecommit = true;
-      this.consensusCache[i][voter].ImplicitPointer = to;
+      info.ImplicitPrecommit = true;
+      info.ImplicitPointer = to;
 
       let firstBlockReached = String(i) === Object.keys(this.consensusCache)[0];
       if (!this.alreadyPrecommit && firstBlockReached) {
@@ -430,7 +426,9 @@ export default class Node {
       }
 
       return true;
-    });
+    };
+    const to = targetNumber as BlockNumber;
+    this.backfill(voter, to, mutate);
 
     this.events.emit('consensus-info');
   }
@@ -445,8 +443,7 @@ export default class Node {
     this.initialiseConsensusView(targetNumber as BlockNumber, voter);
     this.consensusCache[targetNumber as BlockNumber][voter].Prevote = true;
 
-    let to = targetNumber;
-    this.backfill(voter, to as BlockNumber, (i) => {
+    const mutate = (i: BlockNumber) => {
       // the function denotes when we stop backfilling the cache
       i = i as BlockNumber;
       const info = this.consensusCache[i][voter];
@@ -464,7 +461,9 @@ export default class Node {
       }
 
       return true;
-    });
+    };
+    const to = targetNumber as BlockNumber;
+    this.backfill(voter, to, mutate);
 
     this.events.emit('consensus-info');
   }
