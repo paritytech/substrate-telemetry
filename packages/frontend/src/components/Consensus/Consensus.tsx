@@ -25,27 +25,27 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
     largeBlockWithLegend: { width: -1, height: -1 },
     largeBlock: { width: -1, height: -1 },
     countBlocksInLargeRow: 2,
-    largeRowsFlexClassAdded: false,
+    largeRowsAddFlexClass: false,
 
     smallBlock: { width: -1, height: -1 },
     smallBlocksRows: 1,
     countBlocksInSmallRow: 1,
-    smallRowsFlexClassAdded: false,
+    smallRowsAddFlexClass: false,
   };
 
-  public initialBlockSizeSet(): boolean {
+  public largeBlocksSizeDetected(): boolean {
     return this.state.largeBlockWithLegend.width > -1 && this.state.largeBlockWithLegend.height > -1 &&
       this.state.largeBlock.width > -1 && this.state.largeBlock.height > -1;
   }
 
-  public initialSmallBlockSizeSet(): boolean {
+  public smallBlocksSizeDetected(): boolean {
     return this.state.smallBlock.width > -1 && this.state.largeBlockWithLegend.height > -1;
   }
 
   public calculateBoxCount(wasResized: boolean) {
     // if the css class for flexing has already been added we don't calculate
     // any box measurements then, because the box sizes would be skewed then.
-    if ((wasResized || this.state.largeRowsFlexClassAdded === false) && this.initialBlockSizeSet()) {
+    if ((wasResized || this.state.largeRowsAddFlexClass === false) && this.largeBlocksSizeDetected()) {
       // we need to add +2 because of the last block which doesn't contain a border.
       let countBlocks = (this.state.dimensions.width - this.state.largeBlockWithLegend.width + 2) /
         (this.state.largeBlock.width + 2);
@@ -56,10 +56,10 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
       // which fit.
       countBlocks = Math.floor(countBlocks + 1) < 1 ? 2 : Math.floor(countBlocks + 1);
 
-      this.setState({largeRowsFlexClassAdded: true, countBlocksInLargeRow: countBlocks });
+      this.setState({largeRowsAddFlexClass: true, countBlocksInLargeRow: countBlocks });
     }
 
-    if ((wasResized || this.state.smallRowsFlexClassAdded === false) && this.initialSmallBlockSizeSet()) {
+    if ((wasResized || this.state.smallRowsAddFlexClass === false) && this.smallBlocksSizeDetected()) {
       const howManyRows = 2;
 
       const heightLeft = this.state.dimensions.height - (this.state.largeBlock.height * howManyRows);
@@ -70,7 +70,7 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
       let countBlocksInSmallRow = this.state.dimensions.width / this.state.smallBlock.width;
       countBlocksInSmallRow = countBlocksInSmallRow < 1 ? 1 : Math.floor(countBlocksInSmallRow);
 
-      this.setState({ smallRowsFlexClassAdded: true, countBlocksInSmallRow, smallBlocksRows });
+      this.setState({ smallRowsAddFlexClass: true, countBlocksInSmallRow, smallBlocksRows });
     }
   }
 
@@ -139,7 +139,7 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
 
   private getLargeRow(blocks: string[], id: number) {
     const largeBlockSizeChanged = (isFirstBlock: boolean, rect: BoundingRect) => {
-      if (this.initialBlockSizeSet()) {
+      if (this.largeBlocksSizeDetected()) {
         return;
       }
       if (isFirstBlock) {
@@ -151,7 +151,7 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
 
     const stretchLastRowMajor = blocks.length < this.state.countBlocksInLargeRow ?
       'noStretchOnLastRow' : '';
-    const flexClass = this.state.largeRowsFlexClassAdded ? 'flexContainerLargeRow' : '';
+    const flexClass = this.state.largeRowsAddFlexClass ? 'flexContainerLargeRow' : '';
 
     return <div
         className={`ConsensusList LargeRow ${flexClass} ${stretchLastRowMajor}`}
@@ -174,7 +174,7 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
 
   private getSmallRow(blocks: string[]) {
     const smallBlockSizeChanged = (isFirstBlock: boolean, rect: BoundingRect) => {
-      if (this.initialSmallBlockSizeSet()) {
+      if (this.smallBlocksSizeDetected()) {
         return;
       }
       const dimensionsChanged = this.state.smallBlock.height !== rect.height &&
@@ -186,7 +186,7 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
     const stretchLastRow =
       blocks.length < this.state.countBlocksInSmallRow * this.state.smallBlocksRows ?
         'noStretchOnLastRow' : '';
-    const classes = `ConsensusList SmallRow ${this.state.smallRowsFlexClassAdded ? 'flexContainerSmallRow' : ''} ${stretchLastRow}`;
+    const classes = `ConsensusList SmallRow ${this.state.smallRowsAddFlexClass ? 'flexContainerSmallRow' : ''} ${stretchLastRow}`;
 
     return <div className={classes} key="smallRow">
       {blocks.map((height, i) => {

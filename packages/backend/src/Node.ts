@@ -386,15 +386,6 @@ export default class Node {
     this.consensusCache[finalizedHeight][addr].ImplicitPrecommit = true;
   }
 
-  private truncateBlockCache() {
-    let list = Object.keys(this.consensusCache).reverse();
-    list.map((_, i) => {
-      if (i > MAX_BLOCKS_IN_NODE_CACHE) {
-        delete this.consensusCache[i];
-      }
-    });
-  }
-
   private onAfgReceivedPrecommit(message: AfgReceivedPrecommit) {
     const {
       target_number: targetNumber,
@@ -536,6 +527,15 @@ export default class Node {
     }
 
     return to;
+  }
+
+  private truncateBlockCache() {
+    let list = Object.keys(this.consensusCache).reverse();
+    list.map((_, i) => {
+      if (i > MAX_BLOCKS_IN_NODE_CACHE) {
+        delete this.consensusCache[i];
+      }
+    });
   }
 
   private extractVoter(message_voter: String): Types.Address {
