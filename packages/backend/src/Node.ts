@@ -533,7 +533,7 @@ export default class Node {
   private truncateBlockCache() {
     let list = Object.keys(this.consensusCache).reverse();
     list.map((k, i) => {
-      if (i > MAX_BLOCKS_IN_NODE_CACHE) {
+      if (i > MAX_BLOCKS_IN_NODE_CACHE + 1) {
         delete this.consensusCache[k];
       }
     });
