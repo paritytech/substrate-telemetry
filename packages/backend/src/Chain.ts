@@ -7,7 +7,7 @@ import { Maybe, Types, FeedMessage, NumStats } from '@dotstats/common';
 import { BlockNumber, ConsensusInfo } from "@dotstats/common/build/types";
 
 const BLOCK_TIME_HISTORY = 10;
-const MAX_BLOCKS_IN_CHAIN_CACHE = 50;
+export const MAX_BLOCKS_IN_CHAIN_CACHE = 50;
 
 export default class Chain {
   private nodes = new Set<Node>();
