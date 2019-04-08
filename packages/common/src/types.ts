@@ -38,7 +38,7 @@ export declare type ConsensusInfo = {
   BlockNumber: ConsensusView;
 };
 export declare type ConsensusView = {
-  Address: ConsensusState;
+  NodeId: ConsensusState;
 };
 export declare type ConsensusState = {
   Address: ConsensusDetail;

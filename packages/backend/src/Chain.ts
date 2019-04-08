@@ -168,24 +168,24 @@ export default class Chain {
     this.updateConsensusInfo(node);
   }
 
-  private initialiseConsensusView(height: BlockNumber, id1: string, id2: string) {
+  private initialiseConsensusView(height: BlockNumber, id_node1: string, addr_node2: string) {
     if (this.chainConsensusCache[height] === undefined) {
       this.chainConsensusCache[height] = {};
     }
-    if (this.chainConsensusCache[height][id1] === undefined) {
-      this.chainConsensusCache[height][id1] = {};
-      this.chainConsensusCache[height][id1][id2] = {} as Types.ConsensusInfo;
+    if (this.chainConsensusCache[height][id_node1] === undefined) {
+      this.chainConsensusCache[height][id_node1] = {};
+      this.chainConsensusCache[height][id_node1][addr_node2] = {} as Types.ConsensusInfo;
     }
-    if (this.chainConsensusCache[height][id1][id2] === undefined) {
-      this.chainConsensusCache[height][id1][id2] = {} as Types.ConsensusInfo;
+    if (this.chainConsensusCache[height][id_node1][addr_node2] === undefined) {
+      this.chainConsensusCache[height][id_node1][addr_node2] = {} as Types.ConsensusInfo;
     }
   }
 
   private updateConsensusInfo(node: Node) {
     for (let height in node.consensusCache) {
       if (height !== undefined) {
-        this.initialiseConsensusView(parseInt(height) as BlockNumber, String(node.address), String(node.address));
-        this.chainConsensusCache[height][String(node.address)] = node.consensusCache[height];
+        this.initialiseConsensusView(parseInt(height) as BlockNumber, String(node.id), String(node.address));
+        this.chainConsensusCache[height][String(node.id)] = node.consensusCache[height];
       }
     }
 

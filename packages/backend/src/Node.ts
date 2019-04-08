@@ -324,13 +324,12 @@ export default class Node {
     }
   }
 
-  public initialiseConsensusView(height: BlockNumber, id1_: string) {
-    let id1 = id1_;
+  public initialiseConsensusView(height: Types.BlockNumber, addr: Maybe<Types.Address>) {
     if (!(height in this.consensusCache)) {
       this.consensusCache[height] = {};
     }
-    if (!(id1 in this.consensusCache[height])) {
-      this.consensusCache[height][id1] = {} as Types.ConsensusInfo;
+    if (addr && !(addr in this.consensusCache[height])) {
+      this.consensusCache[height][addr] = {} as Types.ConsensusInfo;
     }
   }
 
@@ -348,16 +347,15 @@ export default class Node {
       height: height,
     } = message;
 
-    let addr = String(this.address);
-    this.initialiseConsensusView(height as BlockNumber, addr);
-    this.consensusCache[height as BlockNumber][addr].FinalizedHash = best;
+    this.initialiseConsensusView(height as BlockNumber, this.address);
+    this.consensusCache[height as BlockNumber][String(this.address)].FinalizedHash = best;
     this.events.emit('consensus-info');
   }
 
   public markFinalized(finalizedHeight: BlockNumber, finalizedHash: BlockHash) {
     let addr = String(this.address);
 
-    this.initialiseConsensusView(finalizedHeight, addr);
+    this.initialiseConsensusView(finalizedHeight, this.address);
     this.consensusCache[finalizedHeight][addr].Finalized = true;
     this.consensusCache[finalizedHeight][addr].FinalizedHash = finalizedHash;
     this.consensusCache[finalizedHeight][addr].FinalizedHeight = finalizedHeight;
@@ -373,7 +371,7 @@ export default class Node {
   public markImplicitlyFinalized(finalizedHeight: BlockNumber) {
     let addr = String(this.address);
 
-    this.initialiseConsensusView(finalizedHeight, addr);
+    this.initialiseConsensusView(finalizedHeight, this.address);
     this.consensusCache[finalizedHeight][addr].Finalized = true;
     this.consensusCache[finalizedHeight][addr].FinalizedHeight = finalizedHeight;
     this.consensusCache[finalizedHeight][addr].ImplicitFinalized = true;
@@ -402,8 +400,7 @@ export default class Node {
       target_number: targetNumber,
       target_hash: targetHash,
     } = message;
-    const voter = String(message.voter.replace(/"/g, ''));
-
+    const voter = this.extractVoter(message.voter);
     this.initialiseConsensusView(targetNumber as BlockNumber, voter);
     this.consensusCache[targetNumber as BlockNumber][voter].Precommit = true;
 
@@ -438,8 +435,7 @@ export default class Node {
       target_number: targetNumber,
       target_hash: targetHash,
     } = message;
-    const voter = String(message.voter.replace(/"/g, ''));
-
+    const voter = this.extractVoter(message.voter);
     this.initialiseConsensusView(targetNumber as BlockNumber, voter);
     this.consensusCache[targetNumber as BlockNumber][voter].Prevote = true;
 
@@ -485,9 +481,44 @@ export default class Node {
     }
   }
 
+  private onAfgFinalized(message: AfgFinalized) {
+    const {
+      finalized_number: finalizedNumber,
+      finalized_hash: finalizedHash,
+    } = message;
+
+    this.markFinalized(finalizedNumber, finalizedHash);
+
+    let to = finalizedNumber;
+    this.backfill(this.address, to as BlockNumber, (i) => {
+      i = i as BlockNumber;
+      const info = this.consensusCache[i][String(this.address)];
+      if (info.Finalized || info.ImplicitFinalized) {
+        return false;
+      }
+
+      this.markImplicitlyFinalized(i);
+      this.consensusCache[i][String(this.address)].ImplicitPointer = to;
+
+      let firstBlockReached = String(i) === Object.keys(this.consensusCache)[0];
+      if (!this.alreadyFinalized && firstBlockReached) {
+        this.alreadyFinalized = true;
+        return false;
+      }
+
+      return true;
+    });
+
+    this.events.emit('consensus-info');
+  }
+
   // fill the block cache back from the `to` number to the last block.
   // the function `f` is used to evaluate if we should continue backfilling.
-  private backfill(voter_: string, to: BlockNumber, f: Maybe<(i: BlockNumber) => boolean>) {
+  private backfill(voter: Maybe<Types.Address>, to: BlockNumber, f: Maybe<(i: BlockNumber) => boolean>) {
+    if (!voter) {
+      return false;
+    }
+
     // if this is the first block in the cache then we don't fill latter blocks
     if (Object.keys(this.consensusCache).length < 1) {
       return to;
@@ -500,44 +531,15 @@ export default class Node {
         return to;
       }
 
-      this.initialiseConsensusView(to, voter_);
+      this.initialiseConsensusView(to, voter);
       cont = f ? f(to) : true;
     }
 
     return to;
   }
 
-  private onAfgFinalized(message: AfgFinalized) {
-    const {
-      finalized_number: finalizedNumber,
-      finalized_hash: finalizedHash,
-    } = message;
-
-    this.markFinalized(finalizedNumber, finalizedHash);
-
-    let to = finalizedNumber;
-    let addr = String(this.address);
-    this.backfill(addr, to as BlockNumber, (i) => {
-      i = i as BlockNumber;
-      let addr = String(this.address);
-      const info = this.consensusCache[i][addr];
-      if (info.Finalized || info.ImplicitFinalized) {
-        return false;
-      }
-
-      this.markImplicitlyFinalized(i);
-      this.consensusCache[i][addr].ImplicitPointer = to;
-
-      let firstBlockReached = String(i) === Object.keys(this.consensusCache)[0];
-      if (!this.alreadyFinalized && firstBlockReached) {
-        this.alreadyFinalized = true;
-        return false;
-      }
-
-      return true;
-    });
-
-    this.events.emit('consensus-info');
+  private extractVoter(message_voter: String): Types.Address {
+    return String(message_voter.replace(/"/g, '')) as Types.Address;
   }
 
   private updateLatency(now: Types.Timestamp) {
@@ -582,7 +584,7 @@ export default class Node {
       }
 
       const target = this.best.number as BlockNumber;
-      this.backfill(String(this.address), target, null);
+      this.backfill(this.address, target, null);
     }
   }
 

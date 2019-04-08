@@ -105,24 +105,24 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
   }
 
   private isFinalized(node: Node): boolean {
-    const { address } = node;
+    const { address, id } = node;
     const consensus = this.props.consensusView;
 
     return consensus !== undefined &&
-      address in consensus &&
-      address in consensus[address] &&
-      consensus[address][address].Finalized === true;
+      id in consensus &&
+      address in consensus[id] &&
+      consensus[id][address].Finalized === true;
   }
 
   private getFinalizedHash(node: Node): Types.BlockHash {
-    const { address } = node;
+    const { address, id } = node;
     const consensus = this.props.consensusView;
 
     if (consensus !== undefined &&
-      address in consensus &&
-      address in consensus[address] &&
-      consensus[address][address].Finalized === true) {
-      return consensus[address][address].FinalizedHash;
+      id in consensus &&
+      address in consensus[id] &&
+      consensus[id][address].Finalized === true) {
+      return consensus[id][address].FinalizedHash;
     }
     return '' as Types.BlockHash;
   }
@@ -132,7 +132,7 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
     let finalizedHash;
 
     if (this.isFinalized(node)) {
-      const matrice = this.props.consensusView[node.address][node.address];
+      const matrice = this.props.consensusView[node.id][node.address];
       finalizedInfo = matrice.ImplicitFinalized ?
         <Tooltip text={`${node.name} finalized this block in ${matrice.ImplicitPointer}`}>
           <Icon className="implicit" src={finalizedIcon} alt="" />
@@ -196,9 +196,9 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
 
   private getMatriceContent(rowNode: Node, columnNode: Node) {
     const consensusInfo = this.props.consensusView &&
-      rowNode.address in this.props.consensusView &&
-      columnNode.address in this.props.consensusView[rowNode.address] ?
-      this.props.consensusView[rowNode.address][columnNode.address] : null;
+      rowNode.id in this.props.consensusView &&
+      columnNode.address in this.props.consensusView[rowNode.id] ?
+      this.props.consensusView[rowNode.id][columnNode.address] : null;
 
     let tooltipText = consensusInfo ?
         rowNode.name + ' has seen this of ' + columnNode.name + ': ' +
