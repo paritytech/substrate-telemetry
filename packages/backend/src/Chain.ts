@@ -191,7 +191,14 @@ export default class Chain {
 
     // broadcast only the cache blocks which changed
     const delta: Types.ConsensusInfo = {} as ConsensusInfo;
+    const keys = Object.keys(this.chainConsensusCache);
+    const tip = keys[keys.length - 1];
     for (let height in this.chainConsensusCache) {
+      const in_cache_range = parseInt(tip) - parseInt(height) < MAX_BLOCKS_IN_CHAIN_CACHE;
+      if (!in_cache_range) {
+        continue
+      }
+
       const current = this.chainConsensusCache[height];
       const old = this.lastBroadcastCache[height];
 
