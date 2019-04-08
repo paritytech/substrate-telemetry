@@ -1,3 +1,7 @@
+.ConsensusList {
+  opacity: 0; /* the box should only show up once flexing has been applied */
+}
+
 .ConsensusList table {
   border-spacing: 0px;
 }
@@ -6,6 +10,7 @@
   display: flex;
   align-items: stretch;
   flex-direction: row;
+  opacity: 1.0;
 }
 
 .flexContainerLargeRow .firstInRow {
@@ -24,6 +29,7 @@
   align-items: stretch;
   flex-direction: row;
   flex-wrap: wrap;
+  opacity: 1.0;
 }
 
 .flexContainerSmallRow div {
