@@ -7,11 +7,10 @@ import { Maybe, Types, FeedMessage, NumStats } from '@dotstats/common';
 import { BlockNumber, ConsensusInfo } from "@dotstats/common/build/types";
 
 const BLOCK_TIME_HISTORY = 10;
-const MAX_BLOCKS_IN_CHAIN_CACHE = 5;
+const MAX_BLOCKS_IN_CHAIN_CACHE = 50;
 
 export default class Chain {
   private nodes = new Set<Node>();
-  private chainConsensusCache: Types.ConsensusInfo = {} as ConsensusInfo;
   private lastBroadcastCache: Types.ConsensusInfo = {} as ConsensusInfo;
   private feeds = new FeedSet();
 
@@ -21,6 +20,7 @@ export default class Chain {
   public height = 0 as Types.BlockNumber;
   public finalized = Block.ZERO;
   public blockTimestamp = 0 as Types.Timestamp;
+  public chainConsensusCache: Types.ConsensusInfo = {} as ConsensusInfo;
 
   private blockTimes = new NumStats<Types.Milliseconds>(BLOCK_TIME_HISTORY);
   private averageBlockTime: Maybe<Types.Milliseconds> = null;
@@ -203,6 +203,7 @@ export default class Chain {
 
     if (Object.keys(delta).length > 0 ) {
       this.feeds.broadcast(Feed.consensusInfo(delta));
+      this.truncateChainConsensusCache();
     }
   }
 
@@ -214,6 +215,15 @@ export default class Chain {
         this.restartVis();
       }
     }
+  }
+
+  private truncateChainConsensusCache() {
+    let list = Object.keys(this.chainConsensusCache).reverse();
+    list.map((k, i) => {
+      if (i > MAX_BLOCKS_IN_CHAIN_CACHE) {
+        delete this.chainConsensusCache[k];
+      }
+    });
   }
 
   private restartVis() {

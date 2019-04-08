@@ -23,7 +23,7 @@ const BLOCK_TIME_HISTORY = 10;
 const MEMORY_RECORDS = 20;
 const CPU_RECORDS = 20;
 const TIMEOUT = (1000 * 60 * 1) as Types.Milliseconds; // 1 minute
-const MAX_BLOCKS_IN_NODE_CACHE = 5;
+const MAX_BLOCKS_IN_NODE_CACHE = 50;
 
 const nextId = idGenerator<Types.NodeId>();
 
@@ -531,9 +531,9 @@ export default class Node {
 
   private truncateBlockCache() {
     let list = Object.keys(this.consensusCache).reverse();
-    list.map((_, i) => {
+    list.map((k, i) => {
       if (i > MAX_BLOCKS_IN_NODE_CACHE) {
-        delete this.consensusCache[i];
+        delete this.consensusCache[k];
       }
     });
   }
