@@ -34,6 +34,7 @@ export default class Aggregator {
 
       if (chain) {
         feed.sendMessage(Feed.subscribedTo(label));
+        feed.sendMessage(Feed.consensusInfo(chain.chainConsensusCache));
         chain.addFeed(feed);
       }
     });
