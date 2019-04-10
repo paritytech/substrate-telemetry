@@ -78,6 +78,9 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
     if (this.props.appState.authorities.length === 0 && nextProps.appState.authorities.length === 0) {
       return false;
     }
+    if (this.props.appState.nodes.sorted().length === 0 && nextProps.appState.nodes.sorted().length === 0) {
+      return false;
+    }
 
     const authoritiesDidChange = JSON.stringify(this.props.appState.authorities) !==
       JSON.stringify(nextProps.appState.authorities);
@@ -127,6 +130,7 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
   }
 
   private getAuthorities(): Node[] {
+    // find the node for each of these authority addresses
     return this.props.appState.authorities.map(address =>
       this.props.appState.nodes.sorted()
         .filter(node => node.address === address)[0]);

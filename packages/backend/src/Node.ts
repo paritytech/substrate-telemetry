@@ -471,6 +471,8 @@ export default class Node {
         this.authoritySetId !== authoritySetId) {
       this.events.emit('authority-set-changed', authorities, authoritySetId, number, hash);
     }
+
+    this.authorities = authorities;
   }
 
   private onAfgFinalized(message: AfgFinalized) {

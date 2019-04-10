@@ -164,11 +164,15 @@ export class Connection {
           const receivedConsensusInfo = message.payload;
           const updatedConsensusInfo = JSON.parse(JSON.stringify(this.state.consensusInfo));
 
+          if (Object.keys(receivedConsensusInfo).length === 0) {
+            this.state = this.update({ consensusInfo: {} as Types.ConsensusInfo });
+            break;
+          }
+
           for (const height of Object.keys(receivedConsensusInfo)) {
             updatedConsensusInfo[height] = receivedConsensusInfo[height];
           }
-
-          this.state = this.update({ consensusInfo: updatedConsensusInfo });
+          this.state = this.update({consensusInfo: updatedConsensusInfo});
 
           break;
         }

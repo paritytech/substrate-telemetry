@@ -25,6 +25,9 @@ export default class Chain {
   private blockTimes = new NumStats<Types.Milliseconds>(BLOCK_TIME_HISTORY);
   private averageBlockTime: Maybe<Types.Milliseconds> = null;
 
+  public lastBroadcastedAuthoritySetId: Types.AuthoritySetId = -1 as Types.AuthoritySetId;
+  public lastBroadcastedAuthoritySet: Types.Authorities = {} as Types.Authorities;
+
   constructor(label: Types.ChainLabel) {
     this.label = label;
   }
@@ -76,6 +79,9 @@ export default class Chain {
     feed.sendMessage(Feed.timeSync());
     feed.sendMessage(Feed.bestBlock(this.height, this.blockTimestamp, this.averageBlockTime));
     feed.sendMessage(Feed.bestFinalizedBlock(this.finalized));
+    feed.sendMessage(Feed.authoritySet(this.lastBroadcastedAuthoritySet,
+      this.lastBroadcastedAuthoritySetId));
+    feed.sendMessage(Feed.consensusInfo(this.chainConsensusCache));
 
     for (const node of this.nodes.values()) {
       feed.sendMessage(Feed.addedNode(node));
@@ -215,12 +221,11 @@ export default class Chain {
   }
 
   private authoritySetChanged(node: Node, authorities: Types.Authorities, authoritySetId: Types.AuthoritySetId) {
-    if (node.isAuthority()) {
+    if (node.isAuthority() && authoritySetId !== this.lastBroadcastedAuthoritySetId) {
       this.feeds.broadcast(Feed.authoritySet(authorities, authoritySetId));
-
-      if (authoritySetId > 0) {
-        this.restartVis();
-      }
+      this.lastBroadcastedAuthoritySetId = authoritySetId;
+      this.lastBroadcastedAuthoritySet = authorities;
+      this.restartVis();
     }
   }
 
@@ -235,8 +240,9 @@ export default class Chain {
 
   private restartVis() {
     this.nodes.forEach(node => node.resetCache());
-    this.feeds.broadcast(Feed.consensusInfo(this.chainConsensusCache));
     this.chainConsensusCache = {} as ConsensusInfo;
+    this.lastBroadcastCache = {} as ConsensusInfo;
+    this.feeds.broadcast(Feed.consensusInfo(this.chainConsensusCache));
   }
 
   private updateAverageBlockTime(height: Types.BlockNumber, now: Types.Timestamp) {
