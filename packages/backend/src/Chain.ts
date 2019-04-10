@@ -27,6 +27,7 @@ export default class Chain {
 
   public lastBroadcastedAuthoritySetId: Types.AuthoritySetId = -1 as Types.AuthoritySetId;
   public lastBroadcastedAuthoritySet: Types.Authorities = {} as Types.Authorities;
+  public authoritySetLastChangedAt: Types.BlockNumber = -1 as Types.BlockNumber;
 
   constructor(label: Types.ChainLabel) {
     this.label = label;
@@ -48,7 +49,7 @@ export default class Chain {
     node.events.on('finalized', () => this.updateFinalized(node));
     node.events.on('consensus-info', () => this.updateConsensusInfo(node));
     node.events.on('authority-set-changed', (authorities, authoritySetId, blockNumber, blockHash) =>
-        this.authoritySetChanged(node, authorities, authoritySetId));
+        this.authoritySetChanged(node, authorities, authoritySetId, blockNumber, blockHash));
     node.events.on('stats', () => this.feeds.broadcast(Feed.stats(node)));
     node.events.on('hardware', () => this.feeds.broadcast(Feed.hardware(node)));
     node.events.on('location', (location) => this.feeds.broadcast(Feed.locatedNode(node, location)));
@@ -208,7 +209,10 @@ export default class Chain {
       const current = this.chainConsensusCache[height];
       const old = this.lastBroadcastCache[height];
 
-      if (JSON.stringify(current) !== JSON.stringify(old)) {
+      // only display blocks since the last authority set changed
+      const inRange = parseInt(height) > this.authoritySetLastChangedAt;
+
+      if (JSON.stringify(current) !== JSON.stringify(old) && inRange) {
         delta[height] = current;
         this.lastBroadcastCache[height] = JSON.parse(JSON.stringify(current));
       }
@@ -220,11 +224,13 @@ export default class Chain {
     }
   }
 
-  private authoritySetChanged(node: Node, authorities: Types.Authorities, authoritySetId: Types.AuthoritySetId) {
+  private authoritySetChanged(node: Node, authorities: Types.Authorities, authoritySetId: Types.AuthoritySetId,
+                              blockNumber: Types.BlockNumber, blockHash: Types.BlockHash) {
     if (node.isAuthority() && authoritySetId !== this.lastBroadcastedAuthoritySetId) {
       this.feeds.broadcast(Feed.authoritySet(authorities, authoritySetId));
       this.lastBroadcastedAuthoritySetId = authoritySetId;
       this.lastBroadcastedAuthoritySet = authorities;
+      this.authoritySetLastChangedAt = blockNumber;
       this.restartVis();
     }
   }
