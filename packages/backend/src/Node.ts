@@ -74,10 +74,6 @@ export default class Node {
   // how this node views itself and others
   public consensusCache: ConsensusView = {} as ConsensusView;
 
-  private alreadyPrevote = false;
-  private alreadyPrecommit = false;
-  private alreadyFinalized = false;
-
   private authorities: Types.Authorities = [] as Types.Authorities;
   private authoritySetId: Types.AuthoritySetId = 0 as Types.AuthoritySetId;
 
@@ -406,18 +402,12 @@ export default class Node {
       }
 
       info.ImplicitPrecommit = true;
-      info.ImplicitPointer = to;
-
-      let firstBlockReached = String(i) === Object.keys(this.consensusCache)[0];
-      if (!this.alreadyPrecommit && firstBlockReached) {
-        this.alreadyPrecommit = true;
-        return false;
-      }
+      info.ImplicitPointer = from;
 
       return true;
     };
-    const to = targetNumber as BlockNumber;
-    this.backfill(voter, to, mutate);
+    const from = targetNumber as BlockNumber;
+    this.backfill(voter, from, mutate);
 
     this.events.emit('consensus-info');
   }
@@ -431,8 +421,8 @@ export default class Node {
     this.initialiseConsensusView(targetNumber as BlockNumber, voter);
     this.consensusCache[targetNumber as BlockNumber][voter].Prevote = true;
 
+    const firstBlockNumber = Object.keys(this.consensusCache)[0];
     const mutate = (i: BlockNumber) => {
-      // the function denotes when we stop backfilling the cache
       i = i as BlockNumber;
       const info = this.consensusCache[i][voter];
       if (info.Prevote || info.ImplicitPrevote) {
@@ -440,18 +430,12 @@ export default class Node {
       }
 
       this.consensusCache[i][voter].ImplicitPrevote = true;
-      this.consensusCache[i][voter].ImplicitPointer = to;
-
-      let firstBlockReached = String(i) === Object.keys(this.consensusCache)[0];
-      if (!this.alreadyPrevote && firstBlockReached) {
-        this.alreadyPrevote =  true;
-        return false;
-      }
+      this.consensusCache[i][voter].ImplicitPointer = from;
 
       return true;
     };
-    const to = targetNumber as BlockNumber;
-    this.backfill(voter, to, mutate);
+    const from = targetNumber as BlockNumber;
+    this.backfill(voter, from, mutate);
 
     this.events.emit('consensus-info');
   }
@@ -494,12 +478,6 @@ export default class Node {
       this.markImplicitlyFinalized(i);
       this.consensusCache[i][String(this.address)].ImplicitPointer = to;
 
-      let firstBlockReached = String(i) === Object.keys(this.consensusCache)[0];
-      if (!this.alreadyFinalized && firstBlockReached) {
-        this.alreadyFinalized = true;
-        return false;
-      }
-
       return true;
     });
 
@@ -508,28 +486,41 @@ export default class Node {
 
   // fill the block cache back from the `to` number to the last block.
   // the function `f` is used to evaluate if we should continue backfilling.
-  private backfill(voter: Maybe<Types.Address>, to: BlockNumber, f: Maybe<(i: BlockNumber) => boolean>) {
+  // `f` returns false when backfilling the cache should be stopped, true to continue.
+  //
+  // returns block number until which we backfilled
+  private backfill(voter: Maybe<Types.Address>, from: BlockNumber, f: Maybe<(i: BlockNumber) => boolean>): BlockNumber {
     if (!voter) {
-      return false;
+      return from;
     }
 
     // if this is the first block in the cache then we don't fill latter blocks
-    if (Object.keys(this.consensusCache).length < 1) {
-      return to;
+    if (Object.keys(this.consensusCache).length <= 1) {
+      return from;
     }
 
+    // if below this `from` there are not yet other blocks we don't create empty blocks
+    if (!this.consensusCache[from - 1]) {
+      return from;
+    }
+
+    const firstBlockNumber = Object.keys(this.consensusCache)[0];
     let cont = true;
-    while (cont && to-- > 0) {
-      if (this.consensusCache[to] !== undefined) {
+    while (cont && from-- > 0) {
+      if (this.consensusCache[from] !== undefined) {
         // we reached the next block prior to this
-        return to;
+        return from;
       }
 
-      this.initialiseConsensusView(to, voter);
-      cont = f ? f(to) : true;
-    }
+      this.initialiseConsensusView(from, voter);
+      cont = f ? f(from) : true;
 
-    return to;
+      let firstBlockReached = String(from) === firstBlockNumber;
+      if (firstBlockReached) {
+        break;
+      }
+    }
+    return from;
   }
 
   private truncateBlockCache() {

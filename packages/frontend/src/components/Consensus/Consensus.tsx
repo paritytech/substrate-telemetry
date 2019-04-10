@@ -129,6 +129,11 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
     );
   }
 
+  private handleOnResize = (contentRect: ContentRect) => {
+    this.setState({ dimensions: contentRect.bounds as BoundingRect });
+    this.calculateBoxCount(true);
+  };
+
   private getAuthorities(): Node[] {
     // find the node for each of these authority addresses
     return this.props.appState.authorities.map(address =>
