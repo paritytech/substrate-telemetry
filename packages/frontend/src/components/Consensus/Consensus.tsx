@@ -95,11 +95,6 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
   }
 
   public render() {
-    const handleOnResize = (contentRect: ContentRect) => {
-      this.setState({ dimensions: contentRect.bounds as BoundingRect });
-      this.calculateBoxCount(true);
-    };
-
     this.calculateBoxCount(false);
 
     const lastBlocks = Object.keys(this.props.appState.consensusInfo).reverse();
@@ -118,7 +113,7 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
 
     return (
       <React.Fragment>
-        <Measure bounds={true} onResize={handleOnResize}>
+        <Measure bounds={true} onResize={this.handleOnResize}>
           {({ measureRef }) => (
             <div className="allRows" ref={measureRef}>
               {firstLargeRow}
