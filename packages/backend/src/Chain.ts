@@ -210,7 +210,8 @@ export default class Chain {
       const old = this.lastBroadcastCache[height];
 
       // only display blocks since the last authority set changed
-      const inRange = parseInt(height) > this.authoritySetLastChangedAt;
+      const inRange = parseInt(height) > this.authoritySetLastChangedAt ||
+        this.authoritySetLastChangedAt === undefined;
 
       if (JSON.stringify(current) !== JSON.stringify(old) && inRange) {
         delta[height] = current;
