@@ -3,7 +3,7 @@ import { Types } from '@dotstats/common';
 import Measure, {BoundingRect, ContentRect} from 'react-measure';
 
 import { ConsensusBlock } from './';
-import { State as AppState, Node } from '../../state';
+import { State as AppState } from '../../state';
 
 import './Consensus.css';
 
@@ -134,11 +134,15 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
     this.calculateBoxCount(true);
   };
 
-  private getAuthorities(): Node[] {
+  private getAuthorities(): Types.Authority[] {
     // find the node for each of these authority addresses
-    return this.props.appState.authorities.map(address =>
-      this.props.appState.nodes.sorted()
-        .filter(node => node.address === address)[0]);
+    return this.props.appState.authorities.map(address => {
+      const node2 = this.props.appState.nodes.sorted().filter(node => node.address === address)[0];
+      if (!node2) {
+        return {Address: address, NodeId: null, Name: null} as Types.Authority;
+      }
+      return {Address: address, NodeId: node2.id, Name: node2.name} as Types.Authority;
+    });
   }
 
   private getLargeRow(blocks: string[], id: number) {

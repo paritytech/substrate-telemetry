@@ -4,7 +4,6 @@ import Measure, {BoundingRect, ContentRect} from 'react-measure';
 import { Types } from '@dotstats/common';
 import Identicon from 'polkadot-identicon';
 
-import { Node } from '../../state';
 import { Icon, Tooltip } from '../';
 import Jdenticon from './Jdenticon';
 
@@ -16,7 +15,7 @@ import './ConsensusBlock.css';
 
 export namespace ConsensusBlock {
   export interface Props {
-    authorities: Node[];
+    authorities: Types.Authority[];
     authoritySetId: Types.AuthoritySetId;
     authoritySetBlockNumber: Types.BlockNumber;
     height: Types.BlockNumber;
@@ -44,7 +43,8 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
   }
 
   public render() {
-    const finalizedByWhom = this.props.authorities.filter(node => this.isFinalized(node));
+    const finalizedByWhom = this.props.authorities.filter(authority => this.isFinalized(authority));
+
     const ratio = finalizedByWhom.length + '/' + this.props.authorities.length;
     const tooltip = `${ratio} authorities finalized this block. Authority Set Id: ${this.props.authoritySetId}.`;
     let titleFinal = <span>{ratio}</span>;
@@ -81,17 +81,17 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
           <th className='finalizedInfo'>
             <Tooltip text={tooltip}>{titleFinal}</Tooltip>
           </th>
-          {this.props.authorities.map(node =>
+          {this.props.authorities.map(authority =>
             <th
               className="matrixXLegend"
-              key={`${this.props.height}_matrice_x_${node.address}`}>
-              {this.getNodeContent(node, false)}
+              key={`${this.props.height}_matrice_x_${authority.Address}`}>
+              {this.getAuthorityContent(authority, false)}
             </th>)}
         </tr>
         </thead>
         <tbody>
-          {this.props.authorities.map((node, row) =>
-            this.renderMatriceRow(node, this.props.authorities, row))}
+          {this.props.authorities.map((authority, row) =>
+            this.renderMatriceRow(authority, this.props.authorities, row))}
         </tbody>
         </table>
       </div>)}
@@ -104,21 +104,26 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
       '…' + blockNumber.substr(blockNumber.length - 2, blockNumber.length) : blockNumber;
   }
 
-  private isFinalized(node: Node): boolean {
-    const { address, id } = node;
+  private isFinalized(authority: Types.Authority): boolean {
+    if (!authority || authority.NodeId === null || authority.Address === null) {
+      return false;
+    }
+
+    const { Address: address, NodeId: id } = authority;
     const consensus = this.props.consensusView;
 
     return consensus !== undefined &&
-      id in consensus &&
-      address in consensus[id] &&
-      consensus[id][address].Finalized === true;
+      String(id) in consensus &&
+      address in consensus[String(id)] &&
+      consensus[String(id)][address].Finalized === true;
   }
 
-  private getFinalizedHash(node: Node): Types.BlockHash {
-    const { address, id } = node;
+  private getFinalizedHash(authority: Types.Authority): Types.BlockHash {
+    const { Address: address , NodeId: id } = authority;
     const consensus = this.props.consensusView;
 
     if (consensus !== undefined &&
+      id != null &&
       id in consensus &&
       address in consensus[id] &&
       consensus[id][address].Finalized === true) {
@@ -127,18 +132,19 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
     return '' as Types.BlockHash;
   }
 
-  private renderMatriceRow(node: Node, authorities: Node[], row: number): JSX.Element {
+  private renderMatriceRow(authority: Types.Authority, authorities: Types.Authority[], row: number): JSX.Element {
     let finalizedInfo = <Tooltip text="No information available yet.">&nbsp;</Tooltip>;
     let finalizedHash;
 
-    if (this.isFinalized(node)) {
-      const matrice = this.props.consensusView[node.id][node.address];
+    if (authority.NodeId !== null && authority.NodeId !== undefined && this.isFinalized(authority)) {
+      const matrice = this.props.consensusView[String(authority.NodeId)][authority.Address];
+
       finalizedInfo = matrice.ImplicitFinalized ?
-        <Tooltip text={`${node.name} finalized this block in ${matrice.ImplicitPointer}`}>
+        <Tooltip text={`${authority.Name} finalized this block in ${matrice.ImplicitPointer}`}>
           <Icon className="implicit" src={finalizedIcon} alt="" />
         </Tooltip>
         :
-        <Tooltip text={`${node.name} finalized this block in this block`}>
+        <Tooltip text={`${authority.Name} finalized this block in this block`}>
           <Icon className="explicit" src={finalizedIcon} alt="" />
         </Tooltip>
 
@@ -148,27 +154,27 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
         </Tooltip> : <div className="jdenticonPlaceholder">&nbsp;</div>;
     }
 
-    const firstName = this.props.firstInRow ? <td className="nameLegend">{node.name}</td> : '';
+    const firstName = this.props.firstInRow ? <td className="nameLegend">{authority.Name}</td> : '';
 
     return <tr className="Row">
       {firstName}
-      <td className="legend">{this.getNodeContent(node, true)}</td>
+      <td className="legend">{this.getAuthorityContent(authority, true)}</td>
       <td className="finalizedInfo">{finalizedInfo}{finalizedHash}</td>
       {
         authorities.map((columnNode, column) => {
           const evenOdd = ((row % 2) + column) % 2 === 0 ? 'even' : 'odd';
-          return <td key={'matrice_' + node.address + '_' + columnNode.address}
-            className={`matrice ${evenOdd}`}>{this.getMatriceContent(node, columnNode)}</td>
+          return <td key={'matrice_' + authority.Address + '_' + columnNode.Address}
+            className={`matrice ${evenOdd}`}>{this.getMatriceContent(authority, columnNode)}</td>
         })
       }
     </tr>;
   }
 
-  private getNodeContent(node: Node, nodeName: boolean): JSX.Element {
+  private getAuthorityContent(authority: Types.Authority, nodeName: boolean): JSX.Element {
     return <div className="nodeContent">
       <div className="nodeAddress">
-        <Tooltip text={node.address} copy={true}>
-          <Identicon account={node.address} size={this.props.compact ? 14 : 28} />
+        <Tooltip text={authority.Address} copy={true}>
+          <Identicon account={authority.Address} size={this.props.compact ? 14 : 28} />
         </Tooltip>
       </div>
     </div>;
@@ -194,17 +200,18 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
     return txt.join(', '); // + JSON.stringify((consensusDetail));
   }
 
-  private getMatriceContent(rowNode: Node, columnNode: Node) {
+  private getMatriceContent(rowAuthority: Types.Authority, columnAuthority: Types.Authority) {
     const consensusInfo = this.props.consensusView &&
-      rowNode.id in this.props.consensusView &&
-      columnNode.address in this.props.consensusView[rowNode.id] ?
-      this.props.consensusView[rowNode.id][columnNode.address] : null;
+      String(rowAuthority.NodeId) &&
+      String(rowAuthority.NodeId) in this.props.consensusView &&
+      columnAuthority.Address in this.props.consensusView[String(rowAuthority.NodeId)] ?
+      this.props.consensusView[String(rowAuthority.NodeId)][columnAuthority.Address] : null;
 
     let tooltipText = consensusInfo ?
-        rowNode.name + ' has seen this of ' + columnNode.name + ': ' +
+        rowAuthority.Name + ' has seen this of ' + columnAuthority.Name + ': ' +
         this.format(consensusInfo) : 'No information available yet.';
 
-    if (rowNode.address === columnNode.address) {
+    if (rowAuthority.Address === columnAuthority.Address) {
       tooltipText = 'Self-referential.';
     }
 
@@ -214,7 +221,7 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
     const precommit = consensusInfo && consensusInfo.Precommit;
     const implicitPrecommit = consensusInfo && consensusInfo.ImplicitPrecommit;
 
-    if (rowNode.address !== columnNode.address) {
+    if (rowAuthority.Address !== columnAuthority.Address) {
       let statPrevote;
       let statPrecommit;
 

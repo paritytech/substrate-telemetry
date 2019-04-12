@@ -32,6 +32,11 @@ export type NodeStats = [PeerCount, TransactionCount];
 export type NodeHardware = [Array<MemoryUse>, Array<CPUUse>, Array<BytesPerSecond>, Array<BytesPerSecond>, Array<Timestamp>];
 export type NodeLocation = [Latitude, Longitude, City];
 
+export declare type Authority = {
+  Address: Address,
+  NodeId: Maybe<NodeId>,
+  Name: Maybe<NodeName>,
+};
 export declare type Authorities = Array<Address>;
 export declare type AuthoritySetId = Opaque<number, 'AuthoritySetId'>;
 export declare type ConsensusInfo = {
