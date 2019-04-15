@@ -14,6 +14,16 @@ export namespace Consensus {
 
   export interface State {
     dimensions: BoundingRect;
+
+    largeBlockWithLegend: BoundingRect,
+    largeBlock: BoundingRect,
+    countBlocksInLargeRow: number,
+    largeRowsAddFlexClass: boolean,
+
+    smallBlock: BoundingRect,
+    smallBlocksRows: number,
+    countBlocksInSmallRow: number,
+    smallRowsAddFlexClass: boolean,
   }
 }
 
@@ -22,30 +32,37 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
     // entire area available for rendering the visualization
     dimensions: { width: -1, height: -1 } as BoundingRect,
 
-    largeBlockWithLegend: { width: -1, height: -1 },
-    largeBlock: { width: -1, height: -1 },
+    largeBlockWithLegend: { width: -1, height: -1 } as BoundingRect,
+    largeBlock: { width: -1, height: -1 } as BoundingRect,
     countBlocksInLargeRow: 2,
     largeRowsAddFlexClass: false,
 
-    smallBlock: { width: -1, height: -1 },
+    smallBlock: { width: -1, height: -1 } as BoundingRect,
     smallBlocksRows: 1,
     countBlocksInSmallRow: 1,
     smallRowsAddFlexClass: false,
   };
 
-  public largeBlocksSizeDetected(): boolean {
-    return this.state.largeBlockWithLegend.width > -1 && this.state.largeBlockWithLegend.height > -1 &&
-      this.state.largeBlock.width > -1 && this.state.largeBlock.height > -1;
+  public largeBlocksSizeDetected(state: Consensus.State): boolean {
+    const countBlocks = Object.keys(this.props.appState.consensusInfo).length;
+    if (countBlocks === 1) {
+      return state.largeBlockWithLegend.width > -1 && state.largeBlockWithLegend.height > -1;
+    }
+
+    // if there is more than one block then the size of the first block (with legend)
+    // will be different from the succeeding blocks (without legend)
+    return state.largeBlockWithLegend.width > -1 && state.largeBlockWithLegend.height > -1 &&
+      state.largeBlock.width > -1 && state.largeBlock.height > -1;
   }
 
-  public smallBlocksSizeDetected(): boolean {
-    return this.state.smallBlock.width > -1 && this.state.largeBlockWithLegend.height > -1;
+  public smallBlocksSizeDetected(state: Consensus.State): boolean {
+    return state.smallBlock.width > -1 && state.largeBlockWithLegend.height > -1;
   }
 
   public calculateBoxCount(wasResized: boolean) {
     // if the css class for flexing has already been added we don't calculate
     // any box measurements then, because the box sizes would be skewed then.
-    if ((wasResized || this.state.largeRowsAddFlexClass === false) && this.largeBlocksSizeDetected()) {
+    if ((wasResized || this.state.largeRowsAddFlexClass === false) && this.largeBlocksSizeDetected(this.state)) {
       // we need to add +2 because of the last block which doesn't contain a border.
       let countBlocks = (this.state.dimensions.width - this.state.largeBlockWithLegend.width + 2) /
         (this.state.largeBlock.width + 2);
@@ -59,7 +76,7 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
       this.setState({largeRowsAddFlexClass: true, countBlocksInLargeRow: countBlocks });
     }
 
-    if ((wasResized || this.state.smallRowsAddFlexClass === false) && this.smallBlocksSizeDetected()) {
+    if ((wasResized || this.state.smallRowsAddFlexClass === false) && this.smallBlocksSizeDetected(this.state)) {
       const howManyRows = 2;
 
       const heightLeft = this.state.dimensions.height - (this.state.largeBlock.height * howManyRows);
@@ -93,8 +110,14 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
     const windowSizeChanged = JSON.stringify(this.state.dimensions) !==
       JSON.stringify(nextState.dimensions);
 
+    // size detected, but flex class has not yet been added
+    const largeBlocksSizeDetected = this.largeBlocksSizeDetected(nextState) === true &&
+      this.state.largeRowsAddFlexClass === false;
+    const smallBlocksSizeDetected = this.smallBlocksSizeDetected(nextState) === true &&
+      this.state.smallRowsAddFlexClass === false;
+
     return authoritiesDidChange || authoritySetIdDidChange || newConsensusInfoAvailable ||
-      windowSizeChanged;
+      windowSizeChanged || largeBlocksSizeDetected || smallBlocksSizeDetected;
   }
 
   public render() {
@@ -147,7 +170,7 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
 
   private getLargeRow(blocks: string[], id: number) {
     const largeBlockSizeChanged = (isFirstBlock: boolean, rect: BoundingRect) => {
-      if (this.largeBlocksSizeDetected()) {
+      if (this.largeBlocksSizeDetected(this.state)) {
         return;
       }
       if (isFirstBlock) {
@@ -182,7 +205,7 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
 
   private getSmallRow(blocks: string[]) {
     const smallBlockSizeChanged = (isFirstBlock: boolean, rect: BoundingRect) => {
-      if (this.smallBlocksSizeDetected()) {
+      if (this.smallBlocksSizeDetected(this.state)) {
         return;
       }
       const dimensionsChanged = this.state.smallBlock.height !== rect.height &&
