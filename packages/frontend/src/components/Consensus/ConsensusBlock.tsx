@@ -154,7 +154,8 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
         </Tooltip> : <div className="jdenticonPlaceholder">&nbsp;</div>;
     }
 
-    const firstName = this.props.firstInRow ? <td className="nameLegend">{authority.Name}</td> : '';
+    const name = authority.Name ? <span>{authority.Name}</span> : <em>no name received yet</em>;
+    const firstName = this.props.firstInRow ? <td className="nameLegend">{name}</td> : '';
 
     return <tr className="Row">
       {firstName}
