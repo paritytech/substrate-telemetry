@@ -9,17 +9,19 @@ const TIMEOUT_BASE = (1000 * 5) as Types.Milliseconds; // 5 seconds
 const TIMEOUT_MAX = (1000 * 60 * 5) as Types.Milliseconds; // 5 minutes
 
 export class Connection {
+
   public static async create(pins: PersistentSet<Types.NodeName>, update: Update): Promise<Connection> {
     return new Connection(await Connection.socket(), update, pins);
   }
 
-  private static readonly address = window.location.protocol === 'https:'
-                                      ? `wss://${window.location.hostname}/feed/`
-                                      : `ws://${window.location.hostname}:8080`;
-
-  // private static readonly address = 'wss://telemetry.polkadot.io/feed/';
+  private static readonly address = process.env.REACT_APP_WS_URL ? 
+                                    process.env.REACT_APP_WS_URL : 
+                                    Connection.getDefaultWsAddress()
 
   private static async socket(): Promise<WebSocket> {
+    
+    console.log('address', `${Connection.address}`);
+    
     let socket = await Connection.trySocket();
     let timeout = TIMEOUT_BASE;
 
@@ -31,6 +33,12 @@ export class Connection {
     }
 
     return socket;
+  }
+
+  private static getDefaultWsAddress() : string {
+    return window.location.protocol === 'https:' ? 
+      `wss://${window.location.hostname}/feed/` : 
+      `ws://${window.location.hostname}:8080`
   }
 
   private static async trySocket(): Promise<Maybe<WebSocket>> {
