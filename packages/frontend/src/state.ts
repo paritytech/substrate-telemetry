@@ -47,7 +47,7 @@ export class Node {
   public lon: Maybe<Types.Longitude>;
   public city: Maybe<Types.City>;
 
-  private readonly subscribtions = new Set<(node: Node) => void>();
+  private readonly subscriptions = new Set<(node: Node) => void>();
 
   constructor(
     pinned: boolean,
@@ -141,15 +141,15 @@ export class Node {
   }
 
   public subscribe(handler: (node: Node) => void) {
-    this.subscribtions.add(handler);
+    this.subscriptions.add(handler);
   }
 
   public unsubscribe(handler: (node: Node) => void) {
-    this.subscribtions.delete(handler);
+    this.subscriptions.delete(handler);
   }
 
   private trigger() {
-    for (const handler of this.subscribtions.values()) {
+    for (const handler of this.subscriptions.values()) {
       handler(this);
     }
   }
