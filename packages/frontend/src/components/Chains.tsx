@@ -24,12 +24,12 @@ export class Chains extends React.Component<Chains.Props, {}> {
   public render() {
     return (
       <div className="Chains">
-        {
-          this.chains.map((chain) => this.renderChain(chain))
-        }
         <a className="Chains-fork-me" href="https://github.com/paritytech/substrate-telemetry" target="_blank">
           <Icon src={githubIcon} alt="Fork Me!" />
         </a>
+        {
+          this.chains.map((chain) => this.renderChain(chain))
+        }
       </div>
     );
   }
@@ -43,7 +43,8 @@ export class Chains extends React.Component<Chains.Props, {}> {
 
     return (
       <a key={label} className={className} onClick={this.subscribe.bind(this, label)}>
-        {label} <span className="Chains-node-count" title="Node Count">{nodeCount}</span>
+        <span className="Chains-node-label" title={label}>{label}</span>
+        <span><span className="Chains-node-count" title="Node Count">{nodeCount}</span></span>
       </a>
     )
   }
