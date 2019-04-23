@@ -201,8 +201,8 @@ export default class Chain {
     const keys = Object.keys(this.chainConsensusCache);
     const tip = keys[keys.length - 1];
     for (let height in this.chainConsensusCache) {
-      const in_cache_range = parseInt(tip) - parseInt(height) < MAX_BLOCKS_IN_CHAIN_CACHE;
-      if (!in_cache_range) {
+      const inCacheRange = parseInt(tip) - parseInt(height) < MAX_BLOCKS_IN_CHAIN_CACHE;
+      if (!inCacheRange) {
         continue
       }
 
