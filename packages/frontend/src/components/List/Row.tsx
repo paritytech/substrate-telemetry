@@ -32,6 +32,7 @@ import paritySubstrateIcon from '../../icons/substrate.svg';
 import polkadotJsIcon from '../../icons/polkadot-js.svg';
 import airalabRobonomicsIcon from '../../icons/robonomics.svg';
 import chainXIcon from '../../icons/chainx.svg';
+import edgewareIcon from '../../icons/edgeware.svg';
 import unknownImplementationIcon from '../../icons/question-solid.svg';
 
 import './Row.css';
@@ -44,6 +45,7 @@ const ICONS = {
   'polkadot-js': polkadotJsIcon,
   'robonomics-node': airalabRobonomicsIcon,
   'substrate-node': paritySubstrateIcon,
+  'edgeware-node': edgewareIcon,
   'ChainX': chainXIcon,
 };
 
