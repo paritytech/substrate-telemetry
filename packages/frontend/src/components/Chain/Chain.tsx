@@ -13,7 +13,7 @@ import lastTimeIcon from '../../icons/watch.svg';
 import listIcon from '../../icons/list-alt-regular.svg';
 import worldIcon from '../../icons/location.svg';
 import settingsIcon from '../../icons/settings.svg';
-import consensusIcon from '../../icons/grandpa.svg';
+import consensusIcon from '../../icons/comment-discussion.svg';
 
 import './Chain.css';
 
