@@ -31,6 +31,9 @@ import parityPolkadotIcon from '../../icons/dot.svg';
 import paritySubstrateIcon from '../../icons/substrate.svg';
 import polkadotJsIcon from '../../icons/polkadot-js.svg';
 import airalabRobonomicsIcon from '../../icons/robonomics.svg';
+import chainXIcon from '../../icons/chainx.svg';
+import edgewareIcon from '../../icons/edgeware.svg';
+import joystreamIcon from '../../icons/joystream.svg';
 import unknownImplementationIcon from '../../icons/question-solid.svg';
 
 import './Row.css';
@@ -42,7 +45,10 @@ const ICONS = {
   'parity-polkadot': parityPolkadotIcon,
   'polkadot-js': polkadotJsIcon,
   'robonomics-node': airalabRobonomicsIcon,
-  'substrate-node': paritySubstrateIcon
+  'substrate-node': paritySubstrateIcon,
+  'edgeware-node': edgewareIcon,
+  'joystream-node': joystreamIcon,
+  'ChainX': chainXIcon,
 };
 
 export namespace Row {
