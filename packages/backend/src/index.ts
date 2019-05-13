@@ -62,7 +62,7 @@ http.createServer((request, response) => {
       const nodeList = Array.from(chain.nodeList());
       const nodeId = Number(strNodeId);
       const node = nodeList.filter((node) => node.id == nodeId)[0];
-      if (node && node.networkState) {
+      if (node && typeof node.networkState === 'string') {
         response.writeHead(200, {"Content-Type": "application/json"});
         response.write(node.networkState);
       } else {
