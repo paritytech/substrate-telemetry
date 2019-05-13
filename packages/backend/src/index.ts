@@ -62,9 +62,12 @@ http.createServer((request, response) => {
       const nodeList = Array.from(chain.nodeList());
       const nodeId = Number(strNodeId);
       const node = nodeList.filter((node) => node.id == nodeId)[0];
-      if (node) {
+      if (node && node.networkState) {
         response.writeHead(200, {"Content-Type": "application/json"});
         response.write(node.networkState);
+      } else {
+        response.writeHead(404, {"Content-Type": "text/plain"});
+        response.write("Node has disconnected or has not submitted its network state yet");
       }
     }
   }
