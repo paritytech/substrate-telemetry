@@ -19,6 +19,7 @@ export default class Feed {
   private socket: WebSocket;
   private messages: Array<FeedMessage.Message> = [];
   private waitingForPong = false;
+  private sendFinality = false;
 
   constructor(socket: WebSocket) {
     this.id = nextId();
@@ -86,24 +87,53 @@ export default class Feed {
     };
   }
 
-  public static consensusInfo(blocks: ConsensusInfo): FeedMessage.Message {
-    return {
-      action: Actions.ConsensusInfo,
-      payload: blocks
-    };
-  }
-
-  public static authoritySet(authorities: Authorities, authoritySetId: AuthoritySetId): FeedMessage.Message {
-    return {
-      action: Actions.AuthoritySet,
-      payload: [authorities, authoritySetId]
-    };
-  }
-
   public static stats(node: Node): FeedMessage.Message {
     return {
       action: Actions.NodeStats,
       payload: [node.id, node.nodeStats()]
+    };
+  }
+
+  public static afgFinalized(node: Node, finalizedNumber: Types.BlockNumber, finalizedHash: Types.BlockHash): FeedMessage.Message {
+    const addr = node.address != null ? node.address : "" as Types.Address;
+    return {
+      action: Actions.AfgFinalized,
+      payload: [addr, finalizedNumber, finalizedHash]
+    };
+  }
+
+  public static afgReceivedPrevote(
+    node: Node,
+    targetNumber: Types.BlockNumber,
+    targetHash: Types.BlockHash,
+    voter: Types.Address
+  ): FeedMessage.Message {
+    const addr = node.address != null ? node.address : "" as Types.Address;
+    return {
+      action: Actions.AfgReceivedPrevote,
+      payload: [addr, targetNumber, targetHash, voter]
+    };
+  }
+
+  public static afgReceivedPrecommit(
+    node: Node,
+    targetNumber: Types.BlockNumber,
+    targetHash: Types.BlockHash,
+    voter: Types.Address
+  ): FeedMessage.Message {
+    const addr = node.address != null ? node.address : "" as Types.Address;
+    return {
+      action: Actions.AfgReceivedPrecommit,
+      payload: [addr, targetNumber, targetHash, voter]
+    };
+  }
+
+  public static afgAuthoritySet(
+    authoritySetInfo: Types.AuthoritySetInfo,
+  ): FeedMessage.Message {
+    return {
+      action: Actions.AfgAuthoritySet,
+      payload: authoritySetInfo,
     };
   }
 
@@ -170,6 +200,14 @@ export default class Feed {
     }
   }
 
+  public sendConsensusMessage(message: FeedMessage.Message) {
+    if (!this.sendFinality) {
+      return;
+    }
+
+    this.sendMessage(message);
+  }
+
   public ping() {
     if (this.waitingForPong) {
       this.disconnect();
@@ -201,6 +239,14 @@ export default class Feed {
         }
 
         this.events.emit('subscribe', payload as Types.ChainLabel);
+        break;
+
+      case 'send-finality':
+        this.sendFinality = true;
+        break;
+
+      case 'no-more-finality':
+        this.sendFinality = false;
         break;
 
       case 'ping':

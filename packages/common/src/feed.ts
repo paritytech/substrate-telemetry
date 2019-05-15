@@ -20,7 +20,7 @@ import {
   BlockDetails,
   Timestamp,
   Milliseconds,
-  ChainLabel
+  ChainLabel, AuthoritySetInfo
 } from './types';
 
 export const Actions = {
@@ -41,7 +41,10 @@ export const Actions = {
   UnsubscribedFrom : 0x0E as 0x0E,
   Pong             : 0x0F as 0x0F,
   ConsensusInfo    : 0x10 as 0x10,
-  AuthoritySet     : 0x11 as 0x11,
+  AfgFinalized         : 0x11 as 0x11,
+  AfgReceivedPrevote   : 0x12 as 0x12,
+  AfgReceivedPrecommit : 0x13 as 0x13,
+  AfgAuthoritySet      : 0x14 as 0x14,
 };
 
 export type Action = typeof Actions[keyof typeof Actions];
@@ -92,16 +95,6 @@ export namespace Variants {
     payload: [NodeId, BlockNumber, BlockHash];
   }
 
-  export interface ConsensusInfoMessage extends MessageBase {
-    action: typeof Actions.ConsensusInfo;
-    payload: ConsensusInfo;
-  }
-
-  export interface AuthoritySetMessage extends MessageBase {
-    action: typeof Actions.AuthoritySet;
-    payload: [Authorities, AuthoritySetId];
-  }
-
   export interface NodeStatsMessage extends MessageBase {
     action: typeof Actions.NodeStats;
     payload: [NodeId, NodeStats];
@@ -141,6 +134,26 @@ export namespace Variants {
     action: typeof Actions.Pong;
     payload: string; // just echo whatever `ping` sent
   }
+
+  export interface AfgFinalizedMessage extends MessageBase {
+    action: typeof Actions.AfgFinalized;
+    payload: [Address, BlockNumber, BlockHash];
+  }
+
+  export interface AfgAuthoritySet extends MessageBase {
+    action: typeof Actions.AfgAuthoritySet;
+    payload: AuthoritySetInfo;
+  }
+
+  export interface AfgReceivedPrecommit extends MessageBase {
+    action: typeof Actions.AfgReceivedPrecommit;
+    payload: [Address, BlockNumber, BlockHash, Address];
+  }
+
+  export interface AfgReceivedPrevote extends MessageBase {
+    action: typeof Actions.AfgReceivedPrevote;
+    payload: [Address, BlockNumber, BlockHash, Address];
+  }
 }
 
 export type Message =
@@ -152,8 +165,6 @@ export type Message =
   | Variants.LocatedNodeMessage
   | Variants.ImportedBlockMessage
   | Variants.FinalizedBlockMessage
-  | Variants.ConsensusInfoMessage
-  | Variants.AuthoritySetMessage
   | Variants.NodeStatsMessage
   | Variants.NodeHardwareMessage
   | Variants.TimeSyncMessage
@@ -161,6 +172,10 @@ export type Message =
   | Variants.RemovedChainMessage
   | Variants.SubscribedToMessage
   | Variants.UnsubscribedFromMessage
+  | Variants.AfgFinalizedMessage
+  | Variants.AfgReceivedPrevote
+  | Variants.AfgReceivedPrecommit
+  | Variants.AfgAuthoritySet
   | Variants.PongMessage;
 
 /**

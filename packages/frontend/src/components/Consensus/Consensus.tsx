@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Types } from '@dotstats/common';
+import { Connection } from '../../Connection';
 import Measure, {BoundingRect, ContentRect} from 'react-measure';
 
 import { ConsensusBlock } from './';
@@ -10,6 +11,7 @@ import './Consensus.css';
 export namespace Consensus {
   export interface Props {
     appState: Readonly<AppState>;
+    connection: Promise<Connection>;
   }
 
   export interface State {
@@ -42,6 +44,20 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
     countBlocksInSmallRow: 1,
     smallRowsAddFlexClass: false,
   };
+
+  public componentDidMount() {
+    if (this.props.appState.subscribed != null) {
+      const chain = this.props.appState.subscribed;
+      this.subscribeConsensus(chain);
+    }
+  }
+
+  public componentWillUnmount() {
+    if (this.props.appState.subscribed != null) {
+      const chain = this.props.appState.subscribed;
+      this.unsubscribeConsensus(chain);
+    }
+  }
 
   public largeBlocksSizeDetected(state: Consensus.State): boolean {
     const countBlocks = Object.keys(this.props.appState.consensusInfo).length;
@@ -91,39 +107,10 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
     }
   }
 
-  public shouldComponentUpdate(nextProps: Consensus.Props, nextState: Consensus.State): boolean {
-    if (this.props.appState.authorities.length === 0 && nextProps.appState.authorities.length === 0) {
-      return false;
-    }
-    if (this.props.appState.nodes.sorted().length === 0 && nextProps.appState.nodes.sorted().length === 0) {
-      return false;
-    }
-
-    const authoritiesDidChange = JSON.stringify(this.props.appState.authorities) !==
-      JSON.stringify(nextProps.appState.authorities);
-    const authoritySetIdDidChange = this.props.appState.authoritySetId !==
-      nextProps.appState.authoritySetId;
-
-    const newConsensusInfoAvailable = JSON.stringify(this.props.appState.consensusInfo) !==
-      JSON.stringify(nextProps.appState.consensusInfo);
-
-    const windowSizeChanged = JSON.stringify(this.state.dimensions) !==
-      JSON.stringify(nextState.dimensions);
-
-    // size detected, but flex class has not yet been added
-    const largeBlocksSizeDetected = this.largeBlocksSizeDetected(nextState) === true &&
-      this.state.largeRowsAddFlexClass === false;
-    const smallBlocksSizeDetected = this.smallBlocksSizeDetected(nextState) === true &&
-      this.state.smallRowsAddFlexClass === false;
-
-    return authoritiesDidChange || authoritySetIdDidChange || newConsensusInfoAvailable ||
-      windowSizeChanged || largeBlocksSizeDetected || smallBlocksSizeDetected;
-  }
-
   public render() {
     this.calculateBoxCount(false);
 
-    const lastBlocks = Object.keys(this.props.appState.consensusInfo).reverse();
+    const lastBlocks = this.props.appState.consensusInfo;
 
     let from = 0;
     let to = this.state.countBlocksInLargeRow;
@@ -159,6 +146,10 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
 
   private getAuthorities(): Types.Authority[] {
     // find the node for each of these authority addresses
+    if (this.props.appState.authorities == null) {
+      return [];
+    }
+
     return this.props.appState.authorities.map(address => {
       const node2 = this.props.appState.nodes.sorted().filter(node => node.address === address)[0];
       if (!node2) {
@@ -168,7 +159,7 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
     });
   }
 
-  private getLargeRow(blocks: string[], id: number) {
+  private getLargeRow(blocks: Types.ConsensusInfo, id: number) {
     const largeBlockSizeChanged = (isFirstBlock: boolean, rect: BoundingRect) => {
       if (this.largeBlocksSizeDetected(this.state)) {
         return;
@@ -187,23 +178,25 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
     return <div
         className={`ConsensusList LargeRow ${flexClass} ${stretchLastRowMajor}`}
         key={`consensusList_${id}`}>
-        {blocks.map((height, i) =>
-           <ConsensusBlock
+        {blocks.map((item, i) => {
+           const [height, consensusView] = item;
+           return <ConsensusBlock
              changeBlocks={largeBlockSizeChanged}
              firstInRow={i === 0}
              lastInRow={false}
              compact={false}
              key={height}
-             height={parseInt(height, 10) as Types.BlockNumber}
-             consensusView={this.props.appState.consensusInfo[height]}
+             height={height}
+             consensusView={consensusView}
              authorities={this.getAuthorities()}
              authoritySetId={this.props.appState.authoritySetId}
              authoritySetBlockNumber={this.props.appState.authoritySetBlockNumber}
-           />)}
+           />;
+        })}
       </div>;
   }
 
-  private getSmallRow(blocks: string[]) {
+  private getSmallRow(blocks: Types.ConsensusInfo) {
     const smallBlockSizeChanged = (isFirstBlock: boolean, rect: BoundingRect) => {
       if (this.smallBlocksSizeDetected(this.state)) {
         return;
@@ -220,7 +213,8 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
     const classes = `ConsensusList SmallRow ${this.state.smallRowsAddFlexClass ? 'flexContainerSmallRow' : ''} ${stretchLastRow}`;
 
     return <div className={classes} key="smallRow">
-      {blocks.map((height, i) => {
+      {blocks.map((item, i) => {
+         const [height, consensusView] = item;
          let lastInRow = (i+1) % this.state.countBlocksInSmallRow === 0 ? true : false;
          if (lastInRow && i === 0) {
            // should not be marked as last one in row if it's the very first in row
@@ -233,13 +227,23 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
            lastInRow={lastInRow}
            compact={true}
            key={height}
-           height={parseInt(height, 10) as Types.BlockNumber}
-           consensusView={this.props.appState.consensusInfo[height]}
+           height={height}
+           consensusView={consensusView}
            authorities={this.getAuthorities()}
            authoritySetBlockNumber={this.props.appState.authoritySetBlockNumber}
            authoritySetId={this.props.appState.authoritySetId} />;
          })
       }
       </div>;
+  }
+
+  private async subscribeConsensus(chain: Types.ChainLabel) {
+    const connection = await this.props.connection;
+    connection.subscribeConsensus(chain);
+  }
+
+  private async unsubscribeConsensus(chain: Types.ChainLabel) {
+    const connection = await this.props.connection;
+    connection.unsubscribeConsensus(chain);
   }
 }

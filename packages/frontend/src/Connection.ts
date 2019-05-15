@@ -2,6 +2,7 @@ import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from '@dotstats/
 import { State, Update, Node } from './state';
 import { PersistentSet } from './persist';
 import { getHashData, setHashData } from './utils';
+import { afgAuthoritySet, afgFinalized, afgMarkPre } from './AfgHandling';
 
 const { Actions } = FeedMessage;
 
@@ -63,6 +64,7 @@ export class Connection {
   private pingTimeout: NodeJS.Timer;
   private pingSent: Maybe<Types.Timestamp> = null;
   private resubscribeTo: Maybe<Types.ChainLabel> = getHashData().chain;
+  private resubscribeSendFinality: boolean = getHashData().tab === 'consensus';
   private socket: WebSocket;
   private state: Readonly<State>;
   private readonly update: Update;
@@ -78,6 +80,18 @@ export class Connection {
   public subscribe(chain: Types.ChainLabel) {
     setHashData({ chain });
     this.socket.send(`subscribe:${chain}`);
+  }
+
+  public subscribeConsensus(chain: Types.ChainLabel) {
+    setHashData({ chain });
+    this.resubscribeSendFinality = true;
+    this.socket.send(`send-finality:${chain}`);
+  }
+
+  public unsubscribeConsensus(chain: Types.ChainLabel) {
+    setHashData({ chain });
+    this.resubscribeSendFinality = true;
+    this.socket.send(`no-more-finality:${chain}`);
   }
 
   public handleMessages = (messages: FeedMessage.Message[]) => {
@@ -160,32 +174,6 @@ export class Connection {
           break;
         }
 
-        case Actions.ConsensusInfo: {
-          const receivedConsensusInfo = message.payload;
-          const updatedConsensusInfo = JSON.parse(JSON.stringify(this.state.consensusInfo));
-
-          if (Object.keys(receivedConsensusInfo).length === 0) {
-            this.state = this.update({ consensusInfo: {} as Types.ConsensusInfo });
-            break;
-          }
-
-          for (const height of Object.keys(receivedConsensusInfo)) {
-            updatedConsensusInfo[height] = receivedConsensusInfo[height];
-          }
-          this.state = this.update({consensusInfo: updatedConsensusInfo});
-
-          break;
-        }
-
-        case Actions.AuthoritySet: {
-          const [authorities, authoritySetId] = message.payload;
-
-          this.state = this.update({ authorities: authorities as Types.Authorities,
-            authoritySetId });
-
-          break;
-        }
-
         case Actions.NodeStats: {
           const [id, nodeStats] = message.payload;
 
@@ -254,6 +242,49 @@ export class Connection {
           break;
         }
 
+        case Actions.AfgFinalized: {
+          const [nodeAddress, finalizedNumber, finalizedHash] = message.payload;
+          afgFinalized(nodeAddress, finalizedNumber, finalizedHash,
+              (foo: any) => {
+            console.log("in closure");
+            this.state = this.update(foo);
+              },
+            () => this.state
+          );
+
+          break;
+        }
+
+        case Actions.AfgReceivedPrevote: {
+          const [nodeAddress, blockNumber, blockHash, voter] = message.payload;
+          afgMarkPre(nodeAddress, blockNumber, blockHash, voter, "prevote",
+            (foo: any) => { this.state = this.update(foo)},
+            () => this.state
+            );
+
+          break;
+        }
+
+        case Actions.AfgReceivedPrecommit: {
+          const [nodeAddress, blockNumber, blockHash, voter] = message.payload;
+          afgMarkPre(nodeAddress, blockNumber, blockHash, voter, "precommit",
+            (foo: any) => { this.state = this.update(foo)},
+            () => this.state
+            );
+
+          break;
+        }
+
+        case Actions.AfgAuthoritySet: {
+          const [authoritySetId, authorities] = message.payload;
+          afgAuthoritySet(authoritySetId, authorities,
+            (foo: any) => { this.state = this.update(foo)},
+            () => this.state,
+            );
+
+          break;
+        }
+
         default: {
           break;
         }
@@ -281,7 +312,9 @@ export class Connection {
 
     if (this.state.subscribed) {
       this.resubscribeTo = this.state.subscribed;
-      this.state = this.update({ subscribed: null });
+      this.resubscribeSendFinality = this.state.sendFinality;
+
+      this.state = this.update({ subscribed: null, sendFinality: false });
     }
 
     this.socket.addEventListener('message', this.handleFeedData);
@@ -339,7 +372,7 @@ export class Connection {
 
   private autoSubscribe() {
     const { subscribed, chains } = this.state;
-    const { resubscribeTo } = this;
+    const { resubscribeTo, resubscribeSendFinality } = this;
 
     if (subscribed) {
       return;
@@ -347,7 +380,11 @@ export class Connection {
 
     if (resubscribeTo) {
       if (chains.has(resubscribeTo)) {
+
         this.subscribe(resubscribeTo);
+        if (resubscribeSendFinality) {
+          this.subscribeConsensus(resubscribeTo);
+        }
         return;
       }
     }

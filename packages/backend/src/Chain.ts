@@ -3,15 +3,13 @@ import Node from './Node';
 import Feed from './Feed';
 import FeedSet from './FeedSet';
 import Block from './Block';
-import { Maybe, Types, FeedMessage, NumStats } from '@dotstats/common';
-import { BlockNumber, ConsensusInfo } from "@dotstats/common/build/types";
+import { Maybe, Types, NumStats } from '@dotstats/common';
 
 const BLOCK_TIME_HISTORY = 10;
 export const MAX_BLOCKS_IN_CHAIN_CACHE = 50;
 
 export default class Chain {
   private nodes = new Set<Node>();
-  private lastBroadcastCache: Types.ConsensusInfo = {} as ConsensusInfo;
   private feeds = new FeedSet();
 
   public readonly events = new EventEmitter();
@@ -20,14 +18,11 @@ export default class Chain {
   public height = 0 as Types.BlockNumber;
   public finalized = Block.ZERO;
   public blockTimestamp = 0 as Types.Timestamp;
-  public chainConsensusCache: Types.ConsensusInfo = {} as ConsensusInfo;
 
   private blockTimes = new NumStats<Types.Milliseconds>(BLOCK_TIME_HISTORY);
   private averageBlockTime: Maybe<Types.Milliseconds> = null;
 
-  public lastBroadcastedAuthoritySetId: Types.AuthoritySetId = -1 as Types.AuthoritySetId;
-  public lastBroadcastedAuthoritySet: Types.Authorities = {} as Types.Authorities;
-  public authoritySetLastChangedAt: Types.BlockNumber = -1 as Types.BlockNumber;
+  public lastBroadcastedAuthoritySetInfo: Maybe<Types.AuthoritySetInfo> = null;
 
   constructor(label: Types.ChainLabel) {
     this.label = label;
@@ -47,9 +42,33 @@ export default class Chain {
 
     node.events.on('block', () => this.updateBlock(node));
     node.events.on('finalized', () => this.updateFinalized(node));
-    node.events.on('consensus-info', () => this.updateConsensusInfo(node));
-    node.events.on('authority-set-changed', (authorities, authoritySetId, blockNumber, blockHash) =>
-        this.authoritySetChanged(node, authorities, authoritySetId, blockNumber, blockHash));
+
+    node.events.on('afg-finalized', (finalizedNumber, finalizedHash) => this.feeds.each(
+      f => f.sendConsensusMessage(Feed.afgFinalized(node, finalizedNumber, finalizedHash))
+    ));
+    node.events.on('afg-received-prevote', (finalizedNumber, finalizedHash, voter) => this.feeds.each(
+      f => f.sendConsensusMessage(Feed.afgReceivedPrevote(node, finalizedNumber, finalizedHash, voter))
+    ));
+    node.events.on('afg-received-precommit', (finalizedNumber, finalizedHash, voter) => this.feeds.each(
+      f => f.sendConsensusMessage(Feed.afgReceivedPrecommit(node, finalizedNumber, finalizedHash, voter))
+    ));
+    node.events.on('authority-set-changed', (authorities, authoritySetId, blockNumber, blockHash) => {
+      let newSet;
+      if (this.lastBroadcastedAuthoritySetInfo == null) {
+        newSet = true;
+      } else {
+        const [lastBroadcastedAuthoritySetId] = this.lastBroadcastedAuthoritySetInfo;
+        newSet = authoritySetId !== lastBroadcastedAuthoritySetId;
+      }
+
+      if (node.isAuthority() && newSet) {
+        const addr = node.address != null ? node.address : "" as Types.Address;
+        const set = [authoritySetId, authorities, addr, blockNumber, blockHash] as Types.AuthoritySetInfo;
+        this.feeds.broadcast(Feed.afgAuthoritySet(set));
+        this.lastBroadcastedAuthoritySetInfo = set;
+      }
+    });
+
     node.events.on('stats', () => this.feeds.broadcast(Feed.stats(node)));
     node.events.on('hardware', () => this.feeds.broadcast(Feed.hardware(node)));
     node.events.on('location', (location) => this.feeds.broadcast(Feed.locatedNode(node, location)));
@@ -80,9 +99,10 @@ export default class Chain {
     feed.sendMessage(Feed.timeSync());
     feed.sendMessage(Feed.bestBlock(this.height, this.blockTimestamp, this.averageBlockTime));
     feed.sendMessage(Feed.bestFinalizedBlock(this.finalized));
-    feed.sendMessage(Feed.authoritySet(this.lastBroadcastedAuthoritySet,
-      this.lastBroadcastedAuthoritySetId));
-    feed.sendMessage(Feed.consensusInfo(this.chainConsensusCache));
+
+    if (this.lastBroadcastedAuthoritySetInfo != null) {
+      feed.sendMessage(Feed.afgAuthoritySet(this.lastBroadcastedAuthoritySetInfo));
+    }
 
     for (const node of this.nodes.values()) {
       feed.sendMessage(Feed.addedNode(node));
@@ -134,7 +154,6 @@ export default class Chain {
     }
 
     this.feeds.broadcast(Feed.imported(node));
-    this.updateConsensusInfo(node);
 
     console.log(`[${this.label}] ${node.name} imported ${height}, block time: ${node.blockTime / 1000}s, average: ${node.average / 1000}s | latency ${node.latency}`);
   }
@@ -171,85 +190,6 @@ export default class Chain {
     }
 
     this.feeds.broadcast(Feed.finalized(node));
-
-    this.updateConsensusInfo(node);
-  }
-
-  private initialiseConsensusView(height: BlockNumber, id_node1: string, addr_node2: string) {
-    if (this.chainConsensusCache[height] === undefined) {
-      this.chainConsensusCache[height] = {};
-    }
-    if (this.chainConsensusCache[height][id_node1] === undefined) {
-      this.chainConsensusCache[height][id_node1] = {};
-      this.chainConsensusCache[height][id_node1][addr_node2] = {} as Types.ConsensusInfo;
-    }
-    if (this.chainConsensusCache[height][id_node1][addr_node2] === undefined) {
-      this.chainConsensusCache[height][id_node1][addr_node2] = {} as Types.ConsensusInfo;
-    }
-  }
-
-  private updateConsensusInfo(node: Node) {
-    for (let height in node.consensusCache) {
-      if (height !== undefined) {
-        this.initialiseConsensusView(parseInt(height) as BlockNumber, String(node.id), String(node.address));
-        this.chainConsensusCache[height][String(node.id)] = node.consensusCache[height];
-      }
-    }
-
-    // broadcast only the cache blocks which changed
-    const delta: Types.ConsensusInfo = {} as ConsensusInfo;
-    const keys = Object.keys(this.chainConsensusCache);
-    const tip = keys[keys.length - 1];
-    for (let height in this.chainConsensusCache) {
-      const inCacheRange = parseInt(tip) - parseInt(height) < MAX_BLOCKS_IN_CHAIN_CACHE;
-      if (!inCacheRange) {
-        continue
-      }
-
-      const current = this.chainConsensusCache[height];
-      const old = this.lastBroadcastCache[height];
-
-      // only display blocks since the last authority set changed
-      const inRange = parseInt(height) > this.authoritySetLastChangedAt ||
-        this.authoritySetLastChangedAt === undefined;
-
-      if (JSON.stringify(current) !== JSON.stringify(old) && inRange) {
-        delta[height] = current;
-        this.lastBroadcastCache[height] = JSON.parse(JSON.stringify(current));
-      }
-    }
-
-    if (Object.keys(delta).length > 0 ) {
-      this.feeds.broadcast(Feed.consensusInfo(delta));
-      this.truncateChainConsensusCache();
-    }
-  }
-
-  private authoritySetChanged(node: Node, authorities: Types.Authorities, authoritySetId: Types.AuthoritySetId,
-                              blockNumber: Types.BlockNumber, blockHash: Types.BlockHash) {
-    if (node.isAuthority() && authoritySetId !== this.lastBroadcastedAuthoritySetId) {
-      this.feeds.broadcast(Feed.authoritySet(authorities, authoritySetId));
-      this.lastBroadcastedAuthoritySetId = authoritySetId;
-      this.lastBroadcastedAuthoritySet = authorities;
-      this.authoritySetLastChangedAt = blockNumber;
-      this.restartVis();
-    }
-  }
-
-  private truncateChainConsensusCache() {
-    let list = Object.keys(this.chainConsensusCache).reverse();
-    list.map((k, i) => {
-      if (i > MAX_BLOCKS_IN_CHAIN_CACHE) {
-        delete this.chainConsensusCache[k];
-      }
-    });
-  }
-
-  private restartVis() {
-    this.nodes.forEach(node => node.resetCache());
-    this.chainConsensusCache = {} as ConsensusInfo;
-    this.lastBroadcastCache = {} as ConsensusInfo;
-    this.feeds.broadcast(Feed.consensusInfo(this.chainConsensusCache));
   }
 
   private updateAverageBlockTime(height: Types.BlockNumber, now: Types.Timestamp) {

@@ -53,7 +53,7 @@ export default class App extends React.Component<{}, State> {
       status: 'offline',
       best: 0 as Types.BlockNumber,
       finalized: 0 as Types.BlockNumber,
-      consensusInfo: {} as Types.ConsensusInfo,
+      consensusInfo: new Array(),
       authorities: new Array() as Types.Authorities,
       authoritySetId: -1 as Types.AuthoritySetId,
       authoritySetBlockNumber: -1 as Types.BlockNumber,
@@ -61,6 +61,7 @@ export default class App extends React.Component<{}, State> {
       blockAverage: null,
       timeDiff: 0 as Types.Milliseconds,
       subscribed: null,
+      sendFinality: false,
       chains: new Map(),
       nodes: new SortedCollection(Node.compare),
       settings: this.settings.raw(),
@@ -94,7 +95,7 @@ export default class App extends React.Component<{}, State> {
       <div className="App">
         <OfflineIndicator status={status} />
         <Chains chains={chains} subscribed={subscribed} connection={this.connection} />
-        <Chain appState={this.state} settings={this.settings} pins={this.pins} />
+        <Chain appState={this.state} connection={this.connection} settings={this.settings} pins={this.pins} />
       </div>
     );
   }

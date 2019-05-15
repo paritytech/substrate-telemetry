@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { Connection } from '../../Connection';
 import { Types } from '@dotstats/common';
 import { State as AppState } from '../../state';
 import { formatNumber, secondsWithPrecision, getHashData } from '../../utils';
@@ -22,6 +23,7 @@ export namespace Chain {
 
   export interface Props {
     appState: Readonly<AppState>;
+    connection: Promise<Connection>;
     settings: PersistentObject<AppState.Settings>;
     pins: PersistentSet<Types.NodeName>;
   }
@@ -89,10 +91,10 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
       return <Settings settings={this.props.settings} />;
     }
 
-    const { appState, pins } = this.props;
+    const { appState, connection, pins } = this.props;
 
     if (display === 'consensus') {
-      return <Consensus appState={appState} />;
+      return <Consensus appState={appState} connection={connection} />;
     }
 
     return (

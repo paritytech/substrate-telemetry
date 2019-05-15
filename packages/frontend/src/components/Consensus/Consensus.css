@@ -1,5 +1,6 @@
 .ConsensusList {
-  opacity: 0; /* the box should only show up once flexing has been applied */
+  // TODO revert to 0
+  opacity: 1.0; /* the box should only show up once flexing has been applied */
 }
 
 .ConsensusList table {

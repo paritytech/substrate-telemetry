@@ -42,7 +42,6 @@ export class Node {
   public propagationTime: Maybe<Types.PropagationTime>;
 
   public finalized = 0 as Types.BlockNumber;
-  public consensusInfo: Types.ConsensusInfo;
   public finalizedHash = '' as Types.BlockHash;
 
   public lat: Maybe<Types.Latitude>;
@@ -50,6 +49,7 @@ export class Node {
   public city: Maybe<Types.City>;
 
   private readonly subscriptions = new Set<(node: Node) => void>();
+  private readonly subscriptionsConsensus = new Set<(node: Node) => void>();
 
   constructor(
     pinned: boolean,
@@ -119,10 +119,6 @@ export class Node {
     this.finalizedHash = hash;
   }
 
-  public updateConsensusInfo(consensusInfo: Types.ConsensusInfo) {
-    this.consensusInfo = consensusInfo;
-  }
-
   public updateLocation(location: Types.NodeLocation) {
     const [lat, lon, city] = location;
 
@@ -153,6 +149,14 @@ export class Node {
 
   public unsubscribe(handler: (node: Node) => void) {
     this.subscriptions.delete(handler);
+  }
+
+  public subscribeConsensus(handler: (node: Node) => void) {
+    this.subscriptionsConsensus.add(handler);
+  }
+
+  public unsubscribeConsensus(handler: (node: Node) => void) {
+    this.subscriptionsConsensus.delete(handler);
   }
 
   private trigger() {
@@ -197,6 +201,7 @@ export interface State {
   blockAverage: Maybe<Types.Milliseconds>;
   timeDiff: Types.Milliseconds;
   subscribed: Maybe<Types.ChainLabel>;
+  sendFinality: boolean;
   chains: Map<Types.ChainLabel, Types.NodeCount>;
   nodes: SortedCollection<Types.NodeId, Node>;
   settings: Readonly<State.Settings>;
