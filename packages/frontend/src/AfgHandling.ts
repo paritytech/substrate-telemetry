@@ -45,26 +45,9 @@ export function afgMarkPre(
   updateState: (state: any) => void,
   getState: () => State,
 ) {
-  const consensusInfo = getState().consensusInfo;
-  initialiseConsensusView(consensusInfo, height, addr, voter);
-
-  const index = consensusInfo.findIndex(([blockNumber,]) => blockNumber === height);
-  const [, consensusView] = consensusInfo[index];
-
-  if (what === "prevote") {
-    consensusView[addr][voter].Prevote = true;
-  } else if (what === "precommit") {
-    consensusView[addr][voter].Precommit = true;
-  }
-
-  if (index !== -1) {
-    consensusInfo[index] = [height, consensusView];
-  } else {
-    // append at the beginning
-    consensusInfo.unshift([height, consensusView]);
-  }
-
-  updateState({consensusInfo});
+  const obj = {};
+  obj[what === "prevote" ? "Prevote" : "Precommit"] = true;
+  updateConsensusInfo(height, addr, voter, obj, updateState, getState);
 
   const op = (i: Types.BlockNumber, view: Types.ConsensusView) => {
     const consensusDetail = view[addr][voter];
@@ -75,7 +58,7 @@ export function afgMarkPre(
     markImplicitlyPre(i, addr, height, what, voter, updateState, getState);
     return true;
   };
-  backfill(consensusInfo, height, op, addr, voter);
+  backfill(getState().consensusInfo, height, op, addr, voter);
 }
 
 function markFinalized(
@@ -85,37 +68,19 @@ function markFinalized(
   updateState: (state: any) => void,
   getState: () => State,
 ) {
-  const consensusInfo = getState().consensusInfo;
+  const obj = {
+    Finalized: true,
+    FinalizedHash: finalizedHash,
+    FinalizedHeight: finalizedHeight,
 
-  initialiseConsensusView(consensusInfo, finalizedHeight, addr, addr);
-
-  const index = consensusInfo
-    .findIndex(([blockNumber,]) => blockNumber === finalizedHeight);
-  if (index === -1) {
-    return;
-  }
-  const [, consensusView] = consensusInfo[index];
-
-  consensusView[addr][addr].Finalized = true;
-  consensusView[addr][addr].FinalizedHash = finalizedHash;
-  consensusView[addr][addr].FinalizedHeight = finalizedHeight;
-
-  // this is extrapolated. if this app was just started up we
-  // might not yet have received prevotes/precommits. but
-  // those are a necessary precondition for finalization, so
-  // we can set them and display them in the ui.
-  consensusView[addr][addr].Prevote = true;
-  consensusView[addr][addr].Precommit = true;
-
-  consensusInfo[index] = [finalizedHeight, consensusView];
-
-  if (index !== -1) {
-    consensusInfo[index] = [finalizedHeight, consensusView];
-  } else {
-    consensusInfo.unshift([finalizedHeight, consensusView]);
-  }
-
-  updateState({consensusInfo});
+    // this is extrapolated. if this app was just started up we
+    // might not yet have received prevotes/precommits. but
+    // those are a necessary precondition for finalization, so
+    // we can set them and display them in the ui.
+    Prevote: true,
+    Precommit: true,
+  };
+  updateConsensusInfo(finalizedHeight, addr, addr, obj, updateState, getState);
 }
 
 // A Prevote or Precommit on a block implicitly includes
@@ -268,4 +233,34 @@ function getConsensusView(
     consensusInfo.findIndex(([blockNumber,]) => blockNumber === height);
   const [, consensusView] = consensusInfo[index];
   return [consensusView, index];
+}
+
+function updateConsensusInfo(
+  height: Types.BlockNumber,
+  addr: Types.Address,
+  voter: Types.Address,
+  obj: object,
+  updateState: (state: any) => void,
+  getState: () => State,
+) {
+  const consensusInfo = getState().consensusInfo;
+  initialiseConsensusView(consensusInfo, height, addr, voter);
+
+  const index = consensusInfo.findIndex(([blockNumber,]) => blockNumber === height);
+  const [, consensusView] = consensusInfo[index];
+
+  for (const o in obj) {
+    if (obj.hasOwnProperty(o)) {
+      consensusView[addr][voter][o] = obj[o];
+    }
+  }
+
+  if (index !== -1) {
+    consensusInfo[index] = [height, consensusView];
+  } else {
+    // append at the beginning
+    consensusInfo.unshift([height, consensusView]);
+  }
+
+  updateState({consensusInfo});
 }
