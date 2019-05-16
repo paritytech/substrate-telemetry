@@ -2,7 +2,7 @@ import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from '@dotstats/
 import { State, Update, Node } from './state';
 import { PersistentSet } from './persist';
 import { getHashData, setHashData } from './utils';
-import { afgAuthoritySet, afgFinalized, afgMarkPre } from './AfgHandling';
+import { AfgHandling } from './AfgHandling';
 
 const { Actions } = FeedMessage;
 
@@ -97,8 +97,10 @@ export class Connection {
   public handleMessages = (messages: FeedMessage.Message[]) => {
     const { nodes, chains } = this.state;
     const ref = nodes.ref();
-    const setState = (state: any) => { this.state = this.update(state); };
+
+    const updateState = (state: any) => { this.state = this.update(state); };
     const getState = () => this.state;
+    const afg = new AfgHandling(updateState, getState);
 
     for (const message of messages) {
       switch (message.action) {
@@ -246,28 +248,28 @@ export class Connection {
 
         case Actions.AfgFinalized: {
           const [nodeAddress, finalizedNumber, finalizedHash] = message.payload;
-          afgFinalized( nodeAddress, finalizedNumber, finalizedHash, setState, getState);
+          afg.receivedFinalized( nodeAddress, finalizedNumber, finalizedHash);
 
           break;
         }
 
         case Actions.AfgReceivedPrevote: {
           const [nodeAddress, blockNumber, blockHash, voter] = message.payload;
-          afgMarkPre(nodeAddress, blockNumber, blockHash, voter, "prevote", setState, getState);
+          afg.receivedPre(nodeAddress, blockNumber, blockHash, voter, "prevote");
 
           break;
         }
 
         case Actions.AfgReceivedPrecommit: {
           const [nodeAddress, blockNumber, blockHash, voter] = message.payload;
-          afgMarkPre(nodeAddress, blockNumber, blockHash, voter, "precommit", setState, getState);
+          afg.receivedPre(nodeAddress, blockNumber, blockHash, voter, "precommit");
 
           break;
         }
 
         case Actions.AfgAuthoritySet: {
           const [authoritySetId, authorities] = message.payload;
-          afgAuthoritySet(authoritySetId, authorities, setState, getState);
+          afg.receivedAuthoritySet(authoritySetId, authorities);
 
           break;
         }
