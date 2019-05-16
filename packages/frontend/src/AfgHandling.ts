@@ -194,10 +194,8 @@ function initialiseConsensusView(
   own: Types.Address,
   other: Types.Address,
 ) {
-  const index = consensusInfo.findIndex(item => {
-    const [blockNumber,] = item;
-    return blockNumber === height;
-  });
+  const index =
+    consensusInfo.findIndex(([blockNumber,]) => blockNumber === height);
 
   let consensusView;
   if (index === -1) {
@@ -245,11 +243,8 @@ function backfill(
 
     initialiseConsensusView(consensusInfo, height, own, other);
 
-    const index = consensusInfo.findIndex(item => {
-      const [blockNumber, ] = item;
-      return blockNumber === height;
-    });
-
+    const index =
+      consensusInfo.findIndex(([blockNumber,]) => blockNumber === height);
     if (index === -1) {
       cont = false;
       break;

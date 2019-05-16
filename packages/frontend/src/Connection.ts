@@ -97,7 +97,7 @@ export class Connection {
   public handleMessages = (messages: FeedMessage.Message[]) => {
     const { nodes, chains } = this.state;
     const ref = nodes.ref();
-    const setState = (state: State) => { this.state = this.update(state); };
+    const setState = (state: any) => { this.state = this.update(state); };
     const getState = () => this.state;
 
     for (const message of messages) {
