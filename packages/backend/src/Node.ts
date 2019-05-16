@@ -18,13 +18,11 @@ import {
 import { locate, Location } from './location';
 import MeanList from './MeanList';
 import Block from './Block';
-import { MAX_BLOCKS_IN_CHAIN_CACHE } from './Chain';
 
 const BLOCK_TIME_HISTORY = 10;
 const MEMORY_RECORDS = 20;
 const CPU_RECORDS = 20;
 const TIMEOUT = (1000 * 60 * 1) as Types.Milliseconds; // 1 minute
-const MAX_BLOCKS_IN_NODE_CACHE = MAX_BLOCKS_IN_CHAIN_CACHE;
 
 const nextId = idGenerator<Types.NodeId>();
 

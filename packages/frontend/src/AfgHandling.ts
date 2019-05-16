@@ -118,7 +118,7 @@ function markFinalized(
   updateState({consensusInfo});
 }
 
-// An Prevote or Precommit on a block implicitly includes
+// A Prevote or Precommit on a block implicitly includes
 // a vote on all preceding blocks. This function marks
 // the preceding blocks as implicitly voted on and stores
 // a pointer to the block which contains the explicit vote.

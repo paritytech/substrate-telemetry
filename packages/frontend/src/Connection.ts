@@ -97,6 +97,8 @@ export class Connection {
   public handleMessages = (messages: FeedMessage.Message[]) => {
     const { nodes, chains } = this.state;
     const ref = nodes.ref();
+    const setState = (state: State) => { this.state = this.update(state); };
+    const getState = () => this.state;
 
     for (const message of messages) {
       switch (message.action) {
@@ -244,43 +246,28 @@ export class Connection {
 
         case Actions.AfgFinalized: {
           const [nodeAddress, finalizedNumber, finalizedHash] = message.payload;
-          afgFinalized(nodeAddress, finalizedNumber, finalizedHash,
-              (foo: any) => {
-            console.log("in closure");
-            this.state = this.update(foo);
-              },
-            () => this.state
-          );
+          afgFinalized( nodeAddress, finalizedNumber, finalizedHash, setState, getState);
 
           break;
         }
 
         case Actions.AfgReceivedPrevote: {
           const [nodeAddress, blockNumber, blockHash, voter] = message.payload;
-          afgMarkPre(nodeAddress, blockNumber, blockHash, voter, "prevote",
-            (foo: any) => { this.state = this.update(foo)},
-            () => this.state
-            );
+          afgMarkPre(nodeAddress, blockNumber, blockHash, voter, "prevote", setState, getState);
 
           break;
         }
 
         case Actions.AfgReceivedPrecommit: {
           const [nodeAddress, blockNumber, blockHash, voter] = message.payload;
-          afgMarkPre(nodeAddress, blockNumber, blockHash, voter, "precommit",
-            (foo: any) => { this.state = this.update(foo)},
-            () => this.state
-            );
+          afgMarkPre(nodeAddress, blockNumber, blockHash, voter, "precommit", setState, getState);
 
           break;
         }
 
         case Actions.AfgAuthoritySet: {
           const [authoritySetId, authorities] = message.payload;
-          afgAuthoritySet(authoritySetId, authorities,
-            (foo: any) => { this.state = this.update(foo)},
-            () => this.state,
-            );
+          afgAuthoritySet(authoritySetId, authorities, setState, getState);
 
           break;
         }
@@ -313,7 +300,6 @@ export class Connection {
     if (this.state.subscribed) {
       this.resubscribeTo = this.state.subscribed;
       this.resubscribeSendFinality = this.state.sendFinality;
-
       this.state = this.update({ subscribed: null, sendFinality: false });
     }
 
@@ -380,7 +366,6 @@ export class Connection {
 
     if (resubscribeTo) {
       if (chains.has(resubscribeTo)) {
-
         this.subscribe(resubscribeTo);
         if (resubscribeSendFinality) {
           this.subscribeConsensus(resubscribeTo);

@@ -20,7 +20,8 @@ import {
   BlockDetails,
   Timestamp,
   Milliseconds,
-  ChainLabel, AuthoritySetInfo
+  ChainLabel,
+  AuthoritySetInfo,
 } from './types';
 
 export const Actions = {

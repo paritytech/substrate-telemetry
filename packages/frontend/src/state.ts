@@ -197,11 +197,11 @@ export interface State {
   authorities: Types.Address[];
   authoritySetId: Types.AuthoritySetId;
   authoritySetBlockNumber: Types.BlockNumber;
+  sendFinality: boolean;
   blockTimestamp: Types.Timestamp;
   blockAverage: Maybe<Types.Milliseconds>;
   timeDiff: Types.Milliseconds;
   subscribed: Maybe<Types.ChainLabel>;
-  sendFinality: boolean;
   chains: Map<Types.ChainLabel, Types.NodeCount>;
   nodes: SortedCollection<Types.NodeId, Node>;
   settings: Readonly<State.Settings>;

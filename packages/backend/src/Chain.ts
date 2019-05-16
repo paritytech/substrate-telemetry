@@ -6,7 +6,6 @@ import Block from './Block';
 import { Maybe, Types, NumStats } from '@dotstats/common';
 
 const BLOCK_TIME_HISTORY = 10;
-export const MAX_BLOCKS_IN_CHAIN_CACHE = 50;
 
 export default class Chain {
   private nodes = new Set<Node>();
