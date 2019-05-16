@@ -13,7 +13,6 @@ import {
   AfgReceivedPrecommit,
   AfgReceivedPrevote,
   AfgAuthoritySet,
-  NotifyFinalized,
 } from './message';
 import { locate, Location } from './location';
 import MeanList from './MeanList';
@@ -343,7 +342,7 @@ export default class Node {
 
     // we manually parse the authorities message, because the array was formatted as a
     // string by substrate before sending it.
-    let authorities = JSON.parse(String(message.authorities)) as Types.Authorities;
+    const authorities = JSON.parse(String(message.authorities)) as Types.Authorities;
 
     if (JSON.stringify(this.authorities) !== String(message.authorities) ||
         this.authoritySetId !== authoritySetId) {

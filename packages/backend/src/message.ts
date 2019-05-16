@@ -39,10 +39,6 @@ export interface BestBlock {
   ts: Date;
 }
 
-export interface NotifyFinalized extends BestBlock {
-  msg: 'notify.finalized';
-}
-
 export interface AfgFinalized {
   ts: Date;
   finalized_number: Types.BlockNumber;
@@ -118,7 +114,6 @@ export type Message = MessageBase & (
   | SystemInterval
   | NodeStart
   | BlockImport
-  | NotifyFinalized
   | AfgFinalized
   | AfgReceivedPrecommit
   | AfgReceivedPrevote
