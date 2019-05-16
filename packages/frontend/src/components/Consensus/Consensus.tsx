@@ -190,7 +190,6 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
              consensusView={consensusView}
              authorities={this.getAuthorities()}
              authoritySetId={this.props.appState.authoritySetId}
-             authoritySetBlockNumber={this.props.appState.authoritySetBlockNumber}
            />;
         })}
       </div>;
@@ -230,7 +229,6 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
            height={height}
            consensusView={consensusView}
            authorities={this.getAuthorities()}
-           authoritySetBlockNumber={this.props.appState.authoritySetBlockNumber}
            authoritySetId={this.props.appState.authoritySetId} />;
          })
       }

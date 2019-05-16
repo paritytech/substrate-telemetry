@@ -196,7 +196,6 @@ export interface State {
   consensusInfo: Types.ConsensusInfo;
   authorities: Types.Address[];
   authoritySetId: Types.AuthoritySetId;
-  authoritySetBlockNumber: Types.BlockNumber;
   sendFinality: boolean;
   blockTimestamp: Types.Timestamp;
   blockAverage: Maybe<Types.Milliseconds>;

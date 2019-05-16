@@ -403,8 +403,6 @@ export default class Node {
           this.throttle = false;
         }, 1000);
       }
-
-      const target = this.best.number as BlockNumber;
     }
   }
 

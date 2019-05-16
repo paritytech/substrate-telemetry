@@ -3,9 +3,6 @@ import { stringify, parse, Stringified } from './stringify';
 import {
   FeedVersion,
   Address,
-  Authorities,
-  AuthoritySetId,
-  ConsensusInfo,
   Latitude,
   Longitude,
   City,
@@ -41,11 +38,10 @@ export const Actions = {
   SubscribedTo     : 0x0D as 0x0D,
   UnsubscribedFrom : 0x0E as 0x0E,
   Pong             : 0x0F as 0x0F,
-  ConsensusInfo    : 0x10 as 0x10,
-  AfgFinalized         : 0x11 as 0x11,
-  AfgReceivedPrevote   : 0x12 as 0x12,
-  AfgReceivedPrecommit : 0x13 as 0x13,
-  AfgAuthoritySet      : 0x14 as 0x14,
+  AfgFinalized         : 0x10 as 0x10,
+  AfgReceivedPrevote   : 0x11 as 0x11,
+  AfgReceivedPrecommit : 0x12 as 0x12,
+  AfgAuthoritySet      : 0x13 as 0x13,
 };
 
 export type Action = typeof Actions[keyof typeof Actions];

@@ -17,7 +17,6 @@ export namespace ConsensusBlock {
   export interface Props {
     authorities: Types.Authority[];
     authoritySetId: Types.AuthoritySetId;
-    authoritySetBlockNumber: Types.BlockNumber;
     height: Types.BlockNumber;
     firstInRow: boolean;
     lastInRow: boolean;

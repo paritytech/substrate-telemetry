@@ -5,7 +5,6 @@ import Chain from './Chain';
 import Block from './Block';
 import { VERSION, timestamp, Maybe, FeedMessage, Types, idGenerator } from '@dotstats/common';
 import { Location } from './location';
-import { Authorities, AuthoritySetId, ConsensusInfo } from "@dotstats/common/build/types";
 
 const nextId = idGenerator<Types.FeedId>();
 const { Actions } = FeedMessage;
