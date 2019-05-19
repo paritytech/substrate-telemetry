@@ -172,6 +172,15 @@ export class AfgHandling {
       consensusInfo.unshift([height, consensusView]);
     }
 
+    this.initialiseConsensusViewByRef(consensusView, own, other);
+  }
+
+  // Initializes the `ConsensusView` with empty objects.
+  private initialiseConsensusViewByRef(
+    consensusView: Types.ConsensusView,
+    own: Types.Address,
+    other: Types.Address,
+  ) {
     if (!consensusView[own]) {
       consensusView[own] = {} as Types.ConsensusState;
     }
@@ -198,7 +207,7 @@ export class AfgHandling {
         continue;
       }
 
-      this.initialiseConsensusView(consensusInfo, height, own, other);
+      this.initialiseConsensusViewByRef(consensusView, own, other);
 
       const cont = f ? f(height, consensusView) : true;
       if (!cont) {
