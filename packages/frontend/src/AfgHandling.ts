@@ -51,9 +51,8 @@ export class AfgHandling {
     voter: Types.Address,
     what: string,
   ) {
-    const obj = {};
-    obj[what === "prevote" ? "Prevote" : "Precommit"] = true;
-    this.updateConsensusInfo(height, addr, voter, obj);
+    const data = what === "prevote" ? { Prevote: true } : { Precommit: true };
+    this.updateConsensusInfo(height, addr, voter, data as Partial<Types.ConsensusDetail>);
 
     const op = (i: Types.BlockNumber, view: Types.ConsensusView) => {
       const consensusDetail = view[addr][voter];
@@ -72,7 +71,7 @@ export class AfgHandling {
     finalizedHeight: Types.BlockNumber,
     finalizedHash: Types.BlockHash,
   ) {
-    const obj = {
+    const data = {
       Finalized: true,
       FinalizedHash: finalizedHash,
       FinalizedHeight: finalizedHeight,
@@ -83,8 +82,8 @@ export class AfgHandling {
       // we can set them and display them in the ui.
       Prevote: true,
       Precommit: true,
-    };
-    this.updateConsensusInfo(finalizedHeight, addr, addr, obj);
+    } as Types.ConsensusDetail;
+    this.updateConsensusInfo(finalizedHeight, addr, addr, data);
   }
 
   // A Prevote or Precommit on a block implicitly includes
@@ -239,7 +238,7 @@ export class AfgHandling {
     height: Types.BlockNumber,
     addr: Types.Address,
     voter: Types.Address,
-    obj: object,
+    data: Partial<Types.ConsensusDetail>,
   ) {
     const consensusInfo = this.getState().consensusInfo;
     this.initialiseConsensusView(consensusInfo, height, addr, voter);
@@ -247,9 +246,9 @@ export class AfgHandling {
     const index = consensusInfo.findIndex(([blockNumber,]) => blockNumber === height);
     const [, consensusView] = consensusInfo[index];
 
-    for (const o in obj) {
-      if (obj.hasOwnProperty(o)) {
-        consensusView[addr][voter][o] = obj[o];
+    for (const o in data) {
+      if (data.hasOwnProperty(o)) {
+        consensusView[addr][voter][o] = data[o];
       }
     }
 

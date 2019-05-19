@@ -53,7 +53,7 @@ export default class App extends React.Component<{}, State> {
       status: 'offline',
       best: 0 as Types.BlockNumber,
       finalized: 0 as Types.BlockNumber,
-      consensusInfo: new Array(),
+      consensusInfo: new Array() as Types.ConsensusInfo,
       authorities: new Array() as Types.Authorities,
       authoritySetId: -1 as Types.AuthoritySetId,
       sendFinality: false,
