@@ -245,12 +245,7 @@ export class AfgHandling {
       }
     }
 
-    if (index !== -1) {
-      consensusInfo[index] = [height, consensusView];
-    } else {
-      // append at the beginning
-      consensusInfo.unshift([height, consensusView]);
-    }
+    consensusInfo[index] = [height, consensusView];
 
     this.updateState({consensusInfo});
   }
