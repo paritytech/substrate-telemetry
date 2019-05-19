@@ -98,9 +98,7 @@ export class AfgHandling {
     voter: Types.Address,
   ) {
     const consensusInfo = this.getState().consensusInfo;
-    this.initialiseConsensusView(consensusInfo, height, addr, voter);
-
-    const [consensusView, index] = this.getConsensusView(consensusInfo, height);
+    const consensusView = this.initialiseConsensusView(consensusInfo, height, addr, voter);
 
     if (what === "prevote") {
       consensusView[addr][voter].ImplicitPrevote = true;
@@ -109,7 +107,6 @@ export class AfgHandling {
     }
     consensusView[addr][voter].ImplicitPointer = where;
 
-    consensusInfo[index] = [height, consensusView];
     this.updateState({consensusInfo});
   }
 
@@ -124,9 +121,7 @@ export class AfgHandling {
     voter: Types.Address,
   ) {
     const consensusInfo = this.getState().consensusInfo;
-    this.initialiseConsensusView(consensusInfo, height, addr, voter);
-
-    const [consensusView, index] = this.getConsensusView(consensusInfo, height);
+    const consensusView = this.initialiseConsensusView(consensusInfo, height, addr, voter);
 
     const consensusDetail = {
       Finalized: true,
@@ -145,12 +140,6 @@ export class AfgHandling {
     };
     consensusView[addr][voter] = consensusDetail;
 
-    if (index !== -1) {
-      consensusInfo[index] = [height, consensusView];
-    } else {
-      consensusInfo.unshift([height, consensusView]);
-    }
-
     this.updateState({consensusInfo});
   }
 
@@ -160,7 +149,7 @@ export class AfgHandling {
     height: Types.BlockNumber,
     own: Types.Address,
     other: Types.Address,
-  ) {
+  ) : Types.ConsensusView {
     const found =
       consensusInfo.find(([blockNumber,]) => blockNumber === height);
 
@@ -173,6 +162,8 @@ export class AfgHandling {
     }
 
     this.initialiseConsensusViewByRef(consensusView, own, other);
+
+    return consensusView;
   }
 
   // Initializes the `ConsensusView` with empty objects.
@@ -217,16 +208,6 @@ export class AfgHandling {
     return to;
   }
 
-  private getConsensusView(
-    consensusInfo: Types.ConsensusInfo,
-    height: Types.BlockNumber,
-  ): [Types.ConsensusView, number] {
-    const index =
-      consensusInfo.findIndex(([blockNumber,]) => blockNumber === height);
-    const [, consensusView] = consensusInfo[index];
-    return [consensusView, index];
-  }
-
   private updateConsensusInfo(
     height: Types.BlockNumber,
     addr: Types.Address,
@@ -239,9 +220,9 @@ export class AfgHandling {
     const index = consensusInfo.findIndex(([blockNumber,]) => blockNumber === height);
     const [, consensusView] = consensusInfo[index];
 
-    for (const o in data) {
-      if (data.hasOwnProperty(o)) {
-        consensusView[addr][voter][o] = data[o];
+    for (const k in data) {
+      if (data.hasOwnProperty(k)) {
+        consensusView[addr][voter][k] = data[k];
       }
     }
 
