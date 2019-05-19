@@ -19,8 +19,5 @@
     "build:common": "tsc -p packages/common",
     "check:common": "tsc -p packages/common --noEmit",
     "test": "scripts/test.sh"
-  },
-  "dependencies": {
-    "polkadot-identicon": "^1.1.45"
   }
 }
