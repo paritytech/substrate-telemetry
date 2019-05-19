@@ -128,19 +128,22 @@ export class AfgHandling {
 
     const [consensusView, index] = this.getConsensusView(consensusInfo, height);
 
-    consensusView[addr][voter].Finalized = true;
-    consensusView[addr][voter].FinalizedHeight = height;
-    consensusView[addr][voter].ImplicitFinalized = true;
-    consensusView[addr][voter].ImplicitPointer = to;
+    const consensusDetail = {
+      Finalized: true,
+      FinalizedHeight: height,
+      ImplicitFinalized: true,
+      ImplicitPointer: to,
 
-    // this is extrapolated. if this app was just started up we
-    // might not yet have received prevotes/precommits. but
-    // those are a necessary precondition for finalization, so
-    // we can set them and display them in the ui.
-    consensusView[addr][voter].Prevote = true;
-    consensusView[addr][voter].Precommit = true;
-    consensusView[addr][voter].ImplicitPrevote = true;
-    consensusView[addr][voter].ImplicitPrecommit = true;
+      // this is extrapolated. if this app was just started up we
+      // might not yet have received prevotes/precommits. but
+      // those are a necessary precondition for finalization, so
+      // we can set them and display them in the ui.
+      Prevote: true,
+      Precommit: true,
+      ImplicitPrevote: true,
+      ImplicitPrecommit: true,
+    };
+    consensusView[addr][voter] = consensusDetail;
 
     if (index !== -1) {
       consensusInfo[index] = [height, consensusView];
