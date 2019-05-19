@@ -193,25 +193,14 @@ export class AfgHandling {
     own: Types.Address,
     other: Types.Address,
   ): Types.BlockNumber {
-    let cont = true;
-    for (const i of consensusInfo) {
-      const [height,] = i;
+    for (const [height, consensusView] of consensusInfo) {
       if (height >= to) {
         continue;
       }
 
       this.initialiseConsensusView(consensusInfo, height, own, other);
 
-      const index =
-        consensusInfo.findIndex(([blockNumber,]) => blockNumber === height);
-      if (index === -1) {
-        cont = false;
-        break;
-      }
-
-      const [, consensusView] = consensusInfo[index];
-
-      cont = f ? f(height, consensusView) : true;
+      const cont = f ? f(height, consensusView) : true;
       if (!cont) {
         break;
       }
