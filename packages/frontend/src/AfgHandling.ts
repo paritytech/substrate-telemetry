@@ -161,16 +161,15 @@ export class AfgHandling {
     own: Types.Address,
     other: Types.Address,
   ) {
-    const index =
-      consensusInfo.findIndex(([blockNumber,]) => blockNumber === height);
+    const found =
+      consensusInfo.find(([blockNumber,]) => blockNumber === height);
 
     let consensusView;
-    if (index === -1) {
-      consensusView = {} as Types.ConsensusView;
+    if (found) {
+      [, consensusView] = found;
     } else {
-      const found = consensusInfo[index];
-      const [, foundView] = found;
-      consensusView = foundView;
+      consensusView = {} as Types.ConsensusView;
+      consensusInfo.unshift([height, consensusView]);
     }
 
     if (!consensusView[own]) {
@@ -179,13 +178,6 @@ export class AfgHandling {
 
     if (!consensusView[own][other]) {
       consensusView[own][other] = {} as Types.ConsensusDetail;
-    }
-
-    if (index === -1) {
-      // append at the beginning
-      consensusInfo.unshift([height, consensusView]);
-    } else {
-      consensusInfo[index] = [height, consensusView];
     }
   }
 
