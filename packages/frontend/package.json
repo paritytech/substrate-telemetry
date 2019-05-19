@@ -24,7 +24,7 @@
     "polkadot-identicon": "^1.1.45",
     "react": "16.4.0",
     "react-dom": "16.4.0",
-    "react-measure": "^2.2.4",
+    "react-measure": "^2.3.0",
     "react-scripts-ts": "2.17.0",
     "react-svg": "^4.1.1",
     "stable": "^0.1.8"
