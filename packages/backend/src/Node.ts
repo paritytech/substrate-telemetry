@@ -2,7 +2,18 @@ import * as WebSocket from 'ws';
 import * as EventEmitter from 'events';
 
 import { noop, timestamp, idGenerator, Maybe, Types, NumStats } from '@dotstats/common';
-import { parseMessage, getBestBlock, Message, BestBlock, SystemInterval } from './message';
+import { BlockHash, BlockNumber, ConsensusView } from "@dotstats/common/build/types";
+import {
+  parseMessage,
+  getBestBlock,
+  Message,
+  BestBlock,
+  SystemInterval,
+  AfgFinalized,
+  AfgReceivedPrecommit,
+  AfgReceivedPrevote,
+  AfgAuthoritySet,
+} from './message';
 import { locate, Location } from './location';
 import MeanList from './MeanList';
 import Block from './Block';
@@ -56,6 +67,9 @@ export default class Node {
   private lastBlockAt: Maybe<Date> = null;
   private pingStart = 0 as Types.Timestamp;
   private throttle = false;
+
+  private authorities: Types.Authorities = [] as Types.Authorities;
+  private authoritySetId: Types.AuthoritySetId = 0 as Types.AuthoritySetId;
 
   constructor(
     ip: string,
@@ -182,8 +196,9 @@ export default class Node {
 
   public nodeDetails(): Types.NodeDetails {
     const authority = this.authority ? this.address : null;
+    const addr = this.address ? this.address : '' as Types.Address;
 
-    return [this.name, this.implementation, this.version, authority, this.networkId];
+    return [this.name, addr, this.implementation, this.version, authority, this.networkId];
   }
 
   public nodeStats(): Types.NodeStats {
@@ -236,6 +251,19 @@ export default class Node {
     if (message.msg === 'system.interval') {
       this.onSystemInterval(message);
     }
+
+    if (message.msg === 'afg.finalized') {
+      this.onAfgFinalized(message);
+    }
+    if (message.msg === 'afg.received_precommit') {
+      this.onAfgReceivedPrecommit(message);
+    }
+    if (message.msg === 'afg.received_prevote') {
+      this.onAfgReceivedPrevote(message);
+    }
+    if (message.msg === 'afg.authority_set') {
+      this.onAfgAuthoritySet(message);
+    }
   }
 
   private onSystemInterval(message: SystemInterval) {
@@ -281,6 +309,57 @@ export default class Node {
         this.events.emit('hardware');
       }
     }
+  }
+
+  public isAuthority(): boolean {
+    return this.authority;
+  }
+
+  private onAfgReceivedPrecommit(message: AfgReceivedPrecommit) {
+    const {
+      target_number: targetNumber,
+      target_hash: targetHash,
+    } = message;
+    const voter = this.extractVoter(message.voter);
+    this.events.emit('afg-received-precommit', targetNumber, targetHash, voter);
+  }
+
+  private onAfgReceivedPrevote(message: AfgReceivedPrevote) {
+    const {
+      target_number: targetNumber,
+      target_hash: targetHash,
+    } = message;
+    const voter = this.extractVoter(message.voter);
+    this.events.emit('afg-received-prevote', targetNumber, targetHash, voter);
+  }
+
+  private onAfgAuthoritySet(message: AfgAuthoritySet) {
+    const {
+      authority_set_id: authoritySetId,
+      hash,
+      number,
+    } = message;
+
+    // we manually parse the authorities message, because the array was formatted as a
+    // string by substrate before sending it.
+    const authorities = JSON.parse(String(message.authorities)) as Types.Authorities;
+
+    if (JSON.stringify(this.authorities) !== String(message.authorities) ||
+        this.authoritySetId !== authoritySetId) {
+      this.events.emit('authority-set-changed', authorities, authoritySetId, number, hash);
+    }
+  }
+
+  private onAfgFinalized(message: AfgFinalized) {
+    const {
+      finalized_number: finalizedNumber,
+      finalized_hash: finalizedHash,
+    } = message;
+    this.events.emit('afg-finalized', finalizedNumber, finalizedHash);
+  }
+
+  private extractVoter(message_voter: String): Types.Address {
+    return String(message_voter.replace(/"/g, '')) as Types.Address;
   }
 
   private updateLatency(now: Types.Timestamp) {

@@ -2,6 +2,7 @@ import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from '@dotstats/
 import { State, Update, Node } from './state';
 import { PersistentSet } from './persist';
 import { getHashData, setHashData } from './utils';
+import { AfgHandling } from './AfgHandling';
 
 const { Actions } = FeedMessage;
 
@@ -63,6 +64,7 @@ export class Connection {
   private pingTimeout: NodeJS.Timer;
   private pingSent: Maybe<Types.Timestamp> = null;
   private resubscribeTo: Maybe<Types.ChainLabel> = getHashData().chain;
+  private resubscribeSendFinality: boolean = getHashData().tab === 'consensus';
   private socket: WebSocket;
   private state: Readonly<State>;
   private readonly update: Update;
@@ -80,9 +82,25 @@ export class Connection {
     this.socket.send(`subscribe:${chain}`);
   }
 
+  public subscribeConsensus(chain: Types.ChainLabel) {
+    setHashData({ chain });
+    this.resubscribeSendFinality = true;
+    this.socket.send(`send-finality:${chain}`);
+  }
+
+  public unsubscribeConsensus(chain: Types.ChainLabel) {
+    setHashData({ chain });
+    this.resubscribeSendFinality = true;
+    this.socket.send(`no-more-finality:${chain}`);
+  }
+
   public handleMessages = (messages: FeedMessage.Message[]) => {
     const { nodes, chains } = this.state;
     const ref = nodes.ref();
+
+    const updateState = (state: any) => { this.state = this.update(state); };
+    const getState = () => this.state;
+    const afg = new AfgHandling(updateState, getState);
 
     for (const message of messages) {
       switch (message.action) {
@@ -228,6 +246,34 @@ export class Connection {
           break;
         }
 
+        case Actions.AfgFinalized: {
+          const [nodeAddress, finalizedNumber, finalizedHash] = message.payload;
+          afg.receivedFinalized( nodeAddress, finalizedNumber, finalizedHash);
+
+          break;
+        }
+
+        case Actions.AfgReceivedPrevote: {
+          const [nodeAddress, blockNumber, blockHash, voter] = message.payload;
+          afg.receivedPre(nodeAddress, blockNumber, blockHash, voter, "prevote");
+
+          break;
+        }
+
+        case Actions.AfgReceivedPrecommit: {
+          const [nodeAddress, blockNumber, blockHash, voter] = message.payload;
+          afg.receivedPre(nodeAddress, blockNumber, blockHash, voter, "precommit");
+
+          break;
+        }
+
+        case Actions.AfgAuthoritySet: {
+          const [authoritySetId, authorities] = message.payload;
+          afg.receivedAuthoritySet(authoritySetId, authorities);
+
+          break;
+        }
+
         default: {
           break;
         }
@@ -255,7 +301,8 @@ export class Connection {
 
     if (this.state.subscribed) {
       this.resubscribeTo = this.state.subscribed;
-      this.state = this.update({ subscribed: null });
+      this.resubscribeSendFinality = this.state.sendFinality;
+      this.state = this.update({ subscribed: null, sendFinality: false });
     }
 
     this.socket.addEventListener('message', this.handleFeedData);
@@ -313,7 +360,7 @@ export class Connection {
 
   private autoSubscribe() {
     const { subscribed, chains } = this.state;
-    const { resubscribeTo } = this;
+    const { resubscribeTo, resubscribeSendFinality } = this;
 
     if (subscribed) {
       return;
@@ -322,6 +369,9 @@ export class Connection {
     if (resubscribeTo) {
       if (chains.has(resubscribeTo)) {
         this.subscribe(resubscribeTo);
+        if (resubscribeSendFinality) {
+          this.subscribeConsensus(resubscribeTo);
+        }
         return;
       }
     }

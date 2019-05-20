@@ -27,7 +27,37 @@ export type NetworkId = Opaque<string, 'NetworkId'>;
 export type NetworkState = Opaque<string | object, 'NetworkState'>;
 
 export type BlockDetails = [BlockNumber, BlockHash, Milliseconds, Timestamp, Maybe<PropagationTime>];
-export type NodeDetails = [NodeName, NodeImplementation, NodeVersion, Maybe<Address>, Maybe<NetworkId>];
+export type NodeDetails = [NodeName, Address, NodeImplementation, NodeVersion, Maybe<Address>, Maybe<NetworkId>];
 export type NodeStats = [PeerCount, TransactionCount];
 export type NodeHardware = [Array<MemoryUse>, Array<CPUUse>, Array<BytesPerSecond>, Array<BytesPerSecond>, Array<Timestamp>];
 export type NodeLocation = [Latitude, Longitude, City];
+
+export declare type Authority = {
+  Address: Address,
+  NodeId: Maybe<NodeId>,
+  Name: Maybe<NodeName>,
+};
+export declare type Authorities = Array<Address>;
+export declare type AuthoritySetId = Opaque<number, 'AuthoritySetId'>;
+export declare type AuthoritySetInfo = [AuthoritySetId, Authorities, Address, BlockNumber, BlockHash];
+export declare type ConsensusInfo = Array<[BlockNumber, ConsensusView]>;
+export declare type ConsensusView = Map<Address, ConsensusState>;
+export declare type ConsensusState = Map<Address, ConsensusDetail>;
+export declare type ConsensusDetail = {
+  Precommit: Precommit;
+  ImplicitPrecommit: ImplicitPrecommit;
+  Prevote: Prevote;
+  ImplicitPrevote: ImplicitPrevote;
+  ImplicitPointer: ImplicitPointer;
+  Finalized: ImplicitFinalized;
+  ImplicitFinalized: Finalized;
+  FinalizedHash: BlockHash;
+  FinalizedHeight: BlockNumber;
+};
+export declare type Precommit = Opaque<boolean, 'Precommit'>;
+export declare type Prevote = Opaque<boolean, 'Prevote'>;
+export declare type Finalized = Opaque<boolean, 'Finalized'>;
+export declare type ImplicitPrecommit = Opaque<boolean, 'ImplicitPrecommit'>;
+export declare type ImplicitPrevote = Opaque<boolean, 'ImplicitPrevote'>;
+export declare type ImplicitFinalized = Opaque<boolean, 'ImplicitFinalized'>;
+export declare type ImplicitPointer = Opaque<BlockNumber, 'ImplicitPointer'>;

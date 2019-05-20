@@ -1,0 +1,9 @@
+.Jdenticon {
+  cursor: pointer;
+  vertical-align: middle;
+  background-color: #fff;
+}
+
+.Jdenticon:hover {
+  transform: scale(2);
+}

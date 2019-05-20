@@ -3,7 +3,7 @@ import Node from './Node';
 import Feed from './Feed';
 import FeedSet from './FeedSet';
 import Block from './Block';
-import { Maybe, Types, FeedMessage, NumStats } from '@dotstats/common';
+import { Maybe, Types, NumStats } from '@dotstats/common';
 
 const BLOCK_TIME_HISTORY = 10;
 
@@ -20,6 +20,8 @@ export default class Chain {
 
   private blockTimes = new NumStats<Types.Milliseconds>(BLOCK_TIME_HISTORY);
   private averageBlockTime: Maybe<Types.Milliseconds> = null;
+
+  public lastBroadcastedAuthoritySetInfo: Maybe<Types.AuthoritySetInfo> = null;
 
   constructor(label: Types.ChainLabel) {
     this.label = label;
@@ -39,6 +41,33 @@ export default class Chain {
 
     node.events.on('block', () => this.updateBlock(node));
     node.events.on('finalized', () => this.updateFinalized(node));
+
+    node.events.on('afg-finalized', (finalizedNumber, finalizedHash) => this.feeds.each(
+      f => f.sendConsensusMessage(Feed.afgFinalized(node, finalizedNumber, finalizedHash))
+    ));
+    node.events.on('afg-received-prevote', (finalizedNumber, finalizedHash, voter) => this.feeds.each(
+      f => f.sendConsensusMessage(Feed.afgReceivedPrevote(node, finalizedNumber, finalizedHash, voter))
+    ));
+    node.events.on('afg-received-precommit', (finalizedNumber, finalizedHash, voter) => this.feeds.each(
+      f => f.sendConsensusMessage(Feed.afgReceivedPrecommit(node, finalizedNumber, finalizedHash, voter))
+    ));
+    node.events.on('authority-set-changed', (authorities, authoritySetId, blockNumber, blockHash) => {
+      let newSet;
+      if (this.lastBroadcastedAuthoritySetInfo == null) {
+        newSet = true;
+      } else {
+        const [lastBroadcastedAuthoritySetId] = this.lastBroadcastedAuthoritySetInfo;
+        newSet = authoritySetId !== lastBroadcastedAuthoritySetId;
+      }
+
+      if (node.isAuthority() && newSet) {
+        const addr = node.address != null ? node.address : "" as Types.Address;
+        const set = [authoritySetId, authorities, addr, blockNumber, blockHash] as Types.AuthoritySetInfo;
+        this.feeds.broadcast(Feed.afgAuthoritySet(set));
+        this.lastBroadcastedAuthoritySetInfo = set;
+      }
+    });
+
     node.events.on('stats', () => this.feeds.broadcast(Feed.stats(node)));
     node.events.on('hardware', () => this.feeds.broadcast(Feed.hardware(node)));
     node.events.on('location', (location) => this.feeds.broadcast(Feed.locatedNode(node, location)));
@@ -69,6 +98,10 @@ export default class Chain {
     feed.sendMessage(Feed.timeSync());
     feed.sendMessage(Feed.bestBlock(this.height, this.blockTimestamp, this.averageBlockTime));
     feed.sendMessage(Feed.bestFinalizedBlock(this.finalized));
+
+    if (this.lastBroadcastedAuthoritySetInfo != null) {
+      feed.sendMessage(Feed.afgAuthoritySet(this.lastBroadcastedAuthoritySetInfo));
+    }
 
     for (const node of this.nodes.values()) {
       feed.sendMessage(Feed.addedNode(node));

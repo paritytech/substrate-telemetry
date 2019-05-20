@@ -27,6 +27,7 @@ export class Settings extends React.Component<Settings.Props, {}> {
     return (
       <div className="Settings">
         <div className="Settings-category">
+          <h1>List View</h1>
           <h2>Visible Columns</h2>
           {
             Row.columns

@@ -39,6 +39,41 @@ export interface BestBlock {
   ts: Date;
 }
 
+export interface AfgFinalized {
+  ts: Date;
+  finalized_number: Types.BlockNumber;
+  finalized_hash: Types.BlockHash;
+  msg: 'afg.finalized';
+}
+
+export interface AfgReceived {
+  ts: Date;
+  target_number: Maybe<Types.BlockNumber>;
+  target_hash: Maybe<Types.BlockHash>;
+  voter: Types.Address;
+}
+
+export interface AfgReceivedPrecommit extends AfgReceived {
+  msg: 'afg.received_precommit';
+}
+
+export interface AfgReceivedPrevote extends AfgReceived {
+  msg: 'afg.received_prevote';
+}
+
+export interface AfgReceivedCommit extends AfgReceived {
+  msg: 'afg.received_commit';
+}
+
+export interface AfgAuthoritySet {
+  msg: 'afg.authority_set';
+  ts: Date;
+  authorities: Types.Authorities;
+  authority_set_id: Types.AuthoritySetId;
+  number: Types.BlockNumber;
+  hash: Types.BlockHash;
+}
+
 export interface SystemConnected {
   msg: 'system.connected';
   name: Types.NodeName;
@@ -79,6 +114,11 @@ export type Message = MessageBase & (
   | SystemInterval
   | NodeStart
   | BlockImport
+  | AfgFinalized
+  | AfgReceivedPrecommit
+  | AfgReceivedPrevote
+  | AfgReceivedCommit
+  | AfgAuthoritySet
 );
 
 

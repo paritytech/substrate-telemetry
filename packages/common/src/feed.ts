@@ -17,7 +17,8 @@ import {
   BlockDetails,
   Timestamp,
   Milliseconds,
-  ChainLabel
+  ChainLabel,
+  AuthoritySetInfo,
 } from './types';
 
 export const Actions = {
@@ -37,6 +38,10 @@ export const Actions = {
   SubscribedTo     : 0x0D as 0x0D,
   UnsubscribedFrom : 0x0E as 0x0E,
   Pong             : 0x0F as 0x0F,
+  AfgFinalized         : 0x10 as 0x10,
+  AfgReceivedPrevote   : 0x11 as 0x11,
+  AfgReceivedPrecommit : 0x12 as 0x12,
+  AfgAuthoritySet      : 0x13 as 0x13,
 };
 
 export type Action = typeof Actions[keyof typeof Actions];
@@ -126,6 +131,26 @@ export namespace Variants {
     action: typeof Actions.Pong;
     payload: string; // just echo whatever `ping` sent
   }
+
+  export interface AfgFinalizedMessage extends MessageBase {
+    action: typeof Actions.AfgFinalized;
+    payload: [Address, BlockNumber, BlockHash];
+  }
+
+  export interface AfgAuthoritySet extends MessageBase {
+    action: typeof Actions.AfgAuthoritySet;
+    payload: AuthoritySetInfo;
+  }
+
+  export interface AfgReceivedPrecommit extends MessageBase {
+    action: typeof Actions.AfgReceivedPrecommit;
+    payload: [Address, BlockNumber, BlockHash, Address];
+  }
+
+  export interface AfgReceivedPrevote extends MessageBase {
+    action: typeof Actions.AfgReceivedPrevote;
+    payload: [Address, BlockNumber, BlockHash, Address];
+  }
 }
 
 export type Message =
@@ -144,6 +169,10 @@ export type Message =
   | Variants.RemovedChainMessage
   | Variants.SubscribedToMessage
   | Variants.UnsubscribedFromMessage
+  | Variants.AfgFinalizedMessage
+  | Variants.AfgReceivedPrevote
+  | Variants.AfgReceivedPrecommit
+  | Variants.AfgAuthoritySet
   | Variants.PongMessage;
 
 /**

@@ -1,0 +1,201 @@
+.BlockConsensusMatrice {
+  background-color: #222;
+  font-family: monospace, sans-serif;
+  border-spacing: 0px;
+  border-right: 2px solid lightgrey;
+  border-bottom: 1px solid #999;
+}
+
+.LargeRow .BlockConsensusMatrice:last-child {
+  border-right: none;
+}
+
+.SmallRow .lastInRow {
+  clear: right;
+  width: 99%;
+  page-break-after: always;
+}
+
+.BlockConsensusMatrice th {
+  font-weight: normal;
+  border-bottom: 1px dashed #999;
+}
+
+.finalizedInfo, .legend {
+  border-bottom: 1px dotted #555555;
+}
+
+.finalizedInfo {
+  white-space: nowrap;
+}
+
+.finalizedInfo .Tooltip-container {
+  display: inline-block;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.BlockConsensusMatrice .matrice {
+  width: 28px;
+  height: 28px;
+}
+
+.BlockConsensusMatrice .matrice {
+  font-weight: normal;
+  border-right: 1px dotted #555555;
+  border-bottom: 1px dotted #555;
+}
+
+.BlockConsensusMatrice tr .matrice:last-child {
+  border-right: none;
+}
+
+.BlockConsensusMatrice .matrixXLegend {
+  text-align: center;
+  border-right: 1px dotted #555555;
+}
+
+.BlockConsensusMatrice .matrixXLegend:last-child {
+  border-right: none;
+}
+
+.matrice {
+  text-align: center !important;
+  min-width: 35px;
+}
+
+.SmallRow .matrixXLegend,
+.SmallRow .matrice {
+  min-width: 26px;
+  min-height: 26px;
+}
+
+.finalizedInfo {
+  text-align: center !important;
+}
+
+.SmallRow .finalizedInfo {
+  min-width: 40px;
+}
+
+.finalizedInfo {
+  text-align: right;
+  border-right: 1px dashed #999;
+  min-width: 48px;
+}
+
+.finalizedInfo .Tooltip-container {
+  float: none;
+}
+
+.explicit {
+  fill: #E70E81;
+}
+
+.nodeName {
+  float: left;
+  padding-right: 10px;
+  padding-top: 4px;
+}
+
+.flexContainerLargeRow .firstInRow .nodeContent {
+  white-space: nowrap;
+}
+
+.flexContainerLargeRow .firstInRow .nodeName {
+  display: inline-block !important;
+  float: none !important;
+  vertical-align: middle;
+  margin-bottom: 3px;
+}
+
+.flexContainerLargeRow .firstInRow .nodeAddress {
+  display: inline-block !important;
+  float: none !important;
+  vertical-align: middle;
+  margin-right: 3px;
+}
+
+.legend {
+  border-right: 1px solid #999;
+  white-space: nowrap;
+}
+
+.first_false .nodeName {
+  display: none;
+}
+
+.legend .nodeAddress {
+  float: right;
+}
+
+.Row {
+  color: #999;
+  cursor: pointer;
+}
+
+.Row th, .Row td {
+  text-align: left;
+  padding: 2px;
+}
+
+.Row td {
+  position: relative;
+}
+
+.Row .Row-truncate {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  padding: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.Row .Row-Tooltip {
+  position: initial;
+  padding: inherit;
+}
+
+.Row:hover {
+  background-color: #161616;
+}
+
+.nodeAddress svg {
+  cursor: pointer;
+}
+
+.nodeAddress svg:hover {
+  transform: scale(2);
+}
+
+.matrice .Icon ~ .Icon {
+  margin-left: -4px;
+}
+
+.SmallRow .matrice .Prevote svg {
+  margin-left: 3px;
+  margin-bottom: -11px;
+}
+
+.SmallRow .matrice .Precommit svg {
+  margin-left: -1px;
+  margin-top: -6px;
+  margin-bottom: 0px;
+}
+
+.jdenticonPlaceholder {
+  width: 28px;
+}
+
+.SmallRow .jdenticonPlaceholder {
+  width: 14px;
+  float: right;
+}
+
+.even {
+  background-color: #333;
+}
+

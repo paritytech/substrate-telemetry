@@ -19,6 +19,7 @@ export class Node {
   }
 
   public readonly id: Types.NodeId;
+  public readonly address: Types.Address;
   public readonly name: Types.NodeName;
   public readonly implementation: Types.NodeImplementation;
   public readonly version: Types.NodeVersion;
@@ -48,6 +49,7 @@ export class Node {
   public city: Maybe<Types.City>;
 
   private readonly subscriptions = new Set<(node: Node) => void>();
+  private readonly subscriptionsConsensus = new Set<(node: Node) => void>();
 
   constructor(
     pinned: boolean,
@@ -58,12 +60,13 @@ export class Node {
     blockDetails: Types.BlockDetails,
     location: Maybe<Types.NodeLocation>
   ) {
-    const [name, implementation, version, validator, networkId] = nodeDetails;
+    const [name, address, implementation, version, validator, networkId] = nodeDetails;
 
     this.pinned = pinned;
 
     this.id = id;
     this.name = name;
+    this.address = address;
     this.implementation = implementation;
     this.version = version;
     this.validator = validator;
@@ -148,6 +151,14 @@ export class Node {
     this.subscriptions.delete(handler);
   }
 
+  public subscribeConsensus(handler: (node: Node) => void) {
+    this.subscriptionsConsensus.add(handler);
+  }
+
+  public unsubscribeConsensus(handler: (node: Node) => void) {
+    this.subscriptionsConsensus.delete(handler);
+  }
+
   private trigger() {
     for (const handler of this.subscriptions.values()) {
       handler(this);
@@ -182,6 +193,10 @@ export interface State {
   status: 'online' | 'offline' | 'upgrade-requested';
   best: Types.BlockNumber;
   finalized: Types.BlockNumber;
+  consensusInfo: Types.ConsensusInfo;
+  authorities: Types.Address[];
+  authoritySetId: Types.AuthoritySetId;
+  sendFinality: boolean;
   blockTimestamp: Types.Timestamp;
   blockAverage: Maybe<Types.Milliseconds>;
   timeDiff: Types.Milliseconds;
