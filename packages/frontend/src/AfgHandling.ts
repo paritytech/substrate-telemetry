@@ -215,18 +215,13 @@ export class AfgHandling {
     data: Partial<Types.ConsensusDetail>,
   ) {
     const consensusInfo = this.getState().consensusInfo;
-    this.initialiseConsensusView(consensusInfo, height, addr, voter);
-
-    const index = consensusInfo.findIndex(([blockNumber,]) => blockNumber === height);
-    const [, consensusView] = consensusInfo[index];
+    const consensusView = this.initialiseConsensusView(consensusInfo, height, addr, voter);
 
     for (const k in data) {
       if (data.hasOwnProperty(k)) {
         consensusView[addr][voter][k] = data[k];
       }
     }
-
-    consensusInfo[index] = [height, consensusView];
 
     this.updateState({consensusInfo});
   }
