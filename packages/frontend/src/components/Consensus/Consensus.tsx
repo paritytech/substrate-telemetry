@@ -128,7 +128,7 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
       <React.Fragment>
         <Measure bounds={true} onResize={this.handleOnResize}>
           {({ measureRef }) => (
-            <div className="allRows" ref={measureRef}>
+            <div className="Consensus" ref={measureRef}>
               {firstLargeRow}
               {secondLargeRow}
               {smallRow}
