@@ -188,6 +188,7 @@
 
 .Consensus .jdenticonPlaceholder {
   width: 28px;
+  float: right;
 }
 
 .Consensus .SmallRow .jdenticonPlaceholder {
