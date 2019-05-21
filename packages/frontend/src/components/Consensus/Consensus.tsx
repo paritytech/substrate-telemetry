@@ -26,6 +26,7 @@ export namespace Consensus {
     smallBlocksRows: number,
     countBlocksInSmallRow: number,
     smallRowsAddFlexClass: boolean,
+    lastConsensusInfo: string,
   }
 }
 
@@ -43,7 +44,61 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
     smallBlocksRows: 1,
     countBlocksInSmallRow: 1,
     smallRowsAddFlexClass: false,
+    lastConsensusInfo: "",
   };
+
+
+  public shouldComponentUpdate(nextProps: Consensus.Props, nextState: Consensus.State): boolean {
+    if (this.props.appState.authorities.length === 0 && nextProps.appState.authorities.length === 0) {
+      return false;
+    }
+
+    this.props.appState.authorities.map(authority => {
+      if (!this.state.identicons.compact[authority]) {
+        this.state.identicons.compact[authority] =<Identicon account={authority} size={14} />;
+        this.state.identicons.notCompact[authority] = <Identicon account={authority} size={28} />;
+      }
+    });
+
+    // size detected, but flex class has not yet been added
+    const largeBlocksSizeDetected = this.largeBlocksSizeDetected(nextState) === true &&
+      this.state.largeRowsAddFlexClass === false;
+    if (largeBlocksSizeDetected) {
+      return true;
+    }
+
+    const smallBlocksSizeDetected = this.smallBlocksSizeDetected(nextState) === true &&
+      this.state.smallRowsAddFlexClass === false;
+    if (smallBlocksSizeDetected) {
+      return true;
+    }
+
+    const windowSizeChanged = JSON.stringify(this.state.dimensions) !==
+      JSON.stringify(nextState.dimensions);
+    if (windowSizeChanged) {
+      return true;
+    }
+
+    const newConsensusInfoAvailable = this.state.lastConsensusInfo !==
+      JSON.stringify(nextProps.appState.consensusInfo);
+    if (newConsensusInfoAvailable) {
+      return true;
+    }
+
+    const authoritySetIdDidChange = this.props.appState.authoritySetId !==
+      nextProps.appState.authoritySetId;
+    if (authoritySetIdDidChange) {
+      return true;
+    }
+
+    const authoritiesDidChange = JSON.stringify(this.props.appState.authorities) !==
+      JSON.stringify(nextProps.appState.authorities);
+    if (authoritiesDidChange) {
+      return true;
+    }
+
+    return false;
+  }
 
   public componentDidMount() {
     if (this.props.appState.subscribed != null) {
@@ -108,6 +163,7 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
   }
 
   public render() {
+    this.state.lastConsensusInfo = JSON.stringify(this.props.appState.consensusInfo);
     this.calculateBoxCount(false);
 
     const lastBlocks = this.props.appState.consensusInfo;

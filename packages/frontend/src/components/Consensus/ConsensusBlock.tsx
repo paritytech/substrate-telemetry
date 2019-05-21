@@ -27,8 +27,32 @@ export namespace ConsensusBlock {
 }
 
 export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
+  public state = {
+    lastConsensusView: "",
+  }
+
+  public shouldComponentUpdate(nextProps: ConsensusBlock.Props): boolean {
+    if (this.props.authorities.length === 0 && nextProps.authorities.length === 0) {
+      return false;
+    }
+
+    const positionInfoChanged = this.props.firstInRow !== nextProps.firstInRow ||
+      this.props.lastInRow !== nextProps.lastInRow;
+    if (positionInfoChanged) {
+      return true;
+    }
+
+    const newConsensusInfo =
+      JSON.stringify(nextProps.consensusView) !== this.state.lastConsensusView;
+    if (newConsensusInfo) {
+      return true;
+    }
+
+    return false;
+  }
 
   public render() {
+    this.state.lastConsensusView = JSON.stringify(this.props.consensusView);
     const finalizedByWhom = this.props.authorities.filter(authority => this.isFinalized(authority));
 
     const ratio = finalizedByWhom.length + '/' + this.props.authorities.length;
