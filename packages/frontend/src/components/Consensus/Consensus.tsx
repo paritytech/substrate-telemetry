@@ -164,9 +164,18 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
 
   public render() {
     this.state.lastConsensusInfo = JSON.stringify(this.props.appState.consensusInfo);
-    this.calculateBoxCount(false);
-
     const lastBlocks = this.props.appState.consensusInfo;
+
+    if (lastBlocks.length < 2) {
+      return <div className="Consensus">
+        <div className="noData">
+          {lastBlocks.length === 0 ? "No " : "Not yet enough "}
+          GRANDPA data received by the authorities&hellip;
+        </div>;
+      </div>;
+    }
+
+    this.calculateBoxCount(false);
 
     let from = 0;
     let to = this.state.countBlocksInLargeRow;
