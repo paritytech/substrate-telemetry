@@ -60,7 +60,7 @@ export class Node {
     blockDetails: Types.BlockDetails,
     location: Maybe<Types.NodeLocation>
   ) {
-    const [name, address, implementation, version, validator, networkId] = nodeDetails;
+    const [name, implementation, version, validator, networkId, address] = nodeDetails;
 
     this.pinned = pinned;
 
