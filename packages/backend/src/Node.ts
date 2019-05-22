@@ -198,7 +198,7 @@ export default class Node {
     const authority = this.authority ? this.address : null;
     const addr = this.address ? this.address : '' as Types.Address;
 
-    return [this.name, addr, this.implementation, this.version, authority, this.networkId];
+    return [this.name, this.implementation, this.version, authority, this.networkId, addr];
   }
 
   public nodeStats(): Types.NodeStats {
