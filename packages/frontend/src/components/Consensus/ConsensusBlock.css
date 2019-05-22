@@ -81,7 +81,7 @@
 .Consensus .finalizedInfo {
   text-align: right;
   border-right: 1px dashed #999;
-  min-width: 48px;
+  min-width: 50px;
 }
 
 .Consensus .finalizedInfo .Tooltip-container {
