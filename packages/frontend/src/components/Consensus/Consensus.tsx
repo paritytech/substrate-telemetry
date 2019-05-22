@@ -115,9 +115,12 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
   }
 
   public largeBlocksSizeDetected(state: Consensus.State): boolean {
-    const countBlocks = Object.keys(this.props.appState.consensusInfo).length;
-    if (countBlocks === 1) {
-      return state.largeBlockWithLegend.width > -1 && state.largeBlockWithLegend.height > -1;
+    // we can only state that we detected the two block sizes (with
+    // legend and without) if at least two blocks have been added:
+    // the first displayed block will always have a legend with the
+    // node names attached, the second not.
+    if (this.props.appState.consensusInfo.length < 2) {
+      return false;
     }
 
     // if there is more than one block then the size of the first block (with legend)
