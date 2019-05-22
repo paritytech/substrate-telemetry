@@ -321,7 +321,8 @@ export default class Node {
       target_hash: targetHash,
     } = message;
     const voter = this.extractVoter(message.voter);
-    this.events.emit('afg-received-precommit', targetNumber, targetHash, voter);
+    const number = parseInt(String(targetNumber), 10) as Types.BlockNumber;
+    this.events.emit('afg-received-precommit', number, targetHash, voter);
   }
 
   private onAfgReceivedPrevote(message: AfgReceivedPrevote) {
@@ -330,7 +331,8 @@ export default class Node {
       target_hash: targetHash,
     } = message;
     const voter = this.extractVoter(message.voter);
-    this.events.emit('afg-received-prevote', targetNumber, targetHash, voter);
+    const number = parseInt(String(targetNumber), 10) as Types.BlockNumber;
+    this.events.emit('afg-received-prevote', number, targetHash, voter);
   }
 
   private onAfgAuthoritySet(message: AfgAuthoritySet) {
@@ -346,7 +348,8 @@ export default class Node {
 
     if (JSON.stringify(this.authorities) !== String(message.authorities) ||
         this.authoritySetId !== authoritySetId) {
-      this.events.emit('authority-set-changed', authorities, authoritySetId, number, hash);
+      const no = parseInt(String(number), 10) as Types.BlockNumber;
+      this.events.emit('authority-set-changed', authorities, authoritySetId, no, hash);
     }
   }
 
@@ -355,7 +358,8 @@ export default class Node {
       finalized_number: finalizedNumber,
       finalized_hash: finalizedHash,
     } = message;
-    this.events.emit('afg-finalized', finalizedNumber, finalizedHash);
+    const number = parseInt(String(finalizedNumber), 10) as Types.BlockNumber;
+    this.events.emit('afg-finalized', number, finalizedHash);
   }
 
   private extractVoter(message_voter: String): Types.Address {
