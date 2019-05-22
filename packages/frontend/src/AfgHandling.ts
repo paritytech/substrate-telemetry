@@ -156,12 +156,20 @@ export class AfgHandling {
     let consensusView;
     if (found) {
       [, consensusView] = found;
+      this.initialiseConsensusViewByRef(consensusView, own, other);
     } else {
       consensusView = {} as Types.ConsensusView;
-      consensusInfo.unshift([height, consensusView]);
-    }
 
-    this.initialiseConsensusViewByRef(consensusView, own, other);
+      this.initialiseConsensusViewByRef(consensusView, own, other);
+
+      const item: Types.ConsensusItem = [height, consensusView];
+      const insertPos = consensusInfo.findIndex(([elHeight, elView]) => elHeight < height);
+      if (insertPos >= 0) {
+        consensusInfo.splice(insertPos, 0, item);
+      } else {
+        consensusInfo.push(item);
+      }
+    }
 
     return consensusView;
   }
