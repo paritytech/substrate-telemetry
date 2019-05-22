@@ -152,3 +152,7 @@
   text-align: center;
   color: #888;
 }
+
+.Consensus svg {
+  z-index: 999999999;
+}
