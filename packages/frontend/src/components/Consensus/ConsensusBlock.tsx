@@ -16,7 +16,7 @@ import './ConsensusBlock.css';
 export namespace ConsensusBlock {
   export interface Props {
     authorities: Types.Authority[];
-    authoritySetId: Types.AuthoritySetId;
+    authoritySetId: Maybe<Types.AuthoritySetId>;
     height: Types.BlockNumber;
     firstInRow: boolean;
     lastInRow: boolean;

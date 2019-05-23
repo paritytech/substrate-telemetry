@@ -55,7 +55,7 @@ export default class App extends React.Component<{}, State> {
       finalized: 0 as Types.BlockNumber,
       consensusInfo: new Array() as Types.ConsensusInfo,
       authorities: new Array() as Types.Authorities,
-      authoritySetId: -1 as Types.AuthoritySetId,
+      authoritySetId: null,
       sendFinality: false,
       blockTimestamp: 0 as Types.Timestamp,
       blockAverage: null,
