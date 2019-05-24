@@ -248,21 +248,24 @@ export class Connection {
 
         case Actions.AfgFinalized: {
           const [nodeAddress, finalizedNumber, finalizedHash] = message.payload;
-          afg.receivedFinalized( nodeAddress, finalizedNumber, finalizedHash);
+          const no = parseInt(String(finalizedNumber), 10) as Types.BlockNumber;
+          afg.receivedFinalized( nodeAddress, no, finalizedHash);
 
           break;
         }
 
         case Actions.AfgReceivedPrevote: {
           const [nodeAddress, blockNumber, blockHash, voter] = message.payload;
-          afg.receivedPre(nodeAddress, blockNumber, blockHash, voter, "prevote");
+          const no = parseInt(String(blockNumber), 10) as Types.BlockNumber;
+          afg.receivedPre(nodeAddress, no, blockHash, voter, "prevote");
 
           break;
         }
 
         case Actions.AfgReceivedPrecommit: {
           const [nodeAddress, blockNumber, blockHash, voter] = message.payload;
-          afg.receivedPre(nodeAddress, blockNumber, blockHash, voter, "precommit");
+          const no = parseInt(String(blockNumber), 10) as Types.BlockNumber;
+          afg.receivedPre(nodeAddress, no, blockHash, voter, "precommit");
 
           break;
         }
