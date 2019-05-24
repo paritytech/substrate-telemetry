@@ -1,5 +1,5 @@
 import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from '@dotstats/common';
-import { State, Update, Node } from './state';
+import { State, Update, Node, UpdateBound } from './state';
 import { PersistentSet } from './persist';
 import { getHashData, setHashData } from './utils';
 import { AfgHandling } from './AfgHandling';
@@ -114,7 +114,7 @@ export class Connection {
     const { nodes, chains } = this.state;
     const ref = nodes.ref();
 
-    const updateState = (state: any) => { this.state = this.update(state); };
+    const updateState: UpdateBound = (state) => { this.state = this.update(state); };
     const getState = () => this.state;
     const afg = new AfgHandling(updateState, getState);
 
