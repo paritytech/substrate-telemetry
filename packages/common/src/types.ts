@@ -80,3 +80,4 @@ export declare type Icons = {
 
   self: JSX.Element,
 };
+export declare type Jdenticons = Map<BlockHash, JSX.Element>;

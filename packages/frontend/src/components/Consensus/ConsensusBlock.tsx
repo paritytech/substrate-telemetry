@@ -27,7 +27,8 @@ export namespace ConsensusBlock {
 export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
   public state = {
     lastConsensusView: "",
-  }
+    jdenticons: {} as Types.Jdenticons,
+  };
 
   public shouldComponentUpdate(nextProps: ConsensusBlock.Props): boolean {
     if (this.props.authorities.length === 0 && nextProps.authorities.length === 0) {
@@ -62,13 +63,8 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
     } else if (majorityFinalized && this.props.compact) {
       const hash = this.getFinalizedHash(finalizedByWhom[0]);
 
-      if (hash != null && this.state.jdenticons[this.props.compact ? 0 : 1].hasOwnProperty(hash)) {
-        const jdenticon = this.state.jdenticons[this.props.compact ? 0 : 1][hash];
-        titleFinal = jdenticon;
-      } else if (hash != null && !this.state.jdenticons[this.props.compact ? 0 : 1].hasOwnProperty(hash)) {
-        const jdenticon = <Jdenticon hash={hash ? String(hash) : ''} size={this.props.compact ? '14px' : '28px'}/>;
-        this.state.jdenticons[this.props.compact ? 0 : 1][hash] = jdenticon;
-        titleFinal = jdenticon;
+      if (hash != null) {
+        titleFinal = this.getJdenticon(hash);
       } else {
         titleFinal = <span>&nbsp;</span>;
       }
@@ -229,6 +225,16 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
       return <span>{stat}</span>;
     } else {
       return this.props.icons.self;
+    }
+  }
+
+  private getJdenticon(hash: Types.BlockHash) {
+    if (this.state.jdenticons[this.props.compact ? 0 : 1].hasOwnProperty(hash)) {
+      return this.state.jdenticons[this.props.compact ? 0 : 1][hash];
+    } else {
+      const jdenticon = <Jdenticon hash={hash ? String(hash) : ''} size={this.props.compact ? '14px' : '28px'}/>;
+      this.state.jdenticons[this.props.compact ? 0 : 1][hash] = jdenticon;
+      return jdenticon;
     }
   }
 
