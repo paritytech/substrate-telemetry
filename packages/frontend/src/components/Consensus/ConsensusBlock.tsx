@@ -2,9 +2,14 @@ import * as React from 'react';
 
 import Measure, {BoundingRect, ContentRect} from 'react-measure';
 import { Types, Maybe } from '@dotstats/common';
+import Identicon from 'polkadot-identicon';
 
-import { Tooltip } from '../';
+import { Icon, Tooltip } from '../';
 import Jdenticon from './Jdenticon';
+
+import checkIcon from '../../icons/check.svg';
+import finalizedIcon from '../../icons/finalized.svg';
+import hatchingIcon from '../../icons/hatching.svg';
 
 import './ConsensusBlock.css';
 
@@ -17,8 +22,6 @@ export namespace ConsensusBlock {
     lastInRow: boolean;
     compact: boolean;
     measure: boolean;
-    identicons: Types.Identicons;
-    icons: Types.Icons;
     consensusView: Types.ConsensusView;
     changeBlocks: (first: boolean, boundsRect: BoundingRect) => void;
   }
@@ -27,7 +30,6 @@ export namespace ConsensusBlock {
 export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
   public state = {
     lastConsensusView: "",
-    jdenticons: {} as Types.Jdenticons,
   };
 
   public shouldComponentUpdate(nextProps: ConsensusBlock.Props): boolean {
@@ -62,12 +64,7 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
       titleFinal = <span>FINAL</span>;
     } else if (majorityFinalized && this.props.compact) {
       const hash = this.getFinalizedHash(finalizedByWhom[0]);
-
-      if (hash != null) {
-        titleFinal = this.getJdenticon(hash);
-      } else {
-        titleFinal = <span>&nbsp;</span>;
-      }
+      titleFinal = <Jdenticon hash={hash ? String(hash) : ''} size={this.props.compact ? '14px' : '28px'}/>
     }
 
     const handleOnResize = (contentRect: ContentRect) => {
@@ -156,7 +153,8 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
       const matrice = this.props.consensusView[authority.Address][authority.Address];
 
       finalizedInfo = matrice.ImplicitFinalized ?
-        this.props.icons.implicitFinalized : this.props.icons.explicitFinalized;
+        <Icon className="implicit" src={finalizedIcon} alt="" /> :
+        <Icon className="explicit" src={finalizedIcon} alt="" />;
 
       finalizedHash = matrice.FinalizedHash ?
         <Jdenticon hash={matrice.FinalizedHash} size="28px"/> :
@@ -184,8 +182,8 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
 
   private getAuthorityContent(authority: Types.Authority): JSX.Element {
     return <div className="nodeContent" key={'authority_' + this.props.height + '_' + authority.Address}>
-      <div className="nodeAddress" key={'authority_' + this.props.height + '_' + authority.Address + '_Address'}>
-        {this.props.identicons[this.props.compact ? 'compact' : 'notCompact'][authority.Address]}
+      <div className="nodeAddress" key={'authority_' + authority.Address}>
+        <Identicon account={authority.Address} size={this.props.compact ? 14 : 28} />
       </div>
     </div>;
   }
@@ -208,33 +206,23 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
       let statPrecommit;
 
       if (implicitPrevote) {
-        statPrevote = this.props.icons.implicitPrevote;
+        statPrevote = <Icon src={checkIcon} className="implicit" alt="Implicit Prevote"/>;
       }
       if (implicitPrecommit) {
-        statPrecommit = this.props.icons.implicitPrecommit;
+        statPrecommit = <Icon src={checkIcon} className="implicit" alt="Implicit Precommit"/>;
       }
 
       if (prevote) {
-        statPrevote = this.props.icons.explicitPrevote;
+        statPrevote = <Icon src={checkIcon} className="explicit" alt="Prevote"/>;
       }
       if (precommit) {
-        statPrecommit = this.props.icons.explicitPrecommit;
+        statPrecommit = <Icon src={checkIcon} className="explicit" alt="Precommit"/>;
       }
 
       const stat = [statPrevote, statPrecommit];
-      return <span>{stat}</span>;
+      return (stat);
     } else {
-      return this.props.icons.self;
-    }
-  }
-
-  private getJdenticon(hash: Types.BlockHash) {
-    if (this.state.jdenticons[this.props.compact ? 0 : 1].hasOwnProperty(hash)) {
-      return this.state.jdenticons[this.props.compact ? 0 : 1][hash];
-    } else {
-      const jdenticon = <Jdenticon hash={hash ? String(hash) : ''} size={this.props.compact ? '14px' : '28px'}/>;
-      this.state.jdenticons[this.props.compact ? 0 : 1][hash] = jdenticon;
-      return jdenticon;
+      return <Icon src={hatchingIcon} className="hatching" alt=""/>;
     }
   }
 
