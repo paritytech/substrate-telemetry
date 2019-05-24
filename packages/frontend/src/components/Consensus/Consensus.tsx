@@ -214,19 +214,24 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
     to = to + (this.state.smallBlocksRows * this.state.countBlocksInSmallRow);
     const smallRow = this.getSmallRow(lastBlocks.slice(from, to));
 
-    return (
-      <React.Fragment>
-        <Measure bounds={true} onResize={this.handleOnResize}>
-          {({ measureRef }) => (
-            <div className="Consensus" ref={measureRef}>
-              {firstLargeRow}
-              {secondLargeRow}
-              {smallRow}
-            </div>
-          )}
-        </Measure>
-      </React.Fragment>
-    );
+    const get = (measureRef: any) =>
+      <div className="Consensus" ref={measureRef} key="Consensus">
+        {firstLargeRow}
+        {secondLargeRow}
+        {smallRow}
+      </div>;
+
+    if (!(this.state.smallRowsAddFlexClass && this.state.largeRowsAddFlexClass)) {
+      return (
+        <React.Fragment>
+          <Measure bounds={true} onResize={this.handleOnResize}>
+            {({measureRef}) => get(measureRef)}
+          </Measure>
+        </React.Fragment>
+      );
+    } else {
+      return (get(null));
+    }
   }
 
   private handleOnResize = (contentRect: ContentRect) => {
@@ -277,6 +282,7 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
              compact={false}
              key={height}
              height={height}
+             measure={!this.state.largeRowsAddFlexClass}
              consensusView={consensusView}
              authorities={this.getAuthorities()}
              authoritySetId={this.props.appState.authoritySetId}
@@ -319,6 +325,7 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
            compact={true}
            key={height}
            height={height}
+           measure={!this.state.smallRowsAddFlexClass}
            consensusView={consensusView}
            identicons={this.state.identicons}
            icons={this.state.icons}

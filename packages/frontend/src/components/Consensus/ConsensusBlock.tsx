@@ -16,6 +16,7 @@ export namespace ConsensusBlock {
     firstInRow: boolean;
     lastInRow: boolean;
     compact: boolean;
+    measure: boolean;
     identicons: Types.Identicons;
     icons: Types.Icons;
     consensusView: Types.ConsensusView;
@@ -61,48 +62,69 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
       titleFinal = <span>FINAL</span>;
     } else if (majorityFinalized && this.props.compact) {
       const hash = this.getFinalizedHash(finalizedByWhom[0]);
-      titleFinal =
-        <Tooltip text={'Block hash: ' + hash ? String(hash) : ''} copy={true}>
-          <Jdenticon hash={hash ? String(hash) : ''} size={this.props.compact ? '14px' : '28px'}/>
-        </Tooltip>;
+
+      if (hash != null && this.state.jdenticons[this.props.compact ? 0 : 1].hasOwnProperty(hash)) {
+        const jdenticon = this.state.jdenticons[this.props.compact ? 0 : 1][hash];
+        titleFinal = jdenticon;
+      } else if (hash != null && !this.state.jdenticons[this.props.compact ? 0 : 1].hasOwnProperty(hash)) {
+        const jdenticon = <Jdenticon hash={hash ? String(hash) : ''} size={this.props.compact ? '14px' : '28px'}/>;
+        this.state.jdenticons[this.props.compact ? 0 : 1][hash] = jdenticon;
+        titleFinal = jdenticon;
+      } else {
+        titleFinal = <span>&nbsp;</span>;
+      }
     }
 
     const handleOnResize = (contentRect: ContentRect) => {
       this.props.changeBlocks(this.props.firstInRow, contentRect.bounds as BoundingRect);
     };
 
-    return (<Measure bounds={true} onResize={handleOnResize}>{({ measureRef }) => (
-      <div
-        className={`BlockConsensusMatrice ${this.props.firstInRow ? 'firstInRow' : ''} ${this.props.lastInRow ? 'lastInRow' : ''}`}
+    const get = (measureRef: any) => {
+      return <div
+        className={
+          `BlockConsensusMatrice
+          ${this.props.firstInRow ? 'firstInRow' : ''} ${this.props.lastInRow ? 'lastInRow' : ''}`
+        }
         key={'block_' + this.props.height}>
-        <table ref={measureRef}>
-        <thead>
-        <tr className="Row">
-          {this.props.firstInRow && !this.props.compact ?
-            <th className="emptylegend">&nbsp;</th> : ''}
-          <th className="legend">
-            <Tooltip text={`Block number: ${this.props.height}`}>
-              {this.displayBlockNumber()}
-            </Tooltip>
-          </th>
-          <th className='finalizedInfo'>
-            <Tooltip text={tooltip}>{titleFinal}</Tooltip>
-          </th>
-          {this.props.authorities.map(authority =>
-            <th
-              className="matrixXLegend"
-              key={`${this.props.height}_matrice_x_${authority.Address}`}>
-              {this.getAuthorityContent(authority)}
-            </th>)}
-        </tr>
-        </thead>
-        <tbody>
+        <table ref={measureRef} key={'block_table_' + this.props.height}>
+          <thead key={'block_thead_' + this.props.height}>
+          <tr className="Row" key={'block_row_' + this.props.height}>
+            {this.props.firstInRow && !this.props.compact ?
+              <th className="emptylegend" key={'block_row_' + this.props.height + '_empty'}>&nbsp;</th> : ''}
+            <th className="legend" key={'block_row_' + this.props.height + '_legend'}>
+              <Tooltip text={`Block number: ${this.props.height}`}>
+                {this.displayBlockNumber()}
+              </Tooltip>
+            </th>
+            <th className='finalizedInfo' key={'block_row_' + this.props.height + '_finalized_info'}>
+              {titleFinal}
+            </th>
+            {this.props.authorities.map(authority =>
+              <th
+                className="matrixXLegend"
+                key={`${this.props.height}_matrice_x_${authority.Address}`}>
+                {this.getAuthorityContent(authority)}
+              </th>)}
+          </tr>
+          </thead>
+          <tbody key={'block_row_' + this.props.height + '_tbody'}>
           {this.props.authorities.map((authority, row) =>
             this.renderMatriceRow(authority, this.props.authorities, row))}
-        </tbody>
+          </tbody>
         </table>
-      </div>)}
-    </Measure>);
+      </div>
+    };
+
+    if (this.props.measure) {
+      return (
+      <Measure bounds={true} onResize={handleOnResize}>{({measureRef}) => (
+        get(measureRef)
+      )}
+      </Measure>
+      );
+    } else {
+      return (get(null));
+    }
   }
 
   private displayBlockNumber(): string {
