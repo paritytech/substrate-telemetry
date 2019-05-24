@@ -191,7 +191,8 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
     this.state.lastConsensusInfo = JSON.stringify(this.props.appState.consensusInfo);
     const lastBlocks = this.props.appState.consensusInfo;
 
-    if (lastBlocks.length < 2) {
+
+    if (this.props.appState.displayConsensusLoadingScreen && lastBlocks.length < 2) {
       return <div className="Consensus">
         <div className="noData">
           {lastBlocks.length === 0 ? "No " : "Not yet enough "}

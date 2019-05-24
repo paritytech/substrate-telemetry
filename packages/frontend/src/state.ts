@@ -194,6 +194,7 @@ export interface State {
   best: Types.BlockNumber;
   finalized: Types.BlockNumber;
   consensusInfo: Types.ConsensusInfo;
+  displayConsensusLoadingScreen: boolean;
   tabChanged: boolean;
   authorities: Types.Address[];
   authoritySetId: Maybe<Types.AuthoritySetId>;

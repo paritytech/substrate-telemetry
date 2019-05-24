@@ -21,7 +21,20 @@ export class AfgHandling {
   ) {
     if (this.getState().authoritySetId != null && authoritySetId !== this.getState().authoritySetId) {
       // the visualization is restarted when we receive a new auhority set
-      this.updateState({authoritySetId, authorities, consensusInfo: []});
+      this.updateState({
+        authoritySetId,
+        authorities,
+        consensusInfo: [],
+        displayConsensusLoadingScreen: false,
+      });
+    } else if (this.getState().authoritySetId == null) {
+      // initial display
+      this.updateState({
+        authoritySetId,
+        authorities,
+        consensusInfo: [],
+        displayConsensusLoadingScreen: true,
+      });
     }
     return null;
   }

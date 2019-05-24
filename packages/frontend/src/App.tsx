@@ -54,6 +54,7 @@ export default class App extends React.Component<{}, State> {
       best: 0 as Types.BlockNumber,
       finalized: 0 as Types.BlockNumber,
       consensusInfo: new Array() as Types.ConsensusInfo,
+      displayConsensusLoadingScreen: true,
       authorities: new Array() as Types.Authorities,
       authoritySetId: null,
       sendFinality: false,
