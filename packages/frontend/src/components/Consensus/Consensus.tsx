@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Types } from '@dotstats/common';
+import { Types, Maybe } from '@dotstats/common';
 import { Connection } from '../../Connection';
 import Identicon from 'polkadot-identicon';
 import Measure, {BoundingRect, ContentRect} from 'react-measure';
@@ -215,7 +215,7 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
     to = to + (this.state.smallBlocksRows * this.state.countBlocksInSmallRow);
     const smallRow = this.getSmallRow(lastBlocks.slice(from, to));
 
-    const get = (measureRef: any) =>
+    const get = (measureRef: Maybe<(ref: Element | null) => void>) =>
       <div className="Consensus" ref={measureRef} key="Consensus">
         {firstLargeRow}
         {secondLargeRow}

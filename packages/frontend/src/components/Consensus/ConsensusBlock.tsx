@@ -74,7 +74,7 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
       this.props.changeBlocks(this.props.firstInRow, contentRect.bounds as BoundingRect);
     };
 
-    const get = (measureRef: any) => {
+    const get = (measureRef: Maybe<(ref: Element | null) => void>) => {
       return <div
         className={
           `BlockConsensusMatrice
@@ -85,7 +85,7 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
           <thead key={'block_thead_' + this.props.height}>
           <tr className="Row" key={'block_row_' + this.props.height}>
             {this.props.firstInRow && !this.props.compact ?
-              <th className="emptylegend" key={'block_row_' + this.props.height + '_empty'}>&nbsp;</th> : ''}
+              <th className="emptylegend" key={'block_row_' + this.props.height + '_empty'}>&nbsp;</th> : null}
             <th className="legend" key={'block_row_' + this.props.height + '_legend'}>
               <Tooltip text={`Block number: ${this.props.height}`}>
                 {this.displayBlockNumber()}

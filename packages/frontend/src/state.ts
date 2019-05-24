@@ -210,4 +210,4 @@ export interface State {
 }
 
 export type Update = <K extends keyof State>(changes: Pick<State, K> | null) => Readonly<State>;
-
+export type UpdateBound = <K extends keyof State>(changes: Pick<State, K> | null) => void;

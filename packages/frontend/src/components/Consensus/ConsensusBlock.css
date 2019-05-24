@@ -134,7 +134,7 @@
   cursor: pointer;
 }
 
-.Consensus .Row th, .Row td {
+.Consensus .Row th, .Consensus .Row td {
   text-align: left;
   padding: 2px;
 }

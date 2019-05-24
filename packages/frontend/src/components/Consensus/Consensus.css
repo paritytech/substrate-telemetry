@@ -145,8 +145,7 @@
 /* similar to .App-no-telemetry */
 .Consensus .noData {
   width: 100vw;
-  height: 100vh;
-  line-height: 80vh;
+  line-height: 60vh;
   font-size: 56px;
   font-weight: 100;
   text-align: center;

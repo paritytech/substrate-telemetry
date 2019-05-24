@@ -1,15 +1,15 @@
 import { Types } from '@dotstats/common';
-import { State } from './state';
+import { State, UpdateBound } from './state';
 
 const BLOCKS_LIMIT = 50;
 
 export class AfgHandling {
-  private updateState: (state: any) => void;
-  private getState: () => State;
+  private updateState: UpdateBound;
+  private getState: () => Readonly<State>;
 
   constructor(
-    updateState: (state: any) => void,
-    getState: () => State,
+    updateState: UpdateBound,
+    getState: () => Readonly<State>,
   ) {
     this.updateState = updateState;
     this.getState = getState;
