@@ -176,7 +176,7 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
         authorities.map((columnNode, column) => {
           const evenOdd = ((row % 2) + column) % 2 === 0 ? 'even' : 'odd';
           return <td key={'matrice_' + this.props.height + '_' + row + '_' + authority.Address + '_' + columnNode.Address}
-            className={`matrice ${evenOdd}`}>{this.getMatriceContent(authority, columnNode)}</td>
+            className={`matrice ${evenOdd}`}>{this.getCellContent(authority, columnNode)}</td>
         })
       }
     </tr>;
@@ -190,7 +190,7 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
     </div>;
   }
 
-  private getMatriceContent(rowAuthority: Types.Authority, columnAuthority: Types.Authority) {
+  private getCellContent(rowAuthority: Types.Authority, columnAuthority: Types.Authority) {
     const consensusInfo = this.props.consensusView &&
       rowAuthority.Address &&
       rowAuthority.Address in this.props.consensusView &&
