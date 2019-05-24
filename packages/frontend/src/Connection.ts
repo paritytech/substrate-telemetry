@@ -78,7 +78,15 @@ export class Connection {
   }
 
   public subscribe(chain: Types.ChainLabel) {
-    setHashData({ chain });
+    if (this.state.subscribed != null && this.state.subscribed !== chain) {
+      this.state = this.update({
+        tabChanged: true,
+      });
+      setHashData({ chain, tab: 'list' });
+    } else {
+      setHashData({ chain });
+    }
+
     this.socket.send(`subscribe:${chain}`);
   }
 
@@ -88,8 +96,16 @@ export class Connection {
     this.socket.send(`send-finality:${chain}`);
   }
 
+  public resetConsensus() {
+    this.state = this.update({
+      consensusInfo: new Array() as Types.ConsensusInfo,
+      displayConsensusLoadingScreen: true,
+      authorities: [] as Types.Address[],
+      authoritySetId: null,
+    });
+  }
+
   public unsubscribeConsensus(chain: Types.ChainLabel) {
-    setHashData({ chain });
     this.resubscribeSendFinality = true;
     this.socket.send(`no-more-finality:${chain}`);
   }
@@ -217,6 +233,7 @@ export class Connection {
           if (this.state.subscribed === message.payload) {
             nodes.clear();
             this.state = this.update({ subscribed: null, nodes, chains });
+            this.resetConsensus();
           }
 
           break;
@@ -396,6 +413,7 @@ export class Connection {
 
   private handleDisconnect = async () => {
     this.state = this.update({ status: 'offline' });
+    this.resetConsensus();
     this.clean();
     this.socket.close();
     this.socket = await Connection.socket();

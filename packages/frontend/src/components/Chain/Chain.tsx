@@ -56,6 +56,13 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     };
   }
 
+  public shouldComponentUpdate(nextProps: Chain.Props, nextState: Chain.State): boolean {
+    if (nextProps.appState.tabChanged === true && nextState.display === 'consensus') {
+      this.setDisplay('list');
+    }
+    return true;
+  }
+
   public render() {
     const { appState } = this.props;
     const { best, finalized, blockTimestamp, blockAverage } = appState;
