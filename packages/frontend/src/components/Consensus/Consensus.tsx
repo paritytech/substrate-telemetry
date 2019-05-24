@@ -161,7 +161,6 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
     this.state.lastConsensusInfo = JSON.stringify(this.props.appState.consensusInfo);
     const lastBlocks = this.props.appState.consensusInfo;
 
-
     if (this.props.appState.displayConsensusLoadingScreen && lastBlocks.length < 2) {
       return <div className="Consensus">
         <div className="noData">
