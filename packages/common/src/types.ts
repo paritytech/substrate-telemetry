@@ -62,3 +62,21 @@ export declare type ImplicitPrecommit = Opaque<boolean, 'ImplicitPrecommit'>;
 export declare type ImplicitPrevote = Opaque<boolean, 'ImplicitPrevote'>;
 export declare type ImplicitFinalized = Opaque<boolean, 'ImplicitFinalized'>;
 export declare type ImplicitPointer = Opaque<BlockNumber, 'ImplicitPointer'>;
+
+export declare type IdenticonMap = Map<Address, JSX.Element>;
+export declare type Identicons = {
+  compact: IdenticonMap,
+  notCompact: IdenticonMap,
+}
+export declare type Icons = {
+  implicitFinalized: JSX.Element,
+  explicitFinalized: JSX.Element,
+
+  implicitPrevote: JSX.Element,
+  explicitPrevote: JSX.Element,
+
+  implicitPrecommit: JSX.Element,
+  explicitPrecommit: JSX.Element,
+
+  self: JSX.Element,
+};

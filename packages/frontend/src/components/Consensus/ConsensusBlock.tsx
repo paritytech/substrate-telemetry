@@ -2,14 +2,9 @@ import * as React from 'react';
 
 import Measure, {BoundingRect, ContentRect} from 'react-measure';
 import { Types, Maybe } from '@dotstats/common';
-import Identicon from 'polkadot-identicon';
 
-import { Icon, Tooltip } from '../';
+import { Tooltip } from '../';
 import Jdenticon from './Jdenticon';
-
-import checkIcon from '../../icons/check.svg';
-import finalizedIcon from '../../icons/finalized.svg';
-import hatchingIcon from '../../icons/hatching.svg';
 
 import './ConsensusBlock.css';
 
@@ -21,6 +16,8 @@ export namespace ConsensusBlock {
     firstInRow: boolean;
     lastInRow: boolean;
     compact: boolean;
+    identicons: Types.Identicons;
+    icons: Types.Icons;
     consensusView: Types.ConsensusView;
     changeBlocks: (first: boolean, boundsRect: BoundingRect) => void;
   }
@@ -229,25 +226,23 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
       let statPrecommit;
 
       if (implicitPrevote) {
-        statPrevote = <Icon src={checkIcon} className="implicit" alt="Implicit Prevote"/>;
+        statPrevote = this.props.icons.implicitPrevote;
       }
       if (implicitPrecommit) {
-        statPrecommit = <Icon src={checkIcon} className="implicit" alt="Implicit Precommit"/>;
+        statPrecommit = this.props.icons.implicitPrecommit;
       }
 
       if (prevote) {
-        statPrevote = <Icon src={checkIcon} className="explicit" alt="Prevote"/>;
+        statPrevote = this.props.icons.explicitPrevote;
       }
       if (precommit) {
-        statPrecommit = <Icon src={checkIcon} className="explicit" alt="Precommit"/>;
+        statPrecommit = this.props.icons.explicitPrecommit;
       }
 
       const stat = [statPrevote, statPrecommit];
-      return <Tooltip text={tooltipText}>{stat}</Tooltip>
+      return <span>{stat}</span>;
     } else {
-      return <Tooltip text={tooltipText}>
-        <Icon src={hatchingIcon} className="hatching" alt=""/>
-      </Tooltip>
+      return this.props.icons.self;
     }
   }
 

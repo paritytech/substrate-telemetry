@@ -1,10 +1,16 @@
 import * as React from 'react';
 import { Types } from '@dotstats/common';
 import { Connection } from '../../Connection';
+import Identicon from 'polkadot-identicon';
 import Measure, {BoundingRect, ContentRect} from 'react-measure';
 
 import { ConsensusBlock } from './';
+import { Icon } from '../';
 import { State as AppState } from '../../state';
+
+import checkIcon from '../../icons/check.svg';
+import finalizedIcon from '../../icons/finalized.svg';
+import hatchingIcon from '../../icons/hatching.svg';
 
 import './Consensus.css';
 
@@ -27,6 +33,8 @@ export namespace Consensus {
     countBlocksInSmallRow: number,
     smallRowsAddFlexClass: boolean,
     lastConsensusInfo: string,
+    identicons: Types.Identicons,
+    icons: Types.Icons,
   }
 }
 
@@ -45,8 +53,22 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
     countBlocksInSmallRow: 1,
     smallRowsAddFlexClass: false,
     lastConsensusInfo: "",
-  };
 
+    identicons: {
+      compact: {} as Types.IdenticonMap,
+      notCompact: {} as Types.IdenticonMap,
+    },
+
+    icons: {
+      implicitFinalized: <Icon className="implicit" src={finalizedIcon} alt="Finalized through later block"/>,
+      explicitFinalized: <Icon className="explicit" src={finalizedIcon} alt="Finalized in this block"/>,
+      implicitPrevote: <Icon src={checkIcon} className="implicit" alt="Prevoted on in later block"/>,
+      explicitPrevote: <Icon src={checkIcon} className="explicit" alt="Prevote"/>,
+      implicitPrecommit: <Icon src={checkIcon} className="implicit" alt="Precommitted n in later block"/>,
+      explicitPrecommit: <Icon src={checkIcon} className="explicit" alt="Explicit Prevote"/>,
+      self: <Icon src={hatchingIcon} className="hatching" alt="Self"/>,
+    },
+  };
 
   public shouldComponentUpdate(nextProps: Consensus.Props, nextState: Consensus.State): boolean {
     if (this.props.appState.authorities.length === 0 && nextProps.appState.authorities.length === 0) {
@@ -258,6 +280,8 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
              consensusView={consensusView}
              authorities={this.getAuthorities()}
              authoritySetId={this.props.appState.authoritySetId}
+             identicons={this.state.identicons}
+             icons={this.state.icons}
            />;
         })}
       </div>;
@@ -296,6 +320,8 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
            key={height}
            height={height}
            consensusView={consensusView}
+           identicons={this.state.identicons}
+           icons={this.state.icons}
            authorities={this.getAuthorities()}
            authoritySetId={this.props.appState.authoritySetId} />;
          })
