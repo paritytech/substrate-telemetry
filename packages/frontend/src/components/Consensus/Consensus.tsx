@@ -52,6 +52,8 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
       return false;
     }
 
+    this.calculateBoxCount(false);
+
     // size detected, but flex class has not yet been added
     const largeBlocksSizeDetected = this.largeBlocksSizeDetected(nextState) === true &&
       this.state.largeRowsAddFlexClass === false;
@@ -169,8 +171,6 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
         </div>;
       </div>;
     }
-
-    this.calculateBoxCount(false);
 
     let from = 0;
     let to = this.state.countBlocksInLargeRow;
