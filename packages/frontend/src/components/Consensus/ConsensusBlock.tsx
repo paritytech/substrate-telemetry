@@ -164,7 +164,7 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
     const name = authority.Name ?
       <span>{authority.Name}</span> : <em>no data received from node</em>;
     const firstName = this.props.firstInRow ?
-      <td className="nameLegend">{name}</td> : '';
+      <td key={"name_" + name} className="nameLegend">{name}</td> : '';
 
     return <tr className="Row" key={'block_row_' + this.props.height + '_' + row}>
       {firstName}
@@ -219,8 +219,7 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
         statPrecommit = <Icon src={checkIcon} className="explicit" alt="Precommit"/>;
       }
 
-      const stat = [statPrevote, statPrecommit];
-      return (stat);
+      return <span key={"icons_pre"}>{statPrevote}{statPrecommit}</span>;
     } else {
       return <Icon src={hatchingIcon} className="hatching" alt=""/>;
     }

@@ -21,6 +21,6 @@ export class Icon extends React.Component<{}, Props> {
   public render() {
     const { alt, className, onClick, src } = this.props;
 
-    return <ReactSVG title={alt} className={`Icon ${ className || '' }`} path={src} onClick={onClick} />;
+    return <ReactSVG key={this.props.src} title={alt} className={`Icon ${ className || '' }`} path={src} onClick={onClick} />;
   }
 }
