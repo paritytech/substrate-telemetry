@@ -152,6 +152,16 @@
   color: #888;
 }
 
+/* similar to .App-no-telemetry */
+.Consensus .tooManyAuthorities {
+  width: 100vw;
+  line-height: 20vh;
+  font-size: 56px;
+  font-weight: 100;
+  text-align: center;
+  color: #888;
+}
+
 .Consensus svg {
   z-index: 999999999;
 }

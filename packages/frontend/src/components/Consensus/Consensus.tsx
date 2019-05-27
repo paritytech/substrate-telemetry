@@ -8,6 +8,8 @@ import { State as AppState } from '../../state';
 
 import './Consensus.css';
 
+const AUTHORITIES_LIMIT = 10;
+
 export namespace Consensus {
   export interface Props {
     appState: Readonly<AppState>;
@@ -162,6 +164,19 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
   public render() {
     this.state.lastConsensusInfo = JSON.stringify(this.props.appState.consensusInfo);
     const lastBlocks = this.props.appState.consensusInfo;
+
+    if (this.props.appState.authorities.length > AUTHORITIES_LIMIT) {
+      return <div className="Consensus">
+        <div className="tooManyAuthorities">
+          <p>
+            Too many authorities.</p>
+          <p>
+            Won't display for more than {AUTHORITIES_LIMIT} authorities
+            to protect your browser.
+          </p>
+        </div>;
+      </div>;
+    }
 
     if (this.props.appState.displayConsensusLoadingScreen && lastBlocks.length < 2) {
       return <div className="Consensus">
