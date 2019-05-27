@@ -16,23 +16,47 @@ import './ConsensusBlock.css';
 export namespace ConsensusBlock {
   export interface Props {
     authorities: Types.Authority[];
-    authoritySetId: Types.AuthoritySetId;
+    authoritySetId: Maybe<Types.AuthoritySetId>;
     height: Types.BlockNumber;
     firstInRow: boolean;
     lastInRow: boolean;
     compact: boolean;
+    measure: boolean;
     consensusView: Types.ConsensusView;
     changeBlocks: (first: boolean, boundsRect: BoundingRect) => void;
   }
 }
 
 export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
+  public state = {
+    lastConsensusView: "",
+  };
+
+  public shouldComponentUpdate(nextProps: ConsensusBlock.Props): boolean {
+    if (this.props.authorities.length === 0 && nextProps.authorities.length === 0) {
+      return false;
+    }
+
+    const positionInfoChanged = this.props.firstInRow !== nextProps.firstInRow ||
+      this.props.lastInRow !== nextProps.lastInRow;
+    if (positionInfoChanged) {
+      return true;
+    }
+
+    const newConsensusInfo =
+      JSON.stringify(nextProps.consensusView) !== this.state.lastConsensusView;
+    if (newConsensusInfo) {
+      return true;
+    }
+
+    return false;
+  }
 
   public render() {
+    this.state.lastConsensusView = JSON.stringify(this.props.consensusView);
     const finalizedByWhom = this.props.authorities.filter(authority => this.isFinalized(authority));
 
     const ratio = finalizedByWhom.length + '/' + this.props.authorities.length;
-    const tooltip = `${ratio} authorities finalized this block. Authority Set Id: ${this.props.authoritySetId}.`;
     let titleFinal = <span>{ratio}</span>;
 
     const majorityFinalized = finalizedByWhom.length / this.props.authorities.length >= 2/3;
@@ -40,48 +64,59 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
       titleFinal = <span>FINAL</span>;
     } else if (majorityFinalized && this.props.compact) {
       const hash = this.getFinalizedHash(finalizedByWhom[0]);
-      titleFinal =
-        <Tooltip text={'Block hash: ' + hash ? String(hash) : ''} copy={true}>
-          <Jdenticon hash={hash ? String(hash) : ''} size={this.props.compact ? '14px' : '28px'}/>
-        </Tooltip>;
+      titleFinal = <Jdenticon hash={hash ? String(hash) : ''} size={this.props.compact ? '14px' : '28px'}/>
     }
 
     const handleOnResize = (contentRect: ContentRect) => {
       this.props.changeBlocks(this.props.firstInRow, contentRect.bounds as BoundingRect);
     };
 
-    return (<Measure bounds={true} onResize={handleOnResize}>{({ measureRef }) => (
-      <div
-        className={`BlockConsensusMatrice ${this.props.firstInRow ? 'firstInRow' : ''} ${this.props.lastInRow ? 'lastInRow' : ''}`}
+    const get = (measureRef: Maybe<(ref: Element | null) => void>) => {
+      return <div
+        className={
+          `BlockConsensusMatrice
+          ${this.props.firstInRow ? 'firstInRow' : ''} ${this.props.lastInRow ? 'lastInRow' : ''}`
+        }
         key={'block_' + this.props.height}>
-        <table ref={measureRef}>
-        <thead>
-        <tr className="Row">
-          {this.props.firstInRow && !this.props.compact ?
-            <th className="emptylegend">&nbsp;</th> : ''}
-          <th className="legend">
-            <Tooltip text={`Block number: ${this.props.height}`}>
-              {this.displayBlockNumber()}
-            </Tooltip>
-          </th>
-          <th className='finalizedInfo'>
-            <Tooltip text={tooltip}>{titleFinal}</Tooltip>
-          </th>
-          {this.props.authorities.map(authority =>
-            <th
-              className="matrixXLegend"
-              key={`${this.props.height}_matrice_x_${authority.Address}`}>
-              {this.getAuthorityContent(authority)}
-            </th>)}
-        </tr>
-        </thead>
-        <tbody>
+        <table ref={measureRef} key={'block_table_' + this.props.height}>
+          <thead key={'block_thead_' + this.props.height}>
+          <tr className="Row" key={'block_row_' + this.props.height}>
+            {this.props.firstInRow && !this.props.compact ?
+              <th className="emptylegend" key={'block_row_' + this.props.height + '_empty'}>&nbsp;</th> : null}
+            <th className="legend" key={'block_row_' + this.props.height + '_legend'}>
+              <Tooltip text={`Block number: ${this.props.height}`}>
+                {this.displayBlockNumber()}
+              </Tooltip>
+            </th>
+            <th className='finalizedInfo' key={'block_row_' + this.props.height + '_finalized_info'}>
+              {titleFinal}
+            </th>
+            {this.props.authorities.map(authority =>
+              <th
+                className="matrixXLegend"
+                key={`${this.props.height}_matrice_x_${authority.Address}`}>
+                {this.getAuthorityContent(authority)}
+              </th>)}
+          </tr>
+          </thead>
+          <tbody key={'block_row_' + this.props.height + '_tbody'}>
           {this.props.authorities.map((authority, row) =>
             this.renderMatriceRow(authority, this.props.authorities, row))}
-        </tbody>
+          </tbody>
         </table>
-      </div>)}
-    </Measure>);
+      </div>
+    };
+
+    if (this.props.measure) {
+      return (
+      <Measure bounds={true} onResize={handleOnResize}>{({measureRef}) => (
+        get(measureRef)
+      )}
+      </Measure>
+      );
+    } else {
+      return (get(null));
+    }
   }
 
   private displayBlockNumber(): string {
@@ -111,88 +146,54 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
   }
 
   private renderMatriceRow(authority: Types.Authority, authorities: Types.Authority[], row: number): JSX.Element {
-    let finalizedInfo = <Tooltip text="No information available yet.">&nbsp;</Tooltip>;
+    let finalizedInfo = <span>&nbsp;</span>;
     let finalizedHash;
 
     if (authority.NodeId != null && this.isFinalized(authority)) {
       const matrice = this.props.consensusView[authority.Address][authority.Address];
 
       finalizedInfo = matrice.ImplicitFinalized ?
-        <Tooltip text={`${authority.Name} finalized this block in ${matrice.ImplicitPointer}`}>
-          <Icon className="implicit" src={finalizedIcon} alt="" />
-        </Tooltip>
-        :
-        <Tooltip text={`${authority.Name} finalized this block in this block`}>
-          <Icon className="explicit" src={finalizedIcon} alt="" />
-        </Tooltip>
+        <Icon className="implicit" src={finalizedIcon} alt="" /> :
+        <Icon className="explicit" src={finalizedIcon} alt="" />;
 
       finalizedHash = matrice.FinalizedHash ?
-        <Tooltip text={`Block hash: ${matrice.FinalizedHash}`} copy={true}>
-          <Jdenticon hash={matrice.FinalizedHash} size="28px"/>
-        </Tooltip> : <div className="jdenticonPlaceholder">&nbsp;</div>;
+        <Jdenticon hash={matrice.FinalizedHash} size="28px"/> :
+        <div className="jdenticonPlaceholder">&nbsp;</div>;
     }
 
-    const name = authority.Name ? <span>{authority.Name}</span> : <em>no name received yet</em>;
-    const firstName = this.props.firstInRow ? <td className="nameLegend">{name}</td> : '';
+    const name = authority.Name ?
+      <span>{authority.Name}</span> : <em>no data received from node</em>;
+    const firstName = this.props.firstInRow ?
+      <td key={"name_" + name} className="nameLegend">{name}</td> : '';
 
-    return <tr className="Row">
+    return <tr className="Row" key={'block_row_' + this.props.height + '_' + row}>
       {firstName}
-      <td className="legend">{this.getAuthorityContent(authority)}</td>
-      <td className="finalizedInfo">{finalizedInfo}{finalizedHash}</td>
+      <td className="legend" key={'block_row_' + this.props.height + '_' + row + '_legend'}>{this.getAuthorityContent(authority)}</td>
+      <td className="finalizedInfo" key={'block_row_' + this.props.height + '_' + row + '_finalizedInfo'}>{finalizedInfo}{finalizedHash}</td>
       {
         authorities.map((columnNode, column) => {
           const evenOdd = ((row % 2) + column) % 2 === 0 ? 'even' : 'odd';
-          return <td key={'matrice_' + authority.Address + '_' + columnNode.Address}
-            className={`matrice ${evenOdd}`}>{this.getMatriceContent(authority, columnNode)}</td>
+          return <td key={'matrice_' + this.props.height + '_' + row + '_' + authority.Address + '_' + columnNode.Address}
+            className={`matrice ${evenOdd}`}>{this.getCellContent(authority, columnNode)}</td>
         })
       }
     </tr>;
   }
 
   private getAuthorityContent(authority: Types.Authority): JSX.Element {
-    return <div className="nodeContent">
-      <div className="nodeAddress">
-        <Tooltip text={authority.Address} copy={true}>
-          <Identicon account={authority.Address} size={this.props.compact ? 14 : 28} />
-        </Tooltip>
+    return <div className="nodeContent" key={'authority_' + this.props.height + '_' + authority.Address}>
+      <div className="nodeAddress" key={'authority_' + authority.Address}>
+        <Identicon account={authority.Address} size={this.props.compact ? 14 : 28} />
       </div>
     </div>;
   }
 
-  private format(consensusDetail: Types.ConsensusDetail): string {
-    const txt = [];
-    if (consensusDetail.Prevote) {
-      txt.push('Prevote on this chain in this block');
-    } else if (consensusDetail.ImplicitPrevote) {
-      txt.push('Prevote on this chain in block ' + consensusDetail.ImplicitPointer);
-    }
-    if (consensusDetail.Precommit) {
-      txt.push('Precommit on this chain in this block');
-    } else if (consensusDetail.ImplicitPrecommit) {
-      txt.push('Precommit on this chain in block ' + consensusDetail.ImplicitPointer);
-    }
-    if (consensusDetail.Finalized && consensusDetail.ImplicitFinalized) {
-      txt.push('Finalized this chain in block ' + consensusDetail.ImplicitPointer);
-    } else if (consensusDetail.Finalized && !consensusDetail.ImplicitFinalized) {
-      txt.push('Finalized this chain in this block');
-    }
-    return txt.join(', '); // + JSON.stringify((consensusDetail));
-  }
-
-  private getMatriceContent(rowAuthority: Types.Authority, columnAuthority: Types.Authority) {
+  private getCellContent(rowAuthority: Types.Authority, columnAuthority: Types.Authority) {
     const consensusInfo = this.props.consensusView &&
       rowAuthority.Address &&
       rowAuthority.Address in this.props.consensusView &&
       columnAuthority.Address in this.props.consensusView[rowAuthority.Address] ?
-      this.props.consensusView[rowAuthority.Address][columnAuthority.Address] : null;
-
-    let tooltipText = consensusInfo ?
-        rowAuthority.Name + ' has seen this of ' + columnAuthority.Name + ': ' +
-        this.format(consensusInfo) : 'No information available yet.';
-
-    if (rowAuthority.Address === columnAuthority.Address) {
-      tooltipText = 'Self-referential.';
-    }
+        this.props.consensusView[rowAuthority.Address][columnAuthority.Address] : null;
 
     const prevote = consensusInfo && consensusInfo.Prevote;
     const implicitPrevote = consensusInfo && consensusInfo.ImplicitPrevote;
@@ -218,12 +219,9 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
         statPrecommit = <Icon src={checkIcon} className="explicit" alt="Precommit"/>;
       }
 
-      const stat = [statPrevote, statPrecommit];
-      return <Tooltip text={tooltipText}>{stat}</Tooltip>
+      return <span key={"icons_pre"}>{statPrevote}{statPrecommit}</span>;
     } else {
-      return <Tooltip text={tooltipText}>
-        <Icon src={hatchingIcon} className="hatching" alt=""/>
-      </Tooltip>
+      return <Icon src={hatchingIcon} className="hatching" alt=""/>;
     }
   }
 

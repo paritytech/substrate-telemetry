@@ -54,8 +54,9 @@ export default class App extends React.Component<{}, State> {
       best: 0 as Types.BlockNumber,
       finalized: 0 as Types.BlockNumber,
       consensusInfo: new Array() as Types.ConsensusInfo,
+      displayConsensusLoadingScreen: true,
       authorities: new Array() as Types.Authorities,
-      authoritySetId: -1 as Types.AuthoritySetId,
+      authoritySetId: null,
       sendFinality: false,
       blockTimestamp: 0 as Types.Timestamp,
       blockAverage: null,
@@ -65,6 +66,7 @@ export default class App extends React.Component<{}, State> {
       nodes: new SortedCollection(Node.compare),
       settings: this.settings.raw(),
       pins: this.pins.get(),
+      tabChanged: false,
     };
 
     this.connection = Connection.create(this.pins, (changes) => {
@@ -85,7 +87,7 @@ export default class App extends React.Component<{}, State> {
       return (
         <div className="App App-no-telemetry">
           <OfflineIndicator status={status} />
-          Waiting for telemetry data...
+          Waiting for telemetry&hellip;
         </div>
       );
     }
@@ -97,6 +99,12 @@ export default class App extends React.Component<{}, State> {
         <Chain appState={this.state} connection={this.connection} settings={this.settings} pins={this.pins} />
       </div>
     );
+  }
+
+  public componentDidUpdate() {
+    if (this.state.tabChanged === true) {
+      this.setState({tabChanged: false});
+    }
   }
 
   public componentWillMount() {

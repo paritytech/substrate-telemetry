@@ -1,4 +1,4 @@
-.BlockConsensusMatrice {
+.Consensus .BlockConsensusMatrice {
   background-color: #222;
   font-family: monospace, sans-serif;
   border-spacing: 0px;
@@ -6,144 +6,144 @@
   border-bottom: 1px solid #999;
 }
 
-.LargeRow .BlockConsensusMatrice:last-child {
+.Consensus .LargeRow .BlockConsensusMatrice:last-child {
   border-right: none;
 }
 
-.SmallRow .lastInRow {
+.Consensus .SmallRow .lastInRow {
   clear: right;
   width: 99%;
   page-break-after: always;
 }
 
-.BlockConsensusMatrice th {
+.Consensus .BlockConsensusMatrice th {
   font-weight: normal;
   border-bottom: 1px dashed #999;
 }
 
-.finalizedInfo, .legend {
+.Consensus .finalizedInfo, .legend {
   border-bottom: 1px dotted #555555;
 }
 
-.finalizedInfo {
+.Consensus .finalizedInfo {
   white-space: nowrap;
 }
 
-.finalizedInfo .Tooltip-container {
+.Consensus .finalizedInfo .Tooltip-container {
   display: inline-block;
   white-space: nowrap;
   vertical-align: middle;
 }
 
-.BlockConsensusMatrice .matrice {
+.Consensus .BlockConsensusMatrice .matrice {
   width: 28px;
   height: 28px;
 }
 
-.BlockConsensusMatrice .matrice {
+.Consensus .BlockConsensusMatrice .matrice {
   font-weight: normal;
   border-right: 1px dotted #555555;
   border-bottom: 1px dotted #555;
 }
 
-.BlockConsensusMatrice tr .matrice:last-child {
+.Consensus .BlockConsensusMatrice tr .matrice:last-child {
   border-right: none;
 }
 
-.BlockConsensusMatrice .matrixXLegend {
+.Consensus .BlockConsensusMatrice .matrixXLegend {
   text-align: center;
   border-right: 1px dotted #555555;
 }
 
-.BlockConsensusMatrice .matrixXLegend:last-child {
+.Consensus .BlockConsensusMatrice .matrixXLegend:last-child {
   border-right: none;
 }
 
-.matrice {
+.Consensus .matrice {
   text-align: center !important;
   min-width: 35px;
 }
 
-.SmallRow .matrixXLegend,
-.SmallRow .matrice {
+.Consensus .SmallRow .matrixXLegend,
+.Consensus .SmallRow .matrice {
   min-width: 26px;
   min-height: 26px;
 }
 
-.finalizedInfo {
+.Consensus .finalizedInfo {
   text-align: center !important;
 }
 
-.SmallRow .finalizedInfo {
+.Consensus .SmallRow .finalizedInfo {
   min-width: 40px;
 }
 
-.finalizedInfo {
+.Consensus .finalizedInfo {
   text-align: right;
   border-right: 1px dashed #999;
-  min-width: 48px;
+  min-width: 50px;
 }
 
-.finalizedInfo .Tooltip-container {
+.Consensus .finalizedInfo .Tooltip-container {
   float: none;
 }
 
-.explicit {
+.Consensus .explicit {
   fill: #E70E81;
 }
 
-.nodeName {
+.Consensus .nodeName {
   float: left;
   padding-right: 10px;
   padding-top: 4px;
 }
 
-.flexContainerLargeRow .firstInRow .nodeContent {
+.Consensus .flexContainerLargeRow .firstInRow .nodeContent {
   white-space: nowrap;
 }
 
-.flexContainerLargeRow .firstInRow .nodeName {
+.Consensus .flexContainerLargeRow .firstInRow .nodeName {
   display: inline-block !important;
   float: none !important;
   vertical-align: middle;
   margin-bottom: 3px;
 }
 
-.flexContainerLargeRow .firstInRow .nodeAddress {
+.Consensus .flexContainerLargeRow .firstInRow .nodeAddress {
   display: inline-block !important;
   float: none !important;
   vertical-align: middle;
   margin-right: 3px;
 }
 
-.legend {
+.Consensus .legend {
   border-right: 1px solid #999;
   white-space: nowrap;
 }
 
-.first_false .nodeName {
+.Consensus .first_false .nodeName {
   display: none;
 }
 
-.legend .nodeAddress {
+.Consensus .legend .nodeAddress {
   float: right;
 }
 
-.Row {
+.Consensus .Row {
   color: #999;
   cursor: pointer;
 }
 
-.Row th, .Row td {
+.Consensus .Row th, .Consensus .Row td {
   text-align: left;
   padding: 2px;
 }
 
-.Row td {
+.Consensus .Row td {
   position: relative;
 }
 
-.Row .Row-truncate {
+.Consensus .Row .Row-truncate {
   position: absolute;
   left: 0;
   right: 0;
@@ -154,48 +154,49 @@
   text-overflow: ellipsis;
 }
 
-.Row .Row-Tooltip {
+.Consensus .Row .Row-Tooltip {
   position: initial;
   padding: inherit;
 }
 
-.Row:hover {
+.Consensus .Row:hover {
   background-color: #161616;
 }
 
-.nodeAddress svg {
+.Consensus .nodeAddress svg {
   cursor: pointer;
 }
 
-.nodeAddress svg:hover {
+.Consensus .nodeAddress svg:hover {
   transform: scale(2);
 }
 
-.matrice .Icon ~ .Icon {
+.Consensus .matrice .Icon ~ .Icon {
   margin-left: -4px;
 }
 
-.SmallRow .matrice .Prevote svg {
+.Consensus .SmallRow .matrice .Prevote svg {
   margin-left: 3px;
   margin-bottom: -11px;
 }
 
-.SmallRow .matrice .Precommit svg {
+.Consensus .SmallRow .matrice .Precommit svg {
   margin-left: -1px;
   margin-top: -6px;
   margin-bottom: 0px;
 }
 
-.jdenticonPlaceholder {
+.Consensus .jdenticonPlaceholder {
   width: 28px;
+  float: right;
 }
 
-.SmallRow .jdenticonPlaceholder {
+.Consensus .SmallRow .jdenticonPlaceholder {
   width: 14px;
   float: right;
 }
 
-.even {
+.Consensus .even {
   background-color: #333;
 }
 

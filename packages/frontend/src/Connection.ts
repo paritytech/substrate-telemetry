@@ -1,5 +1,5 @@
 import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from '@dotstats/common';
-import { State, Update, Node } from './state';
+import { State, Update, Node, UpdateBound } from './state';
 import { PersistentSet } from './persist';
 import { getHashData, setHashData } from './utils';
 import { AfgHandling } from './AfgHandling';
@@ -14,11 +14,13 @@ export class Connection {
     return new Connection(await Connection.socket(), update, pins);
   }
 
-  private static readonly address = window.location.protocol === 'https:'
+  private static readonly debug: number = 2;
+
+  private static readonly address1 = window.location.protocol === 'https:'
                                       ? `wss://${window.location.hostname}/feed/`
                                       : `ws://${window.location.hostname}:8080`;
 
-  // private static readonly address = 'wss://telemetry.polkadot.io/feed/';
+  private static readonly address2 = 'wss://telemetry.polkadot.io/feed/';
 
   private static async socket(): Promise<WebSocket> {
     let socket = await Connection.trySocket();
@@ -52,7 +54,7 @@ export class Connection {
         resolve(null);
       }
 
-      const socket = new WebSocket(Connection.address);
+      const socket = new WebSocket(Connection.debug === 1 ? Connection.address1 : Connection.address2);
 
       socket.addEventListener('open', onSuccess);
       socket.addEventListener('error', onFailure);
@@ -78,7 +80,15 @@ export class Connection {
   }
 
   public subscribe(chain: Types.ChainLabel) {
-    setHashData({ chain });
+    if (this.state.subscribed != null && this.state.subscribed !== chain) {
+      this.state = this.update({
+        tabChanged: true,
+      });
+      setHashData({ chain, tab: 'list' });
+    } else {
+      setHashData({ chain });
+    }
+
     this.socket.send(`subscribe:${chain}`);
   }
 
@@ -88,8 +98,16 @@ export class Connection {
     this.socket.send(`send-finality:${chain}`);
   }
 
+  public resetConsensus() {
+    this.state = this.update({
+      consensusInfo: new Array() as Types.ConsensusInfo,
+      displayConsensusLoadingScreen: true,
+      authorities: [] as Types.Address[],
+      authoritySetId: null,
+    });
+  }
+
   public unsubscribeConsensus(chain: Types.ChainLabel) {
-    setHashData({ chain });
     this.resubscribeSendFinality = true;
     this.socket.send(`no-more-finality:${chain}`);
   }
@@ -98,7 +116,7 @@ export class Connection {
     const { nodes, chains } = this.state;
     const ref = nodes.ref();
 
-    const updateState = (state: any) => { this.state = this.update(state); };
+    const updateState: UpdateBound = (state) => { this.state = this.update(state); };
     const getState = () => this.state;
     const afg = new AfgHandling(updateState, getState);
 
@@ -217,6 +235,7 @@ export class Connection {
           if (this.state.subscribed === message.payload) {
             nodes.clear();
             this.state = this.update({ subscribed: null, nodes, chains });
+            this.resetConsensus();
           }
 
           break;
@@ -248,21 +267,24 @@ export class Connection {
 
         case Actions.AfgFinalized: {
           const [nodeAddress, finalizedNumber, finalizedHash] = message.payload;
-          afg.receivedFinalized( nodeAddress, finalizedNumber, finalizedHash);
+          const no = parseInt(String(finalizedNumber), 10) as Types.BlockNumber;
+          afg.receivedFinalized( nodeAddress, no, finalizedHash);
 
           break;
         }
 
         case Actions.AfgReceivedPrevote: {
           const [nodeAddress, blockNumber, blockHash, voter] = message.payload;
-          afg.receivedPre(nodeAddress, blockNumber, blockHash, voter, "prevote");
+          const no = parseInt(String(blockNumber), 10) as Types.BlockNumber;
+          afg.receivedPre(nodeAddress, no, blockHash, voter, "prevote");
 
           break;
         }
 
         case Actions.AfgReceivedPrecommit: {
           const [nodeAddress, blockNumber, blockHash, voter] = message.payload;
-          afg.receivedPre(nodeAddress, blockNumber, blockHash, voter, "precommit");
+          const no = parseInt(String(blockNumber), 10) as Types.BlockNumber;
+          afg.receivedPre(nodeAddress, no, blockHash, voter, "precommit");
 
           break;
         }
@@ -393,6 +415,7 @@ export class Connection {
 
   private handleDisconnect = async () => {
     this.state = this.update({ status: 'offline' });
+    this.resetConsensus();
     this.clean();
     this.socket.close();
     this.socket = await Connection.socket();

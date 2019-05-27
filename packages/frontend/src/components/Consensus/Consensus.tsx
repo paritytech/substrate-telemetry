@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Types } from '@dotstats/common';
+import { Types, Maybe } from '@dotstats/common';
 import { Connection } from '../../Connection';
 import Measure, {BoundingRect, ContentRect} from 'react-measure';
 
@@ -7,6 +7,8 @@ import { ConsensusBlock } from './';
 import { State as AppState } from '../../state';
 
 import './Consensus.css';
+
+const AUTHORITIES_LIMIT = 10;
 
 export namespace Consensus {
   export interface Props {
@@ -26,6 +28,7 @@ export namespace Consensus {
     smallBlocksRows: number,
     countBlocksInSmallRow: number,
     smallRowsAddFlexClass: boolean,
+    lastConsensusInfo: string,
   }
 }
 
@@ -43,7 +46,55 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
     smallBlocksRows: 1,
     countBlocksInSmallRow: 1,
     smallRowsAddFlexClass: false,
+    lastConsensusInfo: "",
   };
+
+  public shouldComponentUpdate(nextProps: Consensus.Props, nextState: Consensus.State): boolean {
+    if (this.props.appState.authorities.length === 0 && nextProps.appState.authorities.length === 0) {
+      return false;
+    }
+
+    this.calculateBoxCount(false);
+
+    // size detected, but flex class has not yet been added
+    const largeBlocksSizeDetected = this.largeBlocksSizeDetected(nextState) === true &&
+      this.state.largeRowsAddFlexClass === false;
+    if (largeBlocksSizeDetected) {
+      return true;
+    }
+
+    const smallBlocksSizeDetected = this.smallBlocksSizeDetected(nextState) === true &&
+      this.state.smallRowsAddFlexClass === false;
+    if (smallBlocksSizeDetected) {
+      return true;
+    }
+
+    const windowSizeChanged = JSON.stringify(this.state.dimensions) !==
+      JSON.stringify(nextState.dimensions);
+    if (windowSizeChanged) {
+      return true;
+    }
+
+    const newConsensusInfoAvailable = this.state.lastConsensusInfo !==
+      JSON.stringify(nextProps.appState.consensusInfo);
+    if (newConsensusInfoAvailable) {
+      return true;
+    }
+
+    const authoritySetIdDidChange = this.props.appState.authoritySetId !==
+      nextProps.appState.authoritySetId;
+    if (authoritySetIdDidChange) {
+      return true;
+    }
+
+    const authoritiesDidChange = JSON.stringify(this.props.appState.authorities) !==
+      JSON.stringify(nextProps.appState.authorities);
+    if (authoritiesDidChange) {
+      return true;
+    }
+
+    return false;
+  }
 
   public componentDidMount() {
     if (this.props.appState.subscribed != null) {
@@ -60,9 +111,12 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
   }
 
   public largeBlocksSizeDetected(state: Consensus.State): boolean {
-    const countBlocks = Object.keys(this.props.appState.consensusInfo).length;
-    if (countBlocks === 1) {
-      return state.largeBlockWithLegend.width > -1 && state.largeBlockWithLegend.height > -1;
+    // we can only state that we detected the two block sizes (with
+    // legend and without) if at least two blocks have been added:
+    // the first displayed block will always have a legend with the
+    // node names attached, the second not.
+    if (this.props.appState.consensusInfo.length < 2) {
+      return false;
     }
 
     // if there is more than one block then the size of the first block (with legend)
@@ -108,9 +162,30 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
   }
 
   public render() {
-    this.calculateBoxCount(false);
-
+    this.state.lastConsensusInfo = JSON.stringify(this.props.appState.consensusInfo);
     const lastBlocks = this.props.appState.consensusInfo;
+
+    if (this.props.appState.authorities.length > AUTHORITIES_LIMIT) {
+      return <div className="Consensus">
+        <div className="tooManyAuthorities">
+          <p>
+            Too many authorities.</p>
+          <p>
+            Won't display for more than {AUTHORITIES_LIMIT} authorities
+            to protect your browser.
+          </p>
+        </div>;
+      </div>;
+    }
+
+    if (this.props.appState.displayConsensusLoadingScreen && lastBlocks.length < 2) {
+      return <div className="Consensus">
+        <div className="noData">
+          {lastBlocks.length === 0 ? "No " : "Not yet enough "}
+          GRANDPA data received by the authorities&hellip;
+        </div>;
+      </div>;
+    }
 
     let from = 0;
     let to = this.state.countBlocksInLargeRow;
@@ -124,19 +199,24 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
     to = to + (this.state.smallBlocksRows * this.state.countBlocksInSmallRow);
     const smallRow = this.getSmallRow(lastBlocks.slice(from, to));
 
-    return (
-      <React.Fragment>
-        <Measure bounds={true} onResize={this.handleOnResize}>
-          {({ measureRef }) => (
-            <div className="allRows" ref={measureRef}>
-              {firstLargeRow}
-              {secondLargeRow}
-              {smallRow}
-            </div>
-          )}
-        </Measure>
-      </React.Fragment>
-    );
+    const get = (measureRef: Maybe<(ref: Element | null) => void>) =>
+      <div className="Consensus" ref={measureRef} key="Consensus">
+        {firstLargeRow}
+        {secondLargeRow}
+        {smallRow}
+      </div>;
+
+    if (!(this.state.smallRowsAddFlexClass && this.state.largeRowsAddFlexClass)) {
+      return (
+        <React.Fragment>
+          <Measure bounds={true} onResize={this.handleOnResize}>
+            {({measureRef}) => get(measureRef)}
+          </Measure>
+        </React.Fragment>
+      );
+    } else {
+      return (get(null));
+    }
   }
 
   private handleOnResize = (contentRect: ContentRect) => {
@@ -187,6 +267,7 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
              compact={false}
              key={height}
              height={height}
+             measure={!this.state.largeRowsAddFlexClass}
              consensusView={consensusView}
              authorities={this.getAuthorities()}
              authoritySetId={this.props.appState.authoritySetId}
@@ -227,6 +308,7 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
            compact={true}
            key={height}
            height={height}
+           measure={!this.state.smallRowsAddFlexClass}
            consensusView={consensusView}
            authorities={this.getAuthorities()}
            authoritySetId={this.props.appState.authoritySetId} />;
