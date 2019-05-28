@@ -3,6 +3,7 @@ import { State, Update, Node, UpdateBound } from './state';
 import { PersistentSet } from './persist';
 import { getHashData, setHashData } from './utils';
 import { AfgHandling } from './AfgHandling';
+import { VIS_AUTHORITIES_LIMIT } from '../../frontend/src/components/Consensus';
 
 const { Actions } = FeedMessage;
 
@@ -91,9 +92,11 @@ export class Connection {
   }
 
   public subscribeConsensus(chain: Types.ChainLabel) {
-    setHashData({ chain });
-    this.resubscribeSendFinality = true;
-    this.socket.send(`send-finality:${chain}`);
+    if (this.state.authorities.length <= VIS_AUTHORITIES_LIMIT) {
+      setHashData({chain});
+      this.resubscribeSendFinality = true;
+      this.socket.send(`send-finality:${chain}`);
+    }
   }
 
   public resetConsensus() {
