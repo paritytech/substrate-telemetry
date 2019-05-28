@@ -8,7 +8,9 @@ import { State as AppState } from '../../state';
 
 import './Consensus.css';
 
-const AUTHORITIES_LIMIT = 10;
+// Maximum number of authorities the visualization is
+// allowed of processing.
+export const VIS_AUTHORITIES_LIMIT = 10;
 
 export namespace Consensus {
   export interface Props {
@@ -165,13 +167,13 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
     this.state.lastConsensusInfo = JSON.stringify(this.props.appState.consensusInfo);
     const lastBlocks = this.props.appState.consensusInfo;
 
-    if (this.props.appState.authorities.length > AUTHORITIES_LIMIT) {
+    if (this.props.appState.authorities.length > VIS_AUTHORITIES_LIMIT) {
       return <div className="Consensus">
         <div className="tooManyAuthorities">
           <p>
             Too many authorities.</p>
           <p>
-            Won't display for more than {AUTHORITIES_LIMIT} authorities
+            Won't display for more than {VIS_AUTHORITIES_LIMIT} authorities
             to protect your browser.
           </p>
         </div>;

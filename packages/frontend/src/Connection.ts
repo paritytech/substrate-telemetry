@@ -3,6 +3,7 @@ import { State, Update, Node, UpdateBound } from './state';
 import { PersistentSet } from './persist';
 import { getHashData, setHashData } from './utils';
 import { AfgHandling } from './AfgHandling';
+import { VIS_AUTHORITIES_LIMIT } from '../../frontend/src/components/Consensus';
 
 const { Actions } = FeedMessage;
 
@@ -14,13 +15,11 @@ export class Connection {
     return new Connection(await Connection.socket(), update, pins);
   }
 
-  private static readonly debug: number = 2;
-
-  private static readonly address1 = window.location.protocol === 'https:'
+  private static readonly address = window.location.protocol === 'https:'
                                       ? `wss://${window.location.hostname}/feed/`
                                       : `ws://${window.location.hostname}:8080`;
 
-  private static readonly address2 = 'wss://telemetry.polkadot.io/feed/';
+  // private static readonly address = 'wss://telemetry.polkadot.io/feed/';
 
   private static async socket(): Promise<WebSocket> {
     let socket = await Connection.trySocket();
@@ -54,7 +53,7 @@ export class Connection {
         resolve(null);
       }
 
-      const socket = new WebSocket(Connection.debug === 1 ? Connection.address1 : Connection.address2);
+      const socket = new WebSocket(Connection.address);
 
       socket.addEventListener('open', onSuccess);
       socket.addEventListener('error', onFailure);
@@ -93,9 +92,11 @@ export class Connection {
   }
 
   public subscribeConsensus(chain: Types.ChainLabel) {
-    setHashData({ chain });
-    this.resubscribeSendFinality = true;
-    this.socket.send(`send-finality:${chain}`);
+    if (this.state.authorities.length <= VIS_AUTHORITIES_LIMIT) {
+      setHashData({chain});
+      this.resubscribeSendFinality = true;
+      this.socket.send(`send-finality:${chain}`);
+    }
   }
 
   public resetConsensus() {

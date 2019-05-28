@@ -47,23 +47,6 @@ export default class Aggregator {
       }
     });
 
-    feed.events.on('subscribe-consensus-info', (label: Types.ChainLabel) => {
-      const chain = this.chains.get(label);
-
-      if (chain) {
-        feed.sendMessage(Feed.subscribedTo(label));
-        chain.addFeed(feed);
-      }
-    });
-
-    feed.events.on('unsubscribe-consensus-info', (label: Types.ChainLabel) => {
-      const chain = this.chains.get(label);
-
-      if (chain) {
-        chain.removeFeed(feed);
-        feed.sendMessage(Feed.unsubscribedFrom(label));
-      }
-    });
   }
 
   public getExistingChain(label: Types.ChainLabel) : Maybe<Chain> {

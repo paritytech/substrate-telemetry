@@ -1,6 +1,7 @@
 import { Types } from '@dotstats/common';
 import { State, UpdateBound } from './state';
 
+// Number of blocks which are kept in memory
 const BLOCKS_LIMIT = 50;
 
 export class AfgHandling {
