@@ -4,21 +4,23 @@ use actix_web_actors::ws;
 
 mod node_connector;
 mod node_message;
+mod aggregator;
 mod chain;
+mod node;
 
 use node_connector::NodeConnector;
-use chain::Chain;
+use aggregator::Aggregator;
 
 /// Entry point for connecting nodes
 fn node_route(
     req: HttpRequest,
     stream: web::Payload,
-    chain: web::Data<Addr<Chain>>,
+    aggregator: web::Data<Addr<Aggregator>>,
 ) -> Result<HttpResponse, Error> {
     println!("Connection!");
 
     ws::start(
-        NodeConnector::new(chain.get_ref().clone()),
+        NodeConnector::new(aggregator.get_ref().clone()),
         &req,
         stream,
     )
@@ -26,11 +28,11 @@ fn node_route(
 
 fn main() -> std::io::Result<()> {
     let sys = System::new("substrate-telemetry");
-    let chain = Chain.start();
+    let aggregator = Aggregator::new().start();
 
     HttpServer::new(move || {
         App::new()
-            .data(chain.clone())
+            .data(aggregator.clone())
             .service(web::resource("/submit").route(web::get().to(node_route)))
     })
     .bind("127.0.0.1:8080")?

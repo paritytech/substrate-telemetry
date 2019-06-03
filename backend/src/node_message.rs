@@ -1,15 +1,17 @@
+use actix::prelude::*;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
+use crate::node::Node;
 
 pub use primitive_types::H256 as BlockHash;
 pub type BlockNumber = u64;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Message)]
 pub struct NodeMessage {
-    level: Level,
-    ts: DateTime<Utc>,
+    pub level: Level,
+    pub ts: DateTime<Utc>,
     #[serde(flatten)]
-    details: Details,
+    pub details: Details,
 }
 
 #[derive(Deserialize, Debug)]
@@ -33,11 +35,9 @@ pub enum Details {
 
 #[derive(Deserialize, Debug)]
 pub struct SystemConnected {
-    pub name: Box<str>,
     pub chain: Box<str>,
-    pub implementation: Box<str>,
-    pub version: Box<str>,
-    pub config: Option<Box<str>>,
+    #[serde(flatten)]
+    pub node: Node,
 }
 
 #[derive(Deserialize, Debug)]

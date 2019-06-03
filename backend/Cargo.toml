@@ -12,3 +12,4 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 primitive-types = { version = "0.3.0", features = ["serde"] }
+rustc-hash = "1.0.1"
