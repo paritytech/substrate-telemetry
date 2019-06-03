@@ -1,7 +1,7 @@
 use actix::prelude::*;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
-use crate::node::Node;
+use crate::node::NodeDetails;
 
 pub use primitive_types::H256 as BlockHash;
 pub type BlockNumber = u64;
@@ -37,7 +37,7 @@ pub enum Details {
 pub struct SystemConnected {
     pub chain: Box<str>,
     #[serde(flatten)]
-    pub node: Node,
+    pub node: NodeDetails,
 }
 
 #[derive(Deserialize, Debug)]

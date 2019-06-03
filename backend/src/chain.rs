@@ -3,7 +3,7 @@ use actix::WeakAddr;
 use actix::prelude::*;
 use actix::dev::MessageResponse;
 
-use crate::node::Node;
+use crate::node::{Node, NodeDetails};
 use crate::node_connector::NodeConnector;
 
 #[derive(Serialize, Deserialize, Message, Clone, Copy, Debug)]
@@ -43,6 +43,10 @@ impl Chain {
         }
     }
 
+    pub fn get(&mut self, nid: NodeId) -> Option<&Node> {
+        self.nodes.get(nid.0).and_then(|node| node.as_ref())
+    }
+
     pub fn get_mut(&mut self, nid: NodeId) -> Option<&mut Node> {
         self.nodes.get_mut(nid.0).and_then(|node| node.as_mut())
     }
@@ -62,7 +66,8 @@ impl Chain {
 
 #[derive(Message)]
 pub struct AddNode {
-    pub node: Node,
+    pub node: NodeDetails,
+    pub chain: Box<str>,
     pub connector: WeakAddr<NodeConnector>,
 }
 
@@ -76,6 +81,6 @@ impl Handler<AddNode> for Chain {
     fn handle(&mut self, msg: AddNode, ctx: &mut Context<Self>) {
         println!("[{}] new node {}", self.label, msg.node.name);
 
-        self.add(msg.node);
+        self.add(Node::new(msg.node));
     }
 }

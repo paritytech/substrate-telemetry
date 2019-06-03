@@ -2,8 +2,8 @@ use std::time::{Duration, Instant};
 
 use actix::prelude::*;
 use actix_web_actors::ws;
-use crate::aggregator::{Aggregator, AddNode};
-use crate::chain::Chain;
+use crate::aggregator::Aggregator;
+use crate::chain::{Chain, AddNode};
 use crate::node::Node;
 use crate::node_message::{NodeMessage, Details, SystemConnected};
 
