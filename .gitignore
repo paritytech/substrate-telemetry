@@ -1,6 +1,8 @@
 # See https://help.github.com/ignore-files/ for more about ignoring files.
 htdocs
 
+backend/target
+
 # dependencies
 node_modules
 
