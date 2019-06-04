@@ -1,4 +1,7 @@
 use serde::Deserialize;
+use crate::node_message::NodeMessage;
+
+pub type NodeId = usize;
 
 #[derive(Deserialize, Debug)]
 pub struct NodeDetails {
@@ -16,5 +19,13 @@ impl Node {
         Node {
             details,
         }
+    }
+
+    pub fn name(&self) -> &str {
+        &self.details.name
+    }
+
+    pub fn update(&mut self, chain: &str, msg: NodeMessage) {
+        // info!("[{}] [{}] {:?}", chain, self.name(), msg);
     }
 }

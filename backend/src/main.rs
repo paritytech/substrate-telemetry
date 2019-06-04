@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate log;
+
 use actix::prelude::*;
 use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Error};
 use actix_web_actors::ws;
@@ -7,6 +10,7 @@ mod node_message;
 mod aggregator;
 mod chain;
 mod node;
+mod util;
 
 use node_connector::NodeConnector;
 use aggregator::Aggregator;
@@ -17,8 +21,6 @@ fn node_route(
     stream: web::Payload,
     aggregator: web::Data<Addr<Aggregator>>,
 ) -> Result<HttpResponse, Error> {
-    println!("Connection!");
-
     ws::start(
         NodeConnector::new(aggregator.get_ref().clone()),
         &req,
@@ -27,6 +29,8 @@ fn node_route(
 }
 
 fn main() -> std::io::Result<()> {
+    env_logger::init();
+
     let sys = System::new("substrate-telemetry");
     let aggregator = Aggregator::new().start();
 

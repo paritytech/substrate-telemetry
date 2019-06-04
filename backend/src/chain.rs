@@ -3,84 +3,100 @@ use actix::WeakAddr;
 use actix::prelude::*;
 use actix::dev::MessageResponse;
 
-use crate::node::{Node, NodeDetails};
-use crate::node_connector::NodeConnector;
-
-#[derive(Serialize, Deserialize, Message, Clone, Copy, Debug)]
-pub struct NodeId(usize);
+use crate::node::{Node, NodeId, NodeDetails};
+use crate::node_connector::Initialize;
+use crate::node_message::{NodeMessage, Details, SystemInterval, Block, BlockHash, BlockNumber};
+use crate::util::DenseMap;
 
 pub struct Chain {
     /// Label of this chain
     label: Box<str>,
-    /// List of retired `NodeId`s that can be re-used
-    retired: Vec<NodeId>,
-    /// All nodes, mapping NodeId.0 -> Node
-    nodes: Vec<Option<Node>>,
+    /// Dense mapping of NodeId -> Node
+    nodes: DenseMap<Node>,
+    ///
+    best: Block,
 }
 
 impl Chain {
     pub fn new(label: Box<str>) -> Self {
-        println!("New chain created: {}", label);
+        info!("[{}] Created", label);
 
         Chain {
             label,
-            retired: Vec::new(),
-            nodes: Vec::new(),
-        }
-    }
-
-    pub fn add(&mut self, node: Node) -> NodeId {
-        match self.retired.pop() {
-            Some(nid) => {
-                self.nodes[nid.0] = Some(node);
-                nid
-            },
-            None => {
-                let nid = NodeId(self.nodes.len());
-                self.nodes.push(Some(node));
-                nid
+            nodes: DenseMap::new(),
+            best: Block {
+                hash: BlockHash::from([0; 32]),
+                height: 0,
             },
         }
     }
-
-    pub fn get(&mut self, nid: NodeId) -> Option<&Node> {
-        self.nodes.get(nid.0).and_then(|node| node.as_ref())
-    }
-
-    pub fn get_mut(&mut self, nid: NodeId) -> Option<&mut Node> {
-        self.nodes.get_mut(nid.0).and_then(|node| node.as_mut())
-    }
-
-    pub fn remove(&mut self, nid: NodeId) {
-        if self.nodes.get_mut(nid.0).take().is_some() {
-            self.retired.push(nid);
-        }
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = (NodeId, &Node)> + '_ {
-        self.nodes.iter().enumerate().filter_map(|(idx, node)| {
-            Some((NodeId(idx), node.as_ref()?))
-        })
-    }
-}
-
-#[derive(Message)]
-pub struct AddNode {
-    pub node: NodeDetails,
-    pub chain: Box<str>,
-    pub connector: WeakAddr<NodeConnector>,
 }
 
 impl Actor for Chain {
     type Context = Context<Self>;
 }
 
+#[derive(Message)]
+pub struct AddNode {
+    pub node: NodeDetails,
+    pub chain: Box<str>,
+    pub rec: Recipient<Initialize>,
+}
+
+#[derive(Message)]
+pub struct UpdateNode {
+    pub nid: NodeId,
+    pub msg: NodeMessage,
+}
+
+#[derive(Message)]
+pub struct RemoveNode(pub NodeId);
+
 impl Handler<AddNode> for Chain {
     type Result = ();
 
-    fn handle(&mut self, msg: AddNode, ctx: &mut Context<Self>) {
-        println!("[{}] new node {}", self.label, msg.node.name);
+    fn handle(&mut self, msg: AddNode, ctx: &mut Self::Context) {
+        let nid = self.nodes.add(Node::new(msg.node));
 
-        self.add(Node::new(msg.node));
+        if let Err(_) = msg.rec.do_send(Initialize(nid, ctx.address())) {
+            self.nodes.remove(nid);
+        }
+    }
+}
+
+impl Handler<UpdateNode> for Chain {
+    type Result = ();
+
+    fn handle(&mut self, msg: UpdateNode, ctx: &mut Self::Context) {
+        let UpdateNode { nid, msg } = msg;
+
+        match msg.details {
+            Details::BlockImport(ref block) | Details::SystemInterval(SystemInterval { ref block, .. }) => {
+                if block.height > self.best.height {
+                    self.best = block.clone();
+                    info!("[{}] [{}] new best block ({}) {:?}", self.label, self.nodes.len(), self.best.height, self.best.hash);
+                }
+            }
+            _ => ()
+        }
+
+        if let Some(node) = self.nodes.get_mut(nid) {
+            node.update(&self.label, msg);
+        }
+    }
+}
+
+impl Handler<RemoveNode> for Chain {
+    type Result = ();
+
+    fn handle(&mut self, msg: RemoveNode, ctx: &mut Self::Context) {
+        let RemoveNode(nid) = msg;
+
+        self.nodes.remove(nid);
+
+        if self.nodes.is_empty() {
+            info!("[{}] Lost all nodes, dropping...", self.label);
+            ctx.stop();
+        }
     }
 }

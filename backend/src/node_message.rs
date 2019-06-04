@@ -24,13 +24,13 @@ pub enum Level {
 #[serde(tag = "msg")]
 pub enum Details {
     #[serde(rename = "node.start")]
-    NodeStart(BestBlock),
+    NodeStart(Block),
     #[serde(rename = "system.connected")]
     SystemConnected(SystemConnected),
     #[serde(rename = "system.interval")]
     SystemInterval(SystemInterval),
     #[serde(rename = "block.import")]
-    BlockImport(BestBlock),
+    BlockImport(Block),
 }
 
 #[derive(Deserialize, Debug)]
@@ -51,11 +51,12 @@ pub struct SystemInterval {
     pub finalized_height: Option<BlockNumber>,
     pub finalized_hash: Option<BlockHash>,
     #[serde(flatten)]
-    pub best_block: BestBlock,
+    pub block: Block,
 }
 
-#[derive(Deserialize, Debug)]
-pub struct BestBlock {
-    pub best: BlockHash,
+#[derive(Deserialize, Debug, Clone)]
+pub struct Block {
+    #[serde(rename = "best")]
+    pub hash: BlockHash,
     pub height: BlockNumber,
 }
