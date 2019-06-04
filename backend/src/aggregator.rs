@@ -1,6 +1,6 @@
+use std::collections::HashMap;
 use actix::WeakAddr;
 use actix::prelude::*;
-use rustc_hash::FxHashMap;
 
 use crate::node::Node;
 use crate::node_connector::NodeConnector;
@@ -8,13 +8,13 @@ use crate::node_message::SystemConnected;
 use crate::chain::{Chain, AddNode};
 
 pub struct Aggregator {
-    chains: FxHashMap<Box<str>, Addr<Chain>>,
+    chains: HashMap<Box<str>, Addr<Chain>>,
 }
 
 impl Aggregator {
     pub fn new() -> Self {
         Aggregator {
-            chains: FxHashMap::default(),
+            chains: HashMap::new(),
         }
     }
 
@@ -27,7 +27,7 @@ impl Aggregator {
             self.chains.insert(chain.into(), Chain::new(chain.into()).start());
         }
 
-        self.chains.get(chain).expect("Chain has just been inserted if necessary")
+        &self.chains[chain]
     }
 }
 

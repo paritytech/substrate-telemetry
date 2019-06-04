@@ -13,7 +13,7 @@ pub struct Chain {
     label: Box<str>,
     /// Dense mapping of NodeId -> Node
     nodes: DenseMap<Node>,
-    ///
+    /// Best block
     best: Block,
 }
 
@@ -24,10 +24,7 @@ impl Chain {
         Chain {
             label,
             nodes: DenseMap::new(),
-            best: Block {
-                hash: BlockHash::from([0; 32]),
-                height: 0,
-            },
+            best: Block::zero(),
         }
     }
 }
@@ -70,14 +67,9 @@ impl Handler<UpdateNode> for Chain {
     fn handle(&mut self, msg: UpdateNode, ctx: &mut Self::Context) {
         let UpdateNode { nid, msg } = msg;
 
-        match msg.details {
-            Details::BlockImport(ref block) | Details::SystemInterval(SystemInterval { ref block, .. }) => {
-                if block.height > self.best.height {
-                    self.best = block.clone();
-                    info!("[{}] [{}] new best block ({}) {:?}", self.label, self.nodes.len(), self.best.height, self.best.hash);
-                }
-            }
-            _ => ()
+        if let Some(block) = msg.details.best_block() {
+            self.best = *block;
+            info!("[{}] [{}] new best block ({}) {:?}", self.label, self.nodes.len(), self.best.height, self.best.hash);
         }
 
         if let Some(node) = self.nodes.get_mut(nid) {

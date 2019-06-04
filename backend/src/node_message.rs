@@ -54,9 +54,29 @@ pub struct SystemInterval {
     pub block: Block,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, Copy)]
 pub struct Block {
     #[serde(rename = "best")]
     pub hash: BlockHash,
     pub height: BlockNumber,
+}
+
+impl Block {
+    pub fn zero() -> Self {
+        Block {
+            hash: BlockHash::from([0; 32]),
+            height: 0,
+        }
+    }
+}
+
+impl Details {
+    pub fn best_block(&self) -> Option<&Block> {
+        match self {
+            Details::BlockImport(block) | Details::SystemInterval(SystemInterval { block, .. }) => {
+                Some(block)
+            }
+            _ => None,
+        }
+    }
 }
