@@ -1,14 +1,14 @@
-use serde::{Serialize, Deserialize};
-use actix::WeakAddr;
 use actix::prelude::*;
-use actix::dev::MessageResponse;
 
+use crate::aggregator::DropChain;
 use crate::node::{Node, NodeId, NodeDetails};
 use crate::node_connector::Initialize;
-use crate::node_message::{NodeMessage, Details, SystemInterval, Block, BlockHash, BlockNumber};
+use crate::node_message::{NodeMessage, Block};
 use crate::util::DenseMap;
 
 pub struct Chain {
+    /// Who to inform if we Chain drops itself
+    drop_rec: Recipient<DropChain>,
     /// Label of this chain
     label: Box<str>,
     /// Dense mapping of NodeId -> Node
@@ -18,10 +18,11 @@ pub struct Chain {
 }
 
 impl Chain {
-    pub fn new(label: Box<str>) -> Self {
+    pub fn new(drop_rec: Recipient<DropChain>, label: Box<str>) -> Self {
         info!("[{}] Created", label);
 
         Chain {
+            drop_rec,
             label,
             nodes: DenseMap::new(),
             best: Block::zero(),
@@ -31,12 +32,15 @@ impl Chain {
 
 impl Actor for Chain {
     type Context = Context<Self>;
+
+    fn stopped(&mut self, _: &mut Self::Context) {
+        let _ = self.drop_rec.do_send(DropChain(self.label.clone()));
+    }
 }
 
 #[derive(Message)]
 pub struct AddNode {
     pub node: NodeDetails,
-    pub chain: Box<str>,
     pub rec: Recipient<Initialize>,
 }
 
@@ -64,16 +68,18 @@ impl Handler<AddNode> for Chain {
 impl Handler<UpdateNode> for Chain {
     type Result = ();
 
-    fn handle(&mut self, msg: UpdateNode, ctx: &mut Self::Context) {
+    fn handle(&mut self, msg: UpdateNode, _: &mut Self::Context) {
         let UpdateNode { nid, msg } = msg;
 
         if let Some(block) = msg.details.best_block() {
-            self.best = *block;
-            info!("[{}] [{}] new best block ({}) {:?}", self.label, self.nodes.len(), self.best.height, self.best.hash);
+            if block.height > self.best.height {
+                self.best = *block;
+                info!("[{}] [{}] new best block ({}) {:?}", self.label, self.nodes.len(), self.best.height, self.best.hash);
+            }
         }
 
         if let Some(node) = self.nodes.get_mut(nid) {
-            node.update(&self.label, msg);
+            node.update(msg);
         }
     }
 }

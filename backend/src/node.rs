@@ -29,12 +29,11 @@ impl Node {
         &self.details.name
     }
 
-    pub fn update(&mut self, chain: &str, msg: NodeMessage) {
+    pub fn update(&mut self, msg: NodeMessage) {
         if let Some(block) = msg.details.best_block() {
             if block.height > self.best.height {
                 self.best = *block;
             }
         }
-        // info!("[{}] [{}] {:?}", chain, self.name(), msg);
     }
 }

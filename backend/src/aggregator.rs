@@ -1,11 +1,9 @@
 use std::collections::HashMap;
-use actix::WeakAddr;
 use actix::prelude::*;
 
-use crate::node::Node;
-use crate::node_connector::NodeConnector;
-use crate::node_message::SystemConnected;
-use crate::chain::{Chain, AddNode};
+use crate::chain::{self, Chain};
+use crate::node::NodeDetails;
+use crate::node_connector::Initialize;
 
 pub struct Aggregator {
     chains: HashMap<Box<str>, Addr<Chain>>,
@@ -20,16 +18,28 @@ impl Aggregator {
 
     /// Get an address to the chain actor by name. If the address is not found,
     /// or the address is disconnected (actor dropped), create a new one.
-    pub fn lazy_chain(&mut self, chain: &str) -> &Addr<Chain> {
-        let connected = self.chains.get(chain).map(|addr| addr.connected()).unwrap_or(false);
+    pub fn lazy_chain(&mut self, chain: Box<str>, ctx: &mut <Self as Actor>::Context) -> &Addr<Chain> {
+        let connected = self.chains.get(&chain).map(|addr| addr.connected()).unwrap_or(false);
 
         if !connected {
-            self.chains.insert(chain.into(), Chain::new(chain.into()).start());
+            let addr = Chain::new(ctx.address().recipient(), chain.clone()).start();
+
+            self.chains.insert(chain.clone(), addr);
         }
 
-        &self.chains[chain]
+        &self.chains[&chain]
     }
 }
+
+#[derive(Message)]
+pub struct AddNode {
+    pub node: NodeDetails,
+    pub chain: Box<str>,
+    pub rec: Recipient<Initialize>,
+}
+
+#[derive(Message)]
+pub struct DropChain(pub Box<str>);
 
 impl Actor for Aggregator {
     type Context = Context<Self>;
@@ -38,9 +48,24 @@ impl Actor for Aggregator {
 impl Handler<AddNode> for Aggregator {
     type Result = ();
 
-    fn handle(&mut self, msg: AddNode, _: &mut Context<Self>) {
-        let chain = msg.chain.clone();
+    fn handle(&mut self, msg: AddNode, ctx: &mut Self::Context) {
+        let AddNode { node, chain, rec } = msg;
 
-        self.lazy_chain(&chain).do_send(msg);
+        self.lazy_chain(chain, ctx).do_send(chain::AddNode {
+            node,
+            rec,
+        });
+    }
+}
+
+impl Handler<DropChain> for Aggregator {
+    type Result = ();
+
+    fn handle(&mut self, msg: DropChain, _: &mut Self::Context) {
+        let DropChain(chain) = msg;
+
+        self.chains.remove(&chain);
+
+        info!("Dropped chain [{}] from the aggregator", chain);
     }
 }
