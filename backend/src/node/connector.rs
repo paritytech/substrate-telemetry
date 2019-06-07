@@ -5,7 +5,7 @@ use actix_web_actors::ws;
 use crate::aggregator::{Aggregator, AddNode};
 use crate::chain::{Chain, UpdateNode, RemoveNode};
 use crate::node::NodeId;
-use crate::node_message::{NodeMessage, Details, SystemConnected};
+use crate::node::message::{NodeMessage, Details, SystemConnected};
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(20);

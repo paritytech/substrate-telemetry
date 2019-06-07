@@ -1,5 +1,9 @@
 use serde::Deserialize;
-use crate::node_message::{NodeMessage, Block};
+
+pub mod message;
+pub mod connector;
+
+use message::{NodeMessage, Block};
 
 pub type NodeId = usize;
 

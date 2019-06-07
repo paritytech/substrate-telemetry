@@ -1,9 +1,8 @@
 use actix::prelude::*;
 
 use crate::aggregator::DropChain;
-use crate::node::{Node, NodeId, NodeDetails};
-use crate::node_connector::Initialize;
-use crate::node_message::{NodeMessage, Block};
+use crate::node::{Node, NodeId, NodeDetails, connector::Initialize, message::{NodeMessage, Block}};
+use crate::feed::connector::{FeedId, FeedConnector};
 use crate::util::DenseMap;
 
 pub struct Chain {
@@ -38,20 +37,31 @@ impl Actor for Chain {
     }
 }
 
+/// Message sent from the Aggregator to the Chain when new Node is connected
 #[derive(Message)]
 pub struct AddNode {
     pub node: NodeDetails,
     pub rec: Recipient<Initialize>,
 }
 
+/// Message sent from the NodeConnector to the Chain when it receives new telemetry data
 #[derive(Message)]
 pub struct UpdateNode {
     pub nid: NodeId,
     pub msg: NodeMessage,
 }
 
+/// Message sent from the NodeConnector to the Chain when the connector disconnects
 #[derive(Message)]
 pub struct RemoveNode(pub NodeId);
+
+/// Message sent from the Aggregator to the Chain when the connector wants to subscribe to that chain
+#[derive(Message)]
+pub struct Subscribe(pub Addr<FeedConnector>);
+
+/// Message sent from the FeedConnector before it subscribes to a new chain, or if it disconnects
+#[derive(Message)]
+pub struct Unsubscribe(pub FeedId);
 
 impl Handler<AddNode> for Chain {
     type Result = ();

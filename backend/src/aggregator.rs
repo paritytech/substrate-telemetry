@@ -2,17 +2,20 @@ use std::collections::HashMap;
 use actix::prelude::*;
 
 use crate::chain::{self, Chain};
-use crate::node::NodeDetails;
-use crate::node_connector::Initialize;
+use crate::node::{NodeDetails, connector::Initialize};
+use crate::feed::connector::FeedConnector;
+use crate::util::DenseMap;
 
 pub struct Aggregator {
     chains: HashMap<Box<str>, Addr<Chain>>,
+    feeds: DenseMap<FeedConnector>,
 }
 
 impl Aggregator {
     pub fn new() -> Self {
         Aggregator {
             chains: HashMap::new(),
+            feeds: DenseMap::new(),
         }
     }
 
@@ -31,6 +34,11 @@ impl Aggregator {
     }
 }
 
+impl Actor for Aggregator {
+    type Context = Context<Self>;
+}
+
+/// Message sent from the NodeConnector to the Aggregator upon getting all node details
 #[derive(Message)]
 pub struct AddNode {
     pub node: NodeDetails,
@@ -38,11 +46,15 @@ pub struct AddNode {
     pub rec: Recipient<Initialize>,
 }
 
+/// Message sent from the Chain to the Aggregator when the Chain loses all nodes
 #[derive(Message)]
 pub struct DropChain(pub Box<str>);
 
-impl Actor for Aggregator {
-    type Context = Context<Self>;
+/// Message sent from the FeedConnector to the Aggregator when subscribing to a new chain
+#[derive(Message)]
+pub struct Subscribe {
+    pub chain: Box<str>,
+    pub feed: Addr<FeedConnector>,
 }
 
 impl Handler<AddNode> for Aggregator {
