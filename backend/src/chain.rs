@@ -2,7 +2,8 @@ use actix::prelude::*;
 
 use crate::aggregator::DropChain;
 use crate::node::{Node, NodeId, NodeDetails, connector::Initialize, message::{NodeMessage, Block}};
-use crate::feed::connector::{FeedId, FeedConnector};
+use crate::feed::connector::{FeedId, FeedConnector, Subscribed};
+use crate::feed::{self, FeedMessageSerializer};
 use crate::util::DenseMap;
 
 pub type ChainId = usize;
@@ -19,6 +20,8 @@ pub struct Chain {
     feeds: DenseMap<Addr<FeedConnector>>,
     /// Best block
     best: Block,
+    /// Message serializer
+    serializer: FeedMessageSerializer,
 }
 
 impl Chain {
@@ -32,6 +35,7 @@ impl Chain {
             nodes: DenseMap::new(),
             feeds: DenseMap::new(),
             best: Block::zero(),
+            serializer: FeedMessageSerializer::new(),
         }
     }
 }
@@ -92,11 +96,19 @@ impl Handler<UpdateNode> for Chain {
             if block.height > self.best.height {
                 self.best = *block;
                 info!("[{}] [{}/{}] new best block ({}) {:?}", self.label, self.nodes.len(), self.feeds.len(), self.best.height, self.best.hash);
+
+                self.serializer.push(feed::BestBlock(self.best.height, msg.ts, None));
             }
         }
 
         if let Some(node) = self.nodes.get_mut(nid) {
             node.update(msg);
+        }
+
+        if let Some(msg) = self.serializer.finalize() {
+            for (_, feed) in self.feeds.iter() {
+                feed.do_send(msg.clone());
+            }
         }
     }
 }
@@ -113,6 +125,18 @@ impl Handler<RemoveNode> for Chain {
             info!("[{}] Lost all nodes, dropping...", self.label);
             ctx.stop();
         }
+    }
+}
+
+impl Handler<Subscribe> for Chain {
+    type Result = ();
+
+    fn handle(&mut self, msg: Subscribe, ctx: &mut Self::Context) {
+        let Subscribe(feed) = msg;
+
+        let fid = self.feeds.add(feed.clone());
+
+        feed.do_send(Subscribed(fid, ctx.address().recipient()));
     }
 }
 

@@ -1,6 +1,8 @@
 use serde::Serialize;
 use serde_json::to_writer;
 use bytes::Bytes;
+use chrono::{DateTime, Utc};
+use crate::node::message::{BlockNumber, BlockHash};
 
 pub mod connector;
 
@@ -55,11 +57,39 @@ impl FeedMessageSerializer {
 }
 
 impl FeedMessage for Version { const ACTION: u8 = 0x00; }
+impl FeedMessage for BestBlock { const ACTION: u8 = 0x01; }
 impl FeedMessage for AddedChain<'_> { const ACTION: u8 = 0x0B; }
 impl FeedMessage for RemovedChain<'_> { const ACTION: u8 = 0x0C; }
 
 #[derive(Serialize)]
 pub struct Version(pub usize);
+  // BestBlock        : 0x01 as 0x01,
+  // BestFinalized    : 0x02 as 0x02,
+  // AddedNode        : 0x03 as 0x03,
+  // RemovedNode      : 0x04 as 0x04,
+
+  // export interface BestBlockMessage extends MessageBase {
+  //   action: typeof Actions.BestBlock;
+  //   payload: [BlockNumber, Timestamp, Maybe<Milliseconds>];
+  // }
+
+  // export interface BestFinalizedBlockMessage extends MessageBase {
+  //   action: typeof Actions.BestFinalized;
+  //   payload: [BlockNumber, BlockHash];
+  // }
+
+  // export interface AddedNodeMessage extends MessageBase {
+  //   action: typeof Actions.AddedNode;
+  //   payload: [NodeId, NodeDetails, NodeStats, NodeHardware, BlockDetails, Maybe<NodeLocation>];
+  // }
+
+
+  // export interface RemovedNodeMessage extends MessageBase {
+  //   action: typeof Actions.RemovedNode;
+  //   payload: NodeId;
+  // }
+#[derive(Serialize)]
+pub struct BestBlock(pub BlockNumber, pub DateTime<Utc>, pub Option<u64>);
 
 #[derive(Serialize)]
 pub struct AddedChain<'a>(pub &'a str, pub usize);

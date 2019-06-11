@@ -104,6 +104,19 @@ impl Handler<DropChain> for Aggregator {
     }
 }
 
+impl Handler<Subscribe> for Aggregator {
+    type Result = ();
+
+    fn handle(&mut self, msg: Subscribe, ctx: &mut Self::Context) {
+        let Subscribe { chain, feed } = msg;
+
+        let chains = &self.chains;
+        if let Some(chain) = self.labels.get(&chain).and_then(|&cid| chains.get(cid)) {
+            chain.do_send(chain::Subscribe(feed));
+        }
+    }
+}
+
 impl Handler<Connect> for Aggregator {
     type Result = ();
 
@@ -118,6 +131,7 @@ impl Handler<Connect> for Aggregator {
 
         self.serializer.push(feed::Version(22));
 
+        // TODO: keep track on number of nodes connected to each chain
         for label in self.labels.keys() {
             self.serializer.push(feed::AddedChain(label, 1));
         }

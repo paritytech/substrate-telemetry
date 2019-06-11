@@ -36,7 +36,7 @@ impl<T> DenseMap<T> {
         }
     }
 
-    pub fn get(&mut self, id: Id) -> Option<&T> {
+    pub fn get(&self, id: Id) -> Option<&T> {
         self.items.get(id).and_then(|item| item.as_ref())
     }
 

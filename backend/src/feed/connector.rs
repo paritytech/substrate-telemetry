@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 use bytes::Bytes;
 use actix::prelude::*;
 use actix_web_actors::ws;
-use crate::aggregator::{Aggregator, Connect, Disconnect};
+use crate::aggregator::{Aggregator, Connect, Disconnect, Subscribe};
 use crate::chain::{Chain, Unsubscribe};
 
 pub type FeedId = usize;
@@ -66,11 +66,25 @@ impl FeedConnector {
             }
         });
     }
+
+    fn handle_cmd(&mut self, cmd: &str, payload: &str, ctx: &mut <Self as Actor>::Context) {
+        info!("FeedConnector sent: {} {}", cmd, payload);
+
+         match cmd {
+            "subscribe" => {
+                self.aggregator.do_send(Subscribe {
+                    chain: payload.into(),
+                    feed: ctx.address(),
+                });
+            }
+            _ => (),
+        }
+    }
 }
 
 /// Message sent form Chain to the FeedConnector upon successful subscription
 #[derive(Message)]
-pub struct Subscribed(pub FeedId, Recipient<Unsubscribe>);
+pub struct Subscribed(pub FeedId, pub Recipient<Unsubscribe>);
 
 /// Message sent from Aggregator to FeedConnector upon successful connection
 #[derive(Message)]
@@ -92,7 +106,12 @@ impl StreamHandler<ws::Message, ws::ProtocolError> for FeedConnector {
             }
             ws::Message::Pong(_) => self.hb = Instant::now(),
             ws::Message::Text(text) => {
-                info!("FeedConnector sent: {}", text);
+                if let Some(idx) = text.find(':') {
+                    let cmd = &text[..idx];
+                    let payload = &text[idx+1..];
+
+                    self.handle_cmd(cmd, payload, ctx);
+                }
             }
             ws::Message::Close(_) => ctx.stop(),
             _ => (),
