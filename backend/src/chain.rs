@@ -5,25 +5,32 @@ use crate::node::{Node, NodeId, NodeDetails, connector::Initialize, message::{No
 use crate::feed::connector::{FeedId, FeedConnector};
 use crate::util::DenseMap;
 
+pub type ChainId = usize;
+
 pub struct Chain {
+    cid: ChainId,
     /// Who to inform if we Chain drops itself
     drop_rec: Recipient<DropChain>,
     /// Label of this chain
     label: Box<str>,
     /// Dense mapping of NodeId -> Node
     nodes: DenseMap<Node>,
+    /// Dense mapping of FeedId -> Addr<FeedConnector>,
+    feeds: DenseMap<Addr<FeedConnector>>,
     /// Best block
     best: Block,
 }
 
 impl Chain {
-    pub fn new(drop_rec: Recipient<DropChain>, label: Box<str>) -> Self {
+    pub fn new(cid: ChainId, drop_rec: Recipient<DropChain>, label: Box<str>) -> Self {
         info!("[{}] Created", label);
 
         Chain {
+            cid,
             drop_rec,
             label,
             nodes: DenseMap::new(),
+            feeds: DenseMap::new(),
             best: Block::zero(),
         }
     }
@@ -84,7 +91,7 @@ impl Handler<UpdateNode> for Chain {
         if let Some(block) = msg.details.best_block() {
             if block.height > self.best.height {
                 self.best = *block;
-                info!("[{}] [{}] new best block ({}) {:?}", self.label, self.nodes.len(), self.best.height, self.best.hash);
+                info!("[{}] [{}/{}] new best block ({}) {:?}", self.label, self.nodes.len(), self.feeds.len(), self.best.height, self.best.hash);
             }
         }
 
@@ -106,5 +113,15 @@ impl Handler<RemoveNode> for Chain {
             info!("[{}] Lost all nodes, dropping...", self.label);
             ctx.stop();
         }
+    }
+}
+
+impl Handler<Unsubscribe> for Chain {
+    type Result = ();
+
+    fn handle(&mut self, msg: Unsubscribe, ctx: &mut Self::Context) {
+        let Unsubscribe(fid) = msg;
+
+        self.feeds.remove(fid);
     }
 }

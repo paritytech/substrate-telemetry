@@ -16,14 +16,21 @@ impl<T> DenseMap<T> {
     }
 
     pub fn add(&mut self, item: T) -> Id {
+        self.add_with(|_| item)
+    }
+
+    pub fn add_with<F>(&mut self, f: F) -> Id
+    where
+        F: FnOnce(Id) -> T,
+    {
         match self.retired.pop() {
             Some(id) => {
-                self.items[id] = Some(item);
+                self.items[id] = Some(f(id));
                 id
             },
             None => {
                 let id = self.items.len();
-                self.items.push(Some(item));
+                self.items.push(Some(f(id)));
                 id
             },
         }

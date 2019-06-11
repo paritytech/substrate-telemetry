@@ -1,36 +1,48 @@
 use std::collections::HashMap;
 use actix::prelude::*;
 
-use crate::chain::{self, Chain};
+use crate::chain::{self, Chain, ChainId};
 use crate::node::{NodeDetails, connector::Initialize};
-use crate::feed::connector::FeedConnector;
+use crate::feed::{self, FeedMessageSerializer};
+use crate::feed::connector::{FeedConnector, Connected, FeedId};
 use crate::util::DenseMap;
 
 pub struct Aggregator {
-    chains: HashMap<Box<str>, Addr<Chain>>,
-    feeds: DenseMap<FeedConnector>,
+    labels: HashMap<Box<str>, ChainId>,
+    chains: DenseMap<Addr<Chain>>,
+    feeds: DenseMap<Addr<FeedConnector>>,
+    serializer: FeedMessageSerializer,
 }
 
 impl Aggregator {
     pub fn new() -> Self {
         Aggregator {
-            chains: HashMap::new(),
+            labels: HashMap::new(),
+            chains: DenseMap::new(),
             feeds: DenseMap::new(),
+            serializer: FeedMessageSerializer::new(),
         }
     }
 
     /// Get an address to the chain actor by name. If the address is not found,
     /// or the address is disconnected (actor dropped), create a new one.
-    pub fn lazy_chain(&mut self, chain: Box<str>, ctx: &mut <Self as Actor>::Context) -> &Addr<Chain> {
-        let connected = self.chains.get(&chain).map(|addr| addr.connected()).unwrap_or(false);
+    pub fn lazy_chain(&mut self, label: Box<str>, ctx: &mut <Self as Actor>::Context) -> &Addr<Chain> {
+        let (cid, found) = self.labels
+            .get(&label)
+            .map(|&cid| (cid, true))
+            .unwrap_or_else(|| {
+                let recipient = ctx.address().recipient();
+                let label = label.clone();
+                let cid = self.chains.add_with(move |cid| Chain::new(cid, recipient, label).start());
 
-        if !connected {
-            let addr = Chain::new(ctx.address().recipient(), chain.clone()).start();
+                (cid, false)
+            });
 
-            self.chains.insert(chain.clone(), addr);
+        if !found {
+            self.labels.insert(label, cid);
         }
 
-        &self.chains[&chain]
+        self.chains.get(cid).expect("Entry just created above; qed")
     }
 }
 
@@ -57,6 +69,14 @@ pub struct Subscribe {
     pub feed: Addr<FeedConnector>,
 }
 
+/// Message sent from the FeedConnector to the Aggregator when first connected
+#[derive(Message)]
+pub struct Connect(pub Addr<FeedConnector>);
+
+/// Message sent from the FeedConnector to the Aggregator when disconnecting
+#[derive(Message)]
+pub struct Disconnect(pub FeedId);
+
 impl Handler<AddNode> for Aggregator {
     type Result = ();
 
@@ -74,10 +94,38 @@ impl Handler<DropChain> for Aggregator {
     type Result = ();
 
     fn handle(&mut self, msg: DropChain, _: &mut Self::Context) {
-        let DropChain(chain) = msg;
+        let DropChain(label) = msg;
 
-        self.chains.remove(&chain);
+        if let Some(cid) = self.labels.remove(&label) {
+            self.chains.remove(cid);
+        }
 
-        info!("Dropped chain [{}] from the aggregator", chain);
+        info!("Dropped chain [{}] from the aggregator", label);
+    }
+}
+
+impl Handler<Connect> for Aggregator {
+    type Result = ();
+
+    fn handle(&mut self, msg: Connect, ctx: &mut Self::Context) {
+        let Connect(connector) = msg;
+
+        let fid = self.feeds.add(connector.clone());
+
+        info!("Feed #{} connected", fid);
+
+        connector.do_send(Connected(fid));
+    }
+}
+
+impl Handler<Disconnect> for Aggregator {
+    type Result = ();
+
+    fn handle(&mut self, msg: Disconnect, ctx: &mut Self::Context) {
+        let Disconnect(fid) = msg;
+
+        info!("Feed #{} disconnected", fid);
+
+        self.feeds.remove(fid);
     }
 }
