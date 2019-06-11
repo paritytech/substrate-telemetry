@@ -1,5 +1,5 @@
 use std::time::{Duration, Instant};
-
+use bytes::Bytes;
 use actix::prelude::*;
 use actix_web_actors::ws;
 use crate::aggregator::{Aggregator, Connect, Disconnect};
@@ -76,6 +76,13 @@ pub struct Subscribed(pub FeedId, Recipient<Unsubscribe>);
 #[derive(Message)]
 pub struct Connected(pub FeedId);
 
+/// Message sent from either Aggregator or Chain to FeedConnector containing
+/// serialized message(s) for the frontend
+///
+/// Since Bytes is ARC'ed, this is cheap to clone
+#[derive(Message, Clone)]
+pub struct Serialized(pub Bytes);
+
 impl StreamHandler<ws::Message, ws::ProtocolError> for FeedConnector {
     fn handle(&mut self, msg: ws::Message, ctx: &mut Self::Context) {
         match msg {
@@ -111,5 +118,15 @@ impl Handler<Connected> for FeedConnector {
         let Connected(fid_aggregator) = msg;
 
         self.fid_aggregator = fid_aggregator;
+    }
+}
+
+impl Handler<Serialized> for FeedConnector {
+    type Result = ();
+
+    fn handle(&mut self, msg: Serialized, ctx: &mut Self::Context) {
+        let Serialized(bytes) = msg;
+
+        ctx.binary(bytes);
     }
 }

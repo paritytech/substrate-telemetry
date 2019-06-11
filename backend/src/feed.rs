@@ -4,6 +4,8 @@ use bytes::Bytes;
 
 pub mod connector;
 
+use connector::Serialized;
+
 pub trait FeedMessage: Serialize {
     const ACTION: u8;
 }
@@ -39,7 +41,7 @@ impl FeedMessageSerializer {
         to_writer(&mut self.buffer, &msg)
     }
 
-    pub fn finalize(&mut self) -> Option<Bytes> {
+    pub fn finalize(&mut self) -> Option<Serialized> {
         if self.buffer.len() == 0 {
             return None;
         }
@@ -48,7 +50,7 @@ impl FeedMessageSerializer {
         let bytes = self.buffer[..].into();
         self.buffer.clear();
 
-        Some(bytes)
+        Some(Serialized(bytes))
     }
 }
 

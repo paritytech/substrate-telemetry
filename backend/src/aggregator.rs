@@ -115,6 +115,16 @@ impl Handler<Connect> for Aggregator {
         info!("Feed #{} connected", fid);
 
         connector.do_send(Connected(fid));
+
+        self.serializer.push(feed::Version(22));
+
+        for label in self.labels.keys() {
+            self.serializer.push(feed::AddedChain(label, 1));
+        }
+
+        if let Some(msg) = self.serializer.finalize() {
+            connector.do_send(msg);
+        }
     }
 }
 
