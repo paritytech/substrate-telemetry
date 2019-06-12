@@ -4,6 +4,7 @@ use actix::prelude::*;
 use actix_web_actors::ws;
 use crate::aggregator::{Aggregator, Connect, Disconnect, Subscribe};
 use crate::chain::Unsubscribe;
+use crate::feed::{FeedMessageSerializer, Pong};
 
 pub type FeedId = usize;
 
@@ -23,6 +24,8 @@ pub struct FeedConnector {
     aggregator: Addr<Aggregator>,
     /// Chain actor address
     chain: Option<Recipient<Unsubscribe>>,
+    /// Message serializer
+    serializer: FeedMessageSerializer,
 }
 
 impl Actor for FeedConnector {
@@ -52,6 +55,7 @@ impl FeedConnector {
             hb: Instant::now(),
             aggregator,
             chain: None,
+            serializer: FeedMessageSerializer::new(),
         }
     }
 
@@ -68,14 +72,18 @@ impl FeedConnector {
     }
 
     fn handle_cmd(&mut self, cmd: &str, payload: &str, ctx: &mut <Self as Actor>::Context) {
-        info!("FeedConnector sent: {} {}", cmd, payload);
-
          match cmd {
             "subscribe" => {
                 self.aggregator.do_send(Subscribe {
                     chain: payload.into(),
                     feed: ctx.address(),
                 });
+            }
+            "ping" => {
+                self.serializer.push(Pong(payload));
+                if let Some(serialized) = self.serializer.finalize() {
+                    ctx.binary(serialized.0);
+                }
             }
             _ => (),
         }

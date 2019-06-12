@@ -3,7 +3,7 @@ use actix::prelude::*;
 use crate::aggregator::DropChain;
 use crate::node::{Node, connector::Initialize, message::{NodeMessage, Block}};
 use crate::feed::connector::{FeedId, FeedConnector, Subscribed};
-use crate::feed::{self, FeedMessageSerializer, AddedNode};
+use crate::feed::{self, FeedMessageSerializer, AddedNode, RemovedNode, SubscribedTo, UnsubscribedFrom};
 use crate::util::DenseMap;
 use crate::types::{NodeId, NodeDetails};
 
@@ -37,6 +37,14 @@ impl Chain {
             feeds: DenseMap::new(),
             best: Block::zero(),
             serializer: FeedMessageSerializer::new(),
+        }
+    }
+
+    fn broadcast(&mut self) {
+        if let Some(msg) = self.serializer.finalize() {
+            for (_, feed) in self.feeds.iter() {
+                feed.do_send(msg.clone());
+            }
         }
     }
 }
@@ -83,6 +91,9 @@ impl Handler<AddNode> for Chain {
 
         if let Err(_) = msg.rec.do_send(Initialize(nid, ctx.address())) {
             self.nodes.remove(nid);
+        } else if let Some(node) = self.nodes.get(nid) {
+            self.serializer.push(AddedNode(nid, node.details(), node.stats(), node.hardware(), node.location()));
+            self.broadcast();
         }
     }
 }
@@ -106,11 +117,7 @@ impl Handler<UpdateNode> for Chain {
             node.update(msg);
         }
 
-        if let Some(msg) = self.serializer.finalize() {
-            for (_, feed) in self.feeds.iter() {
-                feed.do_send(msg.clone());
-            }
-        }
+        self.broadcast();
     }
 }
 
@@ -126,6 +133,9 @@ impl Handler<RemoveNode> for Chain {
             info!("[{}] Lost all nodes, dropping...", self.label);
             ctx.stop();
         }
+
+        self.serializer.push(RemovedNode(nid));
+        self.broadcast();
     }
 }
 
@@ -139,8 +149,10 @@ impl Handler<Subscribe> for Chain {
 
         feed.do_send(Subscribed(fid, ctx.address().recipient()));
 
+        self.serializer.push(SubscribedTo(&self.label));
+
         for (nid, node) in self.nodes.iter() {
-            self.serializer.push(AddedNode(nid, node.details(), node.stats(), node.hardware()));
+            self.serializer.push(AddedNode(nid, node.details(), node.stats(), node.hardware(), node.location()));
         }
 
         if let Some(serialized) = self.serializer.finalize() {
@@ -154,6 +166,14 @@ impl Handler<Unsubscribe> for Chain {
 
     fn handle(&mut self, msg: Unsubscribe, _: &mut Self::Context) {
         let Unsubscribe(fid) = msg;
+
+        if let Some(feed) = self.feeds.get(fid) {
+            self.serializer.push(UnsubscribedFrom(&self.label));
+
+            if let Some(serialized) = self.serializer.finalize() {
+                feed.do_send(serialized);
+            }
+        }
 
         self.feeds.remove(fid);
     }

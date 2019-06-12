@@ -20,6 +20,8 @@ pub struct NodeStats {
 
 pub type NodeHardware<'a> = (&'a [usize], &'a [usize], &'a [usize], &'a [usize], &'a [usize]);
 
+pub type NodeLocation<'a> = (f32, f32, &'a str);
+
 impl Serialize for NodeDetails {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -31,7 +33,7 @@ impl Serialize for NodeDetails {
         tup.serialize_element(&self.version)?;
         tup.serialize_element::<Option<String>>(&None)?; // Maybe<Address>
         tup.serialize_element::<Option<usize>>(&None)?; // Maybe<NetworkId>
-        tup.serialize_element(""); // Address
+        tup.serialize_element("")?; // Address
         tup.end()
     }
 }

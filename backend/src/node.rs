@@ -1,4 +1,4 @@
-use crate::types::{NodeId, NodeDetails, NodeStats, NodeHardware};
+use crate::types::{NodeId, NodeDetails, NodeStats, NodeHardware, NodeLocation};
 
 pub mod message;
 pub mod connector;
@@ -36,6 +36,10 @@ impl Node {
 
     pub fn hardware(&self) -> NodeHardware {
         (&[], &[], &[], &[], &[])
+    }
+
+    pub fn location(&self) -> NodeLocation {
+        (0.0, 0.0, "")
     }
 
     pub fn update(&mut self, msg: NodeMessage) {
