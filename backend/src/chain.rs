@@ -3,7 +3,7 @@ use actix::prelude::*;
 use crate::aggregator::DropChain;
 use crate::node::{Node, NodeId, NodeDetails, connector::Initialize, message::{NodeMessage, Block}};
 use crate::feed::connector::{FeedId, FeedConnector, Subscribed};
-use crate::feed::{self, FeedMessageSerializer};
+use crate::feed::{self, FeedMessageSerializer, AddedNode};
 use crate::util::DenseMap;
 
 pub type ChainId = usize;
@@ -137,6 +137,14 @@ impl Handler<Subscribe> for Chain {
         let fid = self.feeds.add(feed.clone());
 
         feed.do_send(Subscribed(fid, ctx.address().recipient()));
+
+        for (nid, node) in self.nodes.iter() {
+            self.serializer.push(AddedNode(nid, node.details(), node.stats()));
+        }
+
+        if let Some(serialized) = self.serializer.finalize() {
+            feed.do_send(serialized);
+        }
     }
 }
 

@@ -1,7 +1,7 @@
 use actix::prelude::*;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
-use crate::node::NodeDetails;
+use crate::node::{NodeDetails, NodeStats};
 
 pub use primitive_types::H256 as BlockHash;
 pub type BlockNumber = u64;
@@ -42,8 +42,8 @@ pub struct SystemConnected {
 
 #[derive(Deserialize, Debug)]
 pub struct SystemInterval {
-    pub txcount: u64,
-    pub peers: u64,
+    #[serde(flatten)]
+    pub stats: NodeStats,
     pub memory: Option<f64>,
     pub cpu: Option<f64>,
     pub bandwidth_upload: Option<f64>,

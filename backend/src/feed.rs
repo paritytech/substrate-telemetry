@@ -3,6 +3,7 @@ use serde_json::to_writer;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use crate::node::message::{BlockNumber, BlockHash};
+use crate::node::{NodeId, NodeDetails, NodeStats};
 
 pub mod connector;
 
@@ -58,6 +59,7 @@ impl FeedMessageSerializer {
 
 impl FeedMessage for Version { const ACTION: u8 = 0x00; }
 impl FeedMessage for BestBlock { const ACTION: u8 = 0x01; }
+impl FeedMessage for AddedNode<'_> { const ACTION: u8 = 0x03; }
 impl FeedMessage for AddedChain<'_> { const ACTION: u8 = 0x0B; }
 impl FeedMessage for RemovedChain<'_> { const ACTION: u8 = 0x0C; }
 
@@ -96,3 +98,6 @@ pub struct AddedChain<'a>(pub &'a str, pub usize);
 
 #[derive(Serialize)]
 pub struct RemovedChain<'a>(pub &'a str);
+
+#[derive(Serialize)]
+pub struct AddedNode<'a>(pub NodeId, pub &'a NodeDetails, pub &'a NodeStats);
