@@ -5,6 +5,7 @@ use actix::prelude::*;
 use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Error};
 use actix_web_actors::ws;
 
+mod types;
 mod aggregator;
 mod chain;
 mod node;

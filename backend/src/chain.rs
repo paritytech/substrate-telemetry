@@ -1,10 +1,11 @@
 use actix::prelude::*;
 
 use crate::aggregator::DropChain;
-use crate::node::{Node, NodeId, NodeDetails, connector::Initialize, message::{NodeMessage, Block}};
+use crate::node::{Node, connector::Initialize, message::{NodeMessage, Block}};
 use crate::feed::connector::{FeedId, FeedConnector, Subscribed};
 use crate::feed::{self, FeedMessageSerializer, AddedNode};
 use crate::util::DenseMap;
+use crate::types::{NodeId, NodeDetails};
 
 pub type ChainId = usize;
 
@@ -139,7 +140,7 @@ impl Handler<Subscribe> for Chain {
         feed.do_send(Subscribed(fid, ctx.address().recipient()));
 
         for (nid, node) in self.nodes.iter() {
-            self.serializer.push(AddedNode(nid, node.details(), node.stats()));
+            self.serializer.push(AddedNode(nid, node.details(), node.stats(), node.hardware()));
         }
 
         if let Some(serialized) = self.serializer.finalize() {
@@ -151,7 +152,7 @@ impl Handler<Subscribe> for Chain {
 impl Handler<Unsubscribe> for Chain {
     type Result = ();
 
-    fn handle(&mut self, msg: Unsubscribe, ctx: &mut Self::Context) {
+    fn handle(&mut self, msg: Unsubscribe, _: &mut Self::Context) {
         let Unsubscribe(fid) = msg;
 
         self.feeds.remove(fid);

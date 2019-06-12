@@ -3,7 +3,7 @@ use bytes::Bytes;
 use actix::prelude::*;
 use actix_web_actors::ws;
 use crate::aggregator::{Aggregator, Connect, Disconnect, Subscribe};
-use crate::chain::{Chain, Unsubscribe};
+use crate::chain::Unsubscribe;
 
 pub type FeedId = usize;
 
@@ -122,7 +122,7 @@ impl StreamHandler<ws::Message, ws::ProtocolError> for FeedConnector {
 impl Handler<Subscribed> for FeedConnector {
     type Result = ();
 
-    fn handle(&mut self, msg: Subscribed, ctx: &mut Self::Context) {
+    fn handle(&mut self, msg: Subscribed, _: &mut Self::Context) {
         let Subscribed(fid_chain, chain) = msg;
 
         self.fid_chain = fid_chain;
@@ -133,7 +133,7 @@ impl Handler<Subscribed> for FeedConnector {
 impl Handler<Connected> for FeedConnector {
     type Result = ();
 
-    fn handle(&mut self, msg: Connected, ctx: &mut Self::Context) {
+    fn handle(&mut self, msg: Connected, _: &mut Self::Context) {
         let Connected(fid_aggregator) = msg;
 
         self.fid_aggregator = fid_aggregator;

@@ -2,9 +2,7 @@ use actix::prelude::*;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use crate::node::{NodeDetails, NodeStats};
-
-pub use primitive_types::H256 as BlockHash;
-pub type BlockNumber = u64;
+use crate::types::{BlockNumber, BlockHash};
 
 #[derive(Deserialize, Debug, Message)]
 pub struct NodeMessage {

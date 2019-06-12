@@ -1,9 +1,7 @@
 use serde::Serialize;
 use serde_json::to_writer;
-use bytes::Bytes;
 use chrono::{DateTime, Utc};
-use crate::node::message::{BlockNumber, BlockHash};
-use crate::node::{NodeId, NodeDetails, NodeStats};
+use crate::types::{BlockNumber, NodeId, NodeDetails, NodeStats, NodeHardware};
 
 pub mod connector;
 
@@ -100,4 +98,4 @@ pub struct AddedChain<'a>(pub &'a str, pub usize);
 pub struct RemovedChain<'a>(pub &'a str);
 
 #[derive(Serialize)]
-pub struct AddedNode<'a>(pub NodeId, pub &'a NodeDetails, pub &'a NodeStats);
+pub struct AddedNode<'a>(pub NodeId, pub &'a NodeDetails, pub &'a NodeStats, pub NodeHardware<'a>);

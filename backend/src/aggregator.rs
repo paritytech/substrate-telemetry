@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 use actix::prelude::*;
 
-use crate::chain::{self, Chain, ChainId};
-use crate::node::{NodeDetails, connector::Initialize};
-use crate::feed::{self, FeedMessageSerializer};
+use crate::node::connector::Initialize;
 use crate::feed::connector::{FeedConnector, Connected, FeedId};
 use crate::util::DenseMap;
+use crate::feed::{self, FeedMessageSerializer};
+use crate::chain::{self, Chain, ChainId};
+use crate::types::NodeDetails;
 
 pub struct Aggregator {
     labels: HashMap<Box<str>, ChainId>,
@@ -107,7 +108,7 @@ impl Handler<DropChain> for Aggregator {
 impl Handler<Subscribe> for Aggregator {
     type Result = ();
 
-    fn handle(&mut self, msg: Subscribe, ctx: &mut Self::Context) {
+    fn handle(&mut self, msg: Subscribe, _: &mut Self::Context) {
         let Subscribe { chain, feed } = msg;
 
         let chains = &self.chains;
@@ -120,7 +121,7 @@ impl Handler<Subscribe> for Aggregator {
 impl Handler<Connect> for Aggregator {
     type Result = ();
 
-    fn handle(&mut self, msg: Connect, ctx: &mut Self::Context) {
+    fn handle(&mut self, msg: Connect, _: &mut Self::Context) {
         let Connect(connector) = msg;
 
         let fid = self.feeds.add(connector.clone());
@@ -145,7 +146,7 @@ impl Handler<Connect> for Aggregator {
 impl Handler<Disconnect> for Aggregator {
     type Result = ();
 
-    fn handle(&mut self, msg: Disconnect, ctx: &mut Self::Context) {
+    fn handle(&mut self, msg: Disconnect, _: &mut Self::Context) {
         let Disconnect(fid) = msg;
 
         info!("Feed #{} disconnected", fid);
