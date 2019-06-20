@@ -22,6 +22,7 @@ const BLOCK_TIME_HISTORY = 10;
 const MEMORY_RECORDS = 20;
 const CPU_RECORDS = 20;
 const TIMEOUT = (1000 * 60 * 1) as Types.Milliseconds; // 1 minute
+const NO_BLOCK_TIMEOUT = (1000 * 60 * 15) as Types.Milliseconds; // 15 minutes
 
 const nextId = idGenerator<Types.NodeId>();
 
@@ -52,6 +53,7 @@ export default class Node {
   public blockTime = 0 as Types.Milliseconds;
   public blockTimestamp = 0 as Types.Timestamp;
   public propagationTime: Maybe<Types.PropagationTime> = null;
+  public isStale = false;
 
   private peers = 0 as Types.PeerCount;
   private txcount = 0 as Types.TransactionCount;
@@ -190,6 +192,11 @@ export default class Node {
     if (this.lastMessage + TIMEOUT < now) {
       this.disconnect();
     } else {
+      if (!this.isStale && this.blockTimestamp + NO_BLOCK_TIMEOUT < now) {
+        this.isStale = true;
+        this.events.emit('stale');
+      }
+
       this.updateLatency(now);
     }
   }
