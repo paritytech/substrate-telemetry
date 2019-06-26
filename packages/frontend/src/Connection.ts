@@ -403,6 +403,11 @@ export class Connection {
     let topCount: Types.NodeCount = 0 as Types.NodeCount;
 
     for (const [label, count] of chains.entries()) {
+      if (label === 'Alexander') {
+        topLabel = label;
+        break;
+      }
+
       if (count > topCount) {
         topLabel = label;
         topCount = count;
