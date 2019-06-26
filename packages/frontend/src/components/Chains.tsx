@@ -5,6 +5,7 @@ import { Types, Maybe } from '@dotstats/common';
 import stable from 'stable';
 
 import githubIcon from '../icons/mark-github.svg';
+import listIcon from '../icons/three-bars.svg';
 import './Chains.css';
 
 interface ChainData {
@@ -27,6 +28,9 @@ export class Chains extends React.Component<Chains.Props, {}> {
         {
           this.chains.map((chain) => this.renderChain(chain))
         }
+        <a className="Chains-all-chains" href="#all-chains">
+          <Icon src={listIcon} alt="All Chains" />
+        </a>
         <a className="Chains-fork-me" href="https://github.com/paritytech/substrate-telemetry" target="_blank">
           <Icon src={githubIcon} alt="Fork Me!" />
         </a>

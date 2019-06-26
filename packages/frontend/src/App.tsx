@@ -4,6 +4,7 @@ import { Chains, Chain, Ago, OfflineIndicator } from './components';
 import { Connection } from './Connection';
 import { PersistentObject, PersistentSet } from './persist';
 import { State, Node } from './state';
+import { getHashData } from './utils';
 
 import './App.css';
 
@@ -15,6 +16,8 @@ export default class App extends React.Component<{}, State> {
 
   constructor(props: {}) {
     super(props);
+
+    console.log(getHashData().tab);
 
     this.settings = new PersistentObject(
       'settings',
