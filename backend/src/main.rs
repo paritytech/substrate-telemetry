@@ -53,6 +53,7 @@ fn main() -> std::io::Result<()> {
             .data(aggregator.clone())
             .service(web::resource("/submit").route(web::get().to(node_route)))
             .service(web::resource("/feed").route(web::get().to(feed_route)))
+
     })
     .bind("127.0.0.1:8080")?
     .start();

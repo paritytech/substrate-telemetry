@@ -52,7 +52,17 @@ export class Chains extends React.Component<Chains.Props, {}> {
     return stable
       .inplace(
         Array.from(this.props.chains.entries()),
-        (a, b) => b[1] - a[1]
+        (a, b) => {
+          if (a[0] === 'Alexander') {
+            return -1;
+          }
+
+          if (b[0] === 'Alexander') {
+            return 1;
+          }
+
+          return b[1] - a[1];
+        }
       )
       .map(([label, nodeCount]) => ({ label, nodeCount }));
   }

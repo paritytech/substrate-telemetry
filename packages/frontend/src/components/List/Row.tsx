@@ -35,6 +35,8 @@ import chainXIcon from '../../icons/chainx.svg';
 import edgewareIcon from '../../icons/edgeware.svg';
 import joystreamIcon from '../../icons/joystream.svg';
 import ladderIcon from '../../icons/laddernetwork.svg';
+import cennznetIcon from '../../icons/cennznet.svg';
+import darwiniaIcon from '../../icons/darwinia.svg';
 import unknownImplementationIcon from '../../icons/question-solid.svg';
 
 import './Row.css';
@@ -51,6 +53,9 @@ const ICONS = {
   'joystream-node': joystreamIcon,
   'ChainX': chainXIcon,
   'ladder-node': ladderIcon,
+  'cennznet-node': cennznetIcon,
+  'Darwinia': darwiniaIcon,
+  'Darwinia Testnet': darwiniaIcon,
 };
 
 export namespace Row {
