@@ -54,7 +54,8 @@ const ICONS = {
   'ChainX': chainXIcon,
   'ladder-node': ladderIcon,
   'cennznet-node': cennznetIcon,
-  'darwinia-node': darwiniaIcon,
+  'Darwinia': darwiniaIcon,
+  'Darwinia Testnet': darwiniaIcon,
 };
 
 export namespace Row {
