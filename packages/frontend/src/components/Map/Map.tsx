@@ -82,7 +82,7 @@ export class Map extends React.Component<Map.Props, Map.State> {
     // Longitude ranges -180 (west) to +180 (east)
     // Latitude ranges +90 (north) to -90 (south)
     const left = Math.round(((180 + lon) / 360) * state.width + state.left);
-    const top = Math.round(((90 - lat) / 180) * state.height + state.top) * MAP_HEIGHT_ADJUST;
+    const top = Math.round(((90 - lat) / 180) * state.height * MAP_HEIGHT_ADJUST + state.top);
 
     let quarter: Location.Quarter = 0;
 
