@@ -67,7 +67,6 @@
 .Chains-chain-selected {
   background: #fff;
   color: #000;
-  z-index: 1;
 }
 
 .Chains-chain-selected .Chains-node-count {

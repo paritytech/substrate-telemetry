@@ -195,7 +195,7 @@ export interface State {
   finalized: Types.BlockNumber;
   consensusInfo: Types.ConsensusInfo;
   displayConsensusLoadingScreen: boolean;
-  tabChanged: boolean;
+  tab: string;
   authorities: Types.Address[];
   authoritySetId: Maybe<Types.AuthoritySetId>;
   sendFinality: boolean;
@@ -211,3 +211,8 @@ export interface State {
 
 export type Update = <K extends keyof State>(changes: Pick<State, K> | null) => Readonly<State>;
 export type UpdateBound = <K extends keyof State>(changes: Pick<State, K> | null) => void;
+
+export interface ChainData {
+  label: Types.ChainLabel;
+  nodeCount: Types.NodeCount;
+}

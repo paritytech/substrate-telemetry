@@ -1,10 +1,11 @@
 import * as React from 'react';
 import { Types, SortedCollection } from '@dotstats/common';
-import { Chains, Chain, Ago, OfflineIndicator } from './components';
+import { AllChains, Chains, Chain, Ago, OfflineIndicator } from './components';
 import { Connection } from './Connection';
 import { PersistentObject, PersistentSet } from './persist';
-import { State, Node } from './state';
+import { State, Node, ChainData } from './state';
 import { getHashData } from './utils';
+import stable from 'stable';
 
 import './App.css';
 
@@ -16,8 +17,6 @@ export default class App extends React.Component<{}, State> {
 
   constructor(props: {}) {
     super(props);
-
-    console.log(getHashData().tab);
 
     this.settings = new PersistentObject(
       'settings',
@@ -52,6 +51,8 @@ export default class App extends React.Component<{}, State> {
       this.setState({ nodes, pins });
     });
 
+    const { tab = '' } = getHashData();
+
     this.state = {
       status: 'offline',
       best: 0 as Types.BlockNumber,
@@ -69,7 +70,7 @@ export default class App extends React.Component<{}, State> {
       nodes: new SortedCollection(Node.compare),
       settings: this.settings.raw(),
       pins: this.pins.get(),
-      tabChanged: false,
+      tab,
     };
 
     this.connection = Connection.create(this.pins, (changes) => {
@@ -82,11 +83,12 @@ export default class App extends React.Component<{}, State> {
   }
 
   public render() {
-    const { chains, timeDiff, subscribed, status } = this.state;
+    const { timeDiff, subscribed, status, tab } = this.state;
+    const chains = this.chains();
 
     Ago.timeDiff = timeDiff;
 
-    if (chains.size === 0) {
+    if (chains.length === 0) {
       return (
         <div className="App App-no-telemetry">
           <OfflineIndicator status={status} />
@@ -95,27 +97,28 @@ export default class App extends React.Component<{}, State> {
       );
     }
 
+    const overlay = tab === 'all-chains'
+      ? <AllChains chains={chains} subscribed={subscribed} connection={this.connection} />
+      : null;
+
     return (
       <div className="App">
         <OfflineIndicator status={status} />
         <Chains chains={chains} subscribed={subscribed} connection={this.connection} />
         <Chain appState={this.state} connection={this.connection} settings={this.settings} pins={this.pins} />
+        {overlay}
       </div>
     );
   }
 
-  public componentDidUpdate() {
-    if (this.state.tabChanged === true) {
-      this.setState({tabChanged: false});
-    }
-  }
-
   public componentWillMount() {
     window.addEventListener('keydown', this.onKeyPress);
+    window.addEventListener('hashchange', this.onHashChange);
   }
 
   public componentWillUnmount() {
     window.removeEventListener('keydown', this.onKeyPress);
+    window.removeEventListener('hashchange', this.onHashChange);
   }
 
   private onKeyPress = (event: KeyboardEvent) => {
@@ -143,4 +146,30 @@ export default class App extends React.Component<{}, State> {
       connection.subscribe(chains[index]);
     })
   }
+
+  private onHashChange = (event: Event) => {
+    const { tab = '' } = getHashData();
+
+    this.setState({ tab });
+  }
+
+  private chains(): ChainData[] {
+    return stable
+      .inplace(
+        Array.from(this.state.chains.entries()),
+        (a, b) => {
+          if (a[0] === 'Alexander') {
+            return -1;
+          }
+
+          if (b[0] === 'Alexander') {
+            return 1;
+          }
+
+          return b[1] - a[1];
+        }
+      )
+      .map(([label, nodeCount]) => ({ label, nodeCount }));
+  }
+
 }
