@@ -1,4 +1,5 @@
 use crate::types::{NodeId, NodeDetails, NodeStats, NodeHardware, NodeLocation, BlockNumber};
+use crate::util::MeanList;
 
 pub mod message;
 pub mod connector;
@@ -17,6 +18,10 @@ pub struct Node {
     block_timestamp: Instant,
     /// Block time delta
     block_time: u64,
+    /// CPU use means
+    cpu: MeanList,
+    /// Memory use means
+    memory: MeanList,
 }
 
 impl Node {
@@ -29,7 +34,9 @@ impl Node {
             },
             best: Block::zero(),
             block_timestamp: Instant::now(),
-            block_time: 0
+            block_time: 0,
+            cpu: MeanList::new(),
+            memory: MeanList::new(),
         }
     }
 
@@ -46,7 +53,13 @@ impl Node {
     }
 
     pub fn hardware(&self) -> NodeHardware {
-        (&[], &[], &[], &[], &[])
+        (
+            self.memory.slice(),
+            self.cpu.slice(),
+            &[],
+            &[],
+            &[],
+        )
     }
 
     pub fn location(&self) -> NodeLocation {
@@ -60,7 +73,7 @@ impl Node {
     pub fn update_block_time(&mut self, block_height: BlockNumber, timestamp: Instant) {
         if block_height > self.best.height {
             self.block_time = (timestamp - self.block_timestamp).as_millis() as u64;
-            self.block_timestamp = timestamp; 
+            self.block_timestamp = timestamp;
         }
     }
 
@@ -74,6 +87,12 @@ impl Node {
         match msg.details {
             Details::SystemInterval(ref interval) => {
                 self.stats = interval.stats;
+                if let Some(cpu) = interval.cpu {
+                    self.cpu.push(cpu);
+                }
+                if let Some(memory) = interval.memory {
+                    self.memory.push(memory);
+                }
             }
             _ => ()
         }

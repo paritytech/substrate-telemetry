@@ -42,8 +42,8 @@ pub struct SystemConnected {
 pub struct SystemInterval {
     #[serde(flatten)]
     pub stats: NodeStats,
-    pub memory: Option<f64>,
-    pub cpu: Option<f64>,
+    pub memory: Option<f32>,
+    pub cpu: Option<f32>,
     pub bandwidth_upload: Option<f64>,
     pub bandwidth_download: Option<f64>,
     pub finalized_height: Option<BlockNumber>,

@@ -1,3 +1,7 @@
+mod mean_list;
+
+pub use mean_list::MeanList;
+
 type Id = usize;
 
 pub struct DenseMap<T> {
