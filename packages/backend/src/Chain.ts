@@ -10,6 +10,7 @@ const BLOCK_TIME_HISTORY = 10;
 export default class Chain {
   private nodes = new Set<Node>();
   private feeds = new FeedSet();
+  private count = 0;
 
   public readonly events = new EventEmitter();
   public readonly label: Types.ChainLabel;
@@ -28,12 +29,13 @@ export default class Chain {
   }
 
   public get nodeCount(): Types.NodeCount {
-    return this.nodes.size as Types.NodeCount;
+    return this.count as Types.NodeCount;
   }
 
   public addNode(node: Node) {
     console.log(`[${this.label}] new node: ${node.name}`);
 
+    this.count += 1;
     this.nodes.add(node);
     this.feeds.broadcast(Feed.addedNode(node));
 
@@ -81,7 +83,11 @@ export default class Chain {
     node.events.removeAllListeners();
 
     this.nodes.delete(node);
-    this.feeds.broadcast(Feed.removedNode(node));
+
+    if (!node.isStale) {
+      this.count -= 1;
+      this.feeds.broadcast(Feed.removedNode(node));
+    }
 
     this.events.emit('disconnect', this.nodeCount);
 
@@ -91,6 +97,7 @@ export default class Chain {
   }
 
   public staleNode(node: Node) {
+    this.count -= 1;
     this.feeds.broadcast(Feed.removedNode(node));
 
     if (this.height === node.best.number) {
@@ -168,6 +175,7 @@ export default class Chain {
     if (node.isStale) {
       node.isStale = false;
       this.feeds.broadcast(Feed.addedNode(node));
+      this.count += 1;
     } else {
       this.feeds.broadcast(Feed.imported(node));
     }
