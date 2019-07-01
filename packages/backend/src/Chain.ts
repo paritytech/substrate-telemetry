@@ -82,9 +82,13 @@ export default class Chain {
   public removeNode(node: Node) {
     node.events.removeAllListeners();
 
-    this.count -= 1;
+
     this.nodes.delete(node);
-    this.feeds.broadcast(Feed.removedNode(node));
+
+    if (!node.isStale) {
+      this.count -= 1;
+      this.feeds.broadcast(Feed.removedNode(node));
+    }
 
     this.events.emit('disconnect', this.nodeCount);
 
