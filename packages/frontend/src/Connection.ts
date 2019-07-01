@@ -81,7 +81,7 @@ export class Connection {
   public subscribe(chain: Types.ChainLabel) {
     if (this.state.subscribed != null && this.state.subscribed !== chain) {
       this.state = this.update({
-        tabChanged: true,
+        tab: 'list',
       });
       setHashData({ chain, tab: 'list' });
     } else {

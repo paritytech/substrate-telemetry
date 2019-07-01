@@ -1,14 +1,11 @@
 import * as React from 'react';
 import { Connection } from '../Connection';
-import { Icon } from './Icon';
 import { Types, Maybe } from '@dotstats/common';
 import { ChainData } from '../state';
 
-import githubIcon from '../icons/mark-github.svg';
-import listIcon from '../icons/three-bars.svg';
-import './Chains.css';
+import './AllChains.css';
 
-export namespace Chains {
+export namespace AllChains {
   export interface Props {
     chains: ChainData[],
     subscribed: Maybe<Types.ChainLabel>,
@@ -16,20 +13,13 @@ export namespace Chains {
   }
 }
 
-export class Chains extends React.Component<Chains.Props, {}> {
+export class AllChains extends React.Component<AllChains.Props, {}> {
   public render() {
-    const allChainsHref = this.props.subscribed ? `#all-chains/${this.props.subscribed}` : `#all-chains`;
     const { chains } = this.props;
 
     return (
-      <div className="Chains">
+      <div className="AllChains">
         {chains.map((chain) => this.renderChain(chain))}
-        <a className="Chains-all-chains" href={allChainsHref}>
-          <Icon src={listIcon} alt="All Chains" />
-        </a>
-        <a className="Chains-fork-me" href="https://github.com/paritytech/substrate-telemetry" target="_blank">
-          <Icon src={githubIcon} alt="Fork Me!" />
-        </a>
       </div>
     );
   }
@@ -38,12 +28,12 @@ export class Chains extends React.Component<Chains.Props, {}> {
     const { label, nodeCount } = chain;
 
     const className = label === this.props.subscribed
-      ? 'Chains-chain Chains-chain-selected'
-      : 'Chains-chain';
+      ? 'AllChains-chain AllChains-chain-selected'
+      : 'AllChains-chain';
 
     return (
       <a key={label} className={className} onClick={this.subscribe.bind(this, label)}>
-        {label} <span className="Chains-node-count" title="Node Count">{nodeCount}</span>
+        {label} <span className="AllChains-node-count" title="Node Count">{nodeCount}</span>
       </a>
     )
   }
