@@ -82,7 +82,6 @@ export default class Chain {
   public removeNode(node: Node) {
     node.events.removeAllListeners();
 
-
     this.nodes.delete(node);
 
     if (!node.isStale) {
