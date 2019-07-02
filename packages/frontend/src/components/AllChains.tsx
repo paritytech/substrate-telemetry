@@ -15,12 +15,16 @@ export namespace AllChains {
 
 export class AllChains extends React.Component<AllChains.Props, {}> {
   public render() {
-    const { chains } = this.props;
+    const { chains, subscribed } = this.props;
+    const close = subscribed ? `#list/${subscribed}` : '#list';
 
     return (
-      <div className="AllChains">
-        {chains.map((chain) => this.renderChain(chain))}
-      </div>
+      <React.Fragment>
+        <a className="AllChains-overlay" href={close} />
+        <div className="AllChains">
+          {chains.map((chain) => this.renderChain(chain))}
+        </div>
+      </React.Fragment>
     );
   }
 
