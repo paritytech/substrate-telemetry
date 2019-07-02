@@ -113,12 +113,12 @@ export default class Chain {
     }
 
     for (const node of this.nodes.values()) {
-      if (node.isStale) {
-        continue;
-      }
-
       feed.sendMessage(Feed.addedNode(node));
       feed.sendMessage(Feed.finalized(node));
+
+      if (node.isStale) {
+        feed.sendMessage(Feed.staleNode(node));
+      }
     }
   }
 
@@ -167,9 +167,9 @@ export default class Chain {
 
     if (node.isStale) {
       node.isStale = false;
-    } else {
-      this.feeds.broadcast(Feed.imported(node));
     }
+
+    this.feeds.broadcast(Feed.imported(node));
 
     console.log(`[${this.label}] ${node.name} imported ${height}, block time: ${node.blockTime / 1000}s, average: ${node.average / 1000}s | latency ${node.latency}`);
   }
