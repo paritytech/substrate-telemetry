@@ -1,5 +1,5 @@
 .AllChains {
-  position: absolute;
+  position: fixed;
   z-index: 20;
   top: 16px;
   bottom: 16px;
@@ -11,6 +11,17 @@
   box-shadow: 0 2px 20px rgba(0,0,0,0.35);
   overflow-y: scroll;
   overflow-x: hide;
+}
+
+.AllChains-overlay {
+  position: fixed;
+  display: block;
+  z-index: 19;
+  background: rgba(0,0,0,0.35);
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
 }
 
 .AllChains-chain {
