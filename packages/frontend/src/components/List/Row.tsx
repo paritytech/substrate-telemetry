@@ -374,6 +374,10 @@ export class Row extends React.Component<Row.Props, Row.State> {
       className += ' Row-pinned';
     }
 
+    if (node.stale) {
+      className += ' Row-stale';
+    }
+
     return (
       <tr className={className} onClick={this.toggle}>
         {

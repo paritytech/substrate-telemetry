@@ -15,6 +15,8 @@ export class Connection {
     return new Connection(await Connection.socket(), update, pins);
   }
 
+  private static readonly utf8decoder = new TextDecoder('utf-8');
+
   private static readonly address = window.location.protocol === 'https:'
                                       ? `wss://${window.location.hostname}/feed/`
                                       : `ws://${window.location.hostname}:8080`;
@@ -55,6 +57,7 @@ export class Connection {
 
       const socket = new WebSocket(Connection.address);
 
+      socket.binaryType = "arraybuffer";
       socket.addEventListener('open', onSuccess);
       socket.addEventListener('error', onFailure);
       socket.addEventListener('close', onFailure);
@@ -169,6 +172,14 @@ export class Connection {
           const id = message.payload;
 
           nodes.remove(id);
+
+          break;
+        }
+
+        case Actions.StaleNode: {
+          const id = message.payload;
+
+          nodes.mutAndSort(id, (node) => node.setStale(true));
 
           break;
         }
@@ -376,7 +387,9 @@ export class Connection {
   }
 
   private handleFeedData = (event: MessageEvent) => {
-    const data = event.data as FeedMessage.Data;
+    const data = typeof event.data === 'string'
+      ? event.data as any as FeedMessage.Data
+      : Connection.utf8decoder.decode(event.data) as any as FeedMessage.Data;
 
     this.handleMessages(FeedMessage.deserialize(data));
   }

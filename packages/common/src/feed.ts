@@ -22,26 +22,27 @@ import {
 } from './types';
 
 export const Actions = {
-  FeedVersion      : 0x00 as 0x00,
-  BestBlock        : 0x01 as 0x01,
-  BestFinalized    : 0x02 as 0x02,
-  AddedNode        : 0x03 as 0x03,
-  RemovedNode      : 0x04 as 0x04,
-  LocatedNode      : 0x05 as 0x05,
-  ImportedBlock    : 0x06 as 0x06,
-  FinalizedBlock   : 0x07 as 0x07,
-  NodeStats        : 0x08 as 0x08,
-  NodeHardware     : 0x09 as 0x09,
-  TimeSync         : 0x0A as 0x0A,
-  AddedChain       : 0x0B as 0x0B,
-  RemovedChain     : 0x0C as 0x0C,
-  SubscribedTo     : 0x0D as 0x0D,
-  UnsubscribedFrom : 0x0E as 0x0E,
-  Pong             : 0x0F as 0x0F,
+  FeedVersion          : 0x00 as 0x00,
+  BestBlock            : 0x01 as 0x01,
+  BestFinalized        : 0x02 as 0x02,
+  AddedNode            : 0x03 as 0x03,
+  RemovedNode          : 0x04 as 0x04,
+  LocatedNode          : 0x05 as 0x05,
+  ImportedBlock        : 0x06 as 0x06,
+  FinalizedBlock       : 0x07 as 0x07,
+  NodeStats            : 0x08 as 0x08,
+  NodeHardware         : 0x09 as 0x09,
+  TimeSync             : 0x0A as 0x0A,
+  AddedChain           : 0x0B as 0x0B,
+  RemovedChain         : 0x0C as 0x0C,
+  SubscribedTo         : 0x0D as 0x0D,
+  UnsubscribedFrom     : 0x0E as 0x0E,
+  Pong                 : 0x0F as 0x0F,
   AfgFinalized         : 0x10 as 0x10,
   AfgReceivedPrevote   : 0x11 as 0x11,
   AfgReceivedPrecommit : 0x12 as 0x12,
   AfgAuthoritySet      : 0x13 as 0x13,
+  StaleNode            : 0x14 as 0x14,
 };
 
 export type Action = typeof Actions[keyof typeof Actions];
@@ -151,6 +152,11 @@ export namespace Variants {
     action: typeof Actions.AfgReceivedPrevote;
     payload: [Address, BlockNumber, BlockHash, Address];
   }
+
+  export interface StaleNodeMessage extends MessageBase {
+    action: typeof Actions.StaleNode;
+    payload: NodeId;
+  }
 }
 
 export type Message =
@@ -173,6 +179,7 @@ export type Message =
   | Variants.AfgReceivedPrevote
   | Variants.AfgReceivedPrecommit
   | Variants.AfgAuthoritySet
+  | Variants.StaleNodeMessage
   | Variants.PongMessage;
 
 /**
