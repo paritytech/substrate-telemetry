@@ -65,6 +65,13 @@ export default class Feed {
     };
   }
 
+  public static staleNode(node: Node): FeedMessage.Message {
+    return {
+      action: Actions.StaleNode,
+      payload: node.id
+    }
+  }
+
   public static locatedNode(node: Node, location: Location): FeedMessage.Message {
     return {
       action: Actions.LocatedNode,
