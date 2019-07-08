@@ -19,9 +19,9 @@ pub struct Node {
     /// Block time delta
     block_time: u64,
     /// CPU use means
-    cpu: MeanList,
+    cpu: MeanList<f32>,
     /// Memory use means
-    memory: MeanList,
+    memory: MeanList<f32>,
 }
 
 impl Node {
