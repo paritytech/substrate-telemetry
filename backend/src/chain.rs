@@ -148,6 +148,10 @@ impl Handler<UpdateNode> for Chain {
             //     block_details.propagation_time);
                     
             self.serializer.push(feed::ImportedBlock(nid, &block_details));
+
+            if let Some(node) = self.nodes.get(nid) {
+                self.serializer.push(feed::Hardware(nid, node.hardware()));
+            }
         }
 
         if let Some(node) = self.nodes.get_mut(nid) {

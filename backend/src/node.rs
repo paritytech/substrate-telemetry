@@ -5,7 +5,7 @@ pub mod message;
 pub mod connector;
 
 use message::{NodeMessage, Details, Block};
-use std::time::Instant;
+use std::time::{SystemTime, Instant, Duration};
 
 pub struct Node {
     /// Static details
@@ -22,6 +22,12 @@ pub struct Node {
     cpu: MeanList<f32>,
     /// Memory use means
     memory: MeanList<f32>,
+    /// Upload uses means
+    upload: MeanList<f64>,
+    /// Download uses means
+    download: MeanList<f64>,
+    /// Stampchange uses means
+    chart_stamps: MeanList<f64>,
 }
 
 impl Node {
@@ -37,6 +43,9 @@ impl Node {
             block_time: 0,
             cpu: MeanList::new(),
             memory: MeanList::new(),
+            upload: MeanList::new(),
+            download: MeanList::new(),
+            chart_stamps: MeanList::new(),
         }
     }
 
@@ -56,9 +65,9 @@ impl Node {
         (
             self.memory.slice(),
             self.cpu.slice(),
-            &[],
-            &[],
-            &[],
+            self.upload.slice(),
+            self.download.slice(),
+            self.chart_stamps.slice(),
         )
     }
 
@@ -93,6 +102,15 @@ impl Node {
                 if let Some(memory) = interval.memory {
                     self.memory.push(memory);
                 }
+                if let Some(upload) = interval.bandwidth_upload {
+                    self.upload.push(upload);
+                }
+                if let Some(download) = interval.bandwidth_download {
+                    self.download.push(download);
+                }
+                let timestamp = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)
+                                .unwrap_or(Duration::from_secs(0)).as_millis() as f64;
+                self.chart_stamps.push(timestamp);
             }
             _ => ()
         }
