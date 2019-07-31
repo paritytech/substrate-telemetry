@@ -50,6 +50,13 @@ export default class FeedSet {
   private sendMessages = () => {
     const data = FeedMessage.serialize(this.messages);
     this.messages = [];
-    this.each(feed => feed.sendData(data));
+
+    this.each(feed => {
+      try {
+        feed.sendData(data);
+      } catch (err) {
+        console.error("Failed to broadcast to feed", err);
+      }
+    });
   }
 }
