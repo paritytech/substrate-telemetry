@@ -193,7 +193,6 @@ export default class Node {
       this.disconnect();
     } else {
       if (!this.isStale && this.blockTimestamp + NO_BLOCK_TIMEOUT < now) {
-        this.isStale = true;
         this.events.emit('stale');
       }
 

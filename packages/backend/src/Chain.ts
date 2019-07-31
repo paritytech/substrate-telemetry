@@ -91,6 +91,8 @@ export default class Chain {
   }
 
   public staleNode(node: Node) {
+    node.isStale = true;
+
     this.feeds.broadcast(Feed.staleNode(node));
 
     if (this.height === node.best.number) {
