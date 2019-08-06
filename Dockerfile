@@ -1,15 +1,16 @@
-FROM node:alpine
+FROM node:10-alpine
 
 WORKDIR /app
 
-RUN apk update && apk add python g++ make openssh git bash pdftk
-RUN export PYTHONPATH=${PYTHONPATH}:/usr/lib/python2.7
+RUN apk add --no-cache python make g++
 
-COPY ./package.json yarn.lock ./
+COPY ./scripts ./scripts
+COPY ./backend ./backend
+COPY ./packages ./packages
+COPY ./package.json ./yarn.lock ./tsconfig.json ./
 
 RUN yarn 
 
-COPY . .
 
 # Frontend is exposing 3000
 # Backend is exposing 8080
