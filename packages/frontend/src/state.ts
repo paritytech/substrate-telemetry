@@ -1,5 +1,7 @@
 import { Types, Maybe, SortedCollection } from '@dotstats/common';
 
+export const PINNED_CHAIN = 'Kusama CC1';
+
 export class Node {
   public static compare(a: Node, b: Node): number {
     if (a.pinned === b.pinned && a.stale === b.stale) {

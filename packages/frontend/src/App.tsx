@@ -3,7 +3,7 @@ import { Types, SortedCollection } from '@dotstats/common';
 import { AllChains, Chains, Chain, Ago, OfflineIndicator } from './components';
 import { Connection } from './Connection';
 import { PersistentObject, PersistentSet } from './persist';
-import { State, Node, ChainData } from './state';
+import { State, Node, ChainData, PINNED_CHAIN } from './state';
 import { getHashData } from './utils';
 import stable from 'stable';
 
@@ -158,11 +158,11 @@ export default class App extends React.Component<{}, State> {
       .inplace(
         Array.from(this.state.chains.entries()),
         (a, b) => {
-          if (a[0] === 'Alexander') {
+          if (a[0] === PINNED_CHAIN) {
             return -1;
           }
 
-          if (b[0] === 'Alexander') {
+          if (b[0] === PINNED_CHAIN) {
             return 1;
           }
 

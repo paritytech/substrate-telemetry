@@ -1,5 +1,5 @@
 import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from '@dotstats/common';
-import { State, Update, Node, UpdateBound } from './state';
+import { State, Update, Node, UpdateBound, PINNED_CHAIN } from './state';
 import { PersistentSet } from './persist';
 import { getHashData, setHashData } from './utils';
 import { AfgHandling } from './AfgHandling';
@@ -416,7 +416,7 @@ export class Connection {
     let topCount: Types.NodeCount = 0 as Types.NodeCount;
 
     for (const [label, count] of chains.entries()) {
-      if (label === 'Alexander') {
+      if (label === PINNED_CHAIN) {
         topLabel = label;
         break;
       }
