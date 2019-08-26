@@ -27,7 +27,7 @@ pub struct BlockDetails {
     pub propagation_time: u64,
 }
 
-pub type NodeHardware<'a> = (&'a [f32], &'a [f32], &'a [f32], &'a [f32], &'a [f32]);
+pub type NodeHardware<'a> = (&'a [f32], &'a [f32], &'a [f64], &'a [f64], &'a [f64]);
 
 pub type NodeLocation<'a> = (f32, f32, &'a str);
 

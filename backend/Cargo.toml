@@ -17,3 +17,4 @@ primitive-types = { version = "0.3.0", features = ["serde"] }
 rustc-hash = "1.0.1"
 log = "0.4"
 simple_logger = "1.2.0"
+num-traits = "0.2"

@@ -1,7 +1,9 @@
 use serde::Serialize;
 use serde_json::to_writer;
 use chrono::{DateTime, Utc};
-use crate::types::{BlockNumber, NodeId, NodeDetails, NodeStats, NodeHardware, NodeLocation, BlockDetails};
+use crate::types::{
+    BlockNumber, NodeId, NodeDetails, NodeStats, NodeHardware, NodeLocation, BlockDetails
+};
 
 pub mod connector;
 
@@ -60,6 +62,7 @@ impl FeedMessage for BestBlock { const ACTION: u8 = 0x01; }
 impl FeedMessage for AddedNode<'_> { const ACTION: u8 = 0x03; }
 impl FeedMessage for RemovedNode { const ACTION: u8 = 0x04; }
 impl FeedMessage for ImportedBlock<'_> { const ACTION: u8 = 0x06; }
+impl FeedMessage for Hardware<'_> { const ACTION: u8 = 0x09; }
 impl FeedMessage for AddedChain<'_> { const ACTION: u8 = 0x0B; }
 impl FeedMessage for RemovedChain<'_> { const ACTION: u8 = 0x0C; }
 impl FeedMessage for SubscribedTo<'_> { const ACTION: u8 = 0x0D; }
@@ -102,6 +105,9 @@ pub struct RemovedNode(pub NodeId);
 
 #[derive(Serialize)]
 pub struct ImportedBlock<'a>(pub NodeId, pub &'a BlockDetails);
+
+#[derive(Serialize)]
+pub struct Hardware<'a>(pub NodeId, pub NodeHardware<'a>);
 
 #[derive(Serialize)]
 pub struct AddedChain<'a>(pub &'a str, pub usize);
