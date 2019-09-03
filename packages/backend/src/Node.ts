@@ -99,32 +99,10 @@ export default class Node {
     this.lastMessage = timestamp();
     this.socket = socket;
 
-    socket.on('message', (data) => {
-      const message = parseMessage(data);
-
-      if (!message) {
-        return;
-      }
-
-      this.onMessage(message);
-    });
-
-    socket.on('close', () => {
-      console.log(`${this.name} has disconnected`);
-
-      this.disconnect();
-    });
-
-    socket.on('error', (error) => {
-      console.error(`${this.name} has errored`, error);
-
-      this.disconnect();
-    });
-
-    socket.on('pong', () => {
-      this.latency = (timestamp() - this.pingStart) as Types.Milliseconds;
-      this.pingStart = 0 as Types.Timestamp;
-    });
+    socket.on('message', this.onMessageData);
+    socket.on('close', this.disconnect);
+    socket.on('error', this.disconnect);
+    socket.on('pong', this.onPong);
 
     process.nextTick(() => {
       // Handle cached messages
@@ -237,12 +215,27 @@ export default class Node {
     return +(this.lastBlockAt || 0) as Types.Milliseconds;
   }
 
-  private disconnect() {
-    this.socket.removeAllListeners();
+  private disconnect = () => {
+    console.log(`${this.name} has disconnected`);
+
+    this.socket.removeListener('message', this.onMessageData);
+    this.socket.removeListener('close', this.disconnect);
+    this.socket.removeListener('error', this.disconnect);
+    this.socket.removeListener('pong', this.onPong);
     this.socket.close();
     this.socket.terminate();
 
     this.events.emit('disconnect');
+  }
+
+  private onMessageData = (data: WebSocket.Data) => {
+    const message = parseMessage(data);
+
+    if (!message) {
+      return;
+    }
+
+    this.onMessage(message);
   }
 
   private onMessage(message: Message) {
@@ -421,5 +414,10 @@ export default class Node {
     }
 
     return (+time - +this.lastBlockAt) as Types.Milliseconds;
+  }
+
+  private onPong = () => {
+    this.latency = (timestamp() - this.pingStart) as Types.Milliseconds;
+    this.pingStart = 0 as Types.Timestamp;
   }
 }

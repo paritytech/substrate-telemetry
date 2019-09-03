@@ -24,10 +24,10 @@ export default class Feed {
     this.id = nextId();
     this.socket = socket;
 
-    socket.on('message', (data) => this.handleCommand(data.toString()));
-    socket.on('error', () => this.disconnect());
-    socket.on('close', () => this.disconnect());
-    socket.on('pong', () => this.waitingForPong = false);
+    socket.on('message', this.handleCommand);
+    socket.on('error', this.disconnect);
+    socket.on('close', this.disconnect);
+    socket.on('pong', this.onPong);
   }
 
   public static feedVersion(): FeedMessage.Message {
@@ -230,8 +230,8 @@ export default class Feed {
     this.socket.send(data, this.handleError);
   }
 
-  private handleCommand(cmd: string) {
-    const [tag, payload] = cmd.split(':', 2) as [string, Maybe<string>];
+  private handleCommand = (data: WebSocket.Data) => {
+    const [tag, payload] = data.toString().split(':', 2) as [string, Maybe<string>];
 
     if (!payload) {
       return;
@@ -272,10 +272,17 @@ export default class Feed {
     }
   }
 
-  private disconnect() {
-    this.socket.removeAllListeners();
+  private disconnect = () => {
+    this.socket.removeListener('message', this.handleCommand);
+    this.socket.removeListener('error', this.disconnect);
+    this.socket.removeListener('close', this.disconnect);
+    this.socket.removeListener('pong', this.onPong);
     this.socket.terminate();
 
     this.events.emit('disconnect');
+  }
+
+  private onPong = () => {
+    this.waitingForPong = false;
   }
 }
