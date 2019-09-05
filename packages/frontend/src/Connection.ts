@@ -1,5 +1,5 @@
 import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from '@dotstats/common';
-import { State, Update, Node, UpdateBound } from './state';
+import { State, Update, Node, UpdateBound, PINNED_CHAIN } from './state';
 import { PersistentSet } from './persist';
 import { getHashData, setHashData } from './utils';
 import { AfgHandling } from './AfgHandling';
@@ -58,7 +58,6 @@ export class Connection {
       const socket = new WebSocket(Connection.address);
 
       socket.binaryType = "arraybuffer";
-
       socket.addEventListener('open', onSuccess);
       socket.addEventListener('error', onFailure);
       socket.addEventListener('close', onFailure);
@@ -85,7 +84,7 @@ export class Connection {
   public subscribe(chain: Types.ChainLabel) {
     if (this.state.subscribed != null && this.state.subscribed !== chain) {
       this.state = this.update({
-        tabChanged: true,
+        tab: 'list',
       });
       setHashData({ chain, tab: 'list' });
     } else {
@@ -173,6 +172,14 @@ export class Connection {
           const id = message.payload;
 
           nodes.remove(id);
+
+          break;
+        }
+
+        case Actions.StaleNode: {
+          const id = message.payload;
+
+          nodes.mutAndSort(id, (node) => node.setStale(true));
 
           break;
         }
@@ -384,8 +391,6 @@ export class Connection {
       ? event.data as any as FeedMessage.Data
       : Connection.utf8decoder.decode(event.data) as any as FeedMessage.Data;
 
-    console.log('data', data);
-
     this.handleMessages(FeedMessage.deserialize(data));
   }
 
@@ -411,7 +416,7 @@ export class Connection {
     let topCount: Types.NodeCount = 0 as Types.NodeCount;
 
     for (const [label, count] of chains.entries()) {
-      if (label === 'Alexander') {
+      if (label === PINNED_CHAIN) {
         topLabel = label;
         break;
       }

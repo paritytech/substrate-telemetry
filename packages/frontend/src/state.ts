@@ -1,8 +1,10 @@
 import { Types, Maybe, SortedCollection } from '@dotstats/common';
 
+export const PINNED_CHAIN = 'Kusama CC1';
+
 export class Node {
   public static compare(a: Node, b: Node): number {
-    if (a.pinned === b.pinned) {
+    if (a.pinned === b.pinned && a.stale === b.stale) {
       if (a.height === b.height) {
         const aPropagation = a.propagationTime == null ? Infinity : a.propagationTime as number;
         const bPropagation = b.propagationTime == null ? Infinity : b.propagationTime as number;
@@ -11,7 +13,10 @@ export class Node {
         return aPropagation - bPropagation;
       }
     } else {
-      return +b.pinned - +a.pinned;
+      const bSort = (b.pinned ? -2 : 0) + +b.stale;
+      const aSort = (a.pinned ? -2 : 0) + +a.stale;
+
+      return aSort - bSort;
     }
 
     // Descending sort by block number
@@ -26,6 +31,7 @@ export class Node {
   public readonly validator: Maybe<Types.Address>;
   public readonly networkId: Maybe<Types.NetworkId>;
 
+  public stale: boolean;
   public pinned: boolean;
   public peers: Types.PeerCount;
   public txs: Types.TransactionCount;
@@ -110,6 +116,7 @@ export class Node {
     this.blockTime = blockTime;
     this.blockTimestamp = blockTimestamp;
     this.propagationTime = propagationTime;
+    this.stale = false;
 
     this.trigger();
   }
@@ -139,6 +146,13 @@ export class Node {
   public setPinned(pinned: boolean) {
     if (this.pinned !== pinned) {
       this.pinned = pinned;
+      this.trigger();
+    }
+  }
+
+  public setStale(stale: boolean) {
+    if (this.stale !== stale) {
+      this.stale = stale;
       this.trigger();
     }
   }
@@ -195,7 +209,7 @@ export interface State {
   finalized: Types.BlockNumber;
   consensusInfo: Types.ConsensusInfo;
   displayConsensusLoadingScreen: boolean;
-  tabChanged: boolean;
+  tab: string;
   authorities: Types.Address[];
   authoritySetId: Maybe<Types.AuthoritySetId>;
   sendFinality: boolean;
@@ -211,3 +225,8 @@ export interface State {
 
 export type Update = <K extends keyof State>(changes: Pick<State, K> | null) => Readonly<State>;
 export type UpdateBound = <K extends keyof State>(changes: Pick<State, K> | null) => void;
+
+export interface ChainData {
+  label: Types.ChainLabel;
+  nodeCount: Types.NodeCount;
+}

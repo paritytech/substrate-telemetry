@@ -2,19 +2,15 @@ import * as React from 'react';
 import { Connection } from '../Connection';
 import { Icon } from './Icon';
 import { Types, Maybe } from '@dotstats/common';
-import stable from 'stable';
+import { ChainData } from '../state';
 
 import githubIcon from '../icons/mark-github.svg';
+import listIcon from '../icons/three-bars.svg';
 import './Chains.css';
-
-interface ChainData {
-  label: Types.ChainLabel;
-  nodeCount: Types.NodeCount;
-}
 
 export namespace Chains {
   export interface Props {
-    chains: Map<Types.ChainLabel, Types.NodeCount>,
+    chains: ChainData[],
     subscribed: Maybe<Types.ChainLabel>,
     connection: Promise<Connection>
   }
@@ -22,11 +18,15 @@ export namespace Chains {
 
 export class Chains extends React.Component<Chains.Props, {}> {
   public render() {
+    const allChainsHref = this.props.subscribed ? `#all-chains/${this.props.subscribed}` : `#all-chains`;
+    const { chains } = this.props;
+
     return (
       <div className="Chains">
-        {
-          this.chains.map((chain) => this.renderChain(chain))
-        }
+        {chains.map((chain) => this.renderChain(chain))}
+        <a className="Chains-all-chains" href={allChainsHref}>
+          <Icon src={listIcon} alt="All Chains" />
+        </a>
         <a className="Chains-fork-me" href="https://github.com/paritytech/substrate-telemetry" target="_blank">
           <Icon src={githubIcon} alt="Fork Me!" />
         </a>
@@ -46,25 +46,6 @@ export class Chains extends React.Component<Chains.Props, {}> {
         {label} <span className="Chains-node-count" title="Node Count">{nodeCount}</span>
       </a>
     )
-  }
-
-  private get chains(): ChainData[] {
-    return stable
-      .inplace(
-        Array.from(this.props.chains.entries()),
-        (a, b) => {
-          if (a[0] === 'Alexander') {
-            return -1;
-          }
-
-          if (b[0] === 'Alexander') {
-            return 1;
-          }
-
-          return b[1] - a[1];
-        }
-      )
-      .map(([label, nodeCount]) => ({ label, nodeCount }));
   }
 
   private async subscribe(chain: Types.ChainLabel) {

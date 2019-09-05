@@ -1,3 +1,4 @@
+export * from './AllChains';
 export * from './Chains';
 export * from './Chain';
 export * from './List';

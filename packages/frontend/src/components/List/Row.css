@@ -60,6 +60,10 @@
   color: #E6007A;
 }
 
+.Row-stale {
+  font-style: italic;
+}
+
 .Row:hover {
   background-color: #1E1E1E;
 }

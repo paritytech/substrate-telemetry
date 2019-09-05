@@ -10,6 +10,7 @@ const BLOCK_TIME_HISTORY = 10;
 export default class Chain {
   private nodes = new Set<Node>();
   private feeds = new FeedSet();
+  private count = 0;
 
   public readonly events = new EventEmitter();
   public readonly label: Types.ChainLabel;
@@ -82,7 +83,6 @@ export default class Chain {
 
     this.nodes.delete(node);
     this.feeds.broadcast(Feed.removedNode(node));
-
     this.events.emit('disconnect', this.nodeCount);
 
     if (this.height === node.best.number) {
@@ -91,7 +91,9 @@ export default class Chain {
   }
 
   public staleNode(node: Node) {
-    this.feeds.broadcast(Feed.removedNode(node));
+    node.isStale = true;
+
+    this.feeds.broadcast(Feed.staleNode(node));
 
     if (this.height === node.best.number) {
       this.downgradeBlock();
@@ -113,12 +115,12 @@ export default class Chain {
     }
 
     for (const node of this.nodes.values()) {
-      if (node.isStale) {
-        continue;
-      }
-
       feed.sendMessage(Feed.addedNode(node));
       feed.sendMessage(Feed.finalized(node));
+
+      if (node.isStale) {
+        feed.sendMessage(Feed.staleNode(node));
+      }
     }
   }
 
@@ -167,10 +169,9 @@ export default class Chain {
 
     if (node.isStale) {
       node.isStale = false;
-      this.feeds.broadcast(Feed.addedNode(node));
-    } else {
-      this.feeds.broadcast(Feed.imported(node));
     }
+
+    this.feeds.broadcast(Feed.imported(node));
 
     console.log(`[${this.label}] ${node.name} imported ${height}, block time: ${node.blockTime / 1000}s, average: ${node.average / 1000}s | latency ${node.latency}`);
   }

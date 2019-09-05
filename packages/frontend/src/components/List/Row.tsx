@@ -37,6 +37,7 @@ import joystreamIcon from '../../icons/joystream.svg';
 import ladderIcon from '../../icons/laddernetwork.svg';
 import cennznetIcon from '../../icons/cennznet.svg';
 import darwiniaIcon from '../../icons/darwinia.svg';
+import turingIcon from '../../icons/turingnetwork.svg';
 import unknownImplementationIcon from '../../icons/question-solid.svg';
 
 import './Row.css';
@@ -56,6 +57,7 @@ const ICONS = {
   'cennznet-node': cennznetIcon,
   'Darwinia': darwiniaIcon,
   'Darwinia Testnet': darwiniaIcon,
+  'turing-node': turingIcon,
 };
 
 export namespace Row {
@@ -372,6 +374,10 @@ export class Row extends React.Component<Row.Props, Row.State> {
 
     if (node.pinned) {
       className += ' Row-pinned';
+    }
+
+    if (node.stale) {
+      className += ' Row-stale';
     }
 
     return (

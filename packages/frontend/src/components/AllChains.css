@@ -1,0 +1,61 @@
+.AllChains {
+  position: fixed;
+  z-index: 20;
+  top: 16px;
+  bottom: 16px;
+  left: 50%;
+  margin: 0 0 0 -150px;
+  width: 25vw;
+  min-width: 300px;
+  background: #fff;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.35);
+  overflow-y: scroll;
+  overflow-x: hide;
+}
+
+.AllChains-overlay {
+  position: fixed;
+  display: block;
+  z-index: 19;
+  background: rgba(0,0,0,0.35);
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+
+.AllChains-chain {
+  padding: 0 12px;
+  background: #B5AEAE;
+  color: #444;
+  display: block;
+  border-bottom: 1px solid rgba(255,255,255,0.5);
+  height: 40px;
+  line-height: 40px;
+  cursor: pointer;
+  font-size: 0.8em;
+  font-weight: bold;
+  position: relative;
+}
+
+.AllChains-node-count {
+  display: inline-block;
+  padding: 0 0.5em 0.1em;
+  border-radius: 1em;
+  background: #8C8787;
+  color: #fff;
+  font-weight: normal;
+  text-shadow: rgba(0,0,0,0.5) 0 1px 0;
+  font-size: 0.9em;
+  line-height: 1.4em;
+  margin: 0 -0.3em 0 0.3em;
+}
+
+.AllChains-chain-selected {
+  background: #fff;
+  color: #000;
+}
+
+.AllChains-chain-selected .AllChains-node-count {
+  background: #E6007A;
+}
