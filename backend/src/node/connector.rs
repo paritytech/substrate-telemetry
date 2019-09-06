@@ -108,19 +108,27 @@ impl Handler<Initialize> for NodeConnector {
 
 impl StreamHandler<ws::Message, ws::ProtocolError> for NodeConnector {
     fn handle(&mut self, msg: ws::Message, ctx: &mut Self::Context) {
-        match msg {
+        let msg = match msg {
             ws::Message::Ping(msg) => {
                 self.hb = Instant::now();
                 ctx.pong(&msg);
+                None
             }
-            ws::Message::Pong(_) => self.hb = Instant::now(),
-            ws::Message::Text(text) => {
-                if let Ok(msg) = serde_json::from_str::<NodeMessage>(&text) {
-                    self.handle_message(msg, ctx);
-                }
+            ws::Message::Pong(_) => {
+                self.hb = Instant::now();
+                None
             }
-            ws::Message::Close(_) => ctx.stop(),
-            _ => (),
+            ws::Message::Text(text) => serde_json::from_str(&text).ok(),
+            ws::Message::Binary(data) => serde_json::from_slice(&data).ok(),
+            ws::Message::Close(_) => {
+                ctx.stop();
+                None
+            }
+            ws::Message::Nop => None,
+        };
+
+        if let Some(msg) = msg {
+            self.handle_message(msg, ctx);
         }
     }
 }
