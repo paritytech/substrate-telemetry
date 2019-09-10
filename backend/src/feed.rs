@@ -61,6 +61,7 @@ impl FeedMessage for Version { const ACTION: u8 = 0x00; }
 impl FeedMessage for BestBlock { const ACTION: u8 = 0x01; }
 impl FeedMessage for AddedNode<'_> { const ACTION: u8 = 0x03; }
 impl FeedMessage for RemovedNode { const ACTION: u8 = 0x04; }
+impl FeedMessage for LocatedNode<'_> { const ACTION: u8 = 0x05; }
 impl FeedMessage for ImportedBlock<'_> { const ACTION: u8 = 0x06; }
 impl FeedMessage for Hardware<'_> { const ACTION: u8 = 0x09; }
 impl FeedMessage for AddedChain<'_> { const ACTION: u8 = 0x0B; }
@@ -98,10 +99,14 @@ pub struct Version(pub usize);
 pub struct BestBlock(pub BlockNumber, pub DateTime<Utc>, pub Option<u64>);
 
 #[derive(Serialize)]
-pub struct AddedNode<'a>(pub NodeId, pub &'a NodeDetails, pub &'a NodeStats, pub NodeHardware<'a>, pub NodeLocation<'a>);
+pub struct AddedNode<'a>(pub NodeId, pub &'a NodeDetails, pub &'a NodeStats, pub NodeHardware<'a>,
+                         pub &'a BlockDetails, pub NodeLocation<'a>);
 
 #[derive(Serialize)]
 pub struct RemovedNode(pub NodeId);
+
+#[derive(Serialize)]
+pub struct LocatedNode<'a>(pub NodeId, pub f32, pub f32, pub &'a str);
 
 #[derive(Serialize)]
 pub struct ImportedBlock<'a>(pub NodeId, pub &'a BlockDetails);

@@ -1,12 +1,12 @@
 use actix::prelude::*;
+use std::time::{SystemTime, Duration};
 
 use crate::aggregator::DropChain;
 use crate::node::{Node, connector::Initialize, message::{NodeMessage, Block}};
 use crate::feed::connector::{FeedId, FeedConnector, Subscribed};
 use crate::feed::{self, FeedMessageSerializer, AddedNode, RemovedNode, SubscribedTo, UnsubscribedFrom};
-use crate::util::DenseMap;
-use crate::types::{NodeId, NodeDetails, BlockDetails};
-use std::time::{SystemTime, Instant, Duration};
+use crate::util::{DenseMap, Location};
+use crate::types::{NodeId, NodeDetails};
 
 pub type ChainId = usize;
 
@@ -25,7 +25,7 @@ pub struct Chain {
     /// Message serializer
     serializer: FeedMessageSerializer,
     /// When the best block first arrived
-    timestamp: Instant,
+    timestamp: u64,
 }
 
 impl Chain {
@@ -40,7 +40,8 @@ impl Chain {
             feeds: DenseMap::new(),
             best: Block::zero(),
             serializer: FeedMessageSerializer::new(),
-            timestamp: Instant::now(),
+            timestamp: SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)
+                        .unwrap_or(Duration::from_secs(0)).as_millis() as u64,
         }
     }
 
@@ -87,6 +88,13 @@ pub struct Subscribe(pub Addr<FeedConnector>);
 #[derive(Message)]
 pub struct Unsubscribe(pub FeedId);
 
+/// Message sent from the NodeConnector to the Chain when it receives location data
+#[derive(Message)]
+pub struct LocateNode {
+    pub nid: NodeId,
+    pub location: Location,
+}
+
 impl Handler<AddNode> for Chain {
     type Result = ();
 
@@ -96,7 +104,8 @@ impl Handler<AddNode> for Chain {
         if let Err(_) = msg.rec.do_send(Initialize(nid, ctx.address())) {
             self.nodes.remove(nid);
         } else if let Some(node) = self.nodes.get(nid) {
-            self.serializer.push(AddedNode(nid, node.details(), node.stats(), node.hardware(), node.location()));
+            self.serializer.push(AddedNode(nid, node.details(), node.stats(),
+                node.hardware(), &node.block_details(), node.location()));
             self.broadcast();
         }
     }
@@ -110,7 +119,8 @@ impl Handler<UpdateNode> for Chain {
 
         if let Some(block) = msg.details.best_block() {
             let mut propagation_time = 0;
-            let time_now = Instant::now();
+            let time_now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)
+                                .unwrap_or(Duration::from_secs(0)).as_millis() as u64;
 
             if block.height > self.best.height {
                 self.best = *block;
@@ -121,44 +131,35 @@ impl Handler<UpdateNode> for Chain {
             } else if block.height == self.best.height {
                 if let Some(node) = self.nodes.get(nid) {
                     if block.height > node.best().height {
-                        propagation_time = (time_now - self.timestamp).as_millis() as u64;
+                        propagation_time = time_now - self.timestamp;
                     }
                 }
             }
 
-            let mut block_time = 0;
             if let Some(node) = self.nodes.get_mut(nid) {
-                node.update_block_time(block.height, time_now);
-                block_time = node.block_time();
-            }
-
-            let unix_timestamp = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)
-                                .unwrap_or(Duration::from_secs(0)).as_millis() as u64;
-
-            let block_details = BlockDetails {
-                block_number: self.best.height,
-                block_hash: block.hash,
-                block_time: block_time,
-                timestamp: unix_timestamp,
-                propagation_time: propagation_time,
-            };
-
-            // info!("Block details: {}, {}, {}, {}, {}.", block_details.block_number, 
-            //     block_details.block_hash, block_details.block_time, block_details.timestamp,
-            //     block_details.propagation_time);
-                    
-            self.serializer.push(feed::ImportedBlock(nid, &block_details));
-
-            if let Some(node) = self.nodes.get(nid) {
-                self.serializer.push(feed::Hardware(nid, node.hardware()));
+                node.update_block(*block, time_now, propagation_time);
+                self.serializer.push(feed::ImportedBlock(nid, &node.block_details()));
             }
         }
 
         if let Some(node) = self.nodes.get_mut(nid) {
             node.update(msg);
+            self.serializer.push(feed::Hardware(nid, node.hardware()));
         }
 
         self.broadcast();
+    }
+}
+
+impl Handler<LocateNode> for Chain {
+    type Result = ();
+
+    fn handle(&mut self, msg: LocateNode, _: &mut Self::Context) {
+        if let Some(node) = self.nodes.get_mut(msg.nid) {
+            node.update_location(&msg.location);
+            let location = node.location();
+            self.serializer.push(feed::LocatedNode(msg.nid, location.0, location.1, &location.2));
+        }        
     }
 }
 
@@ -193,7 +194,8 @@ impl Handler<Subscribe> for Chain {
         self.serializer.push(SubscribedTo(&self.label));
 
         for (nid, node) in self.nodes.iter() {
-            self.serializer.push(AddedNode(nid, node.details(), node.stats(), node.hardware(), node.location()));
+            self.serializer.push(AddedNode(nid, node.details(), node.stats(),
+                node.hardware(), &node.block_details(), node.location()));
         }
 
         if let Some(serialized) = self.serializer.finalize() {

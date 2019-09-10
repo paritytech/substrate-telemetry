@@ -3,9 +3,10 @@ use std::time::{Duration, Instant};
 use actix::prelude::*;
 use actix_web_actors::ws;
 use crate::aggregator::{Aggregator, AddNode};
-use crate::chain::{Chain, UpdateNode, RemoveNode};
+use crate::chain::{Chain, UpdateNode, RemoveNode, LocateNode};
 use crate::node::NodeId;
 use crate::node::message::{NodeMessage, Details, SystemConnected};
+use crate::util::{Post, Location};
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(20);
@@ -24,6 +25,10 @@ pub struct NodeConnector {
     chain: Option<Addr<Chain>>,
     /// Backlog of messages to be sent once we get a recipient handle to the chain
     backlog: Vec<NodeMessage>,
+    /// IP address of the node this connector is responsible for
+    ip: String,
+    /// Actix address of location services
+    locator: Addr<crate::util::Locator>,
 }
 
 impl Actor for NodeConnector {
@@ -41,7 +46,7 @@ impl Actor for NodeConnector {
 }
 
 impl NodeConnector {
-    pub fn new(aggregator: Addr<Aggregator>) -> Self {
+    pub fn new(aggregator: Addr<Aggregator>, locator: Addr<crate::util::Locator>, ip: String) -> Self {
         Self {
             // Garbage id, will be replaced by the Initialize message
             nid: !0,
@@ -49,6 +54,8 @@ impl NodeConnector {
             aggregator,
             chain: None,
             backlog: Vec::new(),
+            ip: ip,
+            locator: locator,
         }
     }
 
@@ -83,6 +90,17 @@ impl NodeConnector {
             self.backlog.push(msg);
         }
     }
+
+    fn update_node_location(&mut self, location: &Location) {
+        if let Some(chain) = self.chain.as_ref() {
+            chain.do_send(LocateNode {
+                nid: self.nid,
+                location: location.clone(),
+            });    
+        } else {
+            warn!("No chain to send location data to."); 
+        } 
+    }
 }
 
 #[derive(Message)]
@@ -91,7 +109,7 @@ pub struct Initialize(pub NodeId, pub Addr<Chain>);
 impl Handler<Initialize> for NodeConnector {
     type Result = ();
 
-    fn handle(&mut self, msg: Initialize, _: &mut Self::Context) {
+    fn handle(&mut self, msg: Initialize, ctx: &mut Self::Context) {
         let Initialize(nid, chain) = msg;
 
         for msg in self.backlog.drain(..) {
@@ -103,6 +121,32 @@ impl Handler<Initialize> for NodeConnector {
 
         self.nid = nid;
         self.chain = Some(chain);
+
+        // Acquire the node's physical location
+        let ip = self.ip.clone();
+        if ip.eq("127.0.0.1") {
+            self.update_node_location(
+                &Location {latitude: 52.5166667, longitude: 13.4, city: String::from("Berlin")}
+            )
+        } else {
+            self.locator.send(Post {ip: ip.clone()})
+            .into_actor(self)
+            .then(move |res, act, _| {
+                let result = match res {
+                    Ok(res) => res,
+                    _ => {
+                        warn!("Location request unsuccessful");
+                        return fut::ok(())                    
+                    }
+                };
+                if let Some(location) = result {
+                    act.update_node_location(&location);
+                }
+
+                fut::ok(())
+            })
+            .wait(ctx);
+        }
     }
 }
 

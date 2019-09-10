@@ -1,6 +1,8 @@
 mod mean_list;
+mod location;
 
 pub use mean_list::MeanList;
+pub use location::{Locator, Post, Location};
 
 type Id = usize;
 

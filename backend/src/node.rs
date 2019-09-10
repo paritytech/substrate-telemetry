@@ -1,11 +1,11 @@
-use crate::types::{NodeId, NodeDetails, NodeStats, NodeHardware, NodeLocation, BlockNumber};
-use crate::util::MeanList;
+use crate::types::{NodeId, NodeDetails, NodeStats, NodeHardware, NodeLocation, BlockDetails};
+use crate::util::{MeanList, Location};
 
 pub mod message;
 pub mod connector;
 
 use message::{NodeMessage, Details, Block};
-use std::time::{SystemTime, Instant, Duration};
+use std::time::{SystemTime, Duration};
 
 pub struct Node {
     /// Static details
@@ -15,9 +15,11 @@ pub struct Node {
     /// Best block
     best: Block,
     /// Timestamp of best block
-    block_timestamp: Instant,
+    block_timestamp: u64,
     /// Block time delta
     block_time: u64,
+    /// Arrival time compared to other nodes
+    propagation_time: u64,
     /// CPU use means
     cpu: MeanList<f32>,
     /// Memory use means
@@ -28,6 +30,8 @@ pub struct Node {
     download: MeanList<f64>,
     /// Stampchange uses means
     chart_stamps: MeanList<f64>,
+    /// Physical location details
+    location: Location,
 }
 
 impl Node {
@@ -39,13 +43,16 @@ impl Node {
                 peers: 0,
             },
             best: Block::zero(),
-            block_timestamp: Instant::now(),
+            block_timestamp: SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)
+                                .unwrap_or(Duration::from_secs(0)).as_millis() as u64,
             block_time: 0,
+            propagation_time: 0,
             cpu: MeanList::new(),
             memory: MeanList::new(),
             upload: MeanList::new(),
             download: MeanList::new(),
             chart_stamps: MeanList::new(),
+            location: Location{latitude: 52.5, longitude: 13.4, city: String::from("-")},
         }
     }
 
@@ -72,27 +79,37 @@ impl Node {
     }
 
     pub fn location(&self) -> NodeLocation {
-        (0.0, 0.0, "")
+        (self.location.latitude, self.location.longitude, &self.location.city)
+    }
+
+    pub fn update_location(&mut self, location: &Location) {
+        self.location = location.clone();
     }
 
     pub fn block_time(&self) -> u64 {
         self.block_time
     }
 
-    pub fn update_block_time(&mut self, block_height: BlockNumber, timestamp: Instant) {
-        if block_height > self.best.height {
-            self.block_time = (timestamp - self.block_timestamp).as_millis() as u64;
+    pub fn block_details(&self) -> BlockDetails {
+        BlockDetails {
+            block_number: self.best.height,
+            block_hash: self.best.hash,
+            block_time: self.block_time,
+            timestamp: self.block_timestamp,
+            propagation_time: self.propagation_time,
+        }
+    }
+
+    pub fn update_block(&mut self, block: Block, timestamp: u64, propagation_time: u64) {
+        if block.height > self.best.height {
+            self.best = block;
+            self.block_time = timestamp - self.block_timestamp;
             self.block_timestamp = timestamp;
+            self.propagation_time = propagation_time;
         }
     }
 
     pub fn update(&mut self, msg: NodeMessage) {
-        if let Some(block) = msg.details.best_block() {
-            if block.height > self.best.height {
-                self.best = *block;
-            }
-        }
-
         match msg.details {
             Details::SystemInterval(ref interval) => {
                 self.stats = interval.stats;
