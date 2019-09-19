@@ -141,9 +141,9 @@ export default class Node {
         if (message.msg === "system.connected") {
           cleanup();
 
-          const { name, chain, config, implementation, version, pubkey, authority, network_id: networkId } = message;
+          const { name, chain, config, implementation, version, authority, network_id: networkId } = message;
 
-          resolve(new Node(ip, socket, name, chain, config, implementation, version, pubkey, networkId, authority === true, messages));
+          resolve(new Node(ip, socket, name, chain, config, implementation, version, networkId, authority === true, messages));
         } else {
           if (messages.length === 10) {
             messages.shift();

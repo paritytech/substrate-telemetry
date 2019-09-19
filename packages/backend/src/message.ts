@@ -81,7 +81,6 @@ export interface SystemConnected {
   config: string;
   implementation: Types.NodeImplementation;
   version: Types.NodeVersion;
-  pubkey: Maybe<Types.Address>;
   authority: Maybe<boolean>;
   network_id: Maybe<Types.NetworkId>;
 }
