@@ -68,6 +68,7 @@ export interface AfgReceivedCommit extends AfgReceived {
 export interface AfgAuthoritySet {
   msg: 'afg.authority_set';
   ts: Date;
+  authority_id: Types.Address,
   authorities: Types.Authorities;
   authority_set_id: Types.AuthoritySetId;
   number: Types.BlockNumber;

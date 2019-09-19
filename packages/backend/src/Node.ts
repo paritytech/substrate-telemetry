@@ -37,12 +37,12 @@ export default class Node {
   public readonly chain: Types.ChainLabel;
   public readonly implementation: Types.NodeImplementation;
   public readonly version: Types.NodeVersion;
-  public readonly address: Maybe<Types.Address>;
   public readonly networkId: Maybe<Types.NetworkId>;
   public readonly authority: boolean;
 
   public readonly events = new EventEmitter() as EventEmitter & NodeEvents;
 
+  public address: Maybe<Types.Address> = null;
   public networkState: Maybe<Types.NetworkState> = null;
   public location: Maybe<Location> = null;
   public lastMessage: Types.Timestamp;
@@ -81,7 +81,6 @@ export default class Node {
     config: string,
     implentation: Types.NodeImplementation,
     version: Types.NodeVersion,
-    address: Maybe<Types.Address>,
     networkId: Maybe<Types.NetworkId>,
     authority: boolean,
     messages: Array<Message>,
@@ -93,7 +92,6 @@ export default class Node {
     this.config = config;
     this.implementation = implentation;
     this.version = version;
-    this.address = address;
     this.authority = authority;
     this.networkId = networkId;
     this.lastMessage = timestamp();
@@ -336,6 +334,7 @@ export default class Node {
 
   private onAfgAuthoritySet(message: AfgAuthoritySet) {
     const {
+      authority_id: authorityId,
       authority_set_id: authoritySetId,
       hash,
       number,
@@ -344,6 +343,8 @@ export default class Node {
     // we manually parse the authorities message, because the array was formatted as a
     // string by substrate before sending it.
     const authorities = JSON.parse(String(message.authorities)) as Types.Authorities;
+
+    this.address = authorityId;
 
     if (JSON.stringify(this.authorities) !== String(message.authorities) ||
         this.authoritySetId !== authoritySetId) {
