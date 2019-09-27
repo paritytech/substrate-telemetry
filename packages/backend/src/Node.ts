@@ -22,7 +22,7 @@ const BLOCK_TIME_HISTORY = 10;
 const MEMORY_RECORDS = 20;
 const CPU_RECORDS = 20;
 const TIMEOUT = (1000 * 60 * 1) as Types.Milliseconds; // 1 minute
-const NO_BLOCK_TIMEOUT = (1000 * 60 * 15) as Types.Milliseconds; // 15 minutes
+const NO_BLOCK_TIMEOUT = (1000 * 60 * 1) as Types.Milliseconds; // 1 minute
 
 const nextId = idGenerator<Types.NodeId>();
 
