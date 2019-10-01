@@ -1,6 +1,6 @@
 import { Types, Maybe, SortedCollection } from '@dotstats/common';
 
-export const PINNED_CHAIN = 'Kusama CC1';
+export const PINNED_CHAIN = 'Kusama CC2';
 
 export class Node {
   public static compare(a: Node, b: Node): number {
