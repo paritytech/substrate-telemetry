@@ -280,7 +280,7 @@ export class Connection {
         case Actions.AfgFinalized: {
           const [nodeAddress, finalizedNumber, finalizedHash] = message.payload;
           const no = parseInt(String(finalizedNumber), 10) as Types.BlockNumber;
-          afg.receivedFinalized( nodeAddress, no, finalizedHash);
+          afg.receivedFinalized(nodeAddress, no, finalizedHash);
 
           break;
         }

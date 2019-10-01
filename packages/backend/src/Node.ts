@@ -22,7 +22,7 @@ const BLOCK_TIME_HISTORY = 10;
 const MEMORY_RECORDS = 20;
 const CPU_RECORDS = 20;
 const TIMEOUT = (1000 * 60 * 1) as Types.Milliseconds; // 1 minute
-const NO_BLOCK_TIMEOUT = (1000 * 60 * 15) as Types.Milliseconds; // 15 minutes
+const NO_BLOCK_TIMEOUT = (1000 * 60 * 1) as Types.Milliseconds; // 1 minute
 
 const nextId = idGenerator<Types.NodeId>();
 
@@ -37,12 +37,12 @@ export default class Node {
   public readonly chain: Types.ChainLabel;
   public readonly implementation: Types.NodeImplementation;
   public readonly version: Types.NodeVersion;
-  public readonly address: Maybe<Types.Address>;
   public readonly networkId: Maybe<Types.NetworkId>;
   public readonly authority: boolean;
 
   public readonly events = new EventEmitter() as EventEmitter & NodeEvents;
 
+  public address: Maybe<Types.Address> = null;
   public networkState: Maybe<Types.NetworkState> = null;
   public location: Maybe<Location> = null;
   public lastMessage: Types.Timestamp;
@@ -81,7 +81,6 @@ export default class Node {
     config: string,
     implentation: Types.NodeImplementation,
     version: Types.NodeVersion,
-    address: Maybe<Types.Address>,
     networkId: Maybe<Types.NetworkId>,
     authority: boolean,
     messages: Array<Message>,
@@ -93,7 +92,6 @@ export default class Node {
     this.config = config;
     this.implementation = implentation;
     this.version = version;
-    this.address = address;
     this.authority = authority;
     this.networkId = networkId;
     this.lastMessage = timestamp();
@@ -141,9 +139,9 @@ export default class Node {
         if (message.msg === "system.connected") {
           cleanup();
 
-          const { name, chain, config, implementation, version, pubkey, authority, network_id: networkId } = message;
+          const { name, chain, config, implementation, version, authority, network_id: networkId } = message;
 
-          resolve(new Node(ip, socket, name, chain, config, implementation, version, pubkey, networkId, authority === true, messages));
+          resolve(new Node(ip, socket, name, chain, config, implementation, version, networkId, authority === true, messages));
         } else {
           if (messages.length === 10) {
             messages.shift();
@@ -336,6 +334,7 @@ export default class Node {
 
   private onAfgAuthoritySet(message: AfgAuthoritySet) {
     const {
+      authority_id: authorityId,
       authority_set_id: authoritySetId,
       hash,
       number,
@@ -344,6 +343,8 @@ export default class Node {
     // we manually parse the authorities message, because the array was formatted as a
     // string by substrate before sending it.
     const authorities = JSON.parse(String(message.authorities)) as Types.Authorities;
+
+    this.address = authorityId;
 
     if (JSON.stringify(this.authorities) !== String(message.authorities) ||
         this.authoritySetId !== authoritySetId) {

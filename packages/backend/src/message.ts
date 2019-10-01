@@ -68,6 +68,7 @@ export interface AfgReceivedCommit extends AfgReceived {
 export interface AfgAuthoritySet {
   msg: 'afg.authority_set';
   ts: Date;
+  authority_id: Types.Address,
   authorities: Types.Authorities;
   authority_set_id: Types.AuthoritySetId;
   number: Types.BlockNumber;
@@ -81,7 +82,6 @@ export interface SystemConnected {
   config: string;
   implementation: Types.NodeImplementation;
   version: Types.NodeVersion;
-  pubkey: Maybe<Types.Address>;
   authority: Maybe<boolean>;
   network_id: Maybe<Types.NetworkId>;
 }
