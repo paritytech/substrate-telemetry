@@ -32,9 +32,13 @@ impl Aggregator {
             .get(&label)
             .map(|&cid| (cid, true))
             .unwrap_or_else(|| {
+                self.serializer.push(feed::AddedChain(&label, 1));
+
                 let recipient = ctx.address().recipient();
                 let label = label.clone();
                 let cid = self.chains.add_with(move |cid| Chain::new(cid, recipient, label).start());
+
+                self.broadcast();
 
                 (cid, false)
             });
@@ -44,6 +48,14 @@ impl Aggregator {
         }
 
         self.chains.get(cid).expect("Entry just created above; qed")
+    }
+
+    fn broadcast(&mut self) {
+        if let Some(msg) = self.serializer.finalize() {
+            for (_, feed) in self.feeds.iter() {
+                feed.do_send(msg.clone());
+            }
+        }
     }
 }
 
@@ -99,6 +111,8 @@ impl Handler<DropChain> for Aggregator {
 
         if let Some(cid) = self.labels.remove(&label) {
             self.chains.remove(cid);
+            self.serializer.push(feed::RemovedChain(&label));
+            self.broadcast();
         }
 
         info!("Dropped chain [{}] from the aggregator", label);
