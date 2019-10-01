@@ -37,7 +37,7 @@ impl Actor for FeedConnector {
     }
 
     fn stopped(&mut self, _: &mut Self::Context) {
-        if let Some(chain) = self.chain.as_ref() {
+        if let Some(chain) = self.chain.take() {
             chain.do_send(Unsubscribe(self.fid_chain));
         }
 
@@ -74,6 +74,9 @@ impl FeedConnector {
     fn handle_cmd(&mut self, cmd: &str, payload: &str, ctx: &mut <Self as Actor>::Context) {
          match cmd {
             "subscribe" => {
+                if let Some(current) = self.chain.take() {
+                    current.do_send(Unsubscribe(self.fid_chain));
+                }
                 self.aggregator.do_send(Subscribe {
                     chain: payload.into(),
                     feed: ctx.address(),
