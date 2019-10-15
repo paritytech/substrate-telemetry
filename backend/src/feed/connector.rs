@@ -155,10 +155,6 @@ impl Handler<Serialized> for FeedConnector {
     type Result = ();
 
     fn handle(&mut self, msg: Serialized, ctx: &mut Self::Context) {
-        if self.chain.is_none() {
-            return;
-        }
-
         let Serialized(bytes) = msg;
 
         ctx.binary(bytes);
