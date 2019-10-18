@@ -96,10 +96,10 @@ impl NodeConnector {
             chain.do_send(LocateNode {
                 nid: self.nid,
                 location: location.clone(),
-            });    
+            });
         } else {
-            warn!("No chain to send location data to."); 
-        } 
+            warn!("No chain to send location data to.");
+        }
     }
 }
 
@@ -136,7 +136,7 @@ impl Handler<Initialize> for NodeConnector {
                     Ok(res) => res,
                     _ => {
                         warn!("Location request unsuccessful");
-                        return fut::ok(())                    
+                        return fut::ok(())
                     }
                 };
                 if let Some(location) = result {

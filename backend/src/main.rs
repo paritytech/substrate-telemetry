@@ -4,6 +4,7 @@ extern crate log;
 use actix::prelude::*;
 use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Error};
 use actix_web_actors::ws;
+use actix_http::ws::Codec;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
@@ -34,11 +35,13 @@ fn node_route(
         }
     };
 
-    ws::start(
+    let mut res = ws::handshake(&req)?;
+
+    Ok(res.streaming(ws::WebsocketContext::with_codec(
         NodeConnector::new(aggregator.get_ref().clone(), locator.get_ref().clone(), ip),
-        &req,
         stream,
-    )
+        Codec::new().max_size(512 * 1024), // 512kb frame limit
+    )))
 }
 
 /// Entry point for connecting feeds

@@ -152,7 +152,7 @@ impl Handler<Connect> for Aggregator {
         }
 
         if let Some(msg) = self.serializer.finalize() {
-            connector.do_send(msg);
+            let _ = connector.do_send(msg);
         }
     }
 }
