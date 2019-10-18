@@ -1,11 +1,10 @@
 use actix::prelude::*;
-use std::time::{SystemTime, Duration};
 
 use crate::aggregator::DropChain;
 use crate::node::{Node, connector::Initialize, message::{NodeMessage, Block}};
 use crate::feed::connector::{FeedId, FeedConnector, Subscribed};
 use crate::feed::{self, FeedMessageSerializer, AddedNode, RemovedNode, SubscribedTo, UnsubscribedFrom};
-use crate::util::{DenseMap, Location};
+use crate::util::{DenseMap, Location, now};
 use crate::types::{NodeId, NodeDetails};
 
 pub type ChainId = usize;
@@ -40,8 +39,7 @@ impl Chain {
             feeds: DenseMap::new(),
             best: Block::zero(),
             serializer: FeedMessageSerializer::new(),
-            timestamp: SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)
-                        .unwrap_or(Duration::from_secs(0)).as_millis() as u64,
+            timestamp: now(),
         }
     }
 
@@ -119,8 +117,7 @@ impl Handler<UpdateNode> for Chain {
 
         if let Some(block) = msg.details.best_block() {
             let mut propagation_time = 0;
-            let time_now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)
-                                .unwrap_or(Duration::from_secs(0)).as_millis() as u64;
+            let time_now = now();
 
             if block.height > self.best.height {
                 self.best = *block;
