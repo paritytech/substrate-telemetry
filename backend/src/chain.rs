@@ -159,7 +159,7 @@ impl Handler<LocateNode> for Chain {
             node.update_location(&msg.location);
             let location = node.location();
             self.serializer.push(feed::LocatedNode(msg.nid, location.0, location.1, &location.2));
-        }        
+        }
     }
 }
 

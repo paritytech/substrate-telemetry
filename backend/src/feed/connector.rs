@@ -5,6 +5,7 @@ use actix_web_actors::ws;
 use crate::aggregator::{Aggregator, Connect, Disconnect, Subscribe};
 use crate::chain::Unsubscribe;
 use crate::feed::{FeedMessageSerializer, Pong};
+use crate::util::fnv;
 
 pub type FeedId = usize;
 
@@ -24,6 +25,8 @@ pub struct FeedConnector {
     aggregator: Addr<Aggregator>,
     /// Chain actor address
     chain: Option<Recipient<Unsubscribe>>,
+    /// FNV hash of the chain label, optimization to avoid double-subscribing
+    chain_hash: u64,
     /// Message serializer
     serializer: FeedMessageSerializer,
 }
@@ -55,6 +58,7 @@ impl FeedConnector {
             hb: Instant::now(),
             aggregator,
             chain: None,
+            chain_hash: 0,
             serializer: FeedMessageSerializer::new(),
         }
     }
@@ -74,9 +78,11 @@ impl FeedConnector {
     fn handle_cmd(&mut self, cmd: &str, payload: &str, ctx: &mut <Self as Actor>::Context) {
          match cmd {
             "subscribe" => {
-                if let Some(current) = self.chain.take() {
-                    let _ = current.do_send(Unsubscribe(self.fid_chain));
+                match fnv(payload) {
+                    hash if hash == self.chain_hash => return,
+                    hash => self.chain_hash = hash,
                 }
+
                 self.aggregator.do_send(Subscribe {
                     chain: payload.into(),
                     feed: ctx.address(),
@@ -135,6 +141,10 @@ impl Handler<Subscribed> for FeedConnector {
 
     fn handle(&mut self, msg: Subscribed, _: &mut Self::Context) {
         let Subscribed(fid_chain, chain) = msg;
+
+        if let Some(current) = self.chain.take() {
+            let _ = current.do_send(Unsubscribe(self.fid_chain));
+        }
 
         self.fid_chain = fid_chain;
         self.chain = Some(chain);

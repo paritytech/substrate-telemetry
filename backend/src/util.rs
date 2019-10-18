@@ -76,3 +76,13 @@ impl<T> DenseMap<T> {
         self.len() == 0
     }
 }
+
+pub fn fnv<D: AsRef<[u8]>>(data: D) -> u64 {
+    use fnv::FnvHasher;
+    use std::hash::Hasher;
+
+    let mut hasher = FnvHasher::default();
+
+    hasher.write(data.as_ref());
+    hasher.finish()
+}
