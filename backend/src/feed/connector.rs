@@ -103,6 +103,9 @@ impl FeedConnector {
 #[derive(Message)]
 pub struct Subscribed(pub FeedId, pub Recipient<Unsubscribe>);
 
+#[derive(Message)]
+pub struct Unsubscribed;
+
 /// Message sent from Aggregator to FeedConnector upon successful connection
 #[derive(Message)]
 pub struct Connected(pub FeedId);
@@ -148,6 +151,15 @@ impl Handler<Subscribed> for FeedConnector {
 
         self.fid_chain = fid_chain;
         self.chain = Some(chain);
+    }
+}
+
+impl Handler<Unsubscribed> for FeedConnector {
+    type Result = ();
+
+    fn handle(&mut self, _: Unsubscribed, _: &mut Self::Context) {
+        self.chain = None;
+        self.chain_hash = 0;
     }
 }
 

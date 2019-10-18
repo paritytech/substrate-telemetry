@@ -2,19 +2,20 @@ use actix::prelude::*;
 
 use crate::aggregator::DropChain;
 use crate::node::{Node, connector::Initialize, message::{NodeMessage, Block}};
-use crate::feed::connector::{FeedId, FeedConnector, Subscribed};
+use crate::feed::connector::{FeedId, FeedConnector, Subscribed, Unsubscribed};
 use crate::feed::{self, FeedMessageSerializer, AddedNode, RemovedNode, SubscribedTo, UnsubscribedFrom};
 use crate::util::{DenseMap, Location, now};
 use crate::types::{NodeId, NodeDetails};
 
 pub type ChainId = usize;
+pub type Label = Box<str>;
 
 pub struct Chain {
     cid: ChainId,
     /// Who to inform if we Chain drops itself
     drop_rec: Recipient<DropChain>,
     /// Label of this chain
-    label: Box<str>,
+    label: Label,
     /// Dense mapping of NodeId -> Node
     nodes: DenseMap<Node>,
     /// Dense mapping of FeedId -> Addr<FeedConnector>,
@@ -28,7 +29,7 @@ pub struct Chain {
 }
 
 impl Chain {
-    pub fn new(cid: ChainId, drop_rec: Recipient<DropChain>, label: Box<str>) -> Self {
+    pub fn new(cid: ChainId, drop_rec: Recipient<DropChain>, label: Label) -> Self {
         info!("[{}] Created", label);
 
         Chain {
@@ -57,6 +58,10 @@ impl Actor for Chain {
 
     fn stopped(&mut self, _: &mut Self::Context) {
         let _ = self.drop_rec.do_send(DropChain(self.label.clone()));
+
+        for (_, feed) in self.feeds.iter() {
+            feed.do_send(Unsubscribed)
+        }
     }
 }
 
@@ -102,6 +107,8 @@ impl Handler<AddNode> for Chain {
         if let Err(_) = msg.rec.do_send(Initialize(nid, ctx.address())) {
             self.nodes.remove(nid);
         } else if let Some(node) = self.nodes.get(nid) {
+            info!("Added node {}, broadcast?", node.details().name);
+
             self.serializer.push(AddedNode(nid, node.details(), node.stats(),
                 node.hardware(), &node.block_details(), node.location()));
             self.broadcast();

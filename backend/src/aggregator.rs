@@ -5,11 +5,11 @@ use crate::node::connector::Initialize;
 use crate::feed::connector::{FeedConnector, Connected, FeedId};
 use crate::util::DenseMap;
 use crate::feed::{self, FeedMessageSerializer};
-use crate::chain::{self, Chain, ChainId};
+use crate::chain::{self, Chain, ChainId, Label};
 use crate::types::NodeDetails;
 
 pub struct Aggregator {
-    labels: HashMap<Box<str>, ChainId>,
+    labels: HashMap<Label, ChainId>,
     chains: DenseMap<Addr<Chain>>,
     feeds: DenseMap<Addr<FeedConnector>>,
     serializer: FeedMessageSerializer,
@@ -27,7 +27,7 @@ impl Aggregator {
 
     /// Get an address to the chain actor by name. If the address is not found,
     /// or the address is disconnected (actor dropped), create a new one.
-    pub fn lazy_chain(&mut self, label: Box<str>, ctx: &mut <Self as Actor>::Context) -> &Addr<Chain> {
+    pub fn lazy_chain(&mut self, label: Label, ctx: &mut <Self as Actor>::Context) -> &Addr<Chain> {
         let (cid, found) = self.labels
             .get(&label)
             .map(|&cid| (cid, true))
@@ -67,18 +67,18 @@ impl Actor for Aggregator {
 #[derive(Message)]
 pub struct AddNode {
     pub node: NodeDetails,
-    pub chain: Box<str>,
+    pub chain: Label,
     pub rec: Recipient<Initialize>,
 }
 
 /// Message sent from the Chain to the Aggregator when the Chain loses all nodes
 #[derive(Message)]
-pub struct DropChain(pub Box<str>);
+pub struct DropChain(pub Label);
 
 /// Message sent from the FeedConnector to the Aggregator when subscribing to a new chain
 #[derive(Message)]
 pub struct Subscribe {
-    pub chain: Box<str>,
+    pub chain: Label,
     pub feed: Addr<FeedConnector>,
 }
 
