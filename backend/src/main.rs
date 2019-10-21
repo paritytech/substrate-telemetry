@@ -34,7 +34,7 @@ fn node_route(
     let mut res = ws::handshake(&req)?;
 
     Ok(res.streaming(ws::WebsocketContext::with_codec(
-        NodeConnector::new(aggregator.get_ref().clone(), locator.get_ref().clone(), ip),
+        NodeConnector::new(aggregator.get_ref().clone(), locator.get_ref().clone().recipient(), ip),
         stream,
         Codec::new().max_size(512 * 1024), // 512kb frame limit
     )))

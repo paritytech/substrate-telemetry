@@ -5,6 +5,12 @@ use serde::Deserialize;
 use serde::ser::{Serialize, SerializeTuple, Serializer};
 use rustc_hash::FxHashMap;
 
+use crate::chain::{Chain, LocateNode};
+use crate::types::NodeId;
+
+/// Localhost IPv4
+pub const LOCALHOST: Ipv4Addr = Ipv4Addr::new(127, 0, 0, 1);
+
 #[derive(Deserialize, Clone)]
 pub struct Location {
     pub latitude: f32,
@@ -43,23 +49,35 @@ impl Actor for Locator {
     type Context = SyncContext<Self>;
 }
 
-pub struct Post {
+#[derive(Message)]
+pub struct LocateRequest {
     pub ip: Ipv4Addr,
+    pub nid: NodeId,
+    pub chain: Addr<Chain>,
 }
 
-impl Message for Post {
-    type Result = Option<Location>;
-}
+impl Handler<LocateRequest> for Locator {
+    type Result = ();
 
-impl Handler<Post> for Locator {
-    type Result = Option<Location>;
+    fn handle(&mut self, msg: LocateRequest, _: &mut Self::Context) {
+        let LocateRequest { ip, nid, chain } = msg;
 
-    fn handle(&mut self, msg: Post, _: &mut Self::Context) -> Option<Location> {
-        if let Some(location) = self.cache.get(&msg.ip) {
-            return Some(location.clone())
+        println!("! New location request {}", ip);
+
+        if ip == LOCALHOST {
+            let _ = chain.do_send(LocateNode {
+                nid,
+                location: Location { latitude: 52.5166667, longitude: 13.4, city: "Berlin".into() },
+            });
+            return;
         }
 
-        let ip_req = format!("https://ipapi.co/{}/json", msg.ip);
+        if let Some(location) = self.cache.get(&ip).cloned() {
+            let _ = chain.do_send(LocateNode { nid, location });
+            return;
+        }
+
+        let ip_req = format!("https://ipapi.co/{}/json", ip);
         let response = self.client
             .post(&ip_req)
             .send();
@@ -69,16 +87,14 @@ impl Handler<Post> for Locator {
         } else if let Ok(mut response) = response {
             match response.json::<Location>() {
                 Ok(location) => {
-                    self.cache.insert(msg.ip, location.clone());
+                    self.cache.insert(ip, location.clone());
 
-                    return Some(location);
+                    chain.do_send(LocateNode { nid, location });
                 }
                 Err(err) => {
                     warn!("JSON error for ip location: {:?}", err);
                 }
             }
         }
-
-        None
     }
 }

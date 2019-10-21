@@ -1,4 +1,5 @@
 use actix::prelude::*;
+use std::sync::Arc;
 
 use crate::aggregator::{Aggregator, DropChain, NodeCount};
 use crate::node::{Node, connector::Initialize, message::{NodeMessage, Block}};
@@ -8,7 +9,7 @@ use crate::util::{DenseMap, Location, now};
 use crate::types::{NodeId, NodeDetails};
 
 pub type ChainId = usize;
-pub type Label = Box<str>;
+pub type Label = Arc<str>;
 
 pub struct Chain {
     cid: ChainId,
@@ -113,8 +114,6 @@ impl Handler<AddNode> for Chain {
         if let Err(_) = msg.rec.do_send(Initialize(nid, ctx.address())) {
             self.nodes.remove(nid);
         } else if let Some(node) = self.nodes.get(nid) {
-            info!("Added node {}, broadcast?", node.details().name);
-
             self.serializer.push(AddedNode(nid, node.details(), node.stats(),
                 node.hardware(), &node.block_details(), node.location()));
             self.broadcast();

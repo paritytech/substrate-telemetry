@@ -1,7 +1,6 @@
 use actix::prelude::*;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
-use crate::chain::Label;
 use crate::node::{NodeDetails, NodeStats};
 use crate::types::{BlockNumber, BlockHash};
 
@@ -34,7 +33,7 @@ pub enum Details {
 
 #[derive(Deserialize, Debug)]
 pub struct SystemConnected {
-    pub chain: Label,
+    pub chain: Box<str>,
     #[serde(flatten)]
     pub node: NodeDetails,
 }
