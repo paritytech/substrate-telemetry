@@ -1,5 +1,6 @@
 use serde::ser::{Serialize, Serializer, SerializeTuple};
 use serde::Deserialize;
+use std::sync::Arc;
 
 pub type NodeId = usize;
 pub type BlockNumber = u64;
@@ -29,7 +30,12 @@ pub struct BlockDetails {
 
 pub type NodeHardware<'a> = (&'a [f32], &'a [f32], &'a [f64], &'a [f64], &'a [f64]);
 
-pub type NodeLocation<'a> = &'a crate::util::Location;
+#[derive(Debug, Clone)]
+pub struct NodeLocation {
+    pub latitude: f32,
+    pub longitude: f32,
+    pub city: Arc<str>,
+}
 
 impl Serialize for NodeDetails {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -70,6 +76,19 @@ impl Serialize for BlockDetails {
         tup.serialize_element(&self.block_time)?;
         tup.serialize_element(&self.timestamp)?;
         tup.serialize_element(&self.propagation_time)?;
+        tup.end()
+    }
+}
+
+impl Serialize for NodeLocation {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut tup = serializer.serialize_tuple(3)?;
+        tup.serialize_element(&self.latitude)?;
+        tup.serialize_element(&self.longitude)?;
+        tup.serialize_element(&&*self.city)?;
         tup.end()
     }
 }

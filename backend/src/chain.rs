@@ -5,8 +5,8 @@ use crate::aggregator::{Aggregator, DropChain, NodeCount};
 use crate::node::{Node, connector::Initialize, message::{NodeMessage, Block}};
 use crate::feed::connector::{FeedId, FeedConnector, Subscribed, Unsubscribed};
 use crate::feed::{self, FeedMessageSerializer, AddedNode, RemovedNode, SubscribedTo, UnsubscribedFrom};
-use crate::util::{DenseMap, Location, now};
-use crate::types::{NodeId, NodeDetails};
+use crate::util::{DenseMap, now};
+use crate::types::{NodeId, NodeDetails, NodeLocation};
 
 pub type ChainId = usize;
 pub type Label = Arc<str>;
@@ -102,7 +102,7 @@ pub struct Unsubscribe(pub FeedId);
 #[derive(Message)]
 pub struct LocateNode {
     pub nid: NodeId,
-    pub location: Location,
+    pub location: NodeLocation,
 }
 
 impl Handler<AddNode> for Chain {

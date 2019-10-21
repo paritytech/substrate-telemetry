@@ -114,9 +114,7 @@ impl Handler<Initialize> for NodeConnector {
 
         // Acquire the node's physical location
         if let Some(ip) = self.ip {
-            println!("wtf {:?}", ip);
-
-            let _ = self.locator.send(LocateRequest { ip, nid, chain });
+            let _ = self.locator.do_send(LocateRequest { ip, nid, chain });
         }
     }
 }

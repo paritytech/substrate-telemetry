@@ -3,47 +3,47 @@ use std::sync::Arc;
 
 use actix::prelude::*;
 use serde::Deserialize;
-use serde::ser::{Serialize, SerializeTuple, Serializer};
 use rustc_hash::FxHashMap;
 use parking_lot::RwLock;
 
 use crate::chain::{Chain, LocateNode};
-use crate::types::NodeId;
+use crate::types::{NodeId, NodeLocation};
 
-/// Localhost IPv4
-pub const LOCALHOST: Ipv4Addr = Ipv4Addr::new(127, 0, 0, 1);
-
-#[derive(Deserialize, Clone)]
-pub struct Location {
-    pub latitude: f32,
-    pub longitude: f32,
-    pub city: Box<str>,
+// Having a custom type here because serde can't deserialize to Arc<str>
+#[derive(Deserialize)]
+struct Location {
+    latitude: f32,
+    longitude: f32,
+    city: Box<str>,
 }
 
-impl Serialize for Location {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut tup = serializer.serialize_tuple(3)?;
-        tup.serialize_element(&self.latitude)?;
-        tup.serialize_element(&self.longitude)?;
-        tup.serialize_element(&self.city)?;
-        tup.end()
+impl From<Location> for NodeLocation {
+    fn from(loc: Location) -> NodeLocation {
+        NodeLocation {
+            latitude: loc.latitude,
+            longitude: loc.longitude,
+            city: loc.city.into(),
+        }
     }
 }
 
 #[derive(Clone)]
 pub struct Locator {
     client: reqwest::Client,
-    cache: Arc<RwLock<FxHashMap<Ipv4Addr, Location>>>,
+    cache: Arc<RwLock<FxHashMap<Ipv4Addr, NodeLocation>>>,
 }
 
 impl Locator {
     pub fn new() -> Self {
         let mut cache = FxHashMap::default();
 
-        cache.insert(LOCALHOST, Location { latitude: 52.5166667, longitude: 13.4, city: "Berlin".into() });
+        // Default entry for localhost
+        cache.insert(
+            Ipv4Addr::new(127, 0, 0, 1),
+            NodeLocation { latitude: 52.5166667, longitude: 13.4, city: "Berlin".into() },
+        );
+
+        info!("Locator created! This should only happen once.");
 
         Locator {
             client: reqwest::Client::new(),
@@ -69,8 +69,6 @@ impl Handler<LocateRequest> for Locator {
     fn handle(&mut self, msg: LocateRequest, _: &mut Self::Context) {
         let LocateRequest { ip, nid, chain } = msg;
 
-        println!("! New location request {}", ip);
-
         if let Some(location) = self.cache.read().get(&ip).cloned() {
             let _ = chain.do_send(LocateNode { nid, location });
             return;
@@ -86,6 +84,8 @@ impl Handler<LocateRequest> for Locator {
         } else if let Ok(mut response) = response {
             match response.json::<Location>() {
                 Ok(location) => {
+                    let location = NodeLocation::from(location);
+
                     self.cache.write().insert(ip, location.clone());
 
                     chain.do_send(LocateNode { nid, location });

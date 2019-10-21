@@ -25,16 +25,18 @@ fn node_route(
     req: HttpRequest,
     stream: web::Payload,
     aggregator: web::Data<Addr<Aggregator>>,
-    locator: web::Data<Addr<crate::util::Locator>>,
+    locator: web::Data<Addr<Locator>>,
 ) -> Result<HttpResponse, Error> {
     let ip = req.connection_info().remote().and_then(|addr| {
         addr.parse::<SocketAddrV4>().ok().map(|socket| *socket.ip())
     });
 
     let mut res = ws::handshake(&req)?;
+    let aggregator = aggregator.get_ref().clone();
+    let locator = locator.get_ref().clone().recipient();
 
     Ok(res.streaming(ws::WebsocketContext::with_codec(
-        NodeConnector::new(aggregator.get_ref().clone(), locator.get_ref().clone().recipient(), ip),
+        NodeConnector::new(aggregator, locator, ip),
         stream,
         Codec::new().max_size(512 * 1024), // 512kb frame limit
     )))
@@ -45,7 +47,6 @@ fn feed_route(
     req: HttpRequest,
     stream: web::Payload,
     aggregator: web::Data<Addr<Aggregator>>,
-    _locator: web::Data<Addr<crate::util::Locator>>,
 ) -> Result<HttpResponse, Error> {
     ws::start(
         FeedConnector::new(aggregator.get_ref().clone()),

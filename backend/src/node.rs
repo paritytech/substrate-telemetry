@@ -1,5 +1,5 @@
-use crate::types::{NodeId, NodeDetails, NodeStats, NodeHardware, BlockDetails};
-use crate::util::{MeanList, Location};
+use crate::types::{NodeId, NodeDetails, NodeStats, NodeHardware, NodeLocation, BlockDetails};
+use crate::util::MeanList;
 
 pub mod message;
 pub mod connector;
@@ -31,7 +31,7 @@ pub struct Node {
     /// Stampchange uses means
     chart_stamps: MeanList<f64>,
     /// Physical location details
-    location: Option<Location>,
+    location: Option<NodeLocation>,
 }
 
 impl Node {
@@ -78,11 +78,11 @@ impl Node {
         )
     }
 
-    pub fn location(&self) -> Option<&Location> {
+    pub fn location(&self) -> Option<&NodeLocation> {
         self.location.as_ref()
     }
 
-    pub fn update_location(&mut self, location: Location) {
+    pub fn update_location(&mut self, location: NodeLocation) {
         self.location = Some(location);
     }
 
