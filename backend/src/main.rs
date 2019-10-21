@@ -18,7 +18,7 @@ mod util;
 use node::connector::NodeConnector;
 use feed::connector::FeedConnector;
 use aggregator::Aggregator;
-use crate::util::Locator;
+use crate::util::{Locator, LocatorFactory};
 
 /// Entry point for connecting nodes
 fn node_route(
@@ -60,8 +60,8 @@ fn main() -> std::io::Result<()> {
 
     let sys = System::new("substrate-telemetry");
     let aggregator = Aggregator::new().start();
-    let locator = Locator::new();
-    let locator = SyncArbiter::start(4, move || locator.clone());
+    let factory = LocatorFactory::new();
+    let locator = SyncArbiter::start(4, move || factory.create());
 
     HttpServer::new(move || {
         App::new()

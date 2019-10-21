@@ -2,7 +2,7 @@ mod mean_list;
 mod location;
 
 pub use mean_list::MeanList;
-pub use location::{Locator, LocateRequest};
+pub use location::{Locator, LocatorFactory, LocateRequest};
 
 type Id = usize;
 

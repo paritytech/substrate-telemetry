@@ -33,7 +33,11 @@ pub struct Locator {
     cache: Arc<RwLock<FxHashMap<Ipv4Addr, NodeLocation>>>,
 }
 
-impl Locator {
+pub struct LocatorFactory {
+    cache: Arc<RwLock<FxHashMap<Ipv4Addr, NodeLocation>>>,
+}
+
+impl LocatorFactory {
     pub fn new() -> Self {
         let mut cache = FxHashMap::default();
 
@@ -43,11 +47,15 @@ impl Locator {
             NodeLocation { latitude: 52.5166667, longitude: 13.4, city: "Berlin".into() },
         );
 
-        info!("Locator created! This should only happen once.");
+        LocatorFactory {
+            cache: Arc::new(RwLock::new(cache)),
+        }
+    }
 
+    pub fn create(&self) -> Locator {
         Locator {
             client: reqwest::Client::new(),
-            cache: Arc::new(RwLock::new(cache)),
+            cache: self.cache.clone(),
         }
     }
 }
