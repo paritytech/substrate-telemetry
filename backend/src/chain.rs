@@ -1,6 +1,6 @@
 use actix::prelude::*;
 
-use crate::aggregator::DropChain;
+use crate::aggregator::{Aggregator, DropChain, NodeCount};
 use crate::node::{Node, connector::Initialize, message::{NodeMessage, Block}};
 use crate::feed::connector::{FeedId, FeedConnector, Subscribed, Unsubscribed};
 use crate::feed::{self, FeedMessageSerializer, AddedNode, RemovedNode, SubscribedTo, UnsubscribedFrom};
@@ -13,7 +13,7 @@ pub type Label = Box<str>;
 pub struct Chain {
     cid: ChainId,
     /// Who to inform if we Chain drops itself
-    drop_rec: Recipient<DropChain>,
+    aggregator: Addr<Aggregator>,
     /// Label of this chain
     label: Label,
     /// Dense mapping of NodeId -> Node
@@ -29,12 +29,12 @@ pub struct Chain {
 }
 
 impl Chain {
-    pub fn new(cid: ChainId, drop_rec: Recipient<DropChain>, label: Label) -> Self {
+    pub fn new(cid: ChainId, aggregator: Addr<Aggregator>, label: Label) -> Self {
         info!("[{}] Created", label);
 
         Chain {
             cid,
-            drop_rec,
+            aggregator,
             label,
             nodes: DenseMap::new(),
             feeds: DenseMap::new(),
@@ -51,13 +51,19 @@ impl Chain {
             }
         }
     }
+
+    /// Triggered when the number of nodes in this chain has changed, Aggregator will
+    /// propagate new counts to all connected feeds
+    fn update_count(&self) {
+        let _ = self.aggregator.do_send(NodeCount(self.cid, self.nodes.len()));
+    }
 }
 
 impl Actor for Chain {
     type Context = Context<Self>;
 
     fn stopped(&mut self, _: &mut Self::Context) {
-        let _ = self.drop_rec.do_send(DropChain(self.label.clone()));
+        let _ = self.aggregator.do_send(DropChain(self.label.clone()));
 
         for (_, feed) in self.feeds.iter() {
             feed.do_send(Unsubscribed)
@@ -113,6 +119,8 @@ impl Handler<AddNode> for Chain {
                 node.hardware(), &node.block_details(), node.location()));
             self.broadcast();
         }
+
+        self.update_count();
     }
 }
 
@@ -182,6 +190,7 @@ impl Handler<RemoveNode> for Chain {
 
         self.serializer.push(RemovedNode(nid));
         self.broadcast();
+        self.update_count();
     }
 }
 

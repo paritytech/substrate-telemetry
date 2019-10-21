@@ -10,9 +10,15 @@ use crate::types::NodeDetails;
 
 pub struct Aggregator {
     labels: HashMap<Label, ChainId>,
-    chains: DenseMap<Addr<Chain>>,
+    chains: DenseMap<ChainEntry>,
     feeds: DenseMap<Addr<FeedConnector>>,
     serializer: FeedMessageSerializer,
+}
+
+struct ChainEntry {
+    addr: Addr<Chain>,
+    label: Label,
+    nodes: usize,
 }
 
 impl Aggregator {
@@ -27,16 +33,22 @@ impl Aggregator {
 
     /// Get an address to the chain actor by name. If the address is not found,
     /// or the address is disconnected (actor dropped), create a new one.
-    pub fn lazy_chain(&mut self, label: Label, ctx: &mut <Self as Actor>::Context) -> &Addr<Chain> {
+    pub fn lazy_chain(&mut self, label: Label, ctx: &mut <Self as Actor>::Context) -> &mut ChainEntry {
         let (cid, found) = self.labels
             .get(&label)
             .map(|&cid| (cid, true))
             .unwrap_or_else(|| {
                 self.serializer.push(feed::AddedChain(&label, 1));
 
-                let recipient = ctx.address().recipient();
+                let addr = ctx.address();
                 let label = label.clone();
-                let cid = self.chains.add_with(move |cid| Chain::new(cid, recipient, label).start());
+                let cid = self.chains.add_with(move |cid| {
+                    ChainEntry {
+                        addr: Chain::new(cid, addr, label.clone()).start(),
+                        label,
+                        nodes: 1,
+                    }
+                });
 
                 self.broadcast();
 
@@ -47,7 +59,7 @@ impl Aggregator {
             self.labels.insert(label, cid);
         }
 
-        self.chains.get(cid).expect("Entry just created above; qed")
+        self.chains.get_mut(cid).expect("Entry just created above; qed")
     }
 
     fn broadcast(&mut self) {
@@ -90,13 +102,17 @@ pub struct Connect(pub Addr<FeedConnector>);
 #[derive(Message)]
 pub struct Disconnect(pub FeedId);
 
+/// Message sent from the Chain to the Aggergator when the node count on the chain changes
+#[derive(Message)]
+pub struct NodeCount(pub ChainId, pub usize);
+
 impl Handler<AddNode> for Aggregator {
     type Result = ();
 
     fn handle(&mut self, msg: AddNode, ctx: &mut Self::Context) {
         let AddNode { node, chain, rec } = msg;
 
-        self.lazy_chain(chain, ctx).do_send(chain::AddNode {
+        self.lazy_chain(chain, ctx).addr.do_send(chain::AddNode {
             node,
             rec,
         });
@@ -127,7 +143,7 @@ impl Handler<Subscribe> for Aggregator {
 
         let chains = &self.chains;
         if let Some(chain) = self.labels.get(&chain).and_then(|&cid| chains.get(cid)) {
-            chain.do_send(chain::Subscribe(feed));
+            chain.addr.do_send(chain::Subscribe(feed));
         }
     }
 }
@@ -147,8 +163,8 @@ impl Handler<Connect> for Aggregator {
         self.serializer.push(feed::Version(25));
 
         // TODO: keep track on number of nodes connected to each chain
-        for label in self.labels.keys() {
-            self.serializer.push(feed::AddedChain(label, 1));
+        for (_, entry) in self.chains.iter() {
+            self.serializer.push(feed::AddedChain(&entry.label, entry.nodes));
         }
 
         if let Some(msg) = self.serializer.finalize() {
@@ -166,5 +182,22 @@ impl Handler<Disconnect> for Aggregator {
         info!("Feed #{} disconnected", fid);
 
         self.feeds.remove(fid);
+    }
+}
+
+impl Handler<NodeCount> for Aggregator {
+    type Result = ();
+
+    fn handle(&mut self, msg: NodeCount, _: &mut Self::Context) {
+        let NodeCount(cid, count) = msg;
+
+        if let Some(entry) = self.chains.get_mut(cid) {
+            entry.nodes = count;
+
+            if count != 0 {
+                self.serializer.push(feed::AddedChain(&entry.label, count));
+                self.broadcast();
+            }
+        }
     }
 }

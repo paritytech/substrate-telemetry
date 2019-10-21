@@ -72,29 +72,13 @@ impl FeedMessage for Pong<'_> { const ACTION: u8 = 0x0F; }
 
 #[derive(Serialize)]
 pub struct Version(pub usize);
-  // BestBlock        : 0x01 as 0x01,
   // BestFinalized    : 0x02 as 0x02,
-
-  // export interface BestBlockMessage extends MessageBase {
-  //   action: typeof Actions.BestBlock;
-  //   payload: [BlockNumber, Timestamp, Maybe<Milliseconds>];
-  // }
 
   // export interface BestFinalizedBlockMessage extends MessageBase {
   //   action: typeof Actions.BestFinalized;
   //   payload: [BlockNumber, BlockHash];
   // }
 
-  // export interface AddedNodeMessage extends MessageBase {
-  //   action: typeof Actions.AddedNode;
-  //   payload: [NodeId, NodeDetails, NodeStats, NodeHardware, BlockDetails, Maybe<NodeLocation>];
-  // }
-
-
-  // export interface RemovedNodeMessage extends MessageBase {
-  //   action: typeof Actions.RemovedNode;
-  //   payload: NodeId;
-  // }
 #[derive(Serialize)]
 pub struct BestBlock(pub BlockNumber, pub DateTime<Utc>, pub Option<u64>);
 
