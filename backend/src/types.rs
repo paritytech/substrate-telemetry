@@ -29,7 +29,7 @@ pub struct BlockDetails {
 
 pub type NodeHardware<'a> = (&'a [f32], &'a [f32], &'a [f64], &'a [f64], &'a [f64]);
 
-pub type NodeLocation<'a> = (f32, f32, &'a str);
+pub type NodeLocation<'a> = &'a crate::util::Location;
 
 impl Serialize for NodeDetails {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -64,7 +64,7 @@ impl Serialize for BlockDetails {
     where
         S: Serializer,
     {
-        let mut tup = serializer.serialize_tuple(1)?;
+        let mut tup = serializer.serialize_tuple(5)?;
         tup.serialize_element(&self.block_number)?;
         tup.serialize_element(&self.block_hash)?;
         tup.serialize_element(&self.block_time)?;

@@ -1,4 +1,5 @@
 use std::time::{Duration, Instant};
+use std::net::Ipv4Addr;
 
 use actix::prelude::*;
 use actix_web_actors::ws;
@@ -12,7 +13,8 @@ use crate::util::{Post, Location};
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(20);
 /// How long before lack of client response causes a timeout
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(60);
-
+/// Localhost IPv4
+pub const LOCALHOST: Ipv4Addr = Ipv4Addr::new(127, 0, 0, 1);
 
 pub struct NodeConnector {
     /// Id of the node this connector is responsible for handling
@@ -26,7 +28,7 @@ pub struct NodeConnector {
     /// Backlog of messages to be sent once we get a recipient handle to the chain
     backlog: Vec<NodeMessage>,
     /// IP address of the node this connector is responsible for
-    ip: String,
+    ip: Option<Ipv4Addr>,
     /// Actix address of location services
     locator: Addr<crate::util::Locator>,
 }
@@ -46,7 +48,7 @@ impl Actor for NodeConnector {
 }
 
 impl NodeConnector {
-    pub fn new(aggregator: Addr<Aggregator>, locator: Addr<crate::util::Locator>, ip: String) -> Self {
+    pub fn new(aggregator: Addr<Aggregator>, locator: Addr<crate::util::Locator>, ip: Option<Ipv4Addr>) -> Self {
         Self {
             // Garbage id, will be replaced by the Initialize message
             nid: !0,
@@ -54,8 +56,8 @@ impl NodeConnector {
             aggregator,
             chain: None,
             backlog: Vec::new(),
-            ip: ip,
-            locator: locator,
+            ip,
+            locator,
         }
     }
 
@@ -91,11 +93,11 @@ impl NodeConnector {
         }
     }
 
-    fn update_node_location(&mut self, location: &Location) {
+    fn update_node_location(&mut self, location: Location) {
         if let Some(chain) = self.chain.as_ref() {
             chain.do_send(LocateNode {
                 nid: self.nid,
-                location: location.clone(),
+                location,
             });
         } else {
             warn!("No chain to send location data to.");
@@ -123,29 +125,30 @@ impl Handler<Initialize> for NodeConnector {
         self.chain = Some(chain);
 
         // Acquire the node's physical location
-        let ip = self.ip.clone();
-        if ip.eq("127.0.0.1") {
-            self.update_node_location(
-                &Location {latitude: 52.5166667, longitude: 13.4, city: String::from("Berlin")}
-            )
-        } else {
-            self.locator.send(Post {ip: ip.clone()})
-            .into_actor(self)
-            .then(move |res, act, _| {
-                let result = match res {
-                    Ok(res) => res,
-                    _ => {
-                        warn!("Location request unsuccessful");
-                        return fut::ok(())
+        if let Some(ip) = self.ip {
+            if ip == LOCALHOST {
+                self.update_node_location(
+                    Location { latitude: 52.5166667, longitude: 13.4, city: "Berlin".into() }
+                )
+            } else {
+                self.locator.send(Post { ip })
+                .into_actor(self)
+                .then(move |res, act, _| {
+                    let result = match res {
+                        Ok(res) => res,
+                        _ => {
+                            warn!("Location request unsuccessful");
+                            return fut::ok(())
+                        }
+                    };
+                    if let Some(location) = result {
+                        act.update_node_location(location);
                     }
-                };
-                if let Some(location) = result {
-                    act.update_node_location(&location);
-                }
 
-                fut::ok(())
-            })
-            .wait(ctx);
+                    fut::ok(())
+                })
+                .wait(ctx);
+            }
         }
     }
 }

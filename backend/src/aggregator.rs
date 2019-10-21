@@ -15,7 +15,7 @@ pub struct Aggregator {
     serializer: FeedMessageSerializer,
 }
 
-struct ChainEntry {
+pub struct ChainEntry {
     addr: Addr<Chain>,
     label: Label,
     nodes: usize,
@@ -60,6 +60,11 @@ impl Aggregator {
         }
 
         self.chains.get_mut(cid).expect("Entry just created above; qed")
+    }
+
+    fn get_chain(&mut self, label: &str) -> Option<&mut ChainEntry> {
+        let chains = &mut self.chains;
+        self.labels.get(label).and_then(move |&cid| chains.get_mut(cid))
     }
 
     fn broadcast(&mut self) {
@@ -141,8 +146,7 @@ impl Handler<Subscribe> for Aggregator {
     fn handle(&mut self, msg: Subscribe, _: &mut Self::Context) {
         let Subscribe { chain, feed } = msg;
 
-        let chains = &self.chains;
-        if let Some(chain) = self.labels.get(&chain).and_then(|&cid| chains.get(cid)) {
+        if let Some(chain) = self.get_chain(&chain) {
             chain.addr.do_send(chain::Subscribe(feed));
         }
     }

@@ -1,12 +1,12 @@
 #[macro_use]
 extern crate log;
 
+use std::net::SocketAddrV4;
+
 use actix::prelude::*;
 use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Error};
 use actix_web_actors::ws;
 use actix_http::ws::Codec;
-use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
 
 mod types;
 mod aggregator;
@@ -27,13 +27,9 @@ fn node_route(
     aggregator: web::Data<Addr<Aggregator>>,
     locator: web::Data<Addr<crate::util::Locator>>,
 ) -> Result<HttpResponse, Error> {
-    let mut ip = String::from("127.0.0.1");
-    if let Some(remote) = req.connection_info().remote() {
-        let v: Vec<&str> = remote.split_terminator(':').collect();
-        if !v.is_empty() {
-            ip = v[0].to_string();
-        }
-    };
+    let ip = req.connection_info().remote().and_then(|addr| {
+        addr.parse::<SocketAddrV4>().ok().map(|socket| *socket.ip())
+    });
 
     let mut res = ws::handshake(&req)?;
 
@@ -63,8 +59,7 @@ fn main() -> std::io::Result<()> {
 
     let sys = System::new("substrate-telemetry");
     let aggregator = Aggregator::new().start();
-    let cache = Arc::new(RwLock::new(HashMap::new()));
-    let locator = SyncArbiter::start(4, move || Locator::new(cache.clone()));
+    let locator = SyncArbiter::start(4, move || Locator::new());
 
     HttpServer::new(move || {
         App::new()

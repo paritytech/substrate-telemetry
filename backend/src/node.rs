@@ -1,4 +1,4 @@
-use crate::types::{NodeId, NodeDetails, NodeStats, NodeHardware, NodeLocation, BlockDetails};
+use crate::types::{NodeId, NodeDetails, NodeStats, NodeHardware, BlockDetails};
 use crate::util::{MeanList, Location};
 
 pub mod message;
@@ -31,7 +31,7 @@ pub struct Node {
     /// Stampchange uses means
     chart_stamps: MeanList<f64>,
     /// Physical location details
-    location: Location,
+    location: Option<Location>,
 }
 
 impl Node {
@@ -52,7 +52,7 @@ impl Node {
             upload: MeanList::new(),
             download: MeanList::new(),
             chart_stamps: MeanList::new(),
-            location: Location{latitude: 52.5, longitude: 13.4, city: String::from("-")},
+            location: None,
         }
     }
 
@@ -78,12 +78,12 @@ impl Node {
         )
     }
 
-    pub fn location(&self) -> NodeLocation {
-        (self.location.latitude, self.location.longitude, &self.location.city)
+    pub fn location(&self) -> Option<&Location> {
+        self.location.as_ref()
     }
 
-    pub fn update_location(&mut self, location: &Location) {
-        self.location = location.clone();
+    pub fn update_location(&mut self, location: Location) {
+        self.location = Some(location);
     }
 
     pub fn block_time(&self) -> u64 {

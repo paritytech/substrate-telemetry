@@ -167,10 +167,12 @@ impl Handler<LocateNode> for Chain {
     type Result = ();
 
     fn handle(&mut self, msg: LocateNode, _: &mut Self::Context) {
-        if let Some(node) = self.nodes.get_mut(msg.nid) {
-            node.update_location(&msg.location);
-            let location = node.location();
-            self.serializer.push(feed::LocatedNode(msg.nid, location.0, location.1, &location.2));
+        let LocateNode { nid, location } = msg;
+
+        if let Some(node) = self.nodes.get_mut(nid) {
+            self.serializer.push(feed::LocatedNode(nid, location.latitude, location.longitude, &location.city));
+
+            node.update_location(location);
         }
     }
 }

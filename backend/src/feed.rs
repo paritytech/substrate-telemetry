@@ -84,7 +84,7 @@ pub struct BestBlock(pub BlockNumber, pub DateTime<Utc>, pub Option<u64>);
 
 #[derive(Serialize)]
 pub struct AddedNode<'a>(pub NodeId, pub &'a NodeDetails, pub &'a NodeStats, pub NodeHardware<'a>,
-                         pub &'a BlockDetails, pub NodeLocation<'a>);
+                         pub &'a BlockDetails, pub Option<NodeLocation<'a>>);
 
 #[derive(Serialize)]
 pub struct RemovedNode(pub NodeId);
