@@ -1,9 +1,11 @@
 use std::net::Ipv4Addr;
+use std::sync::Arc;
 
 use actix::prelude::*;
 use serde::Deserialize;
 use serde::ser::{Serialize, SerializeTuple, Serializer};
 use rustc_hash::FxHashMap;
+use parking_lot::RwLock;
 
 use crate::chain::{Chain, LocateNode};
 use crate::types::NodeId;
@@ -31,16 +33,21 @@ impl Serialize for Location {
     }
 }
 
+#[derive(Clone)]
 pub struct Locator {
     client: reqwest::Client,
-    cache: FxHashMap<Ipv4Addr, Location>,
+    cache: Arc<RwLock<FxHashMap<Ipv4Addr, Location>>>,
 }
 
 impl Locator {
     pub fn new() -> Self {
+        let mut cache = FxHashMap::default();
+
+        cache.insert(LOCALHOST, Location { latitude: 52.5166667, longitude: 13.4, city: "Berlin".into() });
+
         Locator {
             client: reqwest::Client::new(),
-            cache: FxHashMap::default(),
+            cache: Arc::new(RwLock::new(cache)),
         }
     }
 }
@@ -64,15 +71,7 @@ impl Handler<LocateRequest> for Locator {
 
         println!("! New location request {}", ip);
 
-        if ip == LOCALHOST {
-            let _ = chain.do_send(LocateNode {
-                nid,
-                location: Location { latitude: 52.5166667, longitude: 13.4, city: "Berlin".into() },
-            });
-            return;
-        }
-
-        if let Some(location) = self.cache.get(&ip).cloned() {
+        if let Some(location) = self.cache.read().get(&ip).cloned() {
             let _ = chain.do_send(LocateNode { nid, location });
             return;
         }
@@ -87,7 +86,7 @@ impl Handler<LocateRequest> for Locator {
         } else if let Ok(mut response) = response {
             match response.json::<Location>() {
                 Ok(location) => {
-                    self.cache.insert(ip, location.clone());
+                    self.cache.write().insert(ip, location.clone());
 
                     chain.do_send(LocateNode { nid, location });
                 }

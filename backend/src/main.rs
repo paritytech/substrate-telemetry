@@ -59,7 +59,8 @@ fn main() -> std::io::Result<()> {
 
     let sys = System::new("substrate-telemetry");
     let aggregator = Aggregator::new().start();
-    let locator = SyncArbiter::start(4, move || Locator::new());
+    let locator = Locator::new();
+    let locator = SyncArbiter::start(4, move || locator.clone());
 
     HttpServer::new(move || {
         App::new()
