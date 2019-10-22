@@ -20,11 +20,17 @@ pub struct NodeStats {
 }
 
 #[derive(Deserialize, Debug, Clone, Copy)]
+pub struct Block {
+    #[serde(rename = "best")]
+    pub hash: BlockHash,
+    pub height: BlockNumber,
+}
+
+#[derive(Debug, Clone, Copy)]
 pub struct BlockDetails {
-    pub block_number: BlockNumber,
-    pub block_hash: BlockHash,
+    pub block: Block,
     pub block_time: u64,
-    pub timestamp: u64,
+    pub block_timestamp: u64,
     pub propagation_time: u64,
 }
 
@@ -71,10 +77,10 @@ impl Serialize for BlockDetails {
         S: Serializer,
     {
         let mut tup = serializer.serialize_tuple(5)?;
-        tup.serialize_element(&self.block_number)?;
-        tup.serialize_element(&self.block_hash)?;
+        tup.serialize_element(&self.block.height)?;
+        tup.serialize_element(&self.block.hash)?;
         tup.serialize_element(&self.block_time)?;
-        tup.serialize_element(&self.timestamp)?;
+        tup.serialize_element(&self.block_timestamp)?;
         tup.serialize_element(&self.propagation_time)?;
         tup.end()
     }

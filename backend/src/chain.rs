@@ -2,11 +2,11 @@ use actix::prelude::*;
 use std::sync::Arc;
 
 use crate::aggregator::{Aggregator, DropChain, NodeCount};
-use crate::node::{Node, connector::Initialize, message::{NodeMessage, Block}};
+use crate::node::{Node, connector::Initialize, message::NodeMessage};
 use crate::feed::connector::{FeedId, FeedConnector, Subscribed, Unsubscribed};
 use crate::feed::{self, FeedMessageSerializer, AddedNode, RemovedNode, SubscribedTo, UnsubscribedFrom};
 use crate::util::{DenseMap, now};
-use crate::types::{NodeId, NodeDetails, NodeLocation};
+use crate::types::{NodeId, NodeDetails, NodeLocation, Block};
 
 pub type ChainId = usize;
 pub type Label = Arc<str>;
@@ -115,7 +115,7 @@ impl Handler<AddNode> for Chain {
             self.nodes.remove(nid);
         } else if let Some(node) = self.nodes.get(nid) {
             self.serializer.push(AddedNode(nid, node.details(), node.stats(),
-                node.hardware(), &node.block_details(), node.location()));
+                node.hardware(), node.block_details(), node.location()));
             self.broadcast();
         }
 
@@ -149,7 +149,7 @@ impl Handler<UpdateNode> for Chain {
 
             if let Some(node) = self.nodes.get_mut(nid) {
                 node.update_block(*block, time_now, propagation_time);
-                self.serializer.push(feed::ImportedBlock(nid, &node.block_details()));
+                self.serializer.push(feed::ImportedBlock(nid, node.block_details()));
             }
         }
 
@@ -209,7 +209,7 @@ impl Handler<Subscribe> for Chain {
 
         for (nid, node) in self.nodes.iter() {
             self.serializer.push(AddedNode(nid, node.details(), node.stats(),
-                node.hardware(), &node.block_details(), node.location()));
+                node.hardware(), node.block_details(), node.location()));
         }
 
         if let Some(serialized) = self.serializer.finalize() {

@@ -1,11 +1,10 @@
-use crate::types::{NodeId, NodeDetails, NodeStats, NodeHardware, NodeLocation, BlockDetails};
-use crate::util::MeanList;
+use crate::types::{NodeId, NodeDetails, NodeStats, NodeHardware, NodeLocation, BlockDetails, Block};
+use crate::util::{MeanList, now};
 
 pub mod message;
 pub mod connector;
 
-use message::{NodeMessage, Details, Block};
-use std::time::{SystemTime, Duration};
+use message::{NodeMessage, Details};
 
 pub struct Node {
     /// Static details
@@ -13,13 +12,7 @@ pub struct Node {
     /// Basic stats
     stats: NodeStats,
     /// Best block
-    best: Block,
-    /// Timestamp of best block
-    block_timestamp: u64,
-    /// Block time delta
-    block_time: u64,
-    /// Arrival time compared to other nodes
-    propagation_time: u64,
+    best: BlockDetails,
     /// CPU use means
     cpu: MeanList<f32>,
     /// Memory use means
@@ -42,11 +35,12 @@ impl Node {
                 txcount: 0,
                 peers: 0,
             },
-            best: Block::zero(),
-            block_timestamp: SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)
-                                .unwrap_or(Duration::from_secs(0)).as_millis() as u64,
-            block_time: 0,
-            propagation_time: 0,
+            best: BlockDetails {
+                block: Block::zero(),
+                block_timestamp: now(),
+                block_time: 0,
+                propagation_time: 0,
+            },
             cpu: MeanList::new(),
             memory: MeanList::new(),
             upload: MeanList::new(),
@@ -65,7 +59,7 @@ impl Node {
     }
 
     pub fn best(&self) -> &Block {
-        &self.best
+        &self.best.block
     }
 
     pub fn hardware(&self) -> NodeHardware {
@@ -87,25 +81,19 @@ impl Node {
     }
 
     pub fn block_time(&self) -> u64 {
-        self.block_time
+        self.best.block_time
     }
 
-    pub fn block_details(&self) -> BlockDetails {
-        BlockDetails {
-            block_number: self.best.height,
-            block_hash: self.best.hash,
-            block_time: self.block_time,
-            timestamp: self.block_timestamp,
-            propagation_time: self.propagation_time,
-        }
+    pub fn block_details(&self) -> &BlockDetails {
+        &self.best
     }
 
     pub fn update_block(&mut self, block: Block, timestamp: u64, propagation_time: u64) {
-        if block.height > self.best.height {
-            self.best = block;
-            self.block_time = timestamp - self.block_timestamp;
-            self.block_timestamp = timestamp;
-            self.propagation_time = propagation_time;
+        if block.height > self.best.block.height {
+            self.best.block = block;
+            self.best.block_time = timestamp - self.best.block_timestamp;
+            self.best.block_timestamp = timestamp;
+            self.best.propagation_time = propagation_time;
         }
     }
 
@@ -125,9 +113,7 @@ impl Node {
                 if let Some(download) = interval.bandwidth_download {
                     self.download.push(download);
                 }
-                let timestamp = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)
-                                .unwrap_or(Duration::from_secs(0)).as_millis() as f64;
-                self.chart_stamps.push(timestamp);
+                self.chart_stamps.push(now() as f64);
             }
             _ => ()
         }

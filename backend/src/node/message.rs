@@ -2,7 +2,7 @@ use actix::prelude::*;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use crate::node::{NodeDetails, NodeStats};
-use crate::types::{BlockNumber, BlockHash};
+use crate::types::{Block, BlockNumber, BlockHash};
 
 #[derive(Deserialize, Debug, Message)]
 pub struct NodeMessage {
@@ -50,13 +50,6 @@ pub struct SystemInterval {
     pub finalized_hash: Option<BlockHash>,
     #[serde(flatten)]
     pub block: Block,
-}
-
-#[derive(Deserialize, Debug, Clone, Copy)]
-pub struct Block {
-    #[serde(rename = "best")]
-    pub hash: BlockHash,
-    pub height: BlockNumber,
 }
 
 impl Block {
