@@ -2,7 +2,7 @@ use actix::prelude::*;
 use std::sync::Arc;
 
 use crate::aggregator::{Aggregator, DropChain, NodeCount};
-use crate::node::{Node, connector::Initialize, message::NodeMessage};
+use crate::node::{Node, connector::Initialize, message::{NodeMessage, Details}};
 use crate::feed::connector::{FeedId, FeedConnector, Subscribed, Unsubscribed};
 use crate::feed::{self, FeedMessageSerializer, AddedNode, RemovedNode, SubscribedTo, UnsubscribedFrom};
 use crate::util::{DenseMap, now};
@@ -154,8 +154,15 @@ impl Handler<UpdateNode> for Chain {
         }
 
         if let Some(node) = self.nodes.get_mut(nid) {
-            node.update(msg);
-            self.serializer.push(feed::Hardware(nid, node.hardware()));
+            if let Details::SystemInterval(ref interval) = msg.details {
+                if node.update_hardware(interval) {
+                    self.serializer.push(feed::Hardware(nid, node.hardware()));
+                }
+
+                if let Some(finalized) = node.update_finalized(interval) {
+                    self.serializer.push(feed::FinalizedBlock(nid, finalized.height, finalized.hash));
+                }
+            }
         }
 
         self.broadcast();

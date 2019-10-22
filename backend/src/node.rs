@@ -4,7 +4,7 @@ use crate::util::{MeanList, now};
 pub mod message;
 pub mod connector;
 
-use message::{NodeMessage, Details};
+use message::SystemInterval;
 
 pub struct Node {
     /// Static details
@@ -13,6 +13,8 @@ pub struct Node {
     stats: NodeStats,
     /// Best block
     best: BlockDetails,
+    /// Finalized block
+    finalized: Block,
     /// CPU use means
     cpu: MeanList<f32>,
     /// Memory use means
@@ -41,6 +43,7 @@ impl Node {
                 block_time: 0,
                 propagation_time: 0,
             },
+            finalized: Block::zero(),
             cpu: MeanList::new(),
             memory: MeanList::new(),
             upload: MeanList::new(),
@@ -97,25 +100,36 @@ impl Node {
         }
     }
 
-    pub fn update(&mut self, msg: NodeMessage) {
-        match msg.details {
-            Details::SystemInterval(ref interval) => {
-                self.stats = interval.stats;
-                if let Some(cpu) = interval.cpu {
-                    self.cpu.push(cpu);
-                }
-                if let Some(memory) = interval.memory {
-                    self.memory.push(memory);
-                }
-                if let Some(upload) = interval.bandwidth_upload {
-                    self.upload.push(upload);
-                }
-                if let Some(download) = interval.bandwidth_download {
-                    self.download.push(download);
-                }
-                self.chart_stamps.push(now() as f64);
-            }
-            _ => ()
+    pub fn update_hardware(&mut self, interval: &SystemInterval) -> bool {
+        let mut changed = false;
+
+        self.stats = interval.stats;
+        if let Some(cpu) = interval.cpu {
+            changed |= self.cpu.push(cpu);
         }
+        if let Some(memory) = interval.memory {
+            changed |= self.memory.push(memory);
+        }
+        if let Some(upload) = interval.bandwidth_upload {
+            changed |= self.upload.push(upload);
+        }
+        if let Some(download) = interval.bandwidth_download {
+            changed |= self.download.push(download);
+        }
+        self.chart_stamps.push(now() as f64);
+
+        changed
+    }
+
+    pub fn update_finalized(&mut self, interval: &SystemInterval) -> Option<&Block> {
+        if let (Some(height), Some(hash)) = (interval.finalized_height, interval.finalized_hash) {
+            if height > self.finalized.height {
+                self.finalized.height = height;
+                self.finalized.hash = hash;
+                return Some(&self.finalized);
+            }
+        }
+
+        None
     }
 }
