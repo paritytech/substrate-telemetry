@@ -23,6 +23,8 @@ pub struct Chain {
     feeds: DenseMap<Addr<FeedConnector>>,
     /// Best block
     best: Block,
+    /// Finalized block
+    finalized: Block,
     /// Message serializer
     serializer: FeedMessageSerializer,
     /// When the best block first arrived
@@ -40,6 +42,7 @@ impl Chain {
             nodes: DenseMap::new(),
             feeds: DenseMap::new(),
             best: Block::zero(),
+            finalized: Block::zero(),
             serializer: FeedMessageSerializer::new(),
             timestamp: now(),
         }
@@ -161,6 +164,11 @@ impl Handler<UpdateNode> for Chain {
 
                 if let Some(finalized) = node.update_finalized(interval) {
                     self.serializer.push(feed::FinalizedBlock(nid, finalized.height, finalized.hash));
+
+                    if finalized.height > self.finalized.height {
+                        self.finalized = *finalized;
+                        self.serializer.push(feed::BestFinalized(finalized.height, finalized.hash));
+                    }
                 }
             }
         }
@@ -217,6 +225,7 @@ impl Handler<Subscribe> for Chain {
         for (nid, node) in self.nodes.iter() {
             self.serializer.push(AddedNode(nid, node.details(), node.stats(),
                 node.hardware(), node.block_details(), node.location()));
+            self.serializer.push(feed::FinalizedBlock(nid, node.finalized().height, node.finalized().hash));
         }
 
         if let Some(serialized) = self.serializer.finalize() {

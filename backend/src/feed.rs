@@ -59,6 +59,7 @@ impl FeedMessageSerializer {
 
 impl FeedMessage for Version { const ACTION: u8 = 0x00; }
 impl FeedMessage for BestBlock { const ACTION: u8 = 0x01; }
+impl FeedMessage for BestFinalized { const ACTION: u8 = 0x02; }
 impl FeedMessage for AddedNode<'_> { const ACTION: u8 = 0x03; }
 impl FeedMessage for RemovedNode { const ACTION: u8 = 0x04; }
 impl FeedMessage for LocatedNode<'_> { const ACTION: u8 = 0x05; }
@@ -73,15 +74,12 @@ impl FeedMessage for Pong<'_> { const ACTION: u8 = 0x0F; }
 
 #[derive(Serialize)]
 pub struct Version(pub usize);
-  // BestFinalized    : 0x02 as 0x02,
-
-  // export interface BestFinalizedBlockMessage extends MessageBase {
-  //   action: typeof Actions.BestFinalized;
-  //   payload: [BlockNumber, BlockHash];
-  // }
 
 #[derive(Serialize)]
 pub struct BestBlock(pub BlockNumber, pub DateTime<Utc>, pub Option<u64>);
+
+#[derive(Serialize)]
+pub struct BestFinalized(pub BlockNumber, pub BlockHash);
 
 #[derive(Serialize)]
 pub struct AddedNode<'a>(pub NodeId, pub &'a NodeDetails, pub &'a NodeStats, pub NodeHardware<'a>,

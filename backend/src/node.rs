@@ -65,6 +65,10 @@ impl Node {
         &self.best.block
     }
 
+    pub fn finalized(&self) -> &Block {
+        &self.finalized
+    }
+
     pub fn hardware(&self) -> NodeHardware {
         (
             self.memory.slice(),
@@ -126,7 +130,7 @@ impl Node {
             if height > self.finalized.height {
                 self.finalized.height = height;
                 self.finalized.hash = hash;
-                return Some(&self.finalized);
+                return Some(self.finalized());
             }
         }
 
