@@ -41,7 +41,7 @@ impl FeedMessageSerializer {
         self.buffer.push(glue);
         let _ = to_writer(&mut self.buffer, &Message::ACTION);
         self.buffer.push(b',');
-        let _  = to_writer(&mut self.buffer, &msg);
+        let _ = to_writer(&mut self.buffer, &msg);
     }
 
     pub fn finalize(&mut self) -> Option<Serialized> {

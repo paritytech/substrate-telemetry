@@ -56,7 +56,7 @@ impl Chain {
     /// Triggered when the number of nodes in this chain has changed, Aggregator will
     /// propagate new counts to all connected feeds
     fn update_count(&self) {
-        let _ = self.aggregator.do_send(NodeCount(self.cid, self.nodes.len()));
+        self.aggregator.do_send(NodeCount(self.cid, self.nodes.len()));
     }
 }
 
@@ -64,7 +64,7 @@ impl Actor for Chain {
     type Context = Context<Self>;
 
     fn stopped(&mut self, _: &mut Self::Context) {
-        let _ = self.aggregator.do_send(DropChain(self.label.clone()));
+        self.aggregator.do_send(DropChain(self.label.clone()));
 
         for (_, feed) in self.feeds.iter() {
             feed.do_send(Unsubscribed)

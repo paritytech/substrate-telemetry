@@ -46,9 +46,9 @@ impl Serialize for NodeDetails {
         tup.serialize_element(&self.name)?;
         tup.serialize_element(&self.implementation)?;
         tup.serialize_element(&self.version)?;
-        tup.serialize_element::<Option<String>>(&None)?; // Maybe<Address>
-        tup.serialize_element::<Option<usize>>(&None)?; // Maybe<NetworkId>
-        tup.serialize_element("")?; // Address
+        tup.serialize_element::<Option<String>>(&None)?; // TODO Maybe<Address>
+        tup.serialize_element::<Option<usize>>(&None)?; // TODO Maybe<NetworkId>
+        tup.serialize_element("")?; // TODO Address
         tup.end()
     }
 }

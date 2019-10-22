@@ -78,30 +78,22 @@ impl Handler<LocateRequest> for Locator {
         let LocateRequest { ip, nid, chain } = msg;
 
         if let Some(location) = self.cache.read().get(&ip).cloned() {
-            let _ = chain.do_send(LocateNode { nid, location });
-            return;
+            return chain.do_send(LocateNode { nid, location });
         }
 
         let ip_req = format!("https://ipapi.co/{}/json", ip);
-        let response = self.client
-            .post(&ip_req)
-            .send();
+        let mut response = match self.client.post(&ip_req).send() {
+            Ok(response) => response,
+            Err(err) => return warn!("POST error for ip location: {:?}", err),
+        };
 
-        if let Err(error) = response {
-            warn!("POST error for ip location: {:?}", error);
-        } else if let Ok(mut response) = response {
-            match response.json::<Location>() {
-                Ok(location) => {
-                    let location = NodeLocation::from(location);
+        let location = match response.json::<Location>() {
+            Ok(location) => NodeLocation::from(location),
+            Err(err) => return warn!("JSON error for ip location: {:?}", err),
+        };
 
-                    self.cache.write().insert(ip, location.clone());
+        self.cache.write().insert(ip, location.clone());
 
-                    chain.do_send(LocateNode { nid, location });
-                }
-                Err(err) => {
-                    warn!("JSON error for ip location: {:?}", err);
-                }
-            }
-        }
+        chain.do_send(LocateNode { nid, location });
     }
 }
