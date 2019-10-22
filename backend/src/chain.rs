@@ -4,7 +4,7 @@ use std::sync::Arc;
 use crate::aggregator::{Aggregator, DropChain, NodeCount};
 use crate::node::{Node, connector::Initialize, message::{NodeMessage, Details}};
 use crate::feed::connector::{FeedId, FeedConnector, Subscribed, Unsubscribed};
-use crate::feed::{self, FeedMessageSerializer, AddedNode, RemovedNode, SubscribedTo, UnsubscribedFrom};
+use crate::feed::{self, FeedMessageSerializer};
 use crate::util::{DenseMap, now};
 use crate::types::{NodeId, NodeDetails, NodeLocation, Block};
 
@@ -117,7 +117,7 @@ impl Handler<AddNode> for Chain {
         if let Err(_) = msg.rec.do_send(Initialize(nid, ctx.address())) {
             self.nodes.remove(nid);
         } else if let Some(node) = self.nodes.get(nid) {
-            self.serializer.push(AddedNode(nid, node.details(), node.stats(),
+            self.serializer.push(feed::AddedNode(nid, node.details(), node.stats(),
                 node.hardware(), node.block_details(), node.location()));
             self.broadcast();
         }
@@ -138,8 +138,14 @@ impl Handler<UpdateNode> for Chain {
 
             if block.height > self.best.height {
                 self.best = *block;
-                info!("[{}] [{}/{}] new best block ({}) {:?}", self.label, self.nodes.len(), self.feeds.len(), self.best.height, self.best.hash);
-
+                info!(
+                    "[{}] [{}/{}] new best block ({}) {:?}",
+                    self.label,
+                    self.nodes.len(),
+                    self.feeds.len(),
+                    self.best.height,
+                    self.best.hash,
+                );
                 self.serializer.push(feed::BestBlock(self.best.height, msg.ts, None));
                 self.timestamp = time_now;
             } else if block.height == self.best.height {
@@ -204,7 +210,7 @@ impl Handler<RemoveNode> for Chain {
             ctx.stop();
         }
 
-        self.serializer.push(RemovedNode(nid));
+        self.serializer.push(feed::RemovedNode(nid));
         self.broadcast();
         self.update_count();
     }
@@ -220,10 +226,13 @@ impl Handler<Subscribe> for Chain {
 
         feed.do_send(Subscribed(fid, ctx.address().recipient()));
 
-        self.serializer.push(SubscribedTo(&self.label));
+        self.serializer.push(feed::SubscribedTo(&self.label));
+        self.serializer.push(feed::TimeSync(now()));
+        // self.serializer.push(feed::BestBlock());
+        self.serializer.push(feed::BestFinalized(self.finalized.height, self.finalized.hash));
 
         for (nid, node) in self.nodes.iter() {
-            self.serializer.push(AddedNode(nid, node.details(), node.stats(),
+            self.serializer.push(feed::AddedNode(nid, node.details(), node.stats(),
                 node.hardware(), node.block_details(), node.location()));
             self.serializer.push(feed::FinalizedBlock(nid, node.finalized().height, node.finalized().hash));
         }
@@ -241,7 +250,7 @@ impl Handler<Unsubscribe> for Chain {
         let Unsubscribe(fid) = msg;
 
         if let Some(feed) = self.feeds.get(fid) {
-            self.serializer.push(UnsubscribedFrom(&self.label));
+            self.serializer.push(feed::UnsubscribedFrom(&self.label));
 
             if let Some(serialized) = self.serializer.finalize() {
                 feed.do_send(serialized);
