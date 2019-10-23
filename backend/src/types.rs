@@ -13,10 +13,10 @@ pub struct NodeDetails {
     pub version: Box<str>,
 }
 
-#[derive(Deserialize, Debug, Clone, Copy)]
+#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct NodeStats {
-    pub txcount: u64,
     pub peers: u64,
+    pub txcount: u64,
 }
 
 #[derive(Deserialize, Debug, Clone, Copy)]
@@ -65,8 +65,8 @@ impl Serialize for NodeStats {
         S: Serializer,
     {
         let mut tup = serializer.serialize_tuple(2)?;
-        tup.serialize_element(&self.txcount)?;
         tup.serialize_element(&self.peers)?;
+        tup.serialize_element(&self.txcount)?;
         tup.end()
     }
 }

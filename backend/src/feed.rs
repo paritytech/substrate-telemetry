@@ -65,6 +65,7 @@ impl FeedMessage for RemovedNode { const ACTION: u8 = 0x04; }
 impl FeedMessage for LocatedNode<'_> { const ACTION: u8 = 0x05; }
 impl FeedMessage for ImportedBlock<'_> { const ACTION: u8 = 0x06; }
 impl FeedMessage for FinalizedBlock { const ACTION: u8 = 0x07; }
+impl FeedMessage for NodeStatsUpdate<'_> { const ACTION: u8 = 0x08; }
 impl FeedMessage for Hardware<'_> { const ACTION: u8 = 0x09; }
 impl FeedMessage for TimeSync { const ACTION: u8 = 0x0A; }
 impl FeedMessage for AddedChain<'_> { const ACTION: u8 = 0x0B; }
@@ -97,6 +98,9 @@ pub struct ImportedBlock<'a>(pub NodeId, pub &'a BlockDetails);
 
 #[derive(Serialize)]
 pub struct FinalizedBlock(pub NodeId, pub BlockNumber, pub BlockHash);
+
+#[derive(Serialize)]
+pub struct NodeStatsUpdate<'a>(pub NodeId, pub &'a NodeStats);
 
 #[derive(Serialize)]
 pub struct Hardware<'a>(pub NodeId, pub NodeHardware<'a>);

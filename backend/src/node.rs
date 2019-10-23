@@ -125,6 +125,15 @@ impl Node {
         changed
     }
 
+    pub fn update_stats(&mut self, interval: &SystemInterval) -> Option<&NodeStats> {
+        if self.stats != interval.stats {
+            self.stats = interval.stats;
+            Some(&self.stats)
+        } else {
+            None
+        }
+    }
+
     pub fn update_finalized(&mut self, interval: &SystemInterval) -> Option<&Block> {
         if let (Some(height), Some(hash)) = (interval.finalized_height, interval.finalized_hash) {
             if height > self.finalized.height {

@@ -168,6 +168,10 @@ impl Handler<UpdateNode> for Chain {
                     self.serializer.push(feed::Hardware(nid, node.hardware()));
                 }
 
+                if let Some(stats) = node.update_stats(interval) {
+                    self.serializer.push(feed::NodeStatsUpdate(nid, stats));
+                }
+
                 if let Some(finalized) = node.update_finalized(interval) {
                     self.serializer.push(feed::FinalizedBlock(nid, finalized.height, finalized.hash));
 
