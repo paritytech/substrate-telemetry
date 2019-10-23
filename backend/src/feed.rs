@@ -57,22 +57,35 @@ impl FeedMessageSerializer {
     }
 }
 
-impl FeedMessage for Version { const ACTION: u8 = 0x00; }
-impl FeedMessage for BestBlock { const ACTION: u8 = 0x01; }
-impl FeedMessage for BestFinalized { const ACTION: u8 = 0x02; }
-impl FeedMessage for AddedNode<'_> { const ACTION: u8 = 0x03; }
-impl FeedMessage for RemovedNode { const ACTION: u8 = 0x04; }
-impl FeedMessage for LocatedNode<'_> { const ACTION: u8 = 0x05; }
-impl FeedMessage for ImportedBlock<'_> { const ACTION: u8 = 0x06; }
-impl FeedMessage for FinalizedBlock { const ACTION: u8 = 0x07; }
-impl FeedMessage for NodeStatsUpdate<'_> { const ACTION: u8 = 0x08; }
-impl FeedMessage for Hardware<'_> { const ACTION: u8 = 0x09; }
-impl FeedMessage for TimeSync { const ACTION: u8 = 0x0A; }
-impl FeedMessage for AddedChain<'_> { const ACTION: u8 = 0x0B; }
-impl FeedMessage for RemovedChain<'_> { const ACTION: u8 = 0x0C; }
-impl FeedMessage for SubscribedTo<'_> { const ACTION: u8 = 0x0D; }
-impl FeedMessage for UnsubscribedFrom<'_> { const ACTION: u8 = 0x0E; }
-impl FeedMessage for Pong<'_> { const ACTION: u8 = 0x0F; }
+macro_rules! actions {
+    ($($action:literal: $t:ty,)*) => {
+        $(
+            impl FeedMessage for $t {
+                const ACTION: u8 = $action;
+            }
+        )*
+    }
+}
+
+actions! {
+    0x00: Version,
+    0x01: BestBlock,
+    0x02: BestFinalized,
+    0x03: AddedNode<'_>,
+    0x04: RemovedNode,
+    0x05: LocatedNode<'_>,
+    0x06: ImportedBlock<'_>,
+    0x07: FinalizedBlock,
+    0x08: NodeStatsUpdate<'_>,
+    0x09: Hardware<'_>,
+    0x0A: TimeSync,
+    0x0B: AddedChain<'_>,
+    0x0C: RemovedChain<'_>,
+    0x0D: SubscribedTo<'_>,
+    0x0E: UnsubscribedFrom<'_>,
+    0x0F: Pong<'_>,
+    0x14: StaleNode,
+}
 
 #[derive(Serialize)]
 pub struct Version(pub usize);
@@ -122,3 +135,6 @@ pub struct UnsubscribedFrom<'a>(pub &'a str);
 
 #[derive(Serialize)]
 pub struct Pong<'a>(pub &'a str);
+
+#[derive(Serialize)]
+pub struct StaleNode(pub NodeId);
