@@ -100,6 +100,11 @@ export interface SystemInterval extends BestBlock {
   finalized_hash: Maybe<Types.BlockHash>;
 }
 
+export interface SystemNetworkState extends MessageBase {
+  msg: 'system.network_state';
+  state: Types.NetworkState;
+}
+
 export interface NodeStart extends BestBlock {
   msg: 'node.start';
 }
@@ -112,6 +117,7 @@ export interface BlockImport extends BestBlock {
 export type Message = MessageBase & (
   | SystemConnected
   | SystemInterval
+  | SystemNetworkState
   | NodeStart
   | BlockImport
   | AfgFinalized
