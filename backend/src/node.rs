@@ -6,6 +6,11 @@ pub mod connector;
 
 use message::SystemInterval;
 
+/// Minimum time between block below broadcasting updates to the browser gets throttled, in ms.
+const THROTTLE_THRESHOLD: u64 = 100;
+/// Minimum time of intervals for block updates sent to the browser when throttled, in ms.
+const THROTTLE_INTERVAL: u64 = 1000;
+
 pub struct Node {
     /// Static details
     details: NodeDetails,
@@ -15,6 +20,8 @@ pub struct Node {
     best: BlockDetails,
     /// Finalized block
     finalized: Block,
+    /// Timer for throttling block updates
+    throttle: u64,
     /// CPU use means
     cpu: MeanList<f32>,
     /// Memory use means
@@ -44,6 +51,7 @@ impl Node {
                 propagation_time: 0,
             },
             finalized: Block::zero(),
+            throttle: 0,
             cpu: MeanList::new(),
             memory: MeanList::new(),
             upload: MeanList::new(),
@@ -95,13 +103,23 @@ impl Node {
         &self.best
     }
 
-    pub fn update_block(&mut self, block: Block, timestamp: u64, propagation_time: u64) {
+    pub fn update_block(&mut self, block: Block, timestamp: u64, propagation_time: u64) -> Option<&BlockDetails> {
         if block.height > self.best.block.height {
             self.best.block = block;
             self.best.block_time = timestamp - self.best.block_timestamp;
             self.best.block_timestamp = timestamp;
             self.best.propagation_time = propagation_time;
+
+            if self.throttle < timestamp {
+                if self.best.block_time <= THROTTLE_THRESHOLD {
+                    self.throttle = timestamp + THROTTLE_INTERVAL;
+                }
+
+                return Some(&self.best);
+            }
         }
+
+        None
     }
 
     pub fn update_hardware(&mut self, interval: &SystemInterval) -> bool {
