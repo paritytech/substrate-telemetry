@@ -1,8 +1,8 @@
 use serde::Serialize;
 use serde_json::to_writer;
-use chrono::{DateTime, Utc};
 use crate::types::{
-    BlockNumber, BlockHash, NodeId, NodeDetails, NodeStats, NodeHardware, NodeLocation, BlockDetails
+    NodeId, NodeDetails, NodeStats, NodeHardware, NodeLocation,
+    BlockNumber, BlockHash, BlockDetails, Timestamp,
 };
 
 pub mod connector;
@@ -91,7 +91,7 @@ actions! {
 pub struct Version(pub usize);
 
 #[derive(Serialize)]
-pub struct BestBlock(pub BlockNumber, pub DateTime<Utc>, pub Option<u64>);
+pub struct BestBlock(pub BlockNumber, pub Timestamp, pub Option<u64>);
 
 #[derive(Serialize)]
 pub struct BestFinalized(pub BlockNumber, pub BlockHash);

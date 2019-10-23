@@ -117,8 +117,14 @@ impl Handler<AddNode> for Chain {
         if let Err(_) = msg.rec.do_send(Initialize(nid, ctx.address())) {
             self.nodes.remove(nid);
         } else if let Some(node) = self.nodes.get(nid) {
-            self.serializer.push(feed::AddedNode(nid, node.details(), node.stats(),
-                node.hardware(), node.block_details(), node.location()));
+            self.serializer.push(feed::AddedNode(
+                nid,
+                node.details(),
+                node.stats(),
+                node.hardware(),
+                node.block_details(),
+                node.location(),
+            ));
             self.broadcast();
         }
 
@@ -146,8 +152,8 @@ impl Handler<UpdateNode> for Chain {
                     self.best.height,
                     self.best.hash,
                 );
-                self.serializer.push(feed::BestBlock(self.best.height, msg.ts, None));
                 self.timestamp = time_now;
+                self.serializer.push(feed::BestBlock(self.best.height, time_now, None));
             } else if block.height == self.best.height {
                 if let Some(node) = self.nodes.get(nid) {
                     if block.height > node.best().height {
