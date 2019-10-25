@@ -13,7 +13,7 @@ pub struct NumStats<T> {
 impl<T: NumOps + Zero + Bounded + Copy + Sum + TryFrom<usize>> NumStats<T> {
     pub fn new(size: usize) -> Self {
         NumStats {
-            stack: std::iter::repeat(T::zero()).take(size).collect(),
+            stack: vec![T::zero(); size].into_boxed_slice(),
             index: 0,
             sum: T::zero(),
         }

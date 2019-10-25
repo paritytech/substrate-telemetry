@@ -248,19 +248,28 @@ impl Handler<Subscribe> for Chain {
 
     fn handle(&mut self, msg: Subscribe, ctx: &mut Self::Context) {
         let Subscribe(feed) = msg;
-
         let fid = self.feeds.add(feed.clone());
 
         feed.do_send(Subscribed(fid, ctx.address().recipient()));
 
         self.serializer.push(feed::SubscribedTo(&self.label));
         self.serializer.push(feed::TimeSync(now()));
-        self.serializer.push(feed::BestBlock(self.best.height, self.timestamp.unwrap_or_else(|| 0), self.average_block_time));
+        self.serializer.push(feed::BestBlock(
+            self.best.height,
+            self.timestamp.unwrap_or_else(|| 0),
+            self.average_block_time,
+        ));
         self.serializer.push(feed::BestFinalized(self.finalized.height, self.finalized.hash));
 
         for (nid, node) in self.nodes.iter() {
-            self.serializer.push(feed::AddedNode(nid, node.details(), node.stats(),
-                node.hardware(), node.block_details(), node.location()));
+            self.serializer.push(feed::AddedNode(
+                nid,
+                node.details(),
+                node.stats(),
+                node.hardware(),
+                node.block_details(),
+                node.location(),
+            ));
             self.serializer.push(feed::FinalizedBlock(nid, node.finalized().height, node.finalized().hash));
         }
 
