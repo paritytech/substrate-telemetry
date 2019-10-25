@@ -167,7 +167,7 @@ impl Handler<UpdateNode> for Chain {
                 );
                 self.update_average_block_time(time_now);
                 self.timestamp = Some(time_now);
-                self.serializer.push(feed::BestBlock(self.best.height, Some(time_now), self.average_block_time));
+                self.serializer.push(feed::BestBlock(self.best.height, time_now, self.average_block_time));
             } else if block.height == self.best.height {
                 if let Some(node) = self.nodes.get(nid) {
                     if block.height > node.best().height {
@@ -255,7 +255,7 @@ impl Handler<Subscribe> for Chain {
 
         self.serializer.push(feed::SubscribedTo(&self.label));
         self.serializer.push(feed::TimeSync(now()));
-        self.serializer.push(feed::BestBlock(self.best.height, self.timestamp, self.average_block_time));
+        self.serializer.push(feed::BestBlock(self.best.height, self.timestamp.unwrap_or_else(|| 0), self.average_block_time));
         self.serializer.push(feed::BestFinalized(self.finalized.height, self.finalized.hash));
 
         for (nid, node) in self.nodes.iter() {

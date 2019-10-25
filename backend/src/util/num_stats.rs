@@ -22,8 +22,7 @@ impl<T: NumOps + Zero + Bounded + Copy + Sum + TryFrom<usize>> NumStats<T> {
     pub fn push(&mut self, val: T) {
         let slot = &mut self.stack[self.index % self.stack.len()];
 
-        self.sum = self.sum - *slot;
-        self.sum = self.sum + val;
+        self.sum = self.sum - *slot + val;
 
         *slot = val;
 
