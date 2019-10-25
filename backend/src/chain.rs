@@ -5,8 +5,8 @@ use crate::aggregator::{Aggregator, DropChain, NodeCount};
 use crate::node::{Node, connector::Initialize, message::{NodeMessage, Details}};
 use crate::feed::connector::{FeedId, FeedConnector, Subscribed, Unsubscribed};
 use crate::feed::{self, FeedMessageSerializer};
-use crate::util::{DenseMap, now};
-use crate::types::{NodeId, NodeDetails, NodeLocation, Block};
+use crate::util::{DenseMap, NumStats, now};
+use crate::types::{NodeId, NodeDetails, NodeLocation, Block, Timestamp};
 
 pub type ChainId = usize;
 pub type Label = Arc<str>;
@@ -25,10 +25,14 @@ pub struct Chain {
     best: Block,
     /// Finalized block
     finalized: Block,
+    /// Block times history, stored so we can calculate averages
+    block_times: NumStats<u64>,
+    /// Calculated average block time
+    average_block_time: Option<u64>,
     /// Message serializer
     serializer: FeedMessageSerializer,
     /// When the best block first arrived
-    timestamp: u64,
+    timestamp: Option<Timestamp>,
 }
 
 impl Chain {
@@ -43,8 +47,10 @@ impl Chain {
             feeds: DenseMap::new(),
             best: Block::zero(),
             finalized: Block::zero(),
+            block_times: NumStats::new(20),
+            average_block_time: None,
             serializer: FeedMessageSerializer::new(),
-            timestamp: now(),
+            timestamp: None,
         }
     }
 
@@ -60,6 +66,13 @@ impl Chain {
     /// propagate new counts to all connected feeds
     fn update_count(&self) {
         self.aggregator.do_send(NodeCount(self.cid, self.nodes.len()));
+    }
+
+    fn update_average_block_time(&mut self, now: u64) {
+        if let Some(timestamp) = self.timestamp {
+            self.block_times.push(now - timestamp);
+            self.average_block_time = Some(self.block_times.average());
+        }
     }
 }
 
@@ -152,12 +165,15 @@ impl Handler<UpdateNode> for Chain {
                     self.best.height,
                     self.best.hash,
                 );
-                self.timestamp = time_now;
-                self.serializer.push(feed::BestBlock(self.best.height, time_now, None));
+                self.update_average_block_time(time_now);
+                self.timestamp = Some(time_now);
+                self.serializer.push(feed::BestBlock(self.best.height, Some(time_now), self.average_block_time));
             } else if block.height == self.best.height {
                 if let Some(node) = self.nodes.get(nid) {
                     if block.height > node.best().height {
-                        propagation_time = time_now - self.timestamp;
+                        if let Some(timestamp) = self.timestamp {
+                            propagation_time = time_now - timestamp;
+                        }
                     }
                 }
             }
@@ -239,7 +255,7 @@ impl Handler<Subscribe> for Chain {
 
         self.serializer.push(feed::SubscribedTo(&self.label));
         self.serializer.push(feed::TimeSync(now()));
-        // self.serializer.push(feed::BestBlock());
+        self.serializer.push(feed::BestBlock(self.best.height, self.timestamp, self.average_block_time));
         self.serializer.push(feed::BestFinalized(self.finalized.height, self.finalized.hash));
 
         for (nid, node) in self.nodes.iter() {

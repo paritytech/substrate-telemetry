@@ -91,7 +91,7 @@ actions! {
 pub struct Version(pub usize);
 
 #[derive(Serialize)]
-pub struct BestBlock(pub BlockNumber, pub Timestamp, pub Option<u64>);
+pub struct BestBlock(pub BlockNumber, pub Option<Timestamp>, pub Option<u64>);
 
 #[derive(Serialize)]
 pub struct BestFinalized(pub BlockNumber, pub BlockHash);
