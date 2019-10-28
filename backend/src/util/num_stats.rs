@@ -35,4 +35,9 @@ impl<T: NumOps + Zero + Bounded + Copy + Sum + TryFrom<usize>> NumStats<T> {
 
         self.sum / cap
     }
+
+    pub fn reset(&mut self) {
+        self.index = 0;
+        self.sum = T::zero();
+    }
 }

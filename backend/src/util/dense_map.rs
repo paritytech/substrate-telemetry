@@ -62,6 +62,12 @@ impl<T> DenseMap<T> {
         })
     }
 
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (Id, &mut T)> + '_ {
+        self.items.iter_mut().enumerate().filter_map(|(id, item)| {
+            Some((id, item.as_mut()?))
+        })
+    }
+
     pub fn len(&self) -> usize {
         self.items.len() - self.retired.len()
     }

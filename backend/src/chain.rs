@@ -8,6 +8,8 @@ use crate::feed::{self, FeedMessageSerializer};
 use crate::util::{DenseMap, NumStats, now};
 use crate::types::{NodeId, NodeDetails, NodeLocation, Block, Timestamp};
 
+const STALE_TIMEOUT: u64 = 2 * 60 * 1000; // 2 minutes
+
 pub type ChainId = usize;
 pub type Label = Arc<str>;
 
@@ -47,7 +49,7 @@ impl Chain {
             feeds: DenseMap::new(),
             best: Block::zero(),
             finalized: Block::zero(),
-            block_times: NumStats::new(20),
+            block_times: NumStats::new(50),
             average_block_time: None,
             serializer: FeedMessageSerializer::new(),
             timestamp: None,
@@ -72,6 +74,48 @@ impl Chain {
         if let Some(timestamp) = self.timestamp {
             self.block_times.push(now - timestamp);
             self.average_block_time = Some(self.block_times.average());
+        }
+    }
+
+    /// Check if the chain is stale (has not received a new best block in a while).
+    /// If so, find a new best block, ignoring any stale nodes and marking them as such.
+    fn update_stale_nodes(&mut self, now: u64) {
+        let threshold = now - STALE_TIMEOUT;
+        let timestamp = match self.timestamp {
+            Some(ts) => ts,
+            None => return,
+        };
+
+        if timestamp > threshold {
+            // Timestamp is in range, nothing to do
+            return;
+        }
+
+        let mut best = Block::zero();
+        let mut finalized = Block::zero();
+
+        for (nid, node) in self.nodes.iter_mut() {
+            if !node.update_stale(threshold) {
+                if node.best().height > best.height {
+                    best = *node.best();
+                }
+
+                if node.finalized().height > finalized.height {
+                    finalized = *node.finalized();
+                }
+            } else {
+                self.serializer.push(feed::StaleNode(nid));
+            }
+        }
+
+        if self.best.height != 0 || self.finalized.height != 0 {
+            self.best = best;
+            self.finalized = finalized;
+            self.block_times.reset();
+            self.timestamp = None;
+
+            self.serializer.push(feed::BestBlock(self.best.height, now, None));
+            self.serializer.push(feed::BestFinalized(finalized.height, finalized.hash));
         }
     }
 }
@@ -153,7 +197,9 @@ impl Handler<UpdateNode> for Chain {
 
         if let Some(block) = msg.details.best_block() {
             let mut propagation_time = 0;
-            let time_now = now();
+            let now = now();
+
+            self.update_stale_nodes(now);
 
             if block.height > self.best.height {
                 self.best = *block;
@@ -165,21 +211,17 @@ impl Handler<UpdateNode> for Chain {
                     self.best.height,
                     self.best.hash,
                 );
-                self.update_average_block_time(time_now);
-                self.timestamp = Some(time_now);
-                self.serializer.push(feed::BestBlock(self.best.height, time_now, self.average_block_time));
+                self.update_average_block_time(now);
+                self.timestamp = Some(now);
+                self.serializer.push(feed::BestBlock(self.best.height, now, self.average_block_time));
             } else if block.height == self.best.height {
-                if let Some(node) = self.nodes.get(nid) {
-                    if block.height > node.best().height {
-                        if let Some(timestamp) = self.timestamp {
-                            propagation_time = time_now - timestamp;
-                        }
-                    }
+                if let Some(timestamp) = self.timestamp {
+                    propagation_time = now - timestamp;
                 }
             }
 
             if let Some(node) = self.nodes.get_mut(nid) {
-                if let Some(details) = node.update_block(*block, time_now, propagation_time) {
+                if let Some(details) = node.update_block(*block, now, propagation_time) {
                     self.serializer.push(feed::ImportedBlock(nid, details));
                 }
             }
@@ -271,6 +313,9 @@ impl Handler<Subscribe> for Chain {
                 node.location(),
             ));
             self.serializer.push(feed::FinalizedBlock(nid, node.finalized().height, node.finalized().hash));
+            if node.stale() {
+                self.serializer.push(feed::StaleNode(nid));
+            }
         }
 
         if let Some(serialized) = self.serializer.finalize() {

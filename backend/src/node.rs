@@ -34,6 +34,8 @@ pub struct Node {
     chart_stamps: MeanList<f64>,
     /// Physical location details
     location: Option<NodeLocation>,
+    /// Flag marking if the node is stale (not syncing or producing blocks)
+    stale: bool,
 }
 
 impl Node {
@@ -58,6 +60,7 @@ impl Node {
             download: MeanList::new(),
             chart_stamps: MeanList::new(),
             location: None,
+            stale: false,
         }
     }
 
@@ -105,6 +108,7 @@ impl Node {
 
     pub fn update_block(&mut self, block: Block, timestamp: u64, propagation_time: u64) -> Option<&BlockDetails> {
         if block.height > self.best.block.height {
+            self.stale = false;
             self.best.block = block;
             self.best.block_time = timestamp - self.best.block_timestamp;
             self.best.block_timestamp = timestamp;
@@ -162,5 +166,17 @@ impl Node {
         }
 
         None
+    }
+
+    pub fn update_stale(&mut self, threshold: u64) -> bool {
+        if self.best.block_timestamp < threshold {
+            self.stale = true;
+        }
+
+        self.stale
+    }
+
+    pub fn stale(&self) -> bool {
+        self.stale
     }
 }
