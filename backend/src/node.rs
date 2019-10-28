@@ -36,6 +36,8 @@ pub struct Node {
     location: Option<NodeLocation>,
     /// Flag marking if the node is stale (not syncing or producing blocks)
     stale: bool,
+    /// Network state
+    network_state: Option<Box<str>>,
 }
 
 impl Node {
@@ -61,6 +63,7 @@ impl Node {
             chart_stamps: MeanList::new(),
             location: None,
             stale: false,
+            network_state: None,
         }
     }
 
@@ -96,10 +99,6 @@ impl Node {
 
     pub fn update_location(&mut self, location: NodeLocation) {
         self.location = Some(location);
-    }
-
-    pub fn block_time(&self) -> u64 {
-        self.best.block_time
     }
 
     pub fn block_details(&self) -> &BlockDetails {
@@ -178,5 +177,9 @@ impl Node {
 
     pub fn stale(&self) -> bool {
         self.stale
+    }
+
+    pub fn network_state(&self) -> Option<&'static str> {
+        Some("Hello Telemetry")
     }
 }

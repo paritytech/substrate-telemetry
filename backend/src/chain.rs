@@ -165,6 +165,12 @@ pub struct LocateNode {
     pub location: NodeLocation,
 }
 
+pub struct GetNodeNetworkState(pub NodeId);
+
+impl Message for GetNodeNetworkState {
+    type Result = Option<Box<str>>;
+}
+
 impl Handler<AddNode> for Chain {
     type Result = ();
 
@@ -339,5 +345,15 @@ impl Handler<Unsubscribe> for Chain {
         }
 
         self.feeds.remove(fid);
+    }
+}
+
+impl Handler<GetNodeNetworkState> for Chain {
+    type Result = Option<Box<str>>;
+
+    fn handle(&mut self, msg: GetNodeNetworkState, _: &mut Self::Context) -> Self::Result {
+        let GetNodeNetworkState(nid) = msg;
+
+        self.nodes.get(nid)?.network_state().map(Into::into)
     }
 }

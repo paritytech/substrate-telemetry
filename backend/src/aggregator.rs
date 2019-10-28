@@ -5,8 +5,8 @@ use crate::node::connector::Initialize;
 use crate::feed::connector::{FeedConnector, Connected, FeedId};
 use crate::util::DenseMap;
 use crate::feed::{self, FeedMessageSerializer};
-use crate::chain::{self, Chain, ChainId, Label};
-use crate::types::NodeDetails;
+use crate::chain::{self, Chain, ChainId, Label, GetNodeNetworkState};
+use crate::types::{NodeDetails, NodeId};
 
 pub struct Aggregator {
     labels: HashMap<Label, ChainId>,
@@ -111,6 +111,13 @@ pub struct Disconnect(pub FeedId);
 #[derive(Message)]
 pub struct NodeCount(pub ChainId, pub usize);
 
+/// Message sent to the Aggregator to get the network state of a particular node
+pub struct GetNetworkState(pub Box<str>, pub NodeId);
+
+impl Message for GetNetworkState {
+    type Result = Option<Request<Chain, GetNodeNetworkState>>;
+}
+
 impl Handler<AddNode> for Aggregator {
     type Result = ();
 
@@ -203,5 +210,15 @@ impl Handler<NodeCount> for Aggregator {
                 self.broadcast();
             }
         }
+    }
+}
+
+impl Handler<GetNetworkState> for Aggregator {
+    type Result = <GetNetworkState as Message>::Result;
+
+    fn handle(&mut self, msg: GetNetworkState, _: &mut Self::Context) -> Self::Result {
+        let GetNetworkState(chain, nid) = msg;
+
+        Some(self.get_chain(&*chain)?.addr.send(GetNodeNetworkState(nid)))
     }
 }

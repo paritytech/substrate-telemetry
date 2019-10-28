@@ -17,8 +17,9 @@ mod util;
 
 use node::connector::NodeConnector;
 use feed::connector::FeedConnector;
-use aggregator::Aggregator;
-use crate::util::{Locator, LocatorFactory};
+use aggregator::{Aggregator, GetNetworkState};
+use util::{Locator, LocatorFactory};
+use types::NodeId;
 
 /// Entry point for connecting nodes
 fn node_route(
@@ -55,6 +56,24 @@ fn feed_route(
     )
 }
 
+fn state_route(
+    path: web::Path<(Box<str>, NodeId)>,
+    aggregator: web::Data<Addr<Aggregator>>
+) -> impl Future<Item = HttpResponse, Error = Error> {
+    let (chain, nid) = path.into_inner();
+
+    aggregator
+        .send(GetNetworkState(chain, nid))
+        .flatten()
+        .from_err()
+        .and_then(|res| {
+            match res {
+                Some(Some(state)) => HttpResponse::Ok().body(String::from(state)),
+                _ => HttpResponse::Ok().body("Node has disconnected or has not submitted its network state yet"),
+            }
+        })
+}
+
 fn main() -> std::io::Result<()> {
     simple_logger::init_with_level(log::Level::Info).expect("Must be able to start a logger");
 
@@ -69,7 +88,8 @@ fn main() -> std::io::Result<()> {
             .data(locator.clone())
             .service(web::resource("/submit").route(web::get().to(node_route)))
             .service(web::resource("/feed").route(web::get().to(feed_route)))
-
+            .service(web::resource("/network_state/{chain}/{nid}").route(web::get().to_async(state_route)))
+            .service(web::resource("/network_state/{chain}/{nid}/").route(web::get().to_async(state_route)))
     })
     .bind("127.0.0.1:8080")?
     .start();

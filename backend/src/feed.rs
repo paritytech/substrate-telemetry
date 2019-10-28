@@ -51,7 +51,7 @@ impl FeedMessageSerializer {
 
         self.buffer.push(b']');
         let bytes = self.buffer[..].into();
-        self.buffer.clear();
+        self.clear();
 
         Some(Serialized(bytes))
     }
