@@ -9,6 +9,7 @@ import {
   Message,
   BestBlock,
   SystemInterval,
+  SystemNetworkState,
   AfgFinalized,
   AfgReceivedPrecommit,
   AfgReceivedPrevote,
@@ -249,6 +250,10 @@ export default class Node {
       this.onSystemInterval(message);
     }
 
+    if (message.msg === 'system.network_state') {
+      this.onSystemNetworkState(message);
+    }
+
     if (message.msg === 'afg.finalized') {
       this.onAfgFinalized(message);
     }
@@ -306,6 +311,10 @@ export default class Node {
         this.events.emit('hardware');
       }
     }
+  }
+
+  private onSystemNetworkState(message: SystemNetworkState) {
+    this.networkState = message.state;
   }
 
   public isAuthority(): boolean {
