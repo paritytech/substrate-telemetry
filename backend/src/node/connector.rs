@@ -1,6 +1,7 @@
 use std::time::{Duration, Instant};
 use std::net::Ipv4Addr;
 
+use bytes::Bytes;
 use actix::prelude::*;
 use actix_web_actors::ws;
 use crate::aggregator::{Aggregator, AddNode};
@@ -71,11 +72,12 @@ impl NodeConnector {
         });
     }
 
-    fn handle_message(&mut self, msg: NodeMessage, ctx: &mut <Self as Actor>::Context) {
+    fn handle_message(&mut self, msg: NodeMessage, data: Bytes, ctx: &mut <Self as Actor>::Context) {
         if let Some(chain) = self.chain.as_ref() {
             chain.do_send(UpdateNode {
                 nid: self.nid,
                 msg,
+                raw: Some(data)
             });
 
             return;
@@ -103,7 +105,7 @@ impl Handler<Initialize> for NodeConnector {
         let Initialize(nid, chain) = msg;
 
         for msg in self.backlog.drain(..) {
-            chain.do_send(UpdateNode { nid, msg });
+            chain.do_send(UpdateNode { nid, msg, raw: None });
         }
 
         // At this point backlog should never be used again, so we can free the memory
@@ -121,27 +123,27 @@ impl Handler<Initialize> for NodeConnector {
 
 impl StreamHandler<ws::Message, ws::ProtocolError> for NodeConnector {
     fn handle(&mut self, msg: ws::Message, ctx: &mut Self::Context) {
-        let msg = match msg {
+        let data = match msg {
             ws::Message::Ping(msg) => {
                 self.hb = Instant::now();
                 ctx.pong(&msg);
-                None
+                return;
             }
             ws::Message::Pong(_) => {
                 self.hb = Instant::now();
-                None
+                return;
             }
-            ws::Message::Text(text) => serde_json::from_str(&text).ok(),
-            ws::Message::Binary(data) => serde_json::from_slice(&data).ok(),
+            ws::Message::Text(text) => text.into(),
+            ws::Message::Binary(data) => data,
             ws::Message::Close(_) => {
                 ctx.stop();
-                None
+                return;
             }
-            ws::Message::Nop => None,
+            ws::Message::Nop => return,
         };
 
-        if let Some(msg) = msg {
-            self.handle_message(msg, ctx);
+        if let Ok(msg) = serde_json::from_slice(&data) {
+            self.handle_message(msg, data, ctx);
         }
     }
 }

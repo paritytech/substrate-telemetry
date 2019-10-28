@@ -1,3 +1,5 @@
+use bytes::Bytes;
+
 use crate::types::{NodeId, NodeDetails, NodeStats, NodeHardware, NodeLocation, BlockDetails, Block};
 use crate::util::{MeanList, now};
 
@@ -37,7 +39,7 @@ pub struct Node {
     /// Flag marking if the node is stale (not syncing or producing blocks)
     stale: bool,
     /// Network state
-    network_state: Option<Box<str>>,
+    pub network_state: Option<Bytes>,
 }
 
 impl Node {
@@ -63,7 +65,7 @@ impl Node {
             chart_stamps: MeanList::new(),
             location: None,
             stale: false,
-            network_state: None,
+            network_state: Some("Arced Hello!".into()),
         }
     }
 
@@ -177,9 +179,5 @@ impl Node {
 
     pub fn stale(&self) -> bool {
         self.stale
-    }
-
-    pub fn network_state(&self) -> Option<&'static str> {
-        Some("Hello Telemetry")
     }
 }

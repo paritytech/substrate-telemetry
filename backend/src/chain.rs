@@ -1,5 +1,6 @@
 use actix::prelude::*;
 use std::sync::Arc;
+use bytes::Bytes;
 
 use crate::aggregator::{Aggregator, DropChain, NodeCount};
 use crate::node::{Node, connector::Initialize, message::{NodeMessage, Details}};
@@ -144,6 +145,7 @@ pub struct AddNode {
 pub struct UpdateNode {
     pub nid: NodeId,
     pub msg: NodeMessage,
+    pub raw: Option<Bytes>,
 }
 
 /// Message sent from the NodeConnector to the Chain when the connector disconnects
@@ -168,7 +170,7 @@ pub struct LocateNode {
 pub struct GetNodeNetworkState(pub NodeId);
 
 impl Message for GetNodeNetworkState {
-    type Result = Option<Box<str>>;
+    type Result = Option<Bytes>;
 }
 
 impl Handler<AddNode> for Chain {
@@ -199,7 +201,7 @@ impl Handler<UpdateNode> for Chain {
     type Result = ();
 
     fn handle(&mut self, msg: UpdateNode, _: &mut Self::Context) {
-        let UpdateNode { nid, msg } = msg;
+        let UpdateNode { nid, msg, raw } = msg;
 
         if let Some(block) = msg.details.best_block() {
             let mut propagation_time = 0;
@@ -235,6 +237,8 @@ impl Handler<UpdateNode> for Chain {
 
         if let Some(node) = self.nodes.get_mut(nid) {
             if let Details::SystemInterval(ref interval) = msg.details {
+                node.network_state = raw;
+
                 if node.update_hardware(interval) {
                     self.serializer.push(feed::Hardware(nid, node.hardware()));
                 }
@@ -349,11 +353,11 @@ impl Handler<Unsubscribe> for Chain {
 }
 
 impl Handler<GetNodeNetworkState> for Chain {
-    type Result = Option<Box<str>>;
+    type Result = <GetNodeNetworkState as Message>::Result;
 
     fn handle(&mut self, msg: GetNodeNetworkState, _: &mut Self::Context) -> Self::Result {
         let GetNodeNetworkState(nid) = msg;
 
-        self.nodes.get(nid)?.network_state().map(Into::into)
+        self.nodes.get(nid)?.network_state.clone()
     }
 }

@@ -68,7 +68,7 @@ fn state_route(
         .from_err()
         .and_then(|res| {
             match res {
-                Some(Some(state)) => HttpResponse::Ok().body(String::from(state)),
+                Some(Some(state)) => HttpResponse::Ok().content_type("application/json").body(state),
                 _ => HttpResponse::Ok().body("Node has disconnected or has not submitted its network state yet"),
             }
         })
