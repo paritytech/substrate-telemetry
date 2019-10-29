@@ -391,8 +391,6 @@ export class Connection {
       ? event.data as any as FeedMessage.Data
       : Connection.utf8decoder.decode(event.data) as any as FeedMessage.Data;
 
-    console.log('messages', data);
-
     this.handleMessages(FeedMessage.deserialize(data));
   }
 
