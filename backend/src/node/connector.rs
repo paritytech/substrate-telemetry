@@ -66,8 +66,6 @@ impl NodeConnector {
             if Instant::now().duration_since(act.hb) > CLIENT_TIMEOUT {
                 // stop actor
                 ctx.stop();
-            } else {
-                ctx.ping("")
             }
         });
     }
@@ -103,13 +101,11 @@ impl Handler<Initialize> for NodeConnector {
 
     fn handle(&mut self, msg: Initialize, _: &mut Self::Context) {
         let Initialize(nid, chain) = msg;
+        let backlog = std::mem::replace(&mut self.backlog, Vec::new());
 
-        for msg in self.backlog.drain(..) {
+        for msg in backlog {
             chain.do_send(UpdateNode { nid, msg, raw: None });
         }
-
-        // At this point backlog should never be used again, so we can free the memory
-        self.backlog.shrink_to_fit();
 
         self.nid = nid;
         self.chain = Some(chain.clone());
@@ -143,6 +139,7 @@ impl StreamHandler<ws::Message, ws::ProtocolError> for NodeConnector {
         };
 
         if let Ok(msg) = serde_json::from_slice(&data) {
+            self.hb = Instant::now();
             self.handle_message(msg, data, ctx);
         }
     }

@@ -50,6 +50,14 @@ pub struct SystemInterval {
     pub finalized_hash: Option<BlockHash>,
     #[serde(flatten)]
     pub block: Block,
+    pub network_state: Option<NetworkState>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct NetworkState {
+    /// We expect this field to not exist on the data, it's only here to enable
+    /// `network_state` on `SystemInterval` to be set to `Some`.
+    pub _fake_field: Option<usize>,
 }
 
 impl Block {

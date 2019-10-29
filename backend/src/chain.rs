@@ -237,8 +237,10 @@ impl Handler<UpdateNode> for Chain {
 
         if let Some(node) = self.nodes.get_mut(nid) {
             if let Details::SystemInterval(ref interval) = msg.details {
-                if let Some(raw) = raw {
-                    node.set_network_state(raw);
+                if interval.network_state.is_some() {
+                    if let Some(raw) = raw {
+                        node.set_network_state(raw);
+                    }
                 }
 
                 if node.update_hardware(interval) {
