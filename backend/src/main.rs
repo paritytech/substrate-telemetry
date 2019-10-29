@@ -29,6 +29,7 @@ fn node_route(
     locator: web::Data<Addr<Locator>>,
 ) -> Result<HttpResponse, Error> {
     let ip = req.connection_info().remote().and_then(|addr| {
+        info!("Feed connected {}", addr);
         addr.parse::<SocketAddrV4>().ok().map(|socket| *socket.ip())
     });
 
