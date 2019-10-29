@@ -39,7 +39,7 @@ fn node_route(
     Ok(res.streaming(ws::WebsocketContext::with_codec(
         NodeConnector::new(aggregator, locator, ip),
         stream,
-        Codec::new().max_size(1024 * 1024), // 1mb frame limit
+        Codec::new().max_size(10 * 1024 * 1024), // 10mb frame limit
     )))
 }
 
