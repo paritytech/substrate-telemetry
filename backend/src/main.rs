@@ -7,7 +7,6 @@ use actix::prelude::*;
 use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Error};
 use actix_web_actors::ws;
 use actix_http::ws::Codec;
-use bytes::Bytes;
 
 mod types;
 mod aggregator;
@@ -68,32 +67,11 @@ fn state_route(
         .flatten()
         .from_err()
         .and_then(|data| {
-            match data.and_then(|nested| nested).and_then(get_network_state) {
+            match data.and_then(|nested| nested) {
                 Some(body) => HttpResponse::Ok().content_type("application/json").body(body),
                 None => HttpResponse::Ok().body("Node has disconnected or has not submitted its network state yet"),
             }
         })
-}
-
-fn get_network_state(raw: Bytes) -> Option<Bytes> {
-    const NEEDLE: &[u8] = b"\"network_state\":";
-
-    let mut search: &[u8] = &*raw;
-    let mut offset = 0;
-
-    while !search.starts_with(NEEDLE) {
-        offset += 1;
-        search = search.get(1..)?;
-    }
-
-    let end = raw.len() - 2;
-    let start = offset + NEEDLE.len();
-
-    if start > end {
-        return None;
-    }
-
-    Some(raw.slice(start, end))
 }
 
 fn main() -> std::io::Result<()> {

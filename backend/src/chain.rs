@@ -237,7 +237,9 @@ impl Handler<UpdateNode> for Chain {
 
         if let Some(node) = self.nodes.get_mut(nid) {
             if let Details::SystemInterval(ref interval) = msg.details {
-                node.network_state = raw;
+                if let Some(raw) = raw {
+                    node.set_network_state(raw);
+                }
 
                 if node.update_hardware(interval) {
                     self.serializer.push(feed::Hardware(nid, node.hardware()));
@@ -358,6 +360,6 @@ impl Handler<GetNodeNetworkState> for Chain {
     fn handle(&mut self, msg: GetNodeNetworkState, _: &mut Self::Context) -> Self::Result {
         let GetNodeNetworkState(nid) = msg;
 
-        self.nodes.get(nid)?.network_state.clone()
+        self.nodes.get(nid)?.network_state()
     }
 }

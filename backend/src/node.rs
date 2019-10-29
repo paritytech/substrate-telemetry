@@ -65,7 +65,7 @@ impl Node {
             chart_stamps: MeanList::new(),
             location: None,
             stale: false,
-            network_state: Some("Arced Hello!".into()),
+            network_state: None,
         }
     }
 
@@ -179,5 +179,32 @@ impl Node {
 
     pub fn stale(&self) -> bool {
         self.stale
+    }
+
+    pub fn set_network_state(&mut self, state: Bytes) {
+        self.network_state = Some(state);
+    }
+
+    pub fn network_state(&self) -> Option<Bytes> {
+        const NEEDLE: &[u8] = b"\"network_state\":";
+
+        let raw = self.network_state.as_ref()?;
+
+        let mut search: &[u8] = &**raw;
+        let mut offset = 0;
+
+        while !search.starts_with(NEEDLE) {
+            offset += 1;
+            search = search.get(1..)?;
+        }
+
+        let end = raw.len() - 2;
+        let start = offset + NEEDLE.len();
+
+        if start > end {
+            return None;
+        }
+
+        Some(raw.slice(start, end))
     }
 }
