@@ -96,7 +96,7 @@ fn main() -> std::io::Result<()> {
             .service(web::resource("/network_state/{chain}/{nid}").route(web::get().to_async(state_route)))
             .service(web::resource("/network_state/{chain}/{nid}/").route(web::get().to_async(state_route)))
     })
-    .bind("127.0.0.1:8000")?
+    .bind("0.0.0.0:8000")?
     .start();
 
     sys.run()
