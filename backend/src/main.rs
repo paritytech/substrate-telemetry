@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate log;
 
-use std::net::SocketAddrV4;
+use std::net::Ipv4Addr;
 
 use actix::prelude::*;
 use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Error};
@@ -28,9 +28,11 @@ fn node_route(
     aggregator: web::Data<Addr<Aggregator>>,
     locator: web::Data<Addr<Locator>>,
 ) -> Result<HttpResponse, Error> {
-    let ip = req.connection_info().remote().and_then(|addr| {
-        info!("Feed connected {}", addr);
-        addr.parse::<SocketAddrV4>().ok().map(|socket| *socket.ip())
+    let ip = req.connection_info().remote().and_then(|mut addr| {
+        if let Some(port_idx) = addr.find(":") {
+            addr = &addr[..port_idx];
+        }
+        addr.parse::<Ipv4Addr>().ok()
     });
 
     let mut res = ws::handshake(&req)?;
