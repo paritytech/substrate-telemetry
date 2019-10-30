@@ -164,7 +164,7 @@ pub struct Unsubscribe(pub FeedId);
 #[derive(Message)]
 pub struct LocateNode {
     pub nid: NodeId,
-    pub location: NodeLocation,
+    pub location: Arc<NodeLocation>,
 }
 
 pub struct GetNodeNetworkState(pub NodeId);

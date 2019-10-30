@@ -1,4 +1,5 @@
 use bytes::Bytes;
+use std::sync::Arc;
 
 use crate::types::{NodeId, NodeDetails, NodeStats, NodeHardware, NodeLocation, BlockDetails, Block};
 use crate::util::{MeanList, now};
@@ -35,7 +36,7 @@ pub struct Node {
     /// Stampchange uses means
     chart_stamps: MeanList<f64>,
     /// Physical location details
-    location: Option<NodeLocation>,
+    location: Option<Arc<NodeLocation>>,
     /// Flag marking if the node is stale (not syncing or producing blocks)
     stale: bool,
     /// Network state
@@ -96,10 +97,13 @@ impl Node {
     }
 
     pub fn location(&self) -> Option<&NodeLocation> {
-        self.location.as_ref()
+        match self.location {
+            Some(ref location) => Some(&**location),
+            None => None
+        }
     }
 
-    pub fn update_location(&mut self, location: NodeLocation) {
+    pub fn update_location(&mut self, location: Arc<NodeLocation>) {
         self.location = Some(location);
     }
 
