@@ -78,6 +78,8 @@ fn state_route(
 }
 
 fn main() -> std::io::Result<()> {
+    use web::{resource, get};
+
     simple_logger::init_with_level(log::Level::Info).expect("Must be able to start a logger");
 
     let sys = System::new("substrate-telemetry");
@@ -89,12 +91,12 @@ fn main() -> std::io::Result<()> {
         App::new()
             .data(aggregator.clone())
             .data(locator.clone())
-            .service(web::resource("/submit").route(web::get().to(node_route)))
-            .service(web::resource("/submit/").route(web::get().to(node_route)))
-            .service(web::resource("/feed").route(web::get().to(feed_route)))
-            .service(web::resource("/feed/").route(web::get().to(feed_route)))
-            .service(web::resource("/network_state/{chain}/{nid}").route(web::get().to_async(state_route)))
-            .service(web::resource("/network_state/{chain}/{nid}/").route(web::get().to_async(state_route)))
+            .service(resource("/submit").route(get().to(node_route)))
+            .service(resource("/submit/").route(get().to(node_route)))
+            .service(resource("/feed").route(get().to(feed_route)))
+            .service(resource("/feed/").route(get().to(feed_route)))
+            .service(resource("/network_state/{chain}/{nid}").route(get().to_async(state_route)))
+            .service(resource("/network_state/{chain}/{nid}/").route(get().to_async(state_route)))
     })
     .bind("0.0.0.0:8000")?
     .start();
