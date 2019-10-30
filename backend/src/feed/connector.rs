@@ -83,10 +83,21 @@ impl FeedConnector {
                     hash => self.chain_hash = hash,
                 }
 
-                self.aggregator.do_send(Subscribe {
+                self.aggregator.send(Subscribe {
                     chain: payload.into(),
                     feed: ctx.address(),
-                });
+                })
+                .into_actor(self)
+                .then(|res, actor, _| {
+                    match res {
+                        Ok(true) => (),
+                        // Chain not found, reset hash
+                        _ => actor.chain_hash = 0,
+                    }
+
+                    fut::ok(())
+                })
+                .wait(ctx);
             }
             "ping" => {
                 self.serializer.push(Pong(payload));

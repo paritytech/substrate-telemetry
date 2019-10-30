@@ -93,10 +93,13 @@ pub struct AddNode {
 pub struct DropChain(pub Label);
 
 /// Message sent from the FeedConnector to the Aggregator when subscribing to a new chain
-#[derive(Message)]
 pub struct Subscribe {
     pub chain: Label,
     pub feed: Addr<FeedConnector>,
+}
+
+impl Message for Subscribe {
+    type Result = bool;
 }
 
 /// Message sent from the FeedConnector to the Aggregator when first connected
@@ -148,13 +151,16 @@ impl Handler<DropChain> for Aggregator {
 }
 
 impl Handler<Subscribe> for Aggregator {
-    type Result = ();
+    type Result = bool;
 
-    fn handle(&mut self, msg: Subscribe, _: &mut Self::Context) {
+    fn handle(&mut self, msg: Subscribe, _: &mut Self::Context) -> bool {
         let Subscribe { chain, feed } = msg;
 
         if let Some(chain) = self.get_chain(&chain) {
             chain.addr.do_send(chain::Subscribe(feed));
+            true
+        } else {
+            false
         }
     }
 }
