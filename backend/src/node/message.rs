@@ -56,9 +56,16 @@ pub struct SystemInterval {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct NetworkState {
-    /// We expect this field to not exist on the data, it's only here to enable
-    /// `network_state` on `SystemInterval` to be set to `Some`.
+#[serde(untagged)]
+pub enum NetworkState {
+    String(Box<str>),
+    Object(Ignore),
+}
+
+#[derive(Deserialize, Debug)]
+/// We expect this field to not exist on the data, it's only here to enable
+/// `network_state` on `SystemInterval` to be set to `Some`.
+pub struct Ignore {
     pub _fake_field: Option<usize>,
 }
 
