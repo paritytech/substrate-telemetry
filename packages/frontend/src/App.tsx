@@ -163,20 +163,19 @@ export default class App extends React.Component<{}, State> {
 
     this.chainsCache = stable
       .inplace(
-        Array.from(this.state.chains.entries()),
+        Array.from(this.state.chains.values()),
         (a, b) => {
-          if (a[0] === PINNED_CHAIN) {
+          if (a.label === PINNED_CHAIN) {
             return -1;
           }
 
-          if (b[0] === PINNED_CHAIN) {
+          if (b.label === PINNED_CHAIN) {
             return 1;
           }
 
-          return b[1] - a[1];
+          return b.nodeCount - a.nodeCount;
         }
-      )
-      .map(([label, nodeCount]) => ({ label, nodeCount }));
+      );
 
     return this.chainsCache;
   }
