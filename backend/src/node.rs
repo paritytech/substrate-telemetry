@@ -161,16 +161,13 @@ impl Node {
         }
     }
 
-    pub fn update_finalized(&mut self, interval: &SystemInterval) -> Option<&Block> {
-        if let (Some(height), Some(hash)) = (interval.finalized_height, interval.finalized_hash) {
-            if height > self.finalized.height {
-                self.finalized.height = height;
-                self.finalized.hash = hash;
-                return Some(self.finalized());
-            }
+    pub fn update_finalized(&mut self, block: Block) -> Option<&Block> {
+        if block.height > self.finalized.height {
+            self.finalized = block;
+            Some(self.finalized())
+        } else {
+            None
         }
-
-        None
     }
 
     pub fn update_stale(&mut self, threshold: u64) -> bool {

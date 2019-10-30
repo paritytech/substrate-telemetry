@@ -88,6 +88,10 @@ impl NodeConnector {
 
             self.aggregator.do_send(AddNode { rec, chain, node });
         } else {
+            if self.backlog.len() >= 10 {
+                self.backlog.remove(0);
+            }
+
             self.backlog.push(msg);
         }
     }
@@ -119,16 +123,14 @@ impl Handler<Initialize> for NodeConnector {
 
 impl StreamHandler<ws::Message, ws::ProtocolError> for NodeConnector {
     fn handle(&mut self, msg: ws::Message, ctx: &mut Self::Context) {
+        self.hb = Instant::now();
+
         let data = match msg {
             ws::Message::Ping(msg) => {
-                self.hb = Instant::now();
                 ctx.pong(&msg);
                 return;
             }
-            ws::Message::Pong(_) => {
-                self.hb = Instant::now();
-                return;
-            }
+            ws::Message::Pong(_) => return,
             ws::Message::Text(text) => text.into(),
             ws::Message::Binary(data) => data,
             ws::Message::Close(_) => {
@@ -138,9 +140,16 @@ impl StreamHandler<ws::Message, ws::ProtocolError> for NodeConnector {
             ws::Message::Nop => return,
         };
 
-        if let Ok(msg) = serde_json::from_slice(&data) {
-            self.hb = Instant::now();
-            self.handle_message(msg, data, ctx);
+        match serde_json::from_slice(&data) {
+            Ok(msg) => self.handle_message(msg, data, ctx),
+            Err(err) => {
+                let data: &[u8] = if data.len() > 100 {
+                    &data[..100]
+                } else {
+                    &data
+                };
+                warn!("Failed to parse node message: {} {}", err, std::str::from_utf8(data).unwrap_or_else(|_| "INVALID UTF8"))
+            },
         }
     }
 }

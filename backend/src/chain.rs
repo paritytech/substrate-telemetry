@@ -250,8 +250,10 @@ impl Handler<UpdateNode> for Chain {
                 if let Some(stats) = node.update_stats(interval) {
                     self.serializer.push(feed::NodeStatsUpdate(nid, stats));
                 }
+            }
 
-                if let Some(finalized) = node.update_finalized(interval) {
+            if let Some(block) = msg.details.finalized_block() {
+                if let Some(finalized) = node.update_finalized(block) {
                     self.serializer.push(feed::FinalizedBlock(nid, finalized.height, finalized.hash));
 
                     if finalized.height > self.finalized.height {

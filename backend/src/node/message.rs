@@ -29,6 +29,8 @@ pub enum Details {
     SystemInterval(SystemInterval),
     #[serde(rename = "block.import")]
     BlockImport(Block),
+    #[serde(rename = "notify.finalized")]
+    NotifyFinalized(Finalized),
 }
 
 #[derive(Deserialize, Debug)]
@@ -60,6 +62,13 @@ pub struct NetworkState {
     pub _fake_field: Option<usize>,
 }
 
+#[derive(Deserialize, Debug)]
+pub struct Finalized {
+    #[serde(rename = "best")]
+    pub hash: BlockHash,
+    pub height: Box<str>,
+}
+
 impl Block {
     pub fn zero() -> Self {
         Block {
@@ -76,6 +85,24 @@ impl Details {
                 Some(block)
             }
             _ => None,
+        }
+    }
+
+    pub fn finalized_block(&self) -> Option<Block> {
+        match self {
+            Details::SystemInterval(ref interval) => {
+                Some(Block {
+                    hash: interval.finalized_hash?,
+                    height: interval.finalized_height?,
+                })
+            },
+            Details::NotifyFinalized(ref finalized) => {
+                Some(Block {
+                    hash: finalized.hash,
+                    height: finalized.height.parse().ok()?
+                })
+            },
+            _ => None
         }
     }
 }
