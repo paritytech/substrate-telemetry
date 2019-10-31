@@ -39,6 +39,7 @@ import cennznetIcon from '../../icons/cennznet.svg';
 import darwiniaIcon from '../../icons/darwinia.svg';
 import turingIcon from '../../icons/turingnetwork.svg';
 import dothereumIcon from '../../icons/dothereum.svg';
+import katalchainIcon from '../../icons/katalchain.svg';
 import unknownImplementationIcon from '../../icons/question-solid.svg';
 
 import './Row.css';
@@ -60,6 +61,7 @@ const ICONS = {
   'Darwinia Testnet': darwiniaIcon,
   'turing-node': turingIcon,
   'dothereum': dothereumIcon,
+  'katalchain': katalchainIcon,
 };
 
 export namespace Row {
