@@ -187,20 +187,28 @@ impl Node {
     }
 
     pub fn network_state(&self) -> Option<Bytes> {
-        const NEEDLE: &[u8] = b"\"network_state\":";
+        const NEEDLE: &[u8] = b"\"state\":";
+        const NEEDLE_LEGACY: &[u8] = b"\"network_state\":";
 
         let raw = self.network_state.as_ref()?;
 
         let mut search: &[u8] = &**raw;
-        let mut offset = 0;
+        let mut start = 0;
 
-        while !search.starts_with(NEEDLE) {
-            offset += 1;
-            search = search.get(1..)?;
+        loop {
+            if search.starts_with(NEEDLE) {
+                start += NEEDLE.len();
+                break;
+            } else if search.starts_with(NEEDLE_LEGACY) {
+                start += NEEDLE_LEGACY.len();
+                break;
+            } else {
+                start += 1;
+                search = search.get(1..)?;
+            }
         }
 
         let end = raw.len() - 2;
-        let start = offset + NEEDLE.len();
 
         if start > end {
             return None;

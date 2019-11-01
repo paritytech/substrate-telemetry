@@ -236,20 +236,28 @@ impl Handler<UpdateNode> for Chain {
         }
 
         if let Some(node) = self.nodes.get_mut(nid) {
-            if let Details::SystemInterval(ref interval) = msg.details {
-                if interval.network_state.is_some() {
+            match msg.details {
+                Details::SystemInterval(ref interval) => {
+                    if interval.network_state.is_some() {
+                        if let Some(raw) = raw {
+                            node.set_network_state(raw);
+                        }
+                    }
+
+                    if node.update_hardware(interval) {
+                        self.serializer.push(feed::Hardware(nid, node.hardware()));
+                    }
+
+                    if let Some(stats) = node.update_stats(interval) {
+                        self.serializer.push(feed::NodeStatsUpdate(nid, stats));
+                    }
+                }
+                Details::SystemNetworkState(_) => {
                     if let Some(raw) = raw {
                         node.set_network_state(raw);
                     }
                 }
-
-                if node.update_hardware(interval) {
-                    self.serializer.push(feed::Hardware(nid, node.hardware()));
-                }
-
-                if let Some(stats) = node.update_stats(interval) {
-                    self.serializer.push(feed::NodeStatsUpdate(nid, stats));
-                }
+                _ => (),
             }
 
             if let Some(block) = msg.details.finalized_block() {

@@ -1,6 +1,7 @@
 use actix::prelude::*;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
+use serde::de::IgnoredAny;
 use crate::node::{NodeDetails, NodeStats};
 use crate::types::{Block, BlockNumber, BlockHash};
 
@@ -27,10 +28,14 @@ pub enum Details {
     SystemConnected(SystemConnected),
     #[serde(rename = "system.interval")]
     SystemInterval(SystemInterval),
+    #[serde(rename = "system.network_state")]
+    SystemNetworkState(IgnoredAny),
     #[serde(rename = "block.import")]
     BlockImport(Block),
     #[serde(rename = "notify.finalized")]
     NotifyFinalized(Finalized),
+    #[serde(rename = "txpool.import")]
+    TxPoolImport(IgnoredAny),
 }
 
 #[derive(Deserialize, Debug)]
@@ -52,21 +57,7 @@ pub struct SystemInterval {
     pub finalized_hash: Option<BlockHash>,
     #[serde(flatten)]
     pub block: Block,
-    pub network_state: Option<NetworkState>,
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(untagged)]
-pub enum NetworkState {
-    String(Box<str>),
-    Object(Ignore),
-}
-
-#[derive(Deserialize, Debug)]
-/// We expect this field to not exist on the data, it's only here to enable
-/// `network_state` on `SystemInterval` to be set to `Some`.
-pub struct Ignore {
-    pub _fake_field: Option<usize>,
+    pub network_state: Option<IgnoredAny>,
 }
 
 #[derive(Deserialize, Debug)]
