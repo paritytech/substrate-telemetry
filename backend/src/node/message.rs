@@ -36,6 +36,14 @@ pub enum Details {
     NotifyFinalized(Finalized),
     #[serde(rename = "txpool.import")]
     TxPoolImport(IgnoredAny),
+    #[serde(rename = "afg.received_precommit")]
+    AfgReceivedPrecommit(IgnoredAny),
+    #[serde(rename = "afg.received_prevote")]
+    AfgReceivedPrevote(IgnoredAny),
+    #[serde(rename = "afg.received_commit")]
+    AfgReceivedCommit(IgnoredAny),
+    #[serde(rename = "afg.authority_set")]
+    AfgAuthoritySet(IgnoredAny),
 }
 
 #[derive(Deserialize, Debug)]
