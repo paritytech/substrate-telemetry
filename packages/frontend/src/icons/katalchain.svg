@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" x="0" y="0" width="131" height="131">
-  <rect width="131" height="131" x="0" y="0" stroke="white" stroke-width="10"/>
-  <rect width="131" height="40" x="0" y="45" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="131" height="131" viewBox="0 0 131 131">
+  <rect width="131" height="131" x="0" y="0" stroke="currentColor" stroke-width="10" fill="transparent"/>
+  <rect width="131" height="40" x="0" y="45" fill="currentColor"/>
 </svg>
