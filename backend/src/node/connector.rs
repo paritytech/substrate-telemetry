@@ -13,7 +13,7 @@ use crate::util::LocateRequest;
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(20);
 /// How long before lack of client response causes a timeout
-const CLIENT_TIMEOUT: Duration = Duration::from_secs(60);
+const CLIENT_TIMEOUT: Duration = Duration::from_secs(3600);
 
 pub struct NodeConnector {
     /// Id of the node this connector is responsible for handling
