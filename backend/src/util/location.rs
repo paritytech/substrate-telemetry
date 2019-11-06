@@ -69,13 +69,13 @@ impl Handler<LocateRequest> for Locator {
         let ip_req = format!("https://ipapi.co/{}/json", ip);
         let mut response = match self.client.post(&ip_req).send() {
             Ok(response) => response,
-            Err(err) => return warn!("POST error for ip location: {:?}", err),
+            Err(err) => return debug!("POST error for ip location: {:?}", err),
         };
 
         let location = match response.json::<NodeLocation>() {
             Ok(location) => Some(Arc::new(location)),
             Err(err) => {
-                warn!("JSON error for ip location: {:?}", err);
+                debug!("JSON error for ip location: {:?}", err);
                 None
             }
         };

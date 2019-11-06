@@ -36,6 +36,8 @@ pub enum Details {
     NotifyFinalized(Finalized),
     #[serde(rename = "txpool.import")]
     TxPoolImport(IgnoredAny),
+    #[serde(rename = "afg.finalized")]
+    AfgFinalized(IgnoredAny),
     #[serde(rename = "afg.received_precommit")]
     AfgReceivedPrecommit(IgnoredAny),
     #[serde(rename = "afg.received_prevote")]
@@ -44,6 +46,10 @@ pub enum Details {
     AfgReceivedCommit(IgnoredAny),
     #[serde(rename = "afg.authority_set")]
     AfgAuthoritySet(IgnoredAny),
+    #[serde(rename = "aura.pre_sealed_block")]
+    AuraPreSealedBlock(IgnoredAny),
+    #[serde(rename = "prepared_block_for_proposing")]
+    PreparedBlockForProposing(IgnoredAny),
 }
 
 #[derive(Deserialize, Debug)]
