@@ -60,7 +60,7 @@ dependencies = [
 [[package]]
 name = "actix-http"
 version = "0.2.10"
-source = "git+https://github.com/maciejhirsz/actix-web#4e534a158b4d12e5028f4eee14e090724be18c3c"
+source = "git+https://github.com/maciejhirsz/actix-web#4895fcb4c23eb1574f8d8cf923d5fd9cee479c53"
 dependencies = [
  "actix-codec 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-connect 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -218,7 +218,7 @@ dependencies = [
 [[package]]
 name = "actix-web"
 version = "1.0.8"
-source = "git+https://github.com/maciejhirsz/actix-web#4e534a158b4d12e5028f4eee14e090724be18c3c"
+source = "git+https://github.com/maciejhirsz/actix-web#4895fcb4c23eb1574f8d8cf923d5fd9cee479c53"
 dependencies = [
  "actix-codec 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-http 0.2.10 (git+https://github.com/maciejhirsz/actix-web)",
@@ -252,7 +252,7 @@ dependencies = [
 [[package]]
 name = "actix-web-actors"
 version = "1.0.2"
-source = "git+https://github.com/maciejhirsz/actix-web#4e534a158b4d12e5028f4eee14e090724be18c3c"
+source = "git+https://github.com/maciejhirsz/actix-web#4895fcb4c23eb1574f8d8cf923d5fd9cee479c53"
 dependencies = [
  "actix 0.8.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-codec 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
