@@ -7,9 +7,12 @@ license = "GPL-3.0"
 
 [dependencies]
 actix = "0.8"
-actix-web = "1.0.8"
-actix-web-actors = "1.0.2"
-actix-http = "0.2.10"
+actix-web = { git = "https://github.com/maciejhirsz/actix-web" }
+actix-web-actors = { git = "https://github.com/maciejhirsz/actix-web" }
+actix-http = { git = "https://github.com/maciejhirsz/actix-web" }
+# actix-web = "1.0.8"
+# actix-web-actors = "1.0.2"
+# actix-http = "0.2.10"
 bytes = "0.4"
 chrono = { version = "0.4", features = ["serde"] }
 fnv = "1.0.6"
@@ -26,3 +29,8 @@ rustc-hash = "1.0.1"
 [profile.release]
 lto = true
 panic = "abort"
+
+[patch.crates-io]
+actix-web = { git = "https://github.com/maciejhirsz/actix-web" }
+actix-web-actors = { git = "https://github.com/maciejhirsz/actix-web" }
+actix-http = { git = "https://github.com/maciejhirsz/actix-web" }
