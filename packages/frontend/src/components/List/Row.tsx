@@ -1,5 +1,5 @@
 import * as React from 'react';
-import Identicon from 'polkadot-identicon';
+// import Identicon from 'polkadot-identicon';
 import { Types, Maybe, timestamp } from '@dotstats/common';
 import { formatNumber, getHashData, milliOrSecond, secondsWithPrecision } from '../../utils';
 import { State as AppState, Node } from '../../state';
@@ -150,7 +150,8 @@ export class Row extends React.Component<Row.Props, Row.State> {
       width: 16,
       setting: 'validator',
       render: ({ validator }) => {
-        return validator ? <Tooltip text={validator} copy={true}><span className="Row-validator"><Identicon account={validator} size={16} /></span></Tooltip> : '-';
+        // return validator ? <Tooltip text={validator} copy={true}><span className="Row-validator"><Identicon account={validator} size={16} /></span></Tooltip> : '-';
+        return '-';
       }
     },
     {

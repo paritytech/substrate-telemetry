@@ -1,1 +1,1 @@
-yarn build:all && pm2 restart index
+yarn build:frontend && pm2 restart index

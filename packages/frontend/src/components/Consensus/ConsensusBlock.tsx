@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import Measure, {BoundingRect, ContentRect} from 'react-measure';
 import { Types, Maybe } from '@dotstats/common';
-import Identicon from 'polkadot-identicon';
+// import Identicon from 'polkadot-identicon';
 
 import { Icon, Tooltip } from '../';
 import Jdenticon from './Jdenticon';
@@ -181,11 +181,12 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
   }
 
   private getAuthorityContent(authority: Types.Authority): JSX.Element {
-    return <div className="nodeContent" key={'authority_' + this.props.height + '_' + authority.Address}>
-      <div className="nodeAddress" key={'authority_' + authority.Address}>
-        <Identicon account={authority.Address} size={this.props.compact ? 14 : 28} />
-      </div>
-    </div>;
+    return <div>'-'</div>;
+    // return <div className="nodeContent" key={'authority_' + this.props.height + '_' + authority.Address}>
+    //   <div className="nodeAddress" key={'authority_' + authority.Address}>
+    //     <Identicon account={authority.Address} size={this.props.compact ? 14 : 28} />
+    //   </div>
+    // </div>;
   }
 
   private getCellContent(rowAuthority: Types.Authority, columnAuthority: Types.Authority) {

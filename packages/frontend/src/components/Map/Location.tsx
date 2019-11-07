@@ -1,11 +1,11 @@
 import * as React from 'react';
-import Identicon from 'polkadot-identicon';
+// import Identicon from 'polkadot-identicon';
 import { formatNumber, trimHash, milliOrSecond, secondsWithPrecision } from '../../utils';
 import { Ago, Icon } from '../';
 import { Node } from '../../state';
 
 import nodeIcon from '../../icons/server.svg';
-import nodeValidatorIcon from '../../icons/shield.svg';
+// import nodeValidatorIcon from '../../icons/shield.svg';
 import nodeTypeIcon from '../../icons/terminal.svg';
 import nodeLocationIcon from '../../icons/location.svg';
 import blockIcon from '../../icons/package.svg';
@@ -75,7 +75,7 @@ export class Location extends React.Component<Location.Props, Location.State> {
       name,
       implementation,
       version,
-      validator,
+      // validator,
       height,
       hash,
       blockTime,
@@ -84,19 +84,19 @@ export class Location extends React.Component<Location.Props, Location.State> {
       city,
     } = this.props.node;
 
-    let validatorRow = null;
+    const validatorRow = null;
 
-    if (validator) {
-      validatorRow = (
-        <tr>
-          <td><Icon src={nodeValidatorIcon} alt="Node" /></td>
-          <td colSpan={5}>
-            {trimHash(validator, 30)}
-            <span className="Location-validator"><Identicon account={validator} size={16} /></span>
-          </td>
-        </tr>
-      );
-    }
+    // if (validator) {
+    //   validatorRow = (
+    //     <tr>
+    //       <td><Icon src={nodeValidatorIcon} alt="Node" /></td>
+    //       <td colSpan={5}>
+    //         {trimHash(validator, 30)}
+    //         <span className="Location-validator"><Identicon account={validator} size={16} /></span>
+    //       </td>
+    //     </tr>
+    //   );
+    // }
 
     return (
       <table className="Location-details Location-details">
