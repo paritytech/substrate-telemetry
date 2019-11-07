@@ -187,33 +187,21 @@ impl Node {
     }
 
     pub fn network_state(&self) -> Option<Bytes> {
-        const NEEDLE: &[u8] = b"\"state\":";
-        const NEEDLE_LEGACY: &[u8] = b"\"network_state\":";
+        use serde::Deserialize;
+        use serde_json::value::RawValue;
+
+        #[derive(Deserialize)]
+        struct Wrapper<'a> {
+            #[serde(borrow)]
+            state: Option<&'a RawValue>,
+            #[serde(borrow)]
+            network_state: Option<&'a RawValue>,
+        }
 
         let raw = self.network_state.as_ref()?;
+        let wrap: Wrapper = serde_json::from_slice(raw).ok()?;
+        let state = wrap.state.or(wrap.network_state)?;
 
-        let mut search: &[u8] = &**raw;
-        let mut start = 0;
-
-        loop {
-            if search.starts_with(NEEDLE) {
-                start += NEEDLE.len();
-                break;
-            } else if search.starts_with(NEEDLE_LEGACY) {
-                start += NEEDLE_LEGACY.len();
-                break;
-            } else {
-                start += 1;
-                search = search.get(1..)?;
-            }
-        }
-
-        let end = raw.len() - 2;
-
-        if start > end {
-            return None;
-        }
-
-        Some(raw.slice(start, end))
+        Some(state.get().into())
     }
 }
