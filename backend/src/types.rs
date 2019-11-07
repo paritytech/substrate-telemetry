@@ -11,6 +11,7 @@ pub struct NodeDetails {
     pub name: Box<str>,
     pub implementation: Box<str>,
     pub version: Box<str>,
+    pub validator: Option<Box<str>>,
 }
 
 #[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
@@ -52,7 +53,7 @@ impl Serialize for NodeDetails {
         tup.serialize_element(&self.name)?;
         tup.serialize_element(&self.implementation)?;
         tup.serialize_element(&self.version)?;
-        tup.serialize_element::<Option<String>>(&None)?; // TODO Maybe<Address>
+        tup.serialize_element(&self.validator)?; // TODO Maybe<Address>
         tup.serialize_element::<Option<usize>>(&None)?; // TODO Maybe<NetworkId>
         tup.serialize_element("")?; // TODO Address
         tup.end()

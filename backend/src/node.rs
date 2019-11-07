@@ -182,6 +182,10 @@ impl Node {
         self.stale
     }
 
+    pub fn set_validator_address(&mut self, addr: Box<str>) {
+        self.details.validator = Some(addr);
+    }
+
     pub fn set_network_state(&mut self, state: Bytes) {
         self.network_state = Some(state);
     }

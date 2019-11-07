@@ -257,6 +257,10 @@ impl Handler<UpdateNode> for Chain {
                         node.set_network_state(raw);
                     }
                 }
+                Details::AfgAuthoritySet(authority) => {
+                    node.set_validator_address(authority.authority_id);
+                    return;
+                }
                 _ => (),
             }
 

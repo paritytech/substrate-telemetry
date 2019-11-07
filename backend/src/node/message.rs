@@ -45,7 +45,7 @@ pub enum Details {
     #[serde(rename = "afg.received_commit")]
     AfgReceivedCommit(IgnoredAny),
     #[serde(rename = "afg.authority_set")]
-    AfgAuthoritySet(IgnoredAny),
+    AfgAuthoritySet(AfgAuthoritySet),
     #[serde(rename = "aura.pre_sealed_block")]
     AuraPreSealedBlock(IgnoredAny),
     #[serde(rename = "prepared_block_for_proposing")]
@@ -79,6 +79,11 @@ pub struct Finalized {
     #[serde(rename = "best")]
     pub hash: BlockHash,
     pub height: Box<str>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct AfgAuthoritySet {
+    pub authority_id: Box<str>,
 }
 
 impl Block {
