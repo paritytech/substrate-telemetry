@@ -32,7 +32,7 @@ pub struct BlockDetails {
     pub block: Block,
     pub block_time: u64,
     pub block_timestamp: u64,
-    pub propagation_time: u64,
+    pub propagation_time: Option<u64>,
 }
 
 pub type NodeHardware<'a> = (&'a [f32], &'a [f32], &'a [f64], &'a [f64], &'a [f64]);

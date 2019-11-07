@@ -204,7 +204,7 @@ impl Handler<UpdateNode> for Chain {
         let UpdateNode { nid, msg, raw } = msg;
 
         if let Some(block) = msg.details.best_block() {
-            let mut propagation_time = 0;
+            let mut propagation_time = None;
             let now = now();
 
             self.update_stale_nodes(now);
@@ -224,7 +224,7 @@ impl Handler<UpdateNode> for Chain {
                 self.serializer.push(feed::BestBlock(self.best.height, now, self.average_block_time));
             } else if block.height == self.best.height {
                 if let Some(timestamp) = self.timestamp {
-                    propagation_time = now - timestamp;
+                    propagation_time = Some(now - timestamp);
                 }
             }
 

@@ -55,7 +55,7 @@ impl Node {
                 block: Block::zero(),
                 block_timestamp: now(),
                 block_time: 0,
-                propagation_time: 0,
+                propagation_time: None,
             },
             finalized: Block::zero(),
             throttle: 0,
@@ -111,7 +111,7 @@ impl Node {
         &self.best
     }
 
-    pub fn update_block(&mut self, block: Block, timestamp: u64, propagation_time: u64) -> Option<&BlockDetails> {
+    pub fn update_block(&mut self, block: Block, timestamp: u64, propagation_time: Option<u64>) -> Option<&BlockDetails> {
         if block.height > self.best.block.height {
             self.stale = false;
             self.best.block = block;
