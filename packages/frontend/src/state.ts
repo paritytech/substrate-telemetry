@@ -217,7 +217,7 @@ export interface State {
   blockAverage: Maybe<Types.Milliseconds>;
   timeDiff: Types.Milliseconds;
   subscribed: Maybe<Types.ChainLabel>;
-  chains: Map<Types.ChainLabel, Types.NodeCount>;
+  chains: Map<Types.ChainLabel, ChainData>;
   nodes: SortedCollection<Types.NodeId, Node>;
   settings: Readonly<State.Settings>;
   pins: Readonly<Set<Types.NodeName>>;

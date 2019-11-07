@@ -1,7 +1,9 @@
 # Polkadot Telemetry
 
 ## Getting Started
-After cloning the repo, make sure to grab the latest stable version of node and install dependencies before doing anything.
+To run the backend, you will need `cargo` to build the binary. We recommend using [`rustup`](https://rustup.rs/).
+
+To run the frontend make sure to grab the latest stable version of node and install dependencies before doing anything:
 
 ```
 nvm install stable
@@ -10,7 +12,9 @@ yarn
 
 ### Terminal 1 - Backend
 ```
-yarn start:backend
+cd backend
+cargo build --release
+./target/release/telemetry
 ```
 ### Terminal 2 - Frontend
 ```
@@ -18,8 +22,10 @@ yarn start:frontend
 ```
 
 ### Terminal 3 - Node
+Follow up installation instructions from the [Polkadot repo](https://github.com/paritytech/polkadot)
+
 ```
-./target/debug/polkadot --dev --telemetry-url ws://localhost:1024
+./target/release/polkadot --dev --telemetry-url ws://localhost:8000/submit
 ```
 
 ### Run via Docker
@@ -31,5 +37,5 @@ docker-compose up --build -d
  - -d stands for detach, if you would like to see logs i recommend using [Kitmatic](https://kitematic.com/) or dont use the -d
  - --build will build the images and rebuild, but this is not required everytime
   - If you want to makes UI changes, there is no need to rebuild the image as the files are being copied in via volumes.
-  
+
 Now navigate to localhost:3000 in your browser to view the app.

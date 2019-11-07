@@ -11,6 +11,7 @@ import './App.css';
 
 export default class App extends React.Component<{}, State> {
   public state: State;
+  private chainsCache: ChainData[] = [];
   private readonly settings: PersistentObject<State.Settings>;
   private readonly pins: PersistentSet<Types.NodeName>;
   private readonly connection: Promise<Connection>;
@@ -80,6 +81,8 @@ export default class App extends React.Component<{}, State> {
 
       return this.state;
     });
+
+    setInterval(() => this.chainsCache = [], 10000); // Wipe sorted chains cache every 10 seconds
   }
 
   public render() {
@@ -154,22 +157,27 @@ export default class App extends React.Component<{}, State> {
   }
 
   private chains(): ChainData[] {
-    return stable
+    if (this.chainsCache.length === this.state.chains.size) {
+      return this.chainsCache;
+    }
+
+    this.chainsCache = stable
       .inplace(
-        Array.from(this.state.chains.entries()),
+        Array.from(this.state.chains.values()),
         (a, b) => {
-          if (a[0] === PINNED_CHAIN) {
+          if (a.label === PINNED_CHAIN) {
             return -1;
           }
 
-          if (b[0] === PINNED_CHAIN) {
+          if (b.label === PINNED_CHAIN) {
             return 1;
           }
 
-          return b[1] - a[1];
+          return b.nodeCount - a.nodeCount;
         }
-      )
-      .map(([label, nodeCount]) => ({ label, nodeCount }));
+      );
+
+    return this.chainsCache;
   }
 
 }

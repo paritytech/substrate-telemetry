@@ -1,5 +1,5 @@
 import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from '@dotstats/common';
-import { State, Update, Node, UpdateBound, PINNED_CHAIN } from './state';
+import { State, Update, Node, UpdateBound, ChainData, PINNED_CHAIN } from './state';
 import { PersistentSet } from './persist';
 import { getHashData, setHashData } from './utils';
 import { AfgHandling } from './AfgHandling';
@@ -19,7 +19,7 @@ export class Connection {
 
   private static readonly address = window.location.protocol === 'https:'
                                       ? `wss://${window.location.hostname}/feed/`
-                                      : `ws://${window.location.hostname}:8080`;
+                                      : `ws://127.0.0.1:8000/feed`;
 
   // private static readonly address = 'wss://telemetry.polkadot.io/feed/';
 
@@ -234,7 +234,13 @@ export class Connection {
 
         case Actions.AddedChain: {
           const [label, nodeCount] = message.payload;
-          chains.set(label, nodeCount);
+          const chain = chains.get(label);
+
+          if (chain) {
+            chain.nodeCount = nodeCount;
+          } else {
+            chains.set(label, { label, nodeCount });
+          }
 
           this.state = this.update({ chains });
 
@@ -412,23 +418,21 @@ export class Connection {
       }
     }
 
-    let topLabel: Maybe<Types.ChainLabel> = null;
-    let topCount: Types.NodeCount = 0 as Types.NodeCount;
+    let topChain: Maybe<ChainData> = null;
 
-    for (const [label, count] of chains.entries()) {
-      if (label === PINNED_CHAIN) {
-        topLabel = label;
+    for (const chain of chains.values()) {
+      if (chain.label === PINNED_CHAIN) {
+        topChain = chain;
         break;
       }
 
-      if (count > topCount) {
-        topLabel = label;
-        topCount = count;
+      if (!topChain || chain.nodeCount > topChain.nodeCount) {
+        topChain = chain;
       }
     }
 
-    if (topLabel) {
-      this.subscribe(topLabel);
+    if (topChain) {
+      this.subscribe(topChain.label);
     }
   }
 

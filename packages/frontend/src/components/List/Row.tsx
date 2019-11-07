@@ -135,7 +135,7 @@ function formatCPU(cpu: number, stamp: Maybe<Types.Timestamp>): string {
 
 const URI_BASE = window.location.protocol === 'https:'
                                     ? `/network_state/`
-                                    : `http://${window.location.hostname}:8081/network_state/`;
+                                    : `http://${window.location.hostname}:8000/network_state/`;
 
 export class Row extends React.Component<Row.Props, Row.State> {
   public static readonly columns: Column[] = [
