@@ -259,6 +259,7 @@ impl Handler<UpdateNode> for Chain {
                 }
                 Details::AfgAuthoritySet(authority) => {
                     node.set_validator_address(authority.authority_id);
+                    self.broadcast();
                     return;
                 }
                 _ => (),
