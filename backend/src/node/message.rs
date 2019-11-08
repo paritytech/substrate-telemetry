@@ -46,6 +46,8 @@ pub enum Details {
     AfgReceivedCommit(IgnoredAny),
     #[serde(rename = "afg.authority_set")]
     AfgAuthoritySet(AfgAuthoritySet),
+    #[serde(rename = "afg.finalized_blocks_up_to")]
+    AfgFinalizedBlocksUpTo(IgnoredAny),
     #[serde(rename = "aura.pre_sealed_block")]
     AuraPreSealedBlock(IgnoredAny),
     #[serde(rename = "prepared_block_for_proposing")]
