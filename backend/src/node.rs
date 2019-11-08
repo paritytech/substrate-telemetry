@@ -134,7 +134,6 @@ impl Node {
     pub fn update_hardware(&mut self, interval: &SystemInterval) -> bool {
         let mut changed = false;
 
-        self.stats = interval.stats;
         if let Some(cpu) = interval.cpu {
             changed |= self.cpu.push(cpu);
         }
