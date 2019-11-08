@@ -39,6 +39,8 @@ pub struct Node {
     location: Option<Arc<NodeLocation>>,
     /// Flag marking if the node is stale (not syncing or producing blocks)
     stale: bool,
+    /// Connected at timestamp
+    connected: u64,
     /// Network state
     pub network_state: Option<Bytes>,
 }
@@ -46,6 +48,7 @@ pub struct Node {
 impl Node {
     pub fn new(details: NodeDetails) -> Self {
         Node {
+
             details,
             stats: NodeStats {
                 txcount: 0,
@@ -66,6 +69,7 @@ impl Node {
             chart_stamps: MeanList::new(),
             location: None,
             stale: false,
+            connected: now(),
             network_state: None,
         }
     }

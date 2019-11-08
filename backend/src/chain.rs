@@ -222,6 +222,7 @@ impl Handler<UpdateNode> for Chain {
                 self.update_average_block_time(now);
                 self.timestamp = Some(now);
                 self.serializer.push(feed::BestBlock(self.best.height, now, self.average_block_time));
+                propagation_time = Some(0);
             } else if block.height == self.best.height {
                 if let Some(timestamp) = self.timestamp {
                     propagation_time = Some(now - timestamp);
