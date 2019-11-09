@@ -1,7 +1,7 @@
 use bytes::Bytes;
 use std::sync::Arc;
 
-use crate::types::{NodeId, NodeDetails, NodeStats, NodeHardware, NodeLocation, BlockDetails, Block};
+use crate::types::{NodeId, NodeDetails, NodeStats, NodeHardware, NodeLocation, BlockDetails, Block, Timestamp};
 use crate::util::now;
 
 pub mod message;
@@ -32,7 +32,7 @@ pub struct Node {
     /// Flag marking if the node is stale (not syncing or producing blocks)
     stale: bool,
     /// Connected at timestamp
-    connected_at: u64,
+    connected_at: Timestamp,
     /// Network state
     network_state: Option<Bytes>,
 }
@@ -182,19 +182,23 @@ impl Node {
         #[derive(Deserialize)]
         struct Wrapper<'a> {
             #[serde(borrow)]
+            #[serde(alias = "network_state")]
             state: Option<&'a RawValue>,
-            #[serde(borrow)]
-            network_state: Option<&'a RawValue>,
         }
 
         let raw = self.network_state.as_ref()?;
         let wrap: Wrapper = serde_json::from_slice(raw).ok()?;
-        let state = wrap.state.or(wrap.network_state)?;
+        let json = wrap.state?.get();
 
-        Some(state.get().into())
+        // Handle old nodes that exposed network_state as stringified JSON
+        if let Ok(stringified) = serde_json::from_str::<String>(json) {
+            Some(stringified.into())
+        } else {
+            Some(json.into())
+        }
     }
 
-    pub fn connected_at(&self) -> &u64 {
-        &self.connected_at
+    pub fn connected_at(&self) -> Timestamp {
+        self.connected_at
     }
 }
