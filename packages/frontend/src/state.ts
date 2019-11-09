@@ -79,8 +79,6 @@ export class Node {
     this.networkId = networkId;
     this.connectedAt = connectedAt;
 
-    console.log("Created at", connectedAt);
-
     this.updateStats(nodeStats);
     this.updateHardware(nodeHardware);
     this.updateBlock(blockDetails);
