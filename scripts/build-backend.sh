@@ -1,1 +1,0 @@
-tsc -p packages/backend

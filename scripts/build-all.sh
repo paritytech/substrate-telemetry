@@ -1,1 +1,1 @@
-yarn build:common && yarn build:backend && yarn build:frontend
+yarn build:common && yarn build:frontend
