@@ -183,12 +183,12 @@ impl Node {
         struct Wrapper<'a> {
             #[serde(borrow)]
             #[serde(alias = "network_state")]
-            state: Option<&'a RawValue>,
+            state: &'a RawValue,
         }
 
         let raw = self.network_state.as_ref()?;
         let wrap: Wrapper = serde_json::from_slice(raw).ok()?;
-        let json = wrap.state?.get();
+        let json = wrap.state.get();
 
         // Handle old nodes that exposed network_state as stringified JSON
         if let Ok(stringified) = serde_json::from_str::<String>(json) {
