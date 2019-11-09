@@ -5,6 +5,7 @@ import { timestamp, Types } from '@dotstats/common';
 export namespace Ago {
   export interface Props {
     when: Types.Timestamp,
+    justTime?: boolean,
   }
 
   export interface State {
@@ -78,6 +79,10 @@ export class Ago extends React.Component<Ago.Props, Ago.State> {
       agoStr = `${ ago / (3600 * 24) | 0}d`;
     }
 
-    return <span title={new Date(this.props.when).toUTCString()}>{agoStr} ago</span>
+    if (this.props.justTime !== true) {
+      agoStr += ' ago';
+    }
+
+    return <span title={new Date(this.props.when).toUTCString()}>{agoStr}</span>
   }
 }

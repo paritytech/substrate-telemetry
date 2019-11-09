@@ -159,9 +159,9 @@ export class Connection {
         }
 
         case Actions.AddedNode: {
-          const [id, nodeDetails, nodeStats, nodeHardware, blockDetails, location] = message.payload;
+          const [id, nodeDetails, nodeStats, nodeHardware, blockDetails, location, connectedAt] = message.payload;
           const pinned = this.pins.has(nodeDetails[0]);
-          const node = new Node(pinned, id, nodeDetails, nodeStats, nodeHardware, blockDetails, location);
+          const node = new Node(pinned, id, nodeDetails, nodeStats, nodeHardware, blockDetails, location, connectedAt);
 
           nodes.add(node);
 

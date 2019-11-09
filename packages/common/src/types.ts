@@ -27,7 +27,7 @@ export type NetworkId = Opaque<string, 'NetworkId'>;
 export type NetworkState = Opaque<string | object, 'NetworkState'>;
 
 export type BlockDetails = [BlockNumber, BlockHash, Milliseconds, Timestamp, Maybe<PropagationTime>];
-export type NodeDetails = [NodeName, NodeImplementation, NodeVersion, Maybe<Address>, Maybe<NetworkId>, Address];
+export type NodeDetails = [NodeName, NodeImplementation, NodeVersion, Maybe<Address>, Maybe<NetworkId>];
 export type NodeStats = [PeerCount, TransactionCount];
 export type NodeHardware = [Array<MemoryUse>, Array<CPUUse>, Array<BytesPerSecond>, Array<BytesPerSecond>, Array<Timestamp>];
 export type NodeLocation = [Latitude, Longitude, City];

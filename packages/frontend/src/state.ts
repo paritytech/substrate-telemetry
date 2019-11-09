@@ -24,12 +24,12 @@ export class Node {
   }
 
   public readonly id: Types.NodeId;
-  public readonly address: Types.Address;
   public readonly name: Types.NodeName;
   public readonly implementation: Types.NodeImplementation;
   public readonly version: Types.NodeVersion;
   public readonly validator: Maybe<Types.Address>;
   public readonly networkId: Maybe<Types.NetworkId>;
+  public readonly connectedAt: Types.Timestamp;
 
   public stale: boolean;
   public pinned: boolean;
@@ -64,19 +64,20 @@ export class Node {
     nodeStats: Types.NodeStats,
     nodeHardware: Types.NodeHardware,
     blockDetails: Types.BlockDetails,
-    location: Maybe<Types.NodeLocation>
+    location: Maybe<Types.NodeLocation>,
+    connectedAt: Types.Timestamp,
   ) {
-    const [name, implementation, version, validator, networkId, address] = nodeDetails;
+    const [name, implementation, version, validator, networkId] = nodeDetails;
 
     this.pinned = pinned;
 
     this.id = id;
     this.name = name;
-    this.address = address;
     this.implementation = implementation;
     this.version = version;
     this.validator = validator;
     this.networkId = networkId;
+    this.connectedAt = connectedAt;
 
     this.updateStats(nodeStats);
     this.updateHardware(nodeHardware);
@@ -199,6 +200,7 @@ export namespace State {
     blocktime: boolean;
     blockpropagation: boolean;
     blocklasttime: boolean;
+    uptime: boolean;
     networkstate: boolean;
   }
 }

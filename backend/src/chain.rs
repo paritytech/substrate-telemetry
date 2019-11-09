@@ -182,14 +182,7 @@ impl Handler<AddNode> for Chain {
         if let Err(_) = msg.rec.do_send(Initialize(nid, ctx.address())) {
             self.nodes.remove(nid);
         } else if let Some(node) = self.nodes.get(nid) {
-            self.serializer.push(feed::AddedNode(
-                nid,
-                node.details(),
-                node.stats(),
-                node.hardware(),
-                node.block_details(),
-                node.location(),
-            ));
+            self.serializer.push(feed::AddedNode(nid, node));
             self.broadcast();
         }
 
@@ -222,6 +215,7 @@ impl Handler<UpdateNode> for Chain {
                 self.update_average_block_time(now);
                 self.timestamp = Some(now);
                 self.serializer.push(feed::BestBlock(self.best.height, now, self.average_block_time));
+                propagation_time = Some(0);
             } else if block.height == self.best.height {
                 if let Some(timestamp) = self.timestamp {
                     propagation_time = Some(now - timestamp);
@@ -333,14 +327,7 @@ impl Handler<Subscribe> for Chain {
         self.serializer.push(feed::BestFinalized(self.finalized.height, self.finalized.hash));
 
         for (nid, node) in self.nodes.iter() {
-            self.serializer.push(feed::AddedNode(
-                nid,
-                node.details(),
-                node.stats(),
-                node.hardware(),
-                node.block_details(),
-                node.location(),
-            ));
+            self.serializer.push(feed::AddedNode(nid, node));
             self.serializer.push(feed::FinalizedBlock(nid, node.finalized().height, node.finalized().hash));
             if node.stale() {
                 self.serializer.push(feed::StaleNode(nid));

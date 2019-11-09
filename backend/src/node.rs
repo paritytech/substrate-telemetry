@@ -1,8 +1,8 @@
 use bytes::Bytes;
 use std::sync::Arc;
 
-use crate::types::{NodeId, NodeDetails, NodeStats, NodeHardware, NodeLocation, BlockDetails, Block};
-use crate::util::{MeanList, now};
+use crate::types::{NodeId, NodeDetails, NodeStats, NodeHardware, NodeLocation, BlockDetails, Block, Timestamp};
+use crate::util::now;
 
 pub mod message;
 pub mod connector;
@@ -25,27 +25,22 @@ pub struct Node {
     finalized: Block,
     /// Timer for throttling block updates
     throttle: u64,
-    /// CPU use means
-    cpu: MeanList<f32>,
-    /// Memory use means
-    memory: MeanList<f32>,
-    /// Upload uses means
-    upload: MeanList<f64>,
-    /// Download uses means
-    download: MeanList<f64>,
-    /// Stampchange uses means
-    chart_stamps: MeanList<f64>,
+    /// Hardware stats over time
+    hardware: NodeHardware,
     /// Physical location details
     location: Option<Arc<NodeLocation>>,
     /// Flag marking if the node is stale (not syncing or producing blocks)
     stale: bool,
+    /// Connected at timestamp
+    connected_at: Timestamp,
     /// Network state
-    pub network_state: Option<Bytes>,
+    network_state: Option<Bytes>,
 }
 
 impl Node {
     pub fn new(details: NodeDetails) -> Self {
         Node {
+
             details,
             stats: NodeStats {
                 txcount: 0,
@@ -59,13 +54,10 @@ impl Node {
             },
             finalized: Block::zero(),
             throttle: 0,
-            cpu: MeanList::new(),
-            memory: MeanList::new(),
-            upload: MeanList::new(),
-            download: MeanList::new(),
-            chart_stamps: MeanList::new(),
+            hardware: NodeHardware::default(),
             location: None,
             stale: false,
+            connected_at: now(),
             network_state: None,
         }
     }
@@ -86,14 +78,8 @@ impl Node {
         &self.finalized
     }
 
-    pub fn hardware(&self) -> NodeHardware {
-        (
-            self.memory.slice(),
-            self.cpu.slice(),
-            self.upload.slice(),
-            self.download.slice(),
-            self.chart_stamps.slice(),
-        )
+    pub fn hardware(&self) -> &NodeHardware {
+        &self.hardware
     }
 
     pub fn location(&self) -> Option<&NodeLocation> {
@@ -135,18 +121,18 @@ impl Node {
         let mut changed = false;
 
         if let Some(cpu) = interval.cpu {
-            changed |= self.cpu.push(cpu);
+            changed |= self.hardware.cpu.push(cpu);
         }
         if let Some(memory) = interval.memory {
-            changed |= self.memory.push(memory);
+            changed |= self.hardware.memory.push(memory);
         }
         if let Some(upload) = interval.bandwidth_upload {
-            changed |= self.upload.push(upload);
+            changed |= self.hardware.upload.push(upload);
         }
         if let Some(download) = interval.bandwidth_download {
-            changed |= self.download.push(download);
+            changed |= self.hardware.download.push(download);
         }
-        self.chart_stamps.push(now() as f64);
+        self.hardware.chart_stamps.push(now() as f64);
 
         changed
     }
@@ -196,15 +182,23 @@ impl Node {
         #[derive(Deserialize)]
         struct Wrapper<'a> {
             #[serde(borrow)]
-            state: Option<&'a RawValue>,
-            #[serde(borrow)]
-            network_state: Option<&'a RawValue>,
+            #[serde(alias = "network_state")]
+            state: &'a RawValue,
         }
 
         let raw = self.network_state.as_ref()?;
         let wrap: Wrapper = serde_json::from_slice(raw).ok()?;
-        let state = wrap.state.or(wrap.network_state)?;
+        let json = wrap.state.get();
 
-        Some(state.get().into())
+        // Handle old nodes that exposed network_state as stringified JSON
+        if let Ok(stringified) = serde_json::from_str::<String>(json) {
+            Some(stringified.into())
+        } else {
+            Some(json.into())
+        }
+    }
+
+    pub fn connected_at(&self) -> Timestamp {
+        self.connected_at
     }
 }
