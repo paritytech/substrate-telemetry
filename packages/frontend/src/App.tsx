@@ -39,6 +39,7 @@ export default class App extends React.Component<{}, State> {
         finalizedhash: false,
         blockpropagation: true,
         blocklasttime: false,
+        uptime: false,
         networkstate: false,
       },
       (settings) => this.setState({ settings })

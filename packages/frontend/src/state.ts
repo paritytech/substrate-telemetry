@@ -29,6 +29,7 @@ export class Node {
   public readonly version: Types.NodeVersion;
   public readonly validator: Maybe<Types.Address>;
   public readonly networkId: Maybe<Types.NetworkId>;
+  public readonly connectedAt: Types.Timestamp;
 
   public stale: boolean;
   public pinned: boolean;
@@ -63,7 +64,8 @@ export class Node {
     nodeStats: Types.NodeStats,
     nodeHardware: Types.NodeHardware,
     blockDetails: Types.BlockDetails,
-    location: Maybe<Types.NodeLocation>
+    location: Maybe<Types.NodeLocation>,
+    connectedAt: Types.Timestamp,
   ) {
     const [name, implementation, version, validator, networkId] = nodeDetails;
 
@@ -75,6 +77,9 @@ export class Node {
     this.version = version;
     this.validator = validator;
     this.networkId = networkId;
+    this.connectedAt = connectedAt;
+
+    console.log("Created at", connectedAt);
 
     this.updateStats(nodeStats);
     this.updateHardware(nodeHardware);
@@ -197,6 +202,7 @@ export namespace State {
     blocktime: boolean;
     blockpropagation: boolean;
     blocklasttime: boolean;
+    uptime: boolean;
     networkstate: boolean;
   }
 }

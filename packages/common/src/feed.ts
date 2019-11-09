@@ -70,7 +70,7 @@ export namespace Variants {
 
   export interface AddedNodeMessage extends MessageBase {
     action: typeof Actions.AddedNode;
-    payload: [NodeId, NodeDetails, NodeStats, NodeHardware, BlockDetails, Maybe<NodeLocation>];
+    payload: [NodeId, NodeDetails, NodeStats, NodeHardware, BlockDetails, Maybe<NodeLocation>, Timestamp];
   }
 
   export interface RemovedNodeMessage extends MessageBase {

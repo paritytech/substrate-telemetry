@@ -24,6 +24,7 @@ import memoryIcon from '../../icons/memory-solid.svg';
 import uploadIcon from '../../icons/cloud-upload.svg';
 import downloadIcon from '../../icons/cloud-download.svg';
 import networkIcon from '../../icons/network.svg';
+import uptimeIcon from '../../icons/pulse.svg';
 import externalLinkIcon from '../../icons/link-external.svg';
 
 import parityPolkadotIcon from '../../icons/dot.svg';
@@ -304,6 +305,13 @@ export class Row extends React.Component<Row.Props, Row.State> {
       width: 100,
       setting: 'blocklasttime',
       render: ({ blockTimestamp }) => <Ago when={blockTimestamp} />
+    },
+    {
+      label: 'Node Uptime',
+      icon: uptimeIcon,
+      width: 58,
+      setting: 'uptime',
+      render: ({ connectedAt }) => <Ago when={connectedAt} justTime={true} />
     },
     {
       label: 'NetworkState',
