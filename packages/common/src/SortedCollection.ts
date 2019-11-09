@@ -105,8 +105,9 @@ export class SortedCollection<Item extends { id: number }> {
   }
 
   public add(item: Item) {
-    if (this.map.length >= item.id) {
-      this.map = this.map.concat(Array<Maybe<Item>>(10))
+    if (this.map.length <= item.id) {
+      // Grow map if item.id would be out of scope
+      this.map = this.map.concat(Array<Maybe<Item>>(Math.max(10, 1 + item.id - this.map.length)));
     }
 
     this.map[item.id] = item;
