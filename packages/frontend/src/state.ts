@@ -220,7 +220,7 @@ export interface State {
   timeDiff: Types.Milliseconds;
   subscribed: Maybe<Types.ChainLabel>;
   chains: Map<Types.ChainLabel, ChainData>;
-  nodes: SortedCollection<Types.NodeId, Node>;
+  nodes: SortedCollection<Node>;
   settings: Readonly<State.Settings>;
   pins: Readonly<Set<Types.NodeName>>;
 }
