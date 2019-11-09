@@ -9,8 +9,11 @@ pub struct MeanList<T> where T: Float + AddAssign + Zero + From<u8> {
     ticks_per_mean: u8,
 }
 
-impl<T> MeanList<T> where T: Float + AddAssign + Zero + From<u8> {
-    pub fn new() -> MeanList<T> {
+impl<T> Default for MeanList<T>
+where
+    T: Float + AddAssign + Zero + From<u8>,
+{
+    fn default() -> MeanList<T> {
         MeanList {
             period_sum: T::zero(),
             period_count: 0,
@@ -19,7 +22,9 @@ impl<T> MeanList<T> where T: Float + AddAssign + Zero + From<u8> {
             ticks_per_mean: 1,
         }
     }
+}
 
+impl<T> MeanList<T> where T: Float + AddAssign + Zero + From<u8> {
     pub fn slice(&self) -> &[T] {
         &self.means[..usize::from(self.mean_index)]
     }

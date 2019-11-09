@@ -2,7 +2,7 @@ use bytes::Bytes;
 use std::sync::Arc;
 
 use crate::types::{NodeId, NodeDetails, NodeStats, NodeHardware, NodeLocation, BlockDetails, Block};
-use crate::util::{MeanList, now};
+use crate::util::now;
 
 pub mod message;
 pub mod connector;
@@ -25,24 +25,16 @@ pub struct Node {
     finalized: Block,
     /// Timer for throttling block updates
     throttle: u64,
-    /// CPU use means
-    cpu: MeanList<f32>,
-    /// Memory use means
-    memory: MeanList<f32>,
-    /// Upload uses means
-    upload: MeanList<f64>,
-    /// Download uses means
-    download: MeanList<f64>,
-    /// Stampchange uses means
-    chart_stamps: MeanList<f64>,
+    /// Hardware stats over time
+    hardware: NodeHardware,
     /// Physical location details
     location: Option<Arc<NodeLocation>>,
     /// Flag marking if the node is stale (not syncing or producing blocks)
     stale: bool,
     /// Connected at timestamp
-    connected: u64,
+    connected_at: u64,
     /// Network state
-    pub network_state: Option<Bytes>,
+    network_state: Option<Bytes>,
 }
 
 impl Node {
@@ -62,14 +54,10 @@ impl Node {
             },
             finalized: Block::zero(),
             throttle: 0,
-            cpu: MeanList::new(),
-            memory: MeanList::new(),
-            upload: MeanList::new(),
-            download: MeanList::new(),
-            chart_stamps: MeanList::new(),
+            hardware: NodeHardware::default(),
             location: None,
             stale: false,
-            connected: now(),
+            connected_at: now(),
             network_state: None,
         }
     }
@@ -90,14 +78,8 @@ impl Node {
         &self.finalized
     }
 
-    pub fn hardware(&self) -> NodeHardware {
-        (
-            self.memory.slice(),
-            self.cpu.slice(),
-            self.upload.slice(),
-            self.download.slice(),
-            self.chart_stamps.slice(),
-        )
+    pub fn hardware(&self) -> &NodeHardware {
+        &self.hardware
     }
 
     pub fn location(&self) -> Option<&NodeLocation> {
@@ -139,18 +121,18 @@ impl Node {
         let mut changed = false;
 
         if let Some(cpu) = interval.cpu {
-            changed |= self.cpu.push(cpu);
+            changed |= self.hardware.cpu.push(cpu);
         }
         if let Some(memory) = interval.memory {
-            changed |= self.memory.push(memory);
+            changed |= self.hardware.memory.push(memory);
         }
         if let Some(upload) = interval.bandwidth_upload {
-            changed |= self.upload.push(upload);
+            changed |= self.hardware.upload.push(upload);
         }
         if let Some(download) = interval.bandwidth_download {
-            changed |= self.download.push(download);
+            changed |= self.hardware.download.push(download);
         }
-        self.chart_stamps.push(now() as f64);
+        self.hardware.chart_stamps.push(now() as f64);
 
         changed
     }
@@ -210,5 +192,9 @@ impl Node {
         let state = wrap.state.or(wrap.network_state)?;
 
         Some(state.get().into())
+    }
+
+    pub fn connected_at(&self) -> &u64 {
+        &self.connected_at
     }
 }

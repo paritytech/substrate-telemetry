@@ -177,7 +177,7 @@ impl Handler<Connect> for Aggregator {
 
         connector.do_send(Connected(fid));
 
-        self.serializer.push(feed::Version(27));
+        self.serializer.push(feed::Version(28));
 
         // TODO: keep track on number of nodes connected to each chain
         for (_, entry) in self.chains.iter() {

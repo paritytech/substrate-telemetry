@@ -1,8 +1,10 @@
 use serde::Serialize;
+use serde::ser::{Serializer, SerializeTuple};
+
 use serde_json::to_writer;
+use crate::node::Node;
 use crate::types::{
-    NodeId, NodeDetails, NodeStats, NodeHardware, NodeLocation,
-    BlockNumber, BlockHash, BlockDetails, Timestamp,
+    NodeId, NodeStats, NodeHardware, BlockNumber, BlockHash, BlockDetails, Timestamp,
 };
 
 pub mod connector;
@@ -96,9 +98,7 @@ pub struct BestBlock(pub BlockNumber, pub Timestamp, pub Option<u64>);
 #[derive(Serialize)]
 pub struct BestFinalized(pub BlockNumber, pub BlockHash);
 
-#[derive(Serialize)]
-pub struct AddedNode<'a>(pub NodeId, pub &'a NodeDetails, pub &'a NodeStats, pub NodeHardware<'a>,
-                         pub &'a BlockDetails, pub Option<&'a NodeLocation>);
+pub struct AddedNode<'a>(pub NodeId, pub &'a Node);
 
 #[derive(Serialize)]
 pub struct RemovedNode(pub NodeId);
@@ -116,7 +116,7 @@ pub struct FinalizedBlock(pub NodeId, pub BlockNumber, pub BlockHash);
 pub struct NodeStatsUpdate<'a>(pub NodeId, pub &'a NodeStats);
 
 #[derive(Serialize)]
-pub struct Hardware<'a>(pub NodeId, pub NodeHardware<'a>);
+pub struct Hardware<'a>(pub NodeId, pub &'a NodeHardware);
 
 #[derive(Serialize)]
 pub struct TimeSync(pub u64);
@@ -138,3 +138,21 @@ pub struct Pong<'a>(pub &'a str);
 
 #[derive(Serialize)]
 pub struct StaleNode(pub NodeId);
+
+impl Serialize for AddedNode<'_> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let AddedNode(nid, node) = self;
+        let mut tup = serializer.serialize_tuple(7)?;
+        tup.serialize_element(nid)?;
+        tup.serialize_element(node.details())?;
+        tup.serialize_element(node.stats())?;
+        tup.serialize_element(node.hardware())?;
+        tup.serialize_element(node.block_details())?;
+        tup.serialize_element(&node.location())?;
+        tup.serialize_element(node.connected_at())?;
+        tup.end()
+    }
+}

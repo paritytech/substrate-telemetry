@@ -1,6 +1,8 @@
 use serde::ser::{Serialize, Serializer, SerializeTuple};
 use serde::Deserialize;
 
+use crate::util::MeanList;
+
 pub type NodeId = usize;
 pub type BlockNumber = u64;
 pub type Timestamp = u64;
@@ -36,7 +38,19 @@ pub struct BlockDetails {
     pub propagation_time: Option<u64>,
 }
 
-pub type NodeHardware<'a> = (&'a [f32], &'a [f32], &'a [f64], &'a [f64], &'a [f64]);
+#[derive(Default)]
+pub struct NodeHardware {
+    /// CPU use means
+    pub cpu: MeanList<f32>,
+    /// Memory use means
+    pub memory: MeanList<f32>,
+    /// Upload uses means
+    pub upload: MeanList<f64>,
+    /// Download uses means
+    pub download: MeanList<f64>,
+    /// Stampchange uses means
+    pub chart_stamps: MeanList<f64>,
+}
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct NodeLocation {
@@ -54,9 +68,8 @@ impl Serialize for NodeDetails {
         tup.serialize_element(&self.name)?;
         tup.serialize_element(&self.implementation)?;
         tup.serialize_element(&self.version)?;
-        tup.serialize_element(&self.validator)?; // TODO Maybe<Address>
-        tup.serialize_element(&self.network_id)?; // TODO Maybe<NetworkId>
-        tup.serialize_element("")?; // TODO Address
+        tup.serialize_element(&self.validator)?;
+        tup.serialize_element(&self.network_id)?;
         tup.end()
     }
 }
@@ -97,6 +110,21 @@ impl Serialize for NodeLocation {
         tup.serialize_element(&self.latitude)?;
         tup.serialize_element(&self.longitude)?;
         tup.serialize_element(&&*self.city)?;
+        tup.end()
+    }
+}
+
+impl Serialize for NodeHardware {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut tup = serializer.serialize_tuple(5)?;
+        tup.serialize_element(self.memory.slice())?;
+        tup.serialize_element(self.cpu.slice())?;
+        tup.serialize_element(self.upload.slice())?;
+        tup.serialize_element(self.download.slice())?;
+        tup.serialize_element(self.chart_stamps.slice())?;
         tup.end()
     }
 }

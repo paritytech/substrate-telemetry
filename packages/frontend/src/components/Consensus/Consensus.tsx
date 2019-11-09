@@ -233,7 +233,7 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
     }
 
     return this.props.appState.authorities.map(address => {
-      const node2 = this.props.appState.nodes.sorted().filter(node => node.address === address)[0];
+      const node2 = this.props.appState.nodes.sorted().filter(node => node.validator === address)[0];
       if (!node2) {
         return {Address: address, NodeId: null, Name: null} as Types.Authority;
       }
