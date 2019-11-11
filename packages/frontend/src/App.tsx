@@ -1,8 +1,8 @@
 import * as React from 'react';
-import { Types, SortedCollection } from '@dotstats/common';
+import { Types, SortedCollection, Maybe } from '@dotstats/common';
 import { AllChains, Chains, Chain, Ago, OfflineIndicator } from './components';
 import { Connection } from './Connection';
-import { PersistentObject, PersistentSet } from './persist';
+import { Persistent, PersistentObject, PersistentSet } from './persist';
 import { State, Node, ChainData, PINNED_CHAIN } from './state';
 import { getHashData } from './utils';
 import stable from 'stable';
@@ -14,6 +14,7 @@ export default class App extends React.Component<{}, State> {
   private chainsCache: ChainData[] = [];
   private readonly settings: PersistentObject<State.Settings>;
   private readonly pins: PersistentSet<Types.NodeName>;
+  private readonly sortBy: Persistent<Maybe<number>>;
   private readonly connection: Promise<Connection>;
 
   constructor(props: {}) {
@@ -53,6 +54,10 @@ export default class App extends React.Component<{}, State> {
       this.setState({ nodes, pins });
     });
 
+    this.sortBy = new Persistent<Maybe<number>>('sortBy', null, (sortBy) => {
+      this.setState({ sortBy });
+    });
+
     const { tab = '' } = getHashData();
 
     this.state = {
@@ -72,6 +77,7 @@ export default class App extends React.Component<{}, State> {
       nodes: new SortedCollection(Node.compare),
       settings: this.settings.raw(),
       pins: this.pins.get(),
+      sortBy: this.sortBy.get(),
       tab,
     };
 
@@ -109,7 +115,7 @@ export default class App extends React.Component<{}, State> {
       <div className="App">
         <OfflineIndicator status={status} />
         <Chains chains={chains} subscribed={subscribed} connection={this.connection} />
-        <Chain appState={this.state} connection={this.connection} settings={this.settings} pins={this.pins} />
+        <Chain appState={this.state} connection={this.connection} settings={this.settings} pins={this.pins} sortBy={this.sortBy} />
         {overlay}
       </div>
     );

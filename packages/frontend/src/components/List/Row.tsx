@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Types, Maybe, timestamp, Compare } from '@dotstats/common';
 import { formatNumber, getHashData, milliOrSecond, secondsWithPrecision } from '../../utils';
 import { State as AppState, Node } from '../../state';
-import { PersistentSet } from '../../persist';
+import { Persistent, PersistentSet } from '../../persist';
 import { Truncate, HeaderCell } from './';
 import { Ago, Icon, Tooltip, Sparkline, PolkadotIcon } from '../';
 
@@ -78,6 +78,7 @@ export namespace Row {
 
 interface HeaderProps {
   columns: Column[];
+  sortBy: Persistent<Maybe<number>>;
 }
 
 export interface Column {
@@ -336,14 +337,16 @@ export class Row extends React.Component<Row.Props, Row.State> {
   ];
 
   public static Header = (props: HeaderProps) => {
-    const { columns } = props;
+    const { columns, sortBy } = props;
     const last = columns.length - 1;
 
     return (
       <thead>
         <tr className="Row-Header">
           {
-            columns.map((col, index) => <HeaderCell key={index} column={col} first={index === 0} last={index === last} />)
+            columns.map((col, index) => (
+              <HeaderCell key={index} column={col} index={index} last={last} sortBy={sortBy} />
+            ))
           }
         </tr>
       </thead>

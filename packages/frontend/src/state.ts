@@ -223,6 +223,7 @@ export interface State {
   nodes: SortedCollection<Node>;
   settings: Readonly<State.Settings>;
   pins: Readonly<Set<Types.NodeName>>;
+  sortBy: Readonly<Maybe<number>>;
 }
 
 export type Update = <K extends keyof State>(changes: Pick<State, K> | null) => Readonly<State>;

@@ -1,11 +1,11 @@
 import * as React from 'react';
 import { Connection } from '../../Connection';
-import { Types } from '@dotstats/common';
+import { Types, Maybe } from '@dotstats/common';
 import { State as AppState } from '../../state';
 import { formatNumber, secondsWithPrecision, getHashData } from '../../utils';
 import { Tab } from './';
 import { Tile, Ago, List, Map, Settings, Consensus } from '../';
-import { PersistentObject, PersistentSet } from '../../persist';
+import { Persistent, PersistentObject, PersistentSet } from '../../persist';
 
 import blockIcon from '../../icons/cube.svg';
 import finalizedIcon from '../../icons/cube-alt.svg';
@@ -26,6 +26,7 @@ export namespace Chain {
     connection: Promise<Connection>;
     settings: PersistentObject<AppState.Settings>;
     pins: PersistentSet<Types.NodeName>;
+    sortBy: Persistent<Maybe<number>>;
   }
 
   export interface State {
@@ -91,7 +92,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
       return <Settings settings={this.props.settings} />;
     }
 
-    const { appState, connection, pins } = this.props;
+    const { appState, connection, pins, sortBy } = this.props;
 
     if (display === 'consensus') {
       return <Consensus appState={appState} connection={connection} />;
@@ -99,7 +100,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
 
     return (
       display === 'list'
-        ? <List appState={appState} pins={pins} />
+        ? <List appState={appState} pins={pins} sortBy={sortBy} />
         : <Map appState={appState} />
     );
   }
