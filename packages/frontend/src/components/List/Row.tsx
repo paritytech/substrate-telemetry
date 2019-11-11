@@ -1,9 +1,9 @@
 import * as React from 'react';
-import { Types, Maybe, timestamp } from '@dotstats/common';
+import { Types, Maybe, timestamp, Compare } from '@dotstats/common';
 import { formatNumber, getHashData, milliOrSecond, secondsWithPrecision } from '../../utils';
 import { State as AppState, Node } from '../../state';
 import { PersistentSet } from '../../persist';
-import { Truncate } from './';
+import { Truncate, HeaderCell } from './';
 import { Ago, Icon, Tooltip, Sparkline, PolkadotIcon } from '../';
 
 import nodeIcon from '../../icons/server.svg';
@@ -80,11 +80,12 @@ interface HeaderProps {
   columns: Column[];
 }
 
-interface Column {
+export interface Column {
   label: string;
   icon: string;
   width?: number;
   setting?: keyof AppState.Settings;
+  sort?: Compare<Node>;
   render: (node: Node) => React.ReactElement<any> | string;
 }
 
@@ -137,11 +138,14 @@ const URI_BASE = window.location.protocol === 'https:'
                                     ? `/network_state/`
                                     : `http://${window.location.hostname}:8000/network_state/`;
 
+
+
 export class Row extends React.Component<Row.Props, Row.State> {
   public static readonly columns: Column[] = [
     {
       label: 'Node',
       icon: nodeIcon,
+      sort: (a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0,
       render: ({ name }) => <Truncate text={name} position="left" />
     },
     {
@@ -339,17 +343,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
       <thead>
         <tr className="Row-Header">
           {
-            columns.map(({ icon, width, label }, index) => {
-              const position = index === 0 ? 'left'
-                             : index === last ? 'right'
-                             : 'center';
-
-              return (
-                <th key={index} style={width ? { width } : undefined}>
-                  <Tooltip text={label} inline={true} position={position}><Icon src={icon} /></Tooltip>
-                </th>
-              )
-            })
+            columns.map((col, index) => <HeaderCell key={index} column={col} first={index === 0} last={index === last} />)
           }
         </tr>
       </thead>

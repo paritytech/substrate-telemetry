@@ -90,14 +90,19 @@ export namespace SortedCollection {
 }
 
 export class SortedCollection<Item extends { id: number }> {
-  private readonly compare: Compare<Item>;
-
+  private compare: Compare<Item>;
   private map = Array<Maybe<Item>>();
   private list = Array<Item>();
   private changeRef = 0;
 
   constructor(compare: Compare<Item>) {
     this.compare = compare;
+  }
+
+  public setComparator(compare: Compare<Item>) {
+    this.compare = compare;
+    this.list.sort(compare);
+    this.changeRef += 1;
   }
 
   public ref(): SortedCollection.StateRef {
