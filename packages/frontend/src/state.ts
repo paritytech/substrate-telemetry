@@ -1,4 +1,5 @@
 import { Types, Maybe, SortedCollection } from '@dotstats/common';
+import { Column } from './components/List';
 
 export const PINNED_CHAIN = 'Kusama CC2';
 
@@ -30,6 +31,9 @@ export class Node {
   public readonly validator: Maybe<Types.Address>;
   public readonly networkId: Maybe<Types.NetworkId>;
   public readonly connectedAt: Types.Timestamp;
+
+  public readonly sortableName: string;
+  public readonly sortableVersion: number;
 
   public stale: boolean;
   public pinned: boolean;
@@ -78,6 +82,11 @@ export class Node {
     this.validator = validator;
     this.networkId = networkId;
     this.connectedAt = connectedAt;
+
+    const [major = 0, minor = 0, patch = 0] = (version || '0.0.0').split('.').map((n) => parseInt(n, 10) | 0);
+
+    this.sortableName = name.toLocaleLowerCase();
+    this.sortableVersion = (major * 1000 + minor * 100 + patch) | 0;
 
     this.updateStats(nodeStats);
     this.updateHardware(nodeHardware);
@@ -203,6 +212,11 @@ export namespace State {
     uptime: boolean;
     networkstate: boolean;
   }
+
+  export interface SortBy {
+    column: string;
+    reverse: boolean;
+  }
 }
 
 export interface State {
@@ -223,6 +237,8 @@ export interface State {
   nodes: SortedCollection<Node>;
   settings: Readonly<State.Settings>;
   pins: Readonly<Set<Types.NodeName>>;
+  sortBy: Readonly<Maybe<number>>;
+  selectedColumns: Column[];
 }
 
 export type Update = <K extends keyof State>(changes: Pick<State, K> | null) => Readonly<State>;

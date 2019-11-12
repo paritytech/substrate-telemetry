@@ -1,8 +1,9 @@
 import * as React from 'react';
-import { Types, SortedCollection } from '@dotstats/common';
+import { Types, SortedCollection, Maybe, Compare } from '@dotstats/common';
 import { AllChains, Chains, Chain, Ago, OfflineIndicator } from './components';
+import { Row, Column } from './components/List';
 import { Connection } from './Connection';
-import { PersistentObject, PersistentSet } from './persist';
+import { Persistent, PersistentObject, PersistentSet } from './persist';
 import { State, Node, ChainData, PINNED_CHAIN } from './state';
 import { getHashData } from './utils';
 import stable from 'stable';
@@ -14,6 +15,7 @@ export default class App extends React.Component<{}, State> {
   private chainsCache: ChainData[] = [];
   private readonly settings: PersistentObject<State.Settings>;
   private readonly pins: PersistentSet<Types.NodeName>;
+  private readonly sortBy: Persistent<Maybe<number>>;
   private readonly connection: Promise<Connection>;
 
   constructor(props: {}) {
@@ -42,7 +44,12 @@ export default class App extends React.Component<{}, State> {
         uptime: false,
         networkstate: false,
       },
-      (settings) => this.setState({ settings })
+      (settings) => {
+        const selectedColumns = this.selectedColumns(settings);
+
+        this.sortBy.set(null);
+        this.setState({ settings, selectedColumns, sortBy: null })
+      },
     );
 
     this.pins = new PersistentSet<Types.NodeName>('pinned_names', (pins) => {
@@ -51,6 +58,13 @@ export default class App extends React.Component<{}, State> {
       nodes.mutEachAndSort((node) => node.setPinned(pins.has(node.name)));
 
       this.setState({ nodes, pins });
+    });
+
+    this.sortBy = new Persistent<Maybe<number>>('sortBy', null, (sortBy) => {
+      const compare = this.getComparator(sortBy);
+
+      this.state.nodes.setComparator(compare);
+      this.setState({ sortBy });
     });
 
     const { tab = '' } = getHashData();
@@ -72,8 +86,12 @@ export default class App extends React.Component<{}, State> {
       nodes: new SortedCollection(Node.compare),
       settings: this.settings.raw(),
       pins: this.pins.get(),
+      sortBy: this.sortBy.get(),
+      selectedColumns: this.selectedColumns(this.settings.raw()),
       tab,
     };
+
+    this.state.nodes.setComparator(this.getComparator(this.sortBy.get()));
 
     this.connection = Connection.create(this.pins, (changes) => {
       if (changes) {
@@ -109,7 +127,7 @@ export default class App extends React.Component<{}, State> {
       <div className="App">
         <OfflineIndicator status={status} />
         <Chains chains={chains} subscribed={subscribed} connection={this.connection} />
-        <Chain appState={this.state} connection={this.connection} settings={this.settings} pins={this.pins} />
+        <Chain appState={this.state} connection={this.connection} settings={this.settings} pins={this.pins} sortBy={this.sortBy} />
         {overlay}
       </div>
     );
@@ -181,4 +199,35 @@ export default class App extends React.Component<{}, State> {
     return this.chainsCache;
   }
 
+  private selectedColumns(settings: State.Settings): Column[] {
+    return Row.columns.filter(({ setting }) => setting == null || settings[setting]);
+  }
+
+  private getComparator(sortBy: Maybe<number>): Compare<Node> {
+    const columns = this.state.selectedColumns;
+
+    if (sortBy != null) {
+      const [index, rev] = sortBy < 0 ? [~sortBy, -1] : [sortBy, 1];
+      const column = columns[index];
+
+      if (column != null && column.sortBy) {
+        const key = column.sortBy;
+
+        return (a, b) => {
+          const aKey = key(a);
+          const bKey = key(b);
+
+          if (aKey < bKey) {
+            return -1 * rev;
+          } else if (aKey > bKey) {
+            return 1 * rev;
+          } else {
+            return Node.compare(a, b);
+          }
+        }
+      }
+    }
+
+    return Node.compare;
+  }
 }

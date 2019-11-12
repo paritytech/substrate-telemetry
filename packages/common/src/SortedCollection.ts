@@ -90,14 +90,20 @@ export namespace SortedCollection {
 }
 
 export class SortedCollection<Item extends { id: number }> {
-  private readonly compare: Compare<Item>;
-
+  private compare: Compare<Item>;
   private map = Array<Maybe<Item>>();
   private list = Array<Item>();
   private changeRef = 0;
 
   constructor(compare: Compare<Item>) {
     this.compare = compare;
+  }
+
+  public setComparator(compare: Compare<Item>) {
+    this.compare = compare;
+    this.list = this.map.filter((item) => item != null) as Item[];
+    this.list.sort(compare);
+    this.changeRef += 1;
   }
 
   public ref(): SortedCollection.StateRef {
@@ -109,6 +115,9 @@ export class SortedCollection<Item extends { id: number }> {
       // Grow map if item.id would be out of scope
       this.map = this.map.concat(Array<Maybe<Item>>(Math.max(10, 1 + item.id - this.map.length)));
     }
+
+    // Remove old item if overriding
+    this.remove(item.id);
 
     this.map[item.id] = item;
 
@@ -166,6 +175,14 @@ export class SortedCollection<Item extends { id: number }> {
 
     if (newIndex !== index) {
       this.changeRef += 1;
+    }
+  }
+
+  public mutAndMaybeSort(id: number, mutator: (item: Item) => void, sort: boolean) {
+    if (sort) {
+      this.mutAndSort(id, mutator);
+    } else {
+      this.mut(id, mutator);
     }
   }
 

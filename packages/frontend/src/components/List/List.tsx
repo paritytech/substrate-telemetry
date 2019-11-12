@@ -3,7 +3,7 @@ import { Types, Maybe } from '@dotstats/common';
 import { Filter } from '../';
 import { State as AppState, Node } from '../../state';
 import { Row } from './';
-import { PersistentSet } from '../../persist';
+import { Persistent, PersistentSet } from '../../persist';
 import { viewport } from '../../utils'
 
 const HEADER = 148;
@@ -17,6 +17,7 @@ export namespace List {
   export interface Props {
     appState: Readonly<AppState>;
     pins: PersistentSet<Types.NodeName>;
+    sortBy: Persistent<Maybe<number>>;
   }
 
   export interface State {
@@ -51,10 +52,9 @@ export class List extends React.Component<List.Props, {}> {
   }
 
   public render() {
-    const { settings } = this.props.appState;
-    const { pins } = this.props;
+    const { selectedColumns } = this.props.appState;
+    const { pins, sortBy } = this.props;
     const { filter } = this.state;
-    const columns = Row.columns.filter(({ setting }) => setting == null || settings[setting]);
 
     let nodes = this.props.appState.nodes.sorted();
 
@@ -82,10 +82,10 @@ export class List extends React.Component<List.Props, {}> {
       <React.Fragment>
         <div className="List" style={{ height }}>
           <table>
-            <Row.Header columns={columns} />
+            <Row.Header columns={selectedColumns} sortBy={sortBy} />
             <tbody style={{ transform }}>
             {
-              nodes.map((node) => <Row key={node.id} node={node} pins={pins} columns={columns} />)
+              nodes.map((node) => <Row key={node.id} node={node} pins={pins} columns={selectedColumns} />)
             }
             </tbody>
           </table>

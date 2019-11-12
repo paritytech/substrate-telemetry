@@ -26,6 +26,16 @@
   height: 23px;
 }
 
+.Row-Header th.HeaderCell-sortable {
+  cursor: pointer;
+}
+
+.Row-Header th.HeaderCell-sorted {
+  cursor: pointer;
+  background: #E6007A;
+  color: #fff;
+}
+
 .Row .Row-truncate {
   position: absolute;
   left: 0;
