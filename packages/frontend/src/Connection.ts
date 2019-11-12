@@ -4,6 +4,7 @@ import { PersistentSet } from './persist';
 import { getHashData, setHashData } from './utils';
 import { AfgHandling } from './AfgHandling';
 import { VIS_AUTHORITIES_LIMIT } from '../../frontend/src/components/Consensus';
+import { Column } from './components/List';
 
 const { Actions } = FeedMessage;
 
@@ -17,11 +18,11 @@ export class Connection {
 
   private static readonly utf8decoder = new TextDecoder('utf-8');
 
-  private static readonly address = window.location.protocol === 'https:'
-                                      ? `wss://${window.location.hostname}/feed/`
-                                      : `ws://127.0.0.1:8000/feed`;
+  // private static readonly address = window.location.protocol === 'https:'
+  //                                     ? `wss://${window.location.hostname}/feed/`
+  //                                     : `ws://127.0.0.1:8000/feed`;
 
-  // private static readonly address = 'wss://telemetry.polkadot.io/feed/';
+  private static readonly address = 'wss://telemetry.polkadot.io/feed/';
 
   private static async socket(): Promise<WebSocket> {
     let socket = await Connection.trySocket();
@@ -117,12 +118,18 @@ export class Connection {
   }
 
   public handleMessages = (messages: FeedMessage.Message[]) => {
-    const { nodes, chains, sortBy } = this.state;
+    const { nodes, chains, sortBy, selectedColumns } = this.state;
     const ref = nodes.ref();
 
     const updateState: UpdateBound = (state) => { this.state = this.update(state); };
     const getState = () => this.state;
     const afg = new AfgHandling(updateState, getState);
+
+    let sortByColumn: Maybe<Column> = null;
+
+    if (sortBy != null) {
+      sortByColumn = sortBy < 0 ? selectedColumns[~sortBy] : selectedColumns[sortBy];
+    }
 
     for (const message of messages) {
       switch (message.action) {
@@ -187,7 +194,7 @@ export class Connection {
         case Actions.LocatedNode: {
           const [id, lat, lon, city] = message.payload;
 
-          nodes.mutAndMaybeSort(id, (node) => node.updateLocation([lat, lon, city]), sortBy != null);
+          nodes.mutAndMaybeSort(id, (node) => node.updateLocation([lat, lon, city]), sortByColumn === Column.LOCATION);
 
           break;
         }
@@ -203,7 +210,11 @@ export class Connection {
         case Actions.FinalizedBlock: {
           const [id, height, hash] = message.payload;
 
-          nodes.mutAndMaybeSort(id, (node) => node.updateFinalized(height, hash), sortBy != null);
+          nodes.mutAndMaybeSort(
+            id,
+            (node) => node.updateFinalized(height, hash),
+            sortByColumn === Column.FINALIZED || sortByColumn === Column.FINALIZED_HASH,
+          );
 
           break;
         }
@@ -211,7 +222,11 @@ export class Connection {
         case Actions.NodeStats: {
           const [id, nodeStats] = message.payload;
 
-          nodes.mutAndMaybeSort(id, (node) => node.updateStats(nodeStats), sortBy != null);
+          nodes.mutAndMaybeSort(
+            id,
+            (node) => node.updateStats(nodeStats),
+            sortByColumn === Column.PEERS || sortByColumn === Column.TXS,
+          );
 
           break;
         }
@@ -219,7 +234,11 @@ export class Connection {
         case Actions.NodeHardware: {
           const [id, nodeHardware] = message.payload;
 
-          nodes.mutAndMaybeSort(id, (node) => node.updateHardware(nodeHardware), sortBy != null);
+          nodes.mutAndMaybeSort(
+            id,
+            (node) => node.updateHardware(nodeHardware),
+            sortByColumn === Column.CPU || sortByColumn === Column.MEM || sortByColumn === Column.UPLOAD || sortByColumn === Column.DOWNLOAD,
+          );
 
           break;
         }

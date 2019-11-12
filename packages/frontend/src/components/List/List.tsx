@@ -52,10 +52,9 @@ export class List extends React.Component<List.Props, {}> {
   }
 
   public render() {
-    const { settings } = this.props.appState;
+    const { selectedColumns } = this.props.appState;
     const { pins, sortBy } = this.props;
     const { filter } = this.state;
-    const columns = Row.columns.filter(({ setting }) => setting == null || settings[setting]);
 
     let nodes = this.props.appState.nodes.sorted();
 
@@ -83,10 +82,10 @@ export class List extends React.Component<List.Props, {}> {
       <React.Fragment>
         <div className="List" style={{ height }}>
           <table>
-            <Row.Header columns={columns} sortBy={sortBy} />
+            <Row.Header columns={selectedColumns} sortBy={sortBy} />
             <tbody style={{ transform }}>
             {
-              nodes.map((node) => <Row key={node.id} node={node} pins={pins} columns={columns} />)
+              nodes.map((node) => <Row key={node.id} node={node} pins={pins} columns={selectedColumns} />)
             }
             </tbody>
           </table>

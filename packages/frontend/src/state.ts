@@ -1,4 +1,5 @@
 import { Types, Maybe, SortedCollection } from '@dotstats/common';
+import { Column } from './components/List';
 
 export const PINNED_CHAIN = 'Kusama CC2';
 
@@ -237,6 +238,7 @@ export interface State {
   settings: Readonly<State.Settings>;
   pins: Readonly<Set<Types.NodeName>>;
   sortBy: Readonly<Maybe<number>>;
+  selectedColumns: Column[];
 }
 
 export type Update = <K extends keyof State>(changes: Pick<State, K> | null) => Readonly<State>;

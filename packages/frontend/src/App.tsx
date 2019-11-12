@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Types, SortedCollection, Maybe, Compare } from '@dotstats/common';
 import { AllChains, Chains, Chain, Ago, OfflineIndicator } from './components';
-import { Row } from './components/List';
+import { Row, Column } from './components/List';
 import { Connection } from './Connection';
 import { Persistent, PersistentObject, PersistentSet } from './persist';
 import { State, Node, ChainData, PINNED_CHAIN } from './state';
@@ -45,8 +45,10 @@ export default class App extends React.Component<{}, State> {
         networkstate: false,
       },
       (settings) => {
+        const selectedColumns = this.selectedColumns(settings);
+
         this.sortBy.set(null);
-        this.setState({ settings, sortBy: null })
+        this.setState({ settings, selectedColumns, sortBy: null })
       },
     );
 
@@ -85,6 +87,7 @@ export default class App extends React.Component<{}, State> {
       settings: this.settings.raw(),
       pins: this.pins.get(),
       sortBy: this.sortBy.get(),
+      selectedColumns: this.selectedColumns(this.settings.raw()),
       tab,
     };
 
@@ -196,9 +199,12 @@ export default class App extends React.Component<{}, State> {
     return this.chainsCache;
   }
 
+  private selectedColumns(settings: State.Settings): Column[] {
+    return Row.columns.filter(({ setting }) => setting == null || settings[setting]);
+  }
+
   private getComparator(sortBy: Maybe<number>): Compare<Node> {
-    const settings = this.state.settings;
-    const columns = Row.columns.filter(({ setting }) => setting == null || settings[setting]);
+    const columns = this.state.selectedColumns;
 
     if (sortBy != null) {
       const [index, rev] = sortBy < 0 ? [~sortBy, -1] : [sortBy, 1];
