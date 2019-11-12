@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Types, Maybe, timestamp, Compare } from '@dotstats/common';
+import { Types, Maybe, timestamp } from '@dotstats/common';
 import { formatNumber, getHashData, milliOrSecond, secondsWithPrecision } from '../../utils';
 import { State as AppState, Node } from '../../state';
 import { Persistent, PersistentSet } from '../../persist';
@@ -86,7 +86,7 @@ export interface Column {
   icon: string;
   width?: number;
   setting?: keyof AppState.Settings;
-  sort?: Compare<Node>;
+  sortBy?: (node: Node) => any;
   render: (node: Node) => React.ReactElement<any> | string;
 }
 
@@ -146,7 +146,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
     {
       label: 'Node',
       icon: nodeIcon,
-      sort: (a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0,
+      sortBy: ({ sortableName }) => sortableName,
       render: ({ name }) => <Truncate text={name} position="left" />
     },
     {
@@ -154,6 +154,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
       icon: nodeValidatorIcon,
       width: 16,
       setting: 'validator',
+      sortBy: ({ validator }) => validator || '',
       render: ({ validator }) => {
         return validator ? <Tooltip text={validator} copy={true}><span className="Row-validator"><PolkadotIcon account={validator} size={16} /></span></Tooltip> : '-';
       }
@@ -163,6 +164,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
       icon: nodeLocationIcon,
       width: 140,
       setting: 'location',
+      sortBy: ({ city }) => city || '',
       render: ({ city }) => city ? <Truncate position="left" text={city} /> : '-'
     },
     {
@@ -170,6 +172,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
       icon: nodeTypeIcon,
       width: 90,
       setting: 'implementation',
+      sortBy: ({ sortableVersion }) => sortableVersion,
       render: ({ implementation, version }) => {
         const [semver] = version.match(SEMVER_PATTERN) || ['?.?.?'];
         const implIcon = ICONS[implementation] || unknownImplementationIcon;
@@ -186,6 +189,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
       icon: networkIdIcon,
       width: 90,
       setting: 'networkId',
+      sortBy: ({ networkId }) => networkId || '',
       render: ({ networkId }) => networkId ? <Truncate position="left" text={networkId} /> : '-'
     },
     {
@@ -193,6 +197,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
       icon: peersIcon,
       width: 26,
       setting: 'peers',
+      sortBy: ({ peers }) => peers,
       render: ({ peers }) => `${peers}`
     },
     {
@@ -200,6 +205,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
       icon: transactionsIcon,
       width: 26,
       setting: 'txs',
+      sortBy: ({ txs }) => txs,
       render: ({ txs }) => `${txs}`
     },
     {
@@ -207,6 +213,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
       icon: cpuIcon,
       width: 40,
       setting: 'cpu',
+      sortBy: ({ cpu }) => (cpu && cpu[cpu.length - 1]) || 0,
       render: ({ cpu, chartstamps }) => {
         if (cpu.length < 3) {
           return '-';
@@ -222,6 +229,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
       icon: memoryIcon,
       width: 40,
       setting: 'mem',
+      sortBy: ({ mem }) => (mem && mem[mem.length - 1]) || 0,
       render: ({ mem, chartstamps }) => {
         if (mem.length < 3) {
           return '-';
@@ -237,6 +245,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
       icon: uploadIcon,
       width: 40,
       setting: 'upload',
+      sortBy: ({ upload }) => (upload && upload[upload.length - 1]) || 0,
       render: ({ upload, chartstamps }) => {
         if (upload.length < 3) {
           return '-';
@@ -252,6 +261,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
       icon: downloadIcon,
       width: 40,
       setting: 'download',
+      sortBy: ({ download }) => (download && download[download.length - 1]) || 0,
       render: ({ download, chartstamps }) => {
         if (download.length < 3) {
           return '-';
@@ -267,6 +277,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
       icon: blockIcon,
       width: 88,
       setting: 'blocknumber',
+      sortBy: ({ height }) => height || 0,
       render: ({ height }) => `#${formatNumber(height)}`
     },
     {
@@ -274,6 +285,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
       icon: blockHashIcon,
       width: 154,
       setting: 'blockhash',
+      sortBy: ({ hash }) => hash || '',
       render: ({ hash }) => <Truncate position="right" text={hash} copy={true} />
     },
     {
@@ -281,6 +293,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
       icon: finalizedIcon,
       width: 88,
       setting: 'finalized',
+      sortBy: ({ finalized }) => finalized || 0,
       render: ({ finalized }) => `#${formatNumber(finalized)}`
     },
     {
@@ -288,6 +301,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
       icon: blockHashIcon,
       width: 154,
       setting: 'finalizedhash',
+      sortBy: ({ finalizedHash }) => finalizedHash || '',
       render: ({ finalizedHash }) => <Truncate position="right" text={finalizedHash} copy={true} />
     },
     {
@@ -295,6 +309,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
       icon: blockTimeIcon,
       width: 80,
       setting: 'blocktime',
+      sortBy: ({ blockTime }) => blockTime == null ? Infinity : blockTime,
       render: ({ blockTime }) => `${secondsWithPrecision(blockTime/1000)}`
     },
     {
@@ -302,6 +317,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
       icon: propagationTimeIcon,
       width: 58,
       setting: 'blockpropagation',
+      sortBy: ({ propagationTime }) => propagationTime == null ? Infinity : propagationTime,
       render: ({ propagationTime }) => propagationTime == null ? '∞' : milliOrSecond(propagationTime)
     },
     {
@@ -309,6 +325,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
       icon: lastTimeIcon,
       width: 100,
       setting: 'blocklasttime',
+      sortBy: ({ blockTimestamp }) => blockTimestamp || 0,
       render: ({ blockTimestamp }) => <Ago when={blockTimestamp} />
     },
     {
@@ -316,6 +333,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
       icon: uptimeIcon,
       width: 58,
       setting: 'uptime',
+      sortBy: ({ connectedAt }) => connectedAt || 0,
       render: ({ connectedAt }) => <Ago when={connectedAt} justTime={true} />
     },
     {

@@ -115,6 +115,9 @@ export class SortedCollection<Item extends { id: number }> {
       this.map = this.map.concat(Array<Maybe<Item>>(Math.max(10, 1 + item.id - this.map.length)));
     }
 
+    // Remove old item if overriding
+    this.remove(item.id);
+
     this.map[item.id] = item;
 
     sortedInsert(item, this.list, this.compare);
@@ -171,6 +174,14 @@ export class SortedCollection<Item extends { id: number }> {
 
     if (newIndex !== index) {
       this.changeRef += 1;
+    }
+  }
+
+  public mutAndMaybeSort(id: number, mutator: (item: Item) => void, sort: boolean) {
+    if (sort) {
+      this.mutAndSort(id, mutator);
+    } else {
+      this.mut(id, mutator);
     }
   }
 

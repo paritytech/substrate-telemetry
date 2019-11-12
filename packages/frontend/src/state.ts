@@ -31,6 +31,9 @@ export class Node {
   public readonly networkId: Maybe<Types.NetworkId>;
   public readonly connectedAt: Types.Timestamp;
 
+  public readonly sortableName: string;
+  public readonly sortableVersion: number;
+
   public stale: boolean;
   public pinned: boolean;
   public peers: Types.PeerCount;
@@ -78,6 +81,11 @@ export class Node {
     this.validator = validator;
     this.networkId = networkId;
     this.connectedAt = connectedAt;
+
+    const [major = 0, minor = 0, patch = 0] = (version || '0.0.0').split('.').map((n) => parseInt(n, 10) | 0);
+
+    this.sortableName = name.toLocaleLowerCase();
+    this.sortableVersion = (major * 1000 + minor * 100 + patch) | 0;
 
     this.updateStats(nodeStats);
     this.updateHardware(nodeHardware);
@@ -202,6 +210,11 @@ export namespace State {
     blocklasttime: boolean;
     uptime: boolean;
     networkstate: boolean;
+  }
+
+  export interface SortBy {
+    column: string;
+    reverse: boolean;
   }
 }
 

@@ -17,11 +17,11 @@ export class Connection {
 
   private static readonly utf8decoder = new TextDecoder('utf-8');
 
-  // private static readonly address = window.location.protocol === 'https:'
-  //                                     ? `wss://${window.location.hostname}/feed/`
-  //                                     : `ws://127.0.0.1:8000/feed`;
+  private static readonly address = window.location.protocol === 'https:'
+                                      ? `wss://${window.location.hostname}/feed/`
+                                      : `ws://127.0.0.1:8000/feed`;
 
-  private static readonly address = 'wss://telemetry.polkadot.io/feed/';
+  // private static readonly address = 'wss://telemetry.polkadot.io/feed/';
 
   private static async socket(): Promise<WebSocket> {
     let socket = await Connection.trySocket();
@@ -117,7 +117,7 @@ export class Connection {
   }
 
   public handleMessages = (messages: FeedMessage.Message[]) => {
-    const { nodes, chains } = this.state;
+    const { nodes, chains, sortBy } = this.state;
     const ref = nodes.ref();
 
     const updateState: UpdateBound = (state) => { this.state = this.update(state); };
@@ -187,7 +187,7 @@ export class Connection {
         case Actions.LocatedNode: {
           const [id, lat, lon, city] = message.payload;
 
-          nodes.mut(id, (node) => node.updateLocation([lat, lon, city]));
+          nodes.mutAndMaybeSort(id, (node) => node.updateLocation([lat, lon, city]), sortBy != null);
 
           break;
         }
@@ -203,7 +203,7 @@ export class Connection {
         case Actions.FinalizedBlock: {
           const [id, height, hash] = message.payload;
 
-          nodes.mut(id, (node) => node.updateFinalized(height, hash));
+          nodes.mutAndMaybeSort(id, (node) => node.updateFinalized(height, hash), sortBy != null);
 
           break;
         }
@@ -211,7 +211,7 @@ export class Connection {
         case Actions.NodeStats: {
           const [id, nodeStats] = message.payload;
 
-          nodes.mut(id, (node) => node.updateStats(nodeStats));
+          nodes.mutAndMaybeSort(id, (node) => node.updateStats(nodeStats), sortBy != null);
 
           break;
         }
@@ -219,7 +219,7 @@ export class Connection {
         case Actions.NodeHardware: {
           const [id, nodeHardware] = message.payload;
 
-          nodes.mut(id, (node) => node.updateHardware(nodeHardware));
+          nodes.mutAndMaybeSort(id, (node) => node.updateHardware(nodeHardware), sortBy != null);
 
           break;
         }

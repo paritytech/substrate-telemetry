@@ -1,6 +1,7 @@
 import * as React from 'react';
-import { Types, SortedCollection, Maybe } from '@dotstats/common';
+import { Types, SortedCollection, Maybe, Compare } from '@dotstats/common';
 import { AllChains, Chains, Chain, Ago, OfflineIndicator } from './components';
+import { Row } from './components/List';
 import { Connection } from './Connection';
 import { Persistent, PersistentObject, PersistentSet } from './persist';
 import { State, Node, ChainData, PINNED_CHAIN } from './state';
@@ -43,7 +44,10 @@ export default class App extends React.Component<{}, State> {
         uptime: false,
         networkstate: false,
       },
-      (settings) => this.setState({ settings })
+      (settings) => {
+        this.sortBy.set(null);
+        this.setState({ settings, sortBy: null })
+      },
     );
 
     this.pins = new PersistentSet<Types.NodeName>('pinned_names', (pins) => {
@@ -55,6 +59,9 @@ export default class App extends React.Component<{}, State> {
     });
 
     this.sortBy = new Persistent<Maybe<number>>('sortBy', null, (sortBy) => {
+      const compare = this.getComparator(sortBy);
+
+      this.state.nodes.setComparator(compare);
       this.setState({ sortBy });
     });
 
@@ -80,6 +87,8 @@ export default class App extends React.Component<{}, State> {
       sortBy: this.sortBy.get(),
       tab,
     };
+
+    this.state.nodes.setComparator(this.getComparator(this.sortBy.get()));
 
     this.connection = Connection.create(this.pins, (changes) => {
       if (changes) {
@@ -187,4 +196,32 @@ export default class App extends React.Component<{}, State> {
     return this.chainsCache;
   }
 
+  private getComparator(sortBy: Maybe<number>): Compare<Node> {
+    const settings = this.state.settings;
+    const columns = Row.columns.filter(({ setting }) => setting == null || settings[setting]);
+
+    if (sortBy != null) {
+      const [index, rev] = sortBy < 0 ? [~sortBy, -1] : [sortBy, 1];
+      const column = columns[index];
+
+      if (column != null && column.sortBy) {
+        const key = column.sortBy;
+
+        return (a, b) => {
+          const aKey = key(a);
+          const bKey = key(b);
+
+          if (aKey < bKey) {
+            return -1 * rev;
+          } else if (aKey > bKey) {
+            return 1 * rev;
+          } else {
+            return Node.compare(a, b);
+          }
+        }
+      }
+    }
+
+    return Node.compare;
+  }
 }
