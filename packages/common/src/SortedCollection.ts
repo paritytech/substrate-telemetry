@@ -101,6 +101,7 @@ export class SortedCollection<Item extends { id: number }> {
 
   public setComparator(compare: Compare<Item>) {
     this.compare = compare;
+    this.list = this.map.filter((item) => item != null) as Item[];
     this.list.sort(compare);
     this.changeRef += 1;
   }
