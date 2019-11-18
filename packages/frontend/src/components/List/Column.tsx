@@ -53,7 +53,7 @@ import unknownImplementationIcon from '../../icons/question-solid.svg';
 const ICONS = {
   'parity-polkadot': parityPolkadotIcon,
   'polkadot-js': polkadotJsIcon,
-  'robonomics-node': airalabRobonomicsIcon,
+  'airalab-robonomics': airalabRobonomicsIcon,
   'substrate-node': paritySubstrateIcon,
   'edgeware-node': edgewareIcon,
   'joystream-node': joystreamIcon,
