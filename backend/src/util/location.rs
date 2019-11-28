@@ -100,7 +100,7 @@ impl Handler<LocateRequest> for Locator {
             None => self.iplocate_ipinfo_io(ip),
         }) {
             Ok(location) => location,
-            Err(err) => return debug!("POST error for ip location: {:?}", err),
+            Err(err) => return debug!("GET error for ip location: {:?}", err),
         };
 
         self.cache.write().insert(ip, location.clone());
@@ -114,7 +114,7 @@ impl Handler<LocateRequest> for Locator {
 impl Locator {
     fn iplocate_ipapi_co(&self, ip: Ipv4Addr) -> Result<Option<Arc<NodeLocation>>, reqwest::Error> {
         let ip_req = format!("https://ipapi.co/{}/json", ip);
-        let mut response = self.client.post(&ip_req).send()?;
+        let mut response = self.client.get(&ip_req).send()?;
 
         let location = match response.json::<NodeLocation>() {
             Ok(location) => Some(Arc::new(location)),
@@ -129,7 +129,7 @@ impl Locator {
 
     fn iplocate_ipinfo_io(&self, ip: Ipv4Addr) -> Result<Option<Arc<NodeLocation>>, reqwest::Error> {
         let ip_req = format!("https://ipinfo.io/{}/json", ip);
-        let mut response = self.client.post(&ip_req).send()?;
+        let mut response = self.client.get(&ip_req).send()?;
 
         let location = match response.json::<IPApiLocate>() {
             Ok(location) => location.into_node_location().map(Arc::new),
