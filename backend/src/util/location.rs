@@ -142,3 +142,34 @@ impl Locator {
         Ok(location)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ipapi_locate_to_node_location() {
+        let ipapi = IPApiLocate {
+            loc: "12.5,56.25".into(),
+            city: "Foobar".into(),
+        };
+
+        let location = ipapi.into_node_location().unwrap();
+
+        assert_eq!(location.latitude, 12.5);
+        assert_eq!(location.longitude, 56.25);
+        assert_eq!(&*location.city, "Foobar");
+    }
+
+    #[test]
+    fn ipapi_locate_to_node_location_too_many() {
+        let ipapi = IPApiLocate {
+            loc: "12.5,56.25,1.0".into(),
+            city: "Foobar".into(),
+        };
+
+        let location = ipapi.into_node_location();
+
+        assert!(location.is_none());
+    }
+}
