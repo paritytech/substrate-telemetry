@@ -95,10 +95,7 @@ impl Handler<LocateRequest> for Locator {
             return
         }
 
-        let location = match self.iplocate_ipapi_co(ip).and_then(|location| match location {
-            Some(location) => Ok(Some(location)),
-            None => self.iplocate_ipinfo_io(ip),
-        }) {
+        let location = match self.iplocate(ip) {
             Ok(location) => location,
             Err(err) => return debug!("GET error for ip location: {:?}", err),
         };
@@ -112,34 +109,40 @@ impl Handler<LocateRequest> for Locator {
 }
 
 impl Locator {
-    fn iplocate_ipapi_co(&self, ip: Ipv4Addr) -> Result<Option<Arc<NodeLocation>>, reqwest::Error> {
-        let ip_req = format!("https://ipapi.co/{}/json", ip);
-        let mut response = self.client.get(&ip_req).send()?;
+    fn iplocate(&self, ip: Ipv4Addr) -> Result<Option<Arc<NodeLocation>>, reqwest::Error> {
+        let location = self.iplocate_ipapi_co(ip)?;
 
-        let location = match response.json::<NodeLocation>() {
-            Ok(location) => Some(Arc::new(location)),
-            Err(err) => {
-                debug!("JSON error for ip location: {:?}", err);
-                None
-            }
-        };
+        match location {
+            Some(location) => Ok(Some(location)),
+            None => self.iplocate_ipinfo_io(ip),
+        }
+    }
+
+    fn iplocate_ipapi_co(&self, ip: Ipv4Addr) -> Result<Option<Arc<NodeLocation>>, reqwest::Error> {
+        let location = self.query(&format!("https://ipapi.co/{}/json", ip))?.map(Arc::new);
 
         Ok(location)
     }
 
     fn iplocate_ipinfo_io(&self, ip: Ipv4Addr) -> Result<Option<Arc<NodeLocation>>, reqwest::Error> {
-        let ip_req = format!("https://ipinfo.io/{}/json", ip);
-        let mut response = self.client.get(&ip_req).send()?;
-
-        let location = match response.json::<IPApiLocate>() {
-            Ok(location) => location.into_node_location().map(Arc::new),
-            Err(err) => {
-                debug!("JSON error for ip location: {:?}", err);
-                None
-            }
-        };
+        let location = self.query(&format!("https://ipinfo.io/{}/json", ip))?.and_then(|loc: IPApiLocate| {
+            loc.into_node_location().map(Arc::new)
+        });
 
         Ok(location)
+    }
+
+    fn query<T>(&self, url: &str) -> Result<Option<T>, reqwest::Error>
+    where
+        for<'de> T: Deserialize<'de>,
+    {
+        match self.client.get(url).send()?.json::<T>() {
+            Ok(result) => Ok(Some(result)),
+            Err(err) => {
+                debug!("JSON error for ip location: {:?}", err);
+                Ok(None)
+            }
+        }
     }
 }
 
