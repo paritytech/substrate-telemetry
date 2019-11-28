@@ -1,4 +1,4 @@
-use num_traits::{Zero, NumOps, Bounded, ops::saturating::Saturating};
+use num_traits::{Zero, NumOps, Bounded};
 use std::iter::Sum;
 use std::convert::TryFrom;
 
@@ -10,7 +10,7 @@ pub struct NumStats<T> {
     sum: T,
 }
 
-impl<T: Saturating + NumOps + Zero + Bounded + Copy + Sum + TryFrom<usize>> NumStats<T> {
+impl<T: NumOps + Zero + Bounded + Copy + Sum + TryFrom<usize>> NumStats<T> {
     pub fn new(size: usize) -> Self {
         NumStats {
             stack: vec![T::zero(); size].into_boxed_slice(),
