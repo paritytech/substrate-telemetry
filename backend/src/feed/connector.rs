@@ -2,10 +2,13 @@ use std::time::{Duration, Instant};
 use bytes::Bytes;
 use actix::prelude::*;
 use actix_web_actors::ws;
-use crate::aggregator::{Aggregator, Connect, Disconnect, Subscribe};
+use crate::aggregator::{Aggregator, Connect, Disconnect, Subscribe, SendFinality, NoMoreFinality};
 use crate::chain::Unsubscribe;
 use crate::feed::{FeedMessageSerializer, Pong};
 use crate::util::fnv;
+use crate::types::{
+    BlockNumber, BlockHash, Address,
+};
 
 pub type FeedId = usize;
 
@@ -76,7 +79,8 @@ impl FeedConnector {
     }
 
     fn handle_cmd(&mut self, cmd: &str, payload: &str, ctx: &mut <Self as Actor>::Context) {
-         match cmd {
+        info!("handle_cmd: {}", cmd);
+        match cmd {
             "subscribe" => {
                 match fnv(payload) {
                     hash if hash == self.chain_hash => return,
@@ -86,6 +90,41 @@ impl FeedConnector {
                 self.aggregator.send(Subscribe {
                     chain: payload.into(),
                     feed: ctx.address(),
+                })
+                .into_actor(self)
+                .then(|res, actor, _| {
+                    match res {
+                        Ok(true) => (),
+                        // Chain not found, reset hash
+                        _ => actor.chain_hash = 0,
+                    }
+
+                    fut::ok(())
+                })
+                .wait(ctx);
+            }
+            "send-finality" => {
+                self.aggregator.send(SendFinality {
+                    chain: payload.into(),
+                    feed: ctx.address(),
+                })
+                .into_actor(self)
+                .then(|res, actor, _| {
+                    match res {
+                        Ok(true) => (),
+                        // Chain not found, reset hash
+                        _ => actor.chain_hash = 0,
+                    }
+
+                    fut::ok(())
+                })
+                .wait(ctx);
+            }
+            "no-more-finality" => {
+                // possibly put this code into new fn for all 3 messages
+                self.aggregator.send(NoMoreFinality {
+                    chain: payload.into(),
+                    fid: self.fid_chain,//ctx.address(),
                 })
                 .into_actor(self)
                 .then(|res, actor, _| {
@@ -121,6 +160,9 @@ pub struct Unsubscribed;
 #[derive(Message)]
 pub struct Connected(pub FeedId);
 
+// #[derive(Message)]
+// pub struct AfgFinalized2(pub Address, pub BlockNumber, pub BlockHash); // need lifetime parameter?
+
 /// Message sent from either Aggregator or Chain to FeedConnector containing
 /// serialized message(s) for the frontend
 ///
@@ -140,6 +182,8 @@ impl StreamHandler<ws::Message, ws::ProtocolError> for FeedConnector {
                 if let Some(idx) = text.find(':') {
                     let cmd = &text[..idx];
                     let payload = &text[idx+1..];
+
+                    info!("New FEED message: {}", cmd);
 
                     self.handle_cmd(cmd, payload, ctx);
                 }
@@ -193,3 +237,13 @@ impl Handler<Serialized> for FeedConnector {
         ctx.binary(bytes);
     }
 }
+
+// impl Handler<AfgFinalized2> for FeedConnector {
+//     type Result = ();
+
+//     fn handle(&mut self, msg: AfgFinalized2, _: &mut Self::Context) {
+//         let AfgFinalized2(address, finalized_number, finalized_hash) = msg;
+
+//         info!("FEedConnector has AfgFinalized from chain. What next???");
+//     }
+// }

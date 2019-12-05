@@ -1,13 +1,14 @@
 use actix::prelude::*;
 use std::sync::Arc;
 use bytes::Bytes;
+use std::str::FromStr;
 
 use crate::aggregator::{Aggregator, DropChain, NodeCount};
 use crate::node::{Node, connector::Initialize, message::{NodeMessage, Details}};
-use crate::feed::connector::{FeedId, FeedConnector, Subscribed, Unsubscribed};
+use crate::feed::connector::{FeedId, FeedConnector, Subscribed, Unsubscribed/*, AfgFinalized2*/};
 use crate::feed::{self, FeedMessageSerializer};
 use crate::util::{DenseMap, NumStats, now};
-use crate::types::{NodeId, NodeDetails, NodeLocation, Block, Timestamp};
+use crate::types::{NodeId, NodeDetails, NodeLocation, Block, Timestamp, BlockNumber};
 
 const STALE_TIMEOUT: u64 = 2 * 60 * 1000; // 2 minutes
 
@@ -24,6 +25,9 @@ pub struct Chain {
     nodes: DenseMap<Node>,
     /// Dense mapping of FeedId -> Addr<FeedConnector>,
     feeds: DenseMap<Addr<FeedConnector>>,
+    /// Dense mapping of FeedId -> Addr<FeedConnector> for feeds requiring finality info,
+    // finality_feeds: HashMap<FeedId, Addr<FeedConnector>>,
+    finality_feeds: DenseMap<Addr<FeedConnector>>,
     /// Best block
     best: Block,
     /// Finalized block
@@ -48,6 +52,7 @@ impl Chain {
             label,
             nodes: DenseMap::new(),
             feeds: DenseMap::new(),
+            finality_feeds: DenseMap::new(),
             best: Block::zero(),
             finalized: Block::zero(),
             block_times: NumStats::new(50),
@@ -61,6 +66,18 @@ impl Chain {
         if let Some(msg) = self.serializer.finalize() {
             for (_, feed) in self.feeds.iter() {
                 feed.do_send(msg.clone());
+                info!("BROADCASTING");
+            }
+        }
+    }
+
+    fn broadcast_finality(&mut self) {
+        info!("broadcast_finality 1");
+        if let Some(msg) = self.serializer.finalize() {
+            info!("broadcast_finality 2");
+            for (_, feed) in self.finality_feeds.iter() {
+                feed.do_send(msg.clone());
+                info!("SENDING FINALITY INFO");
             }
         }
     }
@@ -160,6 +177,13 @@ pub struct Subscribe(pub Addr<FeedConnector>);
 #[derive(Message)]
 pub struct Unsubscribe(pub FeedId);
 
+/// TEST TEST TEST
+#[derive(Message)]
+pub struct SendFinality(pub Addr<FeedConnector>);
+
+#[derive(Message)]
+pub struct NoMoreFinality(pub FeedId);
+
 /// Message sent from the NodeConnector to the Chain when it receives location data
 #[derive(Message)]
 pub struct LocateNode {
@@ -252,9 +276,83 @@ impl Handler<UpdateNode> for Chain {
                     }
                 }
                 Details::AfgAuthoritySet(authority) => {
-                    node.set_validator_address(authority.authority_id);
+                    // info!("Node.address? {}", node.details().name);
+                    info!("AfgAuthoritySet>>>>>>>");
+                    
+                    node.set_validator_address(authority.authority_id.clone());
+
+                    // let addr = authority.authority_id.clone();
+                    // info!("AfgAuthoritySet({}, {}, {}, {}, {})", addr, authority.authorities,
+                    //     authority.authority_id, self.best.height, self.best.hash);//, number, authority.hash);
+                    // self.serializer.push(feed::AfgAuthoritySet(addr, authority.authorities,
+                    //     authority.authority_id, self.best.height, self.best.hash));//, number, authority.hash));
+
                     self.broadcast();
+                    info!("AfgAuthoritySet!!!!!!!!");
+
+                    ///////////////////////////////
+                    // if let Ok(authority_id) = authority.authority_id.parse::<Address>() {
+                    //     if let Ok(number) = authority.number.parse::<BlockNumber>() {
+                    // if let Some(address) = node.details.validator.clone()
+                    // info!("Node.address? {}", node.details().name);
+
+                    // let addr = authority.authority_id.clone();
+                    // // if let Some(addr) = node.details().validator.clone() {
+
+                    //     info!("AfgAuthoritySet({}, {}, {}, {}, {})", addr, authority.authorities,
+                    //         authority.authority_id, self.best.height, self.best.hash);//, number, authority.hash);
+                    //     self.serializer.push(feed::AfgAuthoritySet(addr, authority.authorities,
+                    //         authority.authority_id, self.best.height, self.best.hash));//, number, authority.hash));
+                    //     self.broadcast_finality();
+                        //     }
+                        // }
+                    // }
+                    ///////////////////////////////
                     return;
+                }
+                Details::AfgFinalized(ref finalized) => {
+                    info!("Reached AfgFinalized");
+                    if let Ok(finalized_number) = finalized.finalized_number.parse::<BlockNumber>() {
+                        let finalized_hash = finalized.finalized_hash;
+
+                        // let addr = Box::from(nid.to_string());
+                        // let addr = node.details().validator.clone().unwrap_or(Box::from(""));
+                        if let Some(addr) = node.details().validator.clone() {
+                            info!("AfgFinalized({}, {}, {})", addr, finalized_number, finalized_hash);
+                            self.serializer.push(feed::AfgFinalized(addr, finalized_number, finalized_hash));
+                            self.broadcast_finality();
+                        }
+                    }
+                    return;
+                }
+                Details::AfgReceivedPrecommit(ref precommit) => {
+                    info!("Reached AfgReceivedPrecommit ************");
+                    if let Ok(finalized_number) = precommit.received.target_number.parse::<BlockNumber>() {
+                        let finalized_hash = precommit.received.target_hash;
+                        if let Some(addr) = node.details().validator.clone() {
+                            let voter = precommit.received.voter.clone();
+                            info!("AfgReceivedPrecommit({}, {}, {}, {})", addr, finalized_number, finalized_hash, voter);
+                            self.serializer.push(feed::AfgReceivedPrecommit(addr, finalized_number, finalized_hash, voter));
+                            self.broadcast_finality();
+                        }
+                    }
+                    return;
+                }
+                Details::AfgReceivedPrevote(ref prevote) => {
+                    info!("Reached AfgReceivedPrevote ************");
+                    if let Ok(finalized_number) = prevote.received.target_number.parse::<BlockNumber>() {
+                        let finalized_hash = prevote.received.target_hash;
+                        if let Some(addr) = node.details().validator.clone() {
+                            let voter = prevote.received.voter.clone();
+                            info!("AfgReceivedPrevote({}, {}, {}, {})", addr, finalized_number, finalized_hash, voter);
+                            self.serializer.push(feed::AfgReceivedPrevote(addr, finalized_number, finalized_hash, voter));
+                            self.broadcast_finality();
+                        }
+                    }
+                    return;
+                }
+                Details::AfgReceivedCommit(ref commit) => {
+                    // info!("Reached AfgReceivedCommit ************");
                 }
                 _ => (),
             }
@@ -340,11 +438,45 @@ impl Handler<Subscribe> for Chain {
     }
 }
 
+impl Handler<SendFinality> for Chain {
+    type Result = ();
+
+    fn handle(&mut self, msg: SendFinality, ctx: &mut Self::Context) {
+        let SendFinality(feed) = msg;
+        let fid = self.finality_feeds.add(feed.clone());
+
+        info!("Added new finality feed {}", fid);
+
+    }
+}
+
+impl Handler<NoMoreFinality> for Chain {
+    type Result = ();
+
+    fn handle(&mut self, msg: NoMoreFinality, _: &mut Self::Context) {
+        let NoMoreFinality(fid) = msg;
+
+        // if let Some(feed) = self.finality_feeds.get(fid) {
+        //     // self.serializer.push(feed::UnsubscribedFrom(&self.label));
+
+        //     if let Some(serialized) = self.serializer.finalize() {
+        //         feed.do_send(serialized);
+        //     }
+        // }
+
+        info!("Removed finality feed {}", fid);
+
+        self.finality_feeds.remove(fid);
+    }
+}
+
 impl Handler<Unsubscribe> for Chain {
     type Result = ();
 
     fn handle(&mut self, msg: Unsubscribe, _: &mut Self::Context) {
         let Unsubscribe(fid) = msg;
+
+        info!("Unsubscribe-----");
 
         if let Some(feed) = self.feeds.get(fid) {
             self.serializer.push(feed::UnsubscribedFrom(&self.label));
@@ -355,6 +487,7 @@ impl Handler<Unsubscribe> for Chain {
         }
 
         self.feeds.remove(fid);
+        self.finality_feeds.remove(fid);
     }
 }
 

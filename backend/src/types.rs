@@ -6,6 +6,7 @@ use crate::util::MeanList;
 pub type NodeId = usize;
 pub type BlockNumber = u64;
 pub type Timestamp = u64;
+pub type Address = Box<str>;  // maybe remove this?
 pub use primitive_types::H256 as BlockHash;
 
 #[derive(Deserialize, Debug)]
