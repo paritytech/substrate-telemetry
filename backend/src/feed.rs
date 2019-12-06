@@ -89,7 +89,7 @@ actions! {
     0x10: AfgFinalized,
     0x11: AfgReceivedPrevote,
     0x12: AfgReceivedPrecommit,
-    0x13: AfgAuthoritySet,  // <<< needed?
+    0x13: AfgAuthoritySet,
     0x14: StaleNode,
 }
 
@@ -141,16 +141,16 @@ pub struct UnsubscribedFrom<'a>(pub &'a str);
 pub struct Pong<'a>(pub &'a str);
 
 #[derive(Serialize)]
-pub struct AfgFinalized(pub Address, pub BlockNumber, pub BlockHash); // need lifetime?
+pub struct AfgFinalized(pub Address, pub BlockNumber, pub BlockHash);
 
 #[derive(Serialize)]
-pub struct AfgReceivedPrevote(pub Address, pub BlockNumber, pub BlockHash, pub Address); // need lifetime?
+pub struct AfgReceivedPrevote(pub Address, pub BlockNumber, pub BlockHash, pub Address);
 
 #[derive(Serialize)]
-pub struct AfgReceivedPrecommit(pub Address, pub BlockNumber, pub BlockHash, pub Address); // need lifetime?
+pub struct AfgReceivedPrecommit(pub Address, pub BlockNumber, pub BlockHash, pub Address);
 
 #[derive(Serialize)]
-pub struct AfgAuthoritySet(pub Address, pub Address, pub Address, pub BlockNumber, pub BlockHash); // need lifetime?
+pub struct AfgAuthoritySet(pub Address, pub Address, pub Address, pub BlockNumber, pub BlockHash);
 
 #[derive(Serialize)]
 pub struct StaleNode(pub NodeId);

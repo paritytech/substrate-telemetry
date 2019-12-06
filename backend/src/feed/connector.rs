@@ -6,9 +6,6 @@ use crate::aggregator::{Aggregator, Connect, Disconnect, Subscribe, SendFinality
 use crate::chain::Unsubscribe;
 use crate::feed::{FeedMessageSerializer, Pong};
 use crate::util::fnv;
-use crate::types::{
-    BlockNumber, BlockHash, Address,
-};
 
 pub type FeedId = usize;
 
@@ -104,39 +101,16 @@ impl FeedConnector {
                 .wait(ctx);
             }
             "send-finality" => {
-                self.aggregator.send(SendFinality {
+                self.aggregator.do_send(SendFinality {
                     chain: payload.into(),
-                    feed: ctx.address(),
-                })
-                .into_actor(self)
-                .then(|res, actor, _| {
-                    match res {
-                        Ok(true) => (),
-                        // Chain not found, reset hash
-                        _ => actor.chain_hash = 0,
-                    }
-
-                    fut::ok(())
-                })
-                .wait(ctx);
+                    fid: self.fid_chain,
+                });
             }
             "no-more-finality" => {
-                // possibly put this code into new fn for all 3 messages
-                self.aggregator.send(NoMoreFinality {
+                self.aggregator.do_send(NoMoreFinality {
                     chain: payload.into(),
-                    fid: self.fid_chain,//ctx.address(),
-                })
-                .into_actor(self)
-                .then(|res, actor, _| {
-                    match res {
-                        Ok(true) => (),
-                        // Chain not found, reset hash
-                        _ => actor.chain_hash = 0,
-                    }
-
-                    fut::ok(())
-                })
-                .wait(ctx);
+                    fid: self.fid_chain,
+                });
             }
             "ping" => {
                 self.serializer.push(Pong(payload));
@@ -159,9 +133,6 @@ pub struct Unsubscribed;
 /// Message sent from Aggregator to FeedConnector upon successful connection
 #[derive(Message)]
 pub struct Connected(pub FeedId);
-
-// #[derive(Message)]
-// pub struct AfgFinalized2(pub Address, pub BlockNumber, pub BlockHash); // need lifetime parameter?
 
 /// Message sent from either Aggregator or Chain to FeedConnector containing
 /// serialized message(s) for the frontend
@@ -237,13 +208,3 @@ impl Handler<Serialized> for FeedConnector {
         ctx.binary(bytes);
     }
 }
-
-// impl Handler<AfgFinalized2> for FeedConnector {
-//     type Result = ();
-
-//     fn handle(&mut self, msg: AfgFinalized2, _: &mut Self::Context) {
-//         let AfgFinalized2(address, finalized_number, finalized_hash) = msg;
-
-//         info!("FEedConnector has AfgFinalized from chain. What next???");
-//     }
-// }

@@ -88,21 +88,16 @@ pub struct AfgAuthoritySet {
     pub authority_id: Box<str>,
     pub authorities: Box<str>,
     pub authority_set_id: Box<str>,
-    // pub number: Box<str>,
-    // pub hash: BlockHash,
 }
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct AfgFinalized {
-    // pub authority_id: Box<str>,
-    // pub ts: DateTime<Utc>, //String,
     pub finalized_hash: BlockHash,
     pub finalized_number: Box<str>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct AfgReceived {
-    // pub ts: DateTime<Utc>,
     pub target_hash: BlockHash,
     pub target_number: Box<str>,
     pub voter: Box<str>,
@@ -110,8 +105,6 @@ pub struct AfgReceived {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct AfgReceivedPrecommit {
-    // pub target_number: Box<str>,
-    // pub target_hash: BlockHash,
     #[serde(flatten)]
     pub received: AfgReceived,
 }
@@ -124,17 +117,9 @@ pub struct AfgReceivedPrevote {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct AfgReceivedCommit {
-    pub target_hash: BlockHash,
-    pub target_number: Box<str>,
-    // #[serde(flatten)]
-    // pub received: AfgReceived,
+    #[serde(flatten)]
+    pub received: AfgReceived,
 }
-
-// #[derive(Deserialize, Debug, Clone)]
-// pub struct AfgFinalizedBlocksUpTo {
-//     pub hash: BlockHash,
-//     pub number: Box<str>,
-// }
 
 impl Block {
     pub fn zero() -> Self {
