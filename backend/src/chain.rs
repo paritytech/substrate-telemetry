@@ -71,7 +71,7 @@ impl Chain {
 
     fn broadcast_finality(&mut self) {
         if let Some(msg) = self.serializer.finalize() {
-            for (_, feed) in self.finality_feeds.iter() {
+            for feed in self.finality_feeds.values() {
                 feed.do_send(msg.clone());
             }
         }
@@ -270,11 +270,11 @@ impl Handler<UpdateNode> for Chain {
                     }
                 }
                 Details::AfgAuthoritySet(authority) => {
-                    node.set_validator_address(authority.authority_id.clone());
+                    node.set_validator_address(authority.authority_id);
                     self.broadcast();
                     return;
                 }
-                Details::AfgFinalized(ref finalized) => {
+                Details::AfgFinalized(finalized) => {
                     if let Ok(finalized_number) = finalized.finalized_number.parse::<BlockNumber>() {
                         if let Some(addr) = node.details().validator.clone() {
                             self.serializer.push(feed::AfgFinalized(addr, finalized_number,
@@ -284,7 +284,7 @@ impl Handler<UpdateNode> for Chain {
                     }
                     return;
                 }
-                Details::AfgReceivedPrecommit(ref precommit) => {
+                Details::AfgReceivedPrecommit(precommit) => {
                     if let Ok(finalized_number) = precommit.received.target_number.parse::<BlockNumber>() {
                         if let Some(addr) = node.details().validator.clone() {
                             let voter = precommit.received.voter.clone();
@@ -295,7 +295,7 @@ impl Handler<UpdateNode> for Chain {
                     }
                     return;
                 }
-                Details::AfgReceivedPrevote(ref prevote) => {
+                Details::AfgReceivedPrevote(prevote) => {
                     if let Ok(finalized_number) = prevote.received.target_number.parse::<BlockNumber>() {
                         if let Some(addr) = node.details().validator.clone() {
                             let voter = prevote.received.voter.clone();
@@ -306,7 +306,7 @@ impl Handler<UpdateNode> for Chain {
                     }
                     return;
                 }
-                Details::AfgReceivedCommit(ref _commit) => {
+                Details::AfgReceivedCommit(_) => {
                 }
                 _ => (),
             }
@@ -421,8 +421,6 @@ impl Handler<Unsubscribe> for Chain {
 
     fn handle(&mut self, msg: Unsubscribe, _: &mut Self::Context) {
         let Unsubscribe(fid) = msg;
-
-        info!("Unsubscribe-----");
 
         if let Some(feed) = self.feeds.get(fid) {
             self.serializer.push(feed::UnsubscribedFrom(&self.label));

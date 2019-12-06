@@ -103,23 +103,17 @@ impl Message for Subscribe {
 }
 
 /// Message sent from the FeedConnector to the Aggregator consensus requested
+#[derive(Message)]
 pub struct SendFinality {
     pub chain: Label,
     pub fid: FeedId,
 }
 
-impl Message for SendFinality {
-    type Result = bool;
-}
-
 /// Message sent from the FeedConnector to the Aggregator no more consensus required
+#[derive(Message)]
 pub struct NoMoreFinality {
     pub chain: Label,
     pub fid: FeedId,
-}
-
-impl Message for NoMoreFinality {
-    type Result = bool;
 }
 
 /// Message sent from the FeedConnector to the Aggregator when first connected
@@ -186,29 +180,23 @@ impl Handler<Subscribe> for Aggregator {
 }
 
 impl Handler<SendFinality> for Aggregator {
-    type Result = bool;
+    type Result = ();
 
-    fn handle(&mut self, msg: SendFinality, _: &mut Self::Context) -> bool {
+    fn handle(&mut self, msg: SendFinality, _: &mut Self::Context) {
         let SendFinality { chain, fid } = msg;
         if let Some(chain) = self.get_chain(&chain) {
             chain.addr.do_send(chain::SendFinality(fid));
-            true
-        } else {
-            false
         }
     }
 }
 
 impl Handler<NoMoreFinality> for Aggregator {
-    type Result = bool;
+    type Result = ();
 
-    fn handle(&mut self, msg: NoMoreFinality, _: &mut Self::Context) -> bool {
+    fn handle(&mut self, msg: NoMoreFinality, _: &mut Self::Context) {
         let NoMoreFinality { chain, fid } = msg;
         if let Some(chain) = self.get_chain(&chain) {
             chain.addr.do_send(chain::NoMoreFinality(fid));
-            true
-        } else {
-            false
         }
     }
 }

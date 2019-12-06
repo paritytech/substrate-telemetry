@@ -76,7 +76,6 @@ impl FeedConnector {
     }
 
     fn handle_cmd(&mut self, cmd: &str, payload: &str, ctx: &mut <Self as Actor>::Context) {
-        info!("handle_cmd: {}", cmd);
         match cmd {
             "subscribe" => {
                 match fnv(payload) {
