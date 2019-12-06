@@ -71,13 +71,6 @@ impl Chain {
         self.aggregator.do_send(NodeCount(self.cid, self.nodes.len()));
     }
 
-    fn update_average_block_time(&mut self, now: u64) {
-        if let Some(timestamp) = self.timestamp {
-            self.block_times.push(now - timestamp);
-            self.average_block_time = Some(self.block_times.average());
-        }
-    }
-
     /// Check if the chain is stale (has not received a new best block in a while).
     /// If so, find a new best block, ignoring any stale nodes and marking them as such.
     fn update_stale_nodes(&mut self, now: u64) {
@@ -190,29 +183,34 @@ impl Handler<AddNode> for Chain {
     }
 }
 
-impl Handler<UpdateNode> for Chain {
-    type Result = ();
+impl Chain {
+    fn handle_block(&mut self, block: &Block, nid: NodeId) {
+        let mut propagation_time = None;
+        let now = now();
+        let nodes_len = self.nodes.len();
 
-    fn handle(&mut self, msg: UpdateNode, _: &mut Self::Context) {
-        let UpdateNode { nid, msg, raw } = msg;
+        self.update_stale_nodes(now);
 
-        if let Some(block) = msg.details.best_block() {
-            let mut propagation_time = None;
-            let now = now();
+        let node = match self.nodes.get_mut(nid) {
+            Some(node) => node,
+            None => return,
+        };
 
-            self.update_stale_nodes(now);
-
+        if node.update_block(*block) {
             if block.height > self.best.height {
                 self.best = *block;
                 info!(
                     "[{}] [{}/{}] new best block ({}) {:?}",
                     self.label,
-                    self.nodes.len(),
+                    nodes_len,
                     self.feeds.len(),
                     self.best.height,
                     self.best.hash,
                 );
-                self.update_average_block_time(now);
+                if let Some(timestamp) = self.timestamp {
+                    self.block_times.push(now - timestamp);
+                    self.average_block_time = Some(self.block_times.average());
+                }
                 self.timestamp = Some(now);
                 self.serializer.push(feed::BestBlock(self.best.height, now, self.average_block_time));
                 propagation_time = Some(0);
@@ -222,11 +220,21 @@ impl Handler<UpdateNode> for Chain {
                 }
             }
 
-            if let Some(node) = self.nodes.get_mut(nid) {
-                if let Some(details) = node.update_block(*block, now, propagation_time) {
-                    self.serializer.push(feed::ImportedBlock(nid, details));
-                }
+            if let Some(details) = node.update_details(now, propagation_time) {
+                self.serializer.push(feed::ImportedBlock(nid, details));
             }
+        }
+    }
+}
+
+impl Handler<UpdateNode> for Chain {
+    type Result = ();
+
+    fn handle(&mut self, msg: UpdateNode, _: &mut Self::Context) {
+        let UpdateNode { nid, msg, raw } = msg;
+
+        if let Some(block) = msg.details.best_block() {
+            self.handle_block(block, nid);
         }
 
         if let Some(node) = self.nodes.get_mut(nid) {
