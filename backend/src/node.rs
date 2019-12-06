@@ -97,24 +97,31 @@ impl Node {
         &self.best
     }
 
-    pub fn update_block(&mut self, block: Block, timestamp: u64, propagation_time: Option<u64>) -> Option<&BlockDetails> {
+    pub fn update_block(&mut self, block: Block) -> bool {
         if block.height > self.best.block.height {
             self.stale = false;
             self.best.block = block;
-            self.best.block_time = timestamp - self.best.block_timestamp;
-            self.best.block_timestamp = timestamp;
-            self.best.propagation_time = propagation_time;
-
-            if self.throttle < timestamp {
-                if self.best.block_time <= THROTTLE_THRESHOLD {
-                    self.throttle = timestamp + THROTTLE_INTERVAL;
-                }
-
-                return Some(&self.best);
-            }
+            
+            true
+        } else {
+            false
         }
+    }
 
-        None
+    pub fn update_details(&mut self, timestamp: u64, propagation_time: Option<u64>) -> Option<&BlockDetails> {
+        self.best.block_time = timestamp - self.best.block_timestamp;
+        self.best.block_timestamp = timestamp;
+        self.best.propagation_time = propagation_time;
+
+        if self.throttle < timestamp {
+            if self.best.block_time <= THROTTLE_THRESHOLD {
+                self.throttle = timestamp + THROTTLE_INTERVAL;
+            }
+
+            Some(&self.best)
+        } else {
+            None
+        }
     }
 
     pub fn update_hardware(&mut self, interval: &SystemInterval) -> bool {
