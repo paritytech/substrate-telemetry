@@ -87,11 +87,13 @@ impl Chain {
 
         let mut best = Block::zero();
         let mut finalized = Block::zero();
+        let mut timestamp = None;
 
         for (nid, node) in self.nodes.iter_mut() {
             if !node.update_stale(threshold) {
                 if node.best().height > best.height {
                     best = *node.best();
+                    timestamp = Some(node.best_timestamp());
                 }
 
                 if node.finalized().height > finalized.height {
@@ -106,9 +108,9 @@ impl Chain {
             self.best = best;
             self.finalized = finalized;
             self.block_times.reset();
-            self.timestamp = None;
+            self.timestamp = timestamp;
 
-            self.serializer.push(feed::BestBlock(self.best.height, now, None));
+            self.serializer.push(feed::BestBlock(self.best.height, timestamp.unwrap_or_else(|| now), None));
             self.serializer.push(feed::BestFinalized(finalized.height, finalized.hash));
         }
     }

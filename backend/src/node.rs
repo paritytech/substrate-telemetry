@@ -74,6 +74,10 @@ impl Node {
         &self.best.block
     }
 
+    pub fn best_timestamp(&self) -> u64 {
+        self.best.block_timestamp
+    }
+
     pub fn finalized(&self) -> &Block {
         &self.finalized
     }
