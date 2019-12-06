@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 use bytes::Bytes;
 use actix::prelude::*;
 use actix_web_actors::ws;
-use crate::aggregator::{Aggregator, Connect, Disconnect, Subscribe};
+use crate::aggregator::{Aggregator, Connect, Disconnect, Subscribe, SendFinality, NoMoreFinality};
 use crate::chain::Unsubscribe;
 use crate::feed::{FeedMessageSerializer, Pong};
 use crate::util::fnv;
@@ -76,7 +76,7 @@ impl FeedConnector {
     }
 
     fn handle_cmd(&mut self, cmd: &str, payload: &str, ctx: &mut <Self as Actor>::Context) {
-         match cmd {
+        match cmd {
             "subscribe" => {
                 match fnv(payload) {
                     hash if hash == self.chain_hash => return,
@@ -98,6 +98,18 @@ impl FeedConnector {
                     fut::ok(())
                 })
                 .wait(ctx);
+            }
+            "send-finality" => {
+                self.aggregator.do_send(SendFinality {
+                    chain: payload.into(),
+                    fid: self.fid_chain,
+                });
+            }
+            "no-more-finality" => {
+                self.aggregator.do_send(NoMoreFinality {
+                    chain: payload.into(),
+                    fid: self.fid_chain,
+                });
             }
             "ping" => {
                 self.serializer.push(Pong(payload));
@@ -140,6 +152,8 @@ impl StreamHandler<ws::Message, ws::ProtocolError> for FeedConnector {
                 if let Some(idx) = text.find(':') {
                     let cmd = &text[..idx];
                     let payload = &text[idx+1..];
+
+                    info!("New FEED message: {}", cmd);
 
                     self.handle_cmd(cmd, payload, ctx);
                 }
