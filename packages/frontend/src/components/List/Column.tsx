@@ -48,6 +48,7 @@ import darwiniaIcon from '../../icons/darwinia.svg';
 import turingIcon from '../../icons/turingnetwork.svg';
 import dothereumIcon from '../../icons/dothereum.svg';
 import katalchainIcon from '../../icons/katalchain.svg';
+import bifrostIcon from '../../icons/bifrost.svg';
 import unknownImplementationIcon from '../../icons/question-solid.svg';
 
 const ICONS = {
@@ -65,6 +66,7 @@ const ICONS = {
   'turing-node': turingIcon,
   'dothereum': dothereumIcon,
   'katalchain': katalchainIcon,
+  'bifrost-node': bifrostIcon,
 };
 
 export namespace Column {
