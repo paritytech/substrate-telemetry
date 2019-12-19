@@ -144,10 +144,10 @@ pub struct Pong<'a>(pub &'a str);
 pub struct AfgFinalized(pub Address, pub BlockNumber, pub BlockHash);
 
 #[derive(Serialize)]
-pub struct AfgReceivedPrevote(pub Address, pub BlockNumber, pub BlockHash, pub Address);
+pub struct AfgReceivedPrevote(pub Address, pub BlockNumber, pub BlockHash, pub Option<Address>);
 
 #[derive(Serialize)]
-pub struct AfgReceivedPrecommit(pub Address, pub BlockNumber, pub BlockHash, pub Address);
+pub struct AfgReceivedPrecommit(pub Address, pub BlockNumber, pub BlockHash, pub Option<Address>);
 
 #[derive(Serialize)]
 pub struct AfgAuthoritySet(pub Address, pub Address, pub Address, pub BlockNumber, pub BlockHash);
