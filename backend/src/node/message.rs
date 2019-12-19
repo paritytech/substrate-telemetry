@@ -100,7 +100,7 @@ pub struct AfgFinalized {
 pub struct AfgReceived {
     pub target_hash: BlockHash,
     pub target_number: Box<str>,
-    pub voter: Box<str>,
+    pub voter: Option<Box<str>>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
