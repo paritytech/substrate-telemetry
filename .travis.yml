@@ -1,11 +1,37 @@
-sudo: false
+language: rust
 
-language: node_js
+cache:
+  cargo: true
+
+rust:
+  - stable
+  - beta
+  - nightly
+
+env:
+  global:
+    - CLIPPY_TOOLCHAIN=nightly
 
 matrix:
-  include:
-    - node_js: "10"
+  allow_failures:
+    - rust: nightly
+
+os:
+  - linux
+
+before_install:
+  - source $HOME/.nvm/nvm.sh
+  - nvm install --lts
+  - nvm use --lts
+
+before_script:
+  - if [ $TRAVIS_RUST_VERSION = $CLIPPY_TOOLCHAIN ]; then rustup component add clippy-preview --toolchain=$CLIPPY_TOOLCHAIN; fi
+  - curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh -s -- -f
+
+script: ./test.sh
 
 script:
+  - yarn
   - yarn build:all
   - yarn test
+  - cd backend && cargo test
