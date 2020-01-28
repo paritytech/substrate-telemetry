@@ -124,13 +124,16 @@ impl FeedConnector {
 
 /// Message sent form Chain to the FeedConnector upon successful subscription
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct Subscribed(pub FeedId, pub Recipient<Unsubscribe>);
 
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct Unsubscribed;
 
 /// Message sent from Aggregator to FeedConnector upon successful connection
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct Connected(pub FeedId);
 
 /// Message sent from either Aggregator or Chain to FeedConnector containing
@@ -138,9 +141,10 @@ pub struct Connected(pub FeedId);
 ///
 /// Since Bytes is ARC'ed, this is cheap to clone
 #[derive(Message, Clone)]
+#[rtype(result = "()")]
 pub struct Serialized(pub Bytes);
 
-impl StreamHandler<ws::Message, ws::ProtocolError> for FeedConnector {
+impl StreamHandler<ws::Message/*, ws::ProtocolError*/> for FeedConnector {
     fn handle(&mut self, msg: ws::Message, ctx: &mut Self::Context) {
         match msg {
             ws::Message::Ping(msg) => {

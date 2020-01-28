@@ -6,10 +6,14 @@ edition = "2018"
 license = "GPL-3.0"
 
 [dependencies]
-actix = "0.8"
-actix-web = { git = "https://github.com/maciejhirsz/actix-web" }
-actix-web-actors = { git = "https://github.com/maciejhirsz/actix-web" }
-actix-http = { git = "https://github.com/maciejhirsz/actix-web" }
+actix = "0.9"
+# actix = "0.8"
+# actix-web = { git = "https://github.com/maciejhirsz/actix-web" }
+# actix-web-actors = { git = "https://github.com/maciejhirsz/actix-web" }
+# actix-http = { git = "https://github.com/maciejhirsz/actix-web" }
+actix-web = "2.0.0"
+actix-web-actors = "2.0.0"
+actix-http = "1.0.1"
 # actix-web = "1.0.8"
 # actix-web-actors = "1.0.2"
 # actix-http = "0.2.10"
@@ -25,12 +29,14 @@ num-traits = "0.2"
 parking_lot = "0.9"
 reqwest = "0.9.18"
 rustc-hash = "1.0.1"
+futures = "0.3.1"
+futures-util = "0.3.1"
 
 [profile.release]
 lto = true
 panic = "abort"
 
-[patch.crates-io]
-actix-web = { git = "https://github.com/maciejhirsz/actix-web" }
-actix-web-actors = { git = "https://github.com/maciejhirsz/actix-web" }
-actix-http = { git = "https://github.com/maciejhirsz/actix-web" }
+# [patch.crates-io]
+# actix-web = { git = "https://github.com/maciejhirsz/actix-web" }
+# actix-web-actors = { git = "https://github.com/maciejhirsz/actix-web" }
+# actix-http = { git = "https://github.com/maciejhirsz/actix-web" }

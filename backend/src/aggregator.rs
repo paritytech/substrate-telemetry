@@ -82,6 +82,7 @@ impl Actor for Aggregator {
 
 /// Message sent from the NodeConnector to the Aggregator upon getting all node details
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct AddNode {
     pub node: NodeDetails,
     pub chain: Label,
@@ -90,6 +91,7 @@ pub struct AddNode {
 
 /// Message sent from the Chain to the Aggregator when the Chain loses all nodes
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct DropChain(pub Label);
 
 /// Message sent from the FeedConnector to the Aggregator when subscribing to a new chain
@@ -104,6 +106,7 @@ impl Message for Subscribe {
 
 /// Message sent from the FeedConnector to the Aggregator consensus requested
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct SendFinality {
     pub chain: Label,
     pub fid: FeedId,
@@ -111,6 +114,7 @@ pub struct SendFinality {
 
 /// Message sent from the FeedConnector to the Aggregator no more consensus required
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct NoMoreFinality {
     pub chain: Label,
     pub fid: FeedId,
@@ -118,14 +122,17 @@ pub struct NoMoreFinality {
 
 /// Message sent from the FeedConnector to the Aggregator when first connected
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct Connect(pub Addr<FeedConnector>);
 
 /// Message sent from the FeedConnector to the Aggregator when disconnecting
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct Disconnect(pub FeedId);
 
 /// Message sent from the Chain to the Aggergator when the node count on the chain changes
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct NodeCount(pub ChainId, pub usize);
 
 /// Message sent to the Aggregator to get the network state of a particular node

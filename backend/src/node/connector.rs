@@ -98,6 +98,7 @@ impl NodeConnector {
 }
 
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct Initialize(pub NodeId, pub Addr<Chain>);
 
 impl Handler<Initialize> for NodeConnector {
@@ -121,7 +122,7 @@ impl Handler<Initialize> for NodeConnector {
     }
 }
 
-impl StreamHandler<ws::Message, ws::ProtocolError> for NodeConnector {
+impl StreamHandler<ws::Message/*, ws::ProtocolError*/> for NodeConnector {
     fn handle(&mut self, msg: ws::Message, ctx: &mut Self::Context) {
         self.hb = Instant::now();
 

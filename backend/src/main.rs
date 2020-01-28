@@ -20,6 +20,8 @@ use feed::connector::FeedConnector;
 use aggregator::{Aggregator, GetNetworkState};
 use util::{Locator, LocatorFactory};
 use types::NodeId;
+// use futures_util::future::FutureExt;
+use futures_util::future::{FutureExt, TryFutureExt};
 
 /// Entry point for connecting nodes
 fn node_route(
@@ -62,19 +64,20 @@ fn feed_route(
 fn state_route(
     path: web::Path<(Box<str>, NodeId)>,
     aggregator: web::Data<Addr<Aggregator>>
-) -> impl Future<Item = HttpResponse, Error = Error> {
+// ) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> impl Future<Output = web::Data<Addr<Aggregator>>> {
     let (chain, nid) = path.into_inner();
 
-    aggregator
+    let foo: () = aggregator
         .send(GetNetworkState(chain, nid))
-        .flatten()
-        .from_err()
-        .and_then(|data| {
-            match data.and_then(|nested| nested) {
-                Some(body) => HttpResponse::Ok().content_type("application/json").body(body),
-                None => HttpResponse::Ok().body("Node has disconnected or has not submitted its network state yet"),
-            }
-        })
+        .flatten();
+        // // .from_err()
+        // .and_then(|data| {
+        //     match data.and_then(|nested| nested) {
+        //         Some(body) => HttpResponse::Ok().content_type("application/json").body(body),
+        //         None => HttpResponse::Ok().body("Node has disconnected or has not submitted its network state yet"),
+        //     }
+        // })
 }
 
 fn main() -> std::io::Result<()> {

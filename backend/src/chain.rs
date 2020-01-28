@@ -142,6 +142,7 @@ impl Actor for Chain {
 
 /// Message sent from the Aggregator to the Chain when new Node is connected
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct AddNode {
     pub node: NodeDetails,
     pub rec: Recipient<Initialize>,
@@ -149,6 +150,7 @@ pub struct AddNode {
 
 /// Message sent from the NodeConnector to the Chain when it receives new telemetry data
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct UpdateNode {
     pub nid: NodeId,
     pub msg: NodeMessage,
@@ -157,24 +159,30 @@ pub struct UpdateNode {
 
 /// Message sent from the NodeConnector to the Chain when the connector disconnects
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct RemoveNode(pub NodeId);
 
 /// Message sent from the Aggregator to the Chain when the connector wants to subscribe to that chain
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct Subscribe(pub Addr<FeedConnector>);
 
 /// Message sent from the FeedConnector before it subscribes to a new chain, or if it disconnects
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct Unsubscribe(pub FeedId);
 
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct SendFinality(pub FeedId);
 
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct NoMoreFinality(pub FeedId);
 
 /// Message sent from the NodeConnector to the Chain when it receives location data
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct LocateNode {
     pub nid: NodeId,
     pub location: Arc<NodeLocation>,
