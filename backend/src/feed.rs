@@ -169,6 +169,7 @@ impl Serialize for AddedNode<'_> {
         tup.serialize_element(nid)?;
         tup.serialize_element(node.details())?;
         tup.serialize_element(node.stats())?;
+        tup.serialize_element(node.io())?;
         tup.serialize_element(node.hardware())?;
         tup.serialize_element(node.block_details())?;
         tup.serialize_element(&node.location())?;

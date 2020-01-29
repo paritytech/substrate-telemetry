@@ -65,6 +65,10 @@ impl Node {
         &self.stats
     }
 
+    pub fn io(&self) -> &NodeIO {
+        &self.io
+    }
+
     pub fn best(&self) -> &Block {
         &self.best.block
     }

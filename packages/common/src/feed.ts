@@ -10,6 +10,7 @@ import {
   NodeCount,
   NodeDetails,
   NodeStats,
+  NodeIO,
   NodeHardware,
   NodeLocation,
   BlockNumber,
@@ -43,6 +44,7 @@ export const Actions = {
   AfgReceivedPrecommit : 0x12 as 0x12,
   AfgAuthoritySet      : 0x13 as 0x13,
   StaleNode            : 0x14 as 0x14,
+  NodeIO               : 0x15 as 0x15,
 };
 
 export type Action = typeof Actions[keyof typeof Actions];
@@ -70,7 +72,7 @@ export namespace Variants {
 
   export interface AddedNodeMessage extends MessageBase {
     action: typeof Actions.AddedNode;
-    payload: [NodeId, NodeDetails, NodeStats, NodeHardware, BlockDetails, Maybe<NodeLocation>, Timestamp];
+    payload: [NodeId, NodeDetails, NodeStats, NodeIO, NodeHardware, BlockDetails, Maybe<NodeLocation>, Timestamp];
   }
 
   export interface RemovedNodeMessage extends MessageBase {
@@ -101,6 +103,11 @@ export namespace Variants {
   export interface NodeHardwareMessage extends MessageBase {
     action: typeof Actions.NodeHardware;
     payload: [NodeId, NodeHardware];
+  }
+
+  export interface NodeIOMessage extends MessageBase {
+    action: typeof Actions.NodeIO;
+    payload: [NodeId, NodeIO];
   }
 
   export interface TimeSyncMessage extends MessageBase {

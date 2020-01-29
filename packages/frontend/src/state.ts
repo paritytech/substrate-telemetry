@@ -66,6 +66,7 @@ export class Node {
     id: Types.NodeId,
     nodeDetails: Types.NodeDetails,
     nodeStats: Types.NodeStats,
+    nodeIO: Types.NodeIO,
     nodeHardware: Types.NodeHardware,
     blockDetails: Types.BlockDetails,
     location: Maybe<Types.NodeLocation>,
