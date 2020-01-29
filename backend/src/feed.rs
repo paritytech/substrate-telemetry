@@ -165,7 +165,7 @@ impl Serialize for AddedNode<'_> {
         S: Serializer,
     {
         let AddedNode(nid, node) = self;
-        let mut tup = serializer.serialize_tuple(7)?;
+        let mut tup = serializer.serialize_tuple(8)?;
         tup.serialize_element(nid)?;
         tup.serialize_element(node.details())?;
         tup.serialize_element(node.stats())?;

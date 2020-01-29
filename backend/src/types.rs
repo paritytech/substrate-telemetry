@@ -24,16 +24,12 @@ pub struct NodeStats {
     pub txcount: u64,
 }
 
-#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Default)]
 pub struct NodeIO {
-    #[serde(default)]
-    pub used_state_cache_size: u64,
-    #[serde(default)]
-    pub used_db_cache_size: u64,
-    #[serde(default)]
-    pub disk_read_per_sec: u32,
-    #[serde(default)]
-    pub disk_write_per_sec: u32,
+    pub used_state_cache_size: MeanList<f32>,
+    pub used_db_cache_size: MeanList<f32>,
+    pub disk_read_per_sec: MeanList<f32>,
+    pub disk_write_per_sec: MeanList<f32>,
 }
 
 #[derive(Deserialize, Debug, Clone, Copy)]
@@ -116,10 +112,10 @@ impl Serialize for NodeIO {
         S: Serializer,
     {
         let mut tup = serializer.serialize_tuple(4)?;
-        tup.serialize_element(&self.used_state_cache_size)?;
-        tup.serialize_element(&self.used_db_cache_size)?;
-        tup.serialize_element(&self.disk_read_per_sec)?;
-        tup.serialize_element(&self.disk_write_per_sec)?;
+        tup.serialize_element(self.used_state_cache_size.slice())?;
+        tup.serialize_element(self.used_db_cache_size.slice())?;
+        tup.serialize_element(self.disk_read_per_sec.slice())?;
+        tup.serialize_element(self.disk_write_per_sec.slice())?;
         tup.end()
     }
 }

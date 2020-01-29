@@ -210,6 +210,44 @@ export namespace Column {
     }
   };
 
+  export const STATE_CACHE: Column = {
+    label: 'State Cache Size',
+    icon: memoryIcon,
+    width: 40,
+    setting: 'stateCacheSize',
+    sortBy: ({ stateCacheSize }) => stateCacheSize.length < 3 ? 0 : stateCacheSize[stateCacheSize.length - 1],
+    render: ({ stateCacheSize, chartstamps }) => {
+      if (stateCacheSize.length < 3) {
+        return '-';
+      }
+
+      return (
+        <Sparkline width={44} height={16} stroke={1} format={formatBytes} values={stateCacheSize} stamps={chartstamps} minScale={MEMORY_SCALE} />
+      );
+    }
+  };
+
+  export const DB_CACHE: Column = {
+    label: 'Database Cache Size',
+    icon: memoryIcon,
+    width: 40,
+    setting: 'dbCacheSize',
+    sortBy: ({ dbCacheSize }) => dbCacheSize.length < 3 ? 0 : dbCacheSize[dbCacheSize.length - 1],
+    render: ({ dbCacheSize, chartstamps }) => {
+      if (dbCacheSize.length < 3) {
+        return '-';
+      }
+
+      return (
+        <Sparkline width={44} height={16} stroke={1} format={formatBytes} values={dbCacheSize} stamps={chartstamps} minScale={MEMORY_SCALE} />
+      );
+    }
+  };
+
+  // TODO
+  // diskRead: boolean;
+  // diskWrite: boolean;
+
   export const BLOCK_NUMBER: Column = {
     label: 'Block',
     icon: blockIcon,
@@ -327,6 +365,20 @@ function formatMemory(kbs: number, stamp: Maybe<Types.Timestamp>): string {
     return `${(mbs / 1024).toFixed(1)} GB${ago}`;
   } else {
     return `${mbs} MB${ago}`;
+  }
+}
+
+function formatBytes(bytes: number, stamp: Maybe<Types.Timestamp>): string {
+  const ago = stamp ? ` (${formatStamp(stamp)})` : '';
+  const kbs = bytes / 1024 | 0;
+  const mbs = kbs / 1024 | 0;
+
+  if (mbs >= 1000) {
+    return `${(mbs / 1024).toFixed(1)} GB${ago}`;
+  } else if (kbs >= 1000) {
+    return `${(kbs / 1024).toFixed(1)} MB${ago}`;
+  } else {
+    return `${kbs} KB${ago}`;
   }
 }
 

@@ -36,6 +36,8 @@ export class Row extends React.Component<Row.Props, Row.State> {
     Column.MEM,
     Column.UPLOAD,
     Column.DOWNLOAD,
+    Column.STATE_CACHE,
+    Column.DB_CACHE,
     Column.BLOCK_NUMBER,
     Column.BLOCK_HASH,
     Column.FINALIZED,

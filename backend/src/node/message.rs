@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use serde::de::IgnoredAny;
 use crate::node::{NodeDetails, NodeStats};
-use crate::types::{Block, BlockNumber, BlockHash, NodeIO};
+use crate::types::{Block, BlockNumber, BlockHash};
 
 #[derive(Deserialize, Debug, Message)]
 pub struct NodeMessage {
@@ -74,8 +74,10 @@ pub struct SystemInterval {
     #[serde(flatten)]
     pub block: Block,
     pub network_state: Option<IgnoredAny>,
-    #[serde(flatten)]
-    pub node_io: NodeIO,
+    pub used_state_cache_size: Option<f32>,
+    pub used_db_cache_size: Option<f32>,
+    pub disk_read_per_sec: Option<f32>,
+    pub disk_write_per_sec: Option<f32>,
 }
 
 #[derive(Deserialize, Debug)]
