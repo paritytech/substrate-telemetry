@@ -1,7 +1,7 @@
 use serde::ser::{Serialize, Serializer, SerializeTuple};
 use serde::Deserialize;
 
-use crate::util::MeanList;
+use crate::util::{MeanList, now};
 
 pub type NodeId = usize;
 pub type BlockNumber = u64;
@@ -18,10 +18,22 @@ pub struct NodeDetails {
     pub network_id: Option<Box<str>>,
 }
 
-#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct NodeStats {
     pub peers: u64,
     pub txcount: u64,
+}
+
+#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct NodeIO {
+    #[serde(default)]
+    pub used_state_cache_size: u64,
+    #[serde(default)]
+    pub used_db_cache_size: u64,
+    #[serde(default)]
+    pub disk_read_per_sec: u32,
+    #[serde(default)]
+    pub disk_write_per_sec: u32,
 }
 
 #[derive(Deserialize, Debug, Clone, Copy)]
@@ -37,6 +49,17 @@ pub struct BlockDetails {
     pub block_time: u64,
     pub block_timestamp: u64,
     pub propagation_time: Option<u64>,
+}
+
+impl Default for BlockDetails {
+    fn default() -> Self {
+        BlockDetails {
+            block: Block::zero(),
+            block_timestamp: now(),
+            block_time: 0,
+            propagation_time: None,
+        }
+    }
 }
 
 #[derive(Default)]
@@ -83,6 +106,20 @@ impl Serialize for NodeStats {
         let mut tup = serializer.serialize_tuple(2)?;
         tup.serialize_element(&self.peers)?;
         tup.serialize_element(&self.txcount)?;
+        tup.end()
+    }
+}
+
+impl Serialize for NodeIO {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut tup = serializer.serialize_tuple(4)?;
+        tup.serialize_element(&self.used_state_cache_size)?;
+        tup.serialize_element(&self.used_db_cache_size)?;
+        tup.serialize_element(&self.disk_read_per_sec)?;
+        tup.serialize_element(&self.disk_write_per_sec)?;
         tup.end()
     }
 }

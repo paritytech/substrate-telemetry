@@ -1,7 +1,7 @@
 use bytes::Bytes;
 use std::sync::Arc;
 
-use crate::types::{NodeId, NodeDetails, NodeStats, NodeHardware, NodeLocation, BlockDetails, Block, Timestamp};
+use crate::types::{NodeId, NodeDetails, NodeStats, NodeIO, NodeHardware, NodeLocation, BlockDetails, Block, Timestamp};
 use crate::util::now;
 
 pub mod message;
@@ -19,6 +19,8 @@ pub struct Node {
     details: NodeDetails,
     /// Basic stats
     stats: NodeStats,
+    /// Node IO stats
+    io: NodeIO,
     /// Best block
     best: BlockDetails,
     /// Finalized block
@@ -42,16 +44,9 @@ impl Node {
         Node {
 
             details,
-            stats: NodeStats {
-                txcount: 0,
-                peers: 0,
-            },
-            best: BlockDetails {
-                block: Block::zero(),
-                block_timestamp: now(),
-                block_time: 0,
-                propagation_time: None,
-            },
+            stats: NodeStats::default(),
+            io: NodeIO::default(),
+            best: BlockDetails::default(),
             finalized: Block::zero(),
             throttle: 0,
             hardware: NodeHardware::default(),
@@ -105,7 +100,7 @@ impl Node {
         if block.height > self.best.block.height {
             self.stale = false;
             self.best.block = block;
-            
+
             true
         } else {
             false
@@ -152,6 +147,15 @@ impl Node {
         if self.stats != interval.stats {
             self.stats = interval.stats;
             Some(&self.stats)
+        } else {
+            None
+        }
+    }
+
+    pub fn update_io(&mut self, interval: &SystemInterval) -> Option<&NodeIO> {
+        if self.io != interval.node_io {
+            self.io = interval.node_io;
+            Some(&self.io)
         } else {
             None
         }

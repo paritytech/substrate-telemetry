@@ -273,6 +273,10 @@ impl Handler<UpdateNode> for Chain {
                     if let Some(stats) = node.update_stats(interval) {
                         self.serializer.push(feed::NodeStatsUpdate(nid, stats));
                     }
+
+                    if let Some(io) = node.update_io(interval) {
+                        self.serializer.push(feed::NodeIOUpdate(nid, io));
+                    }
                 }
                 Details::SystemNetworkState(_) => {
                     if let Some(raw) = raw {

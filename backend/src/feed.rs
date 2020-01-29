@@ -4,7 +4,7 @@ use serde::ser::{Serializer, SerializeTuple};
 use serde_json::to_writer;
 use crate::node::Node;
 use crate::types::{
-    NodeId, NodeStats, NodeHardware, BlockNumber, BlockHash, BlockDetails, Timestamp, Address,
+    NodeId, NodeStats, NodeHardware, NodeIO, BlockNumber, BlockHash, BlockDetails, Timestamp, Address,
 };
 
 pub mod connector;
@@ -91,6 +91,7 @@ actions! {
     0x12: AfgReceivedPrecommit,
     0x13: AfgAuthoritySet,
     0x14: StaleNode,
+    0x15: NodeIOUpdate<'_>,
 }
 
 #[derive(Serialize)]
@@ -118,6 +119,9 @@ pub struct FinalizedBlock(pub NodeId, pub BlockNumber, pub BlockHash);
 
 #[derive(Serialize)]
 pub struct NodeStatsUpdate<'a>(pub NodeId, pub &'a NodeStats);
+
+#[derive(Serialize)]
+pub struct NodeIOUpdate<'a>(pub NodeId, pub &'a NodeIO);
 
 #[derive(Serialize)]
 pub struct Hardware<'a>(pub NodeId, pub &'a NodeHardware);

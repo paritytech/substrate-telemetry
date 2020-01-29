@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use serde::de::IgnoredAny;
 use crate::node::{NodeDetails, NodeStats};
-use crate::types::{Block, BlockNumber, BlockHash};
+use crate::types::{Block, BlockNumber, BlockHash, NodeIO};
 
 #[derive(Deserialize, Debug, Message)]
 pub struct NodeMessage {
@@ -74,6 +74,8 @@ pub struct SystemInterval {
     #[serde(flatten)]
     pub block: Block,
     pub network_state: Option<IgnoredAny>,
+    #[serde(flatten)]
+    pub node_io: NodeIO,
 }
 
 #[derive(Deserialize, Debug)]
