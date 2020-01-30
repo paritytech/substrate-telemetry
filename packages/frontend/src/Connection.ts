@@ -237,7 +237,25 @@ export class Connection {
           nodes.mutAndMaybeSort(
             id,
             (node) => node.updateHardware(nodeHardware),
-            sortByColumn === Column.CPU || sortByColumn === Column.MEM || sortByColumn === Column.UPLOAD || sortByColumn === Column.DOWNLOAD,
+            sortByColumn === Column.CPU
+              || sortByColumn === Column.MEM
+              || sortByColumn === Column.UPLOAD
+              || sortByColumn === Column.DOWNLOAD,
+          );
+
+          break;
+        }
+
+        case Actions.NodeIO: {
+          const [id, nodeIO] = message.payload;
+
+          nodes.mutAndMaybeSort(
+            id,
+            (node) => node.updateIO(nodeIO),
+            sortByColumn === Column.STATE_CACHE
+              || sortByColumn === Column.DB_CACHE
+              || sortByColumn === Column.DISK_READ
+              || sortByColumn === Column.DISK_WRITE,
           );
 
           break;

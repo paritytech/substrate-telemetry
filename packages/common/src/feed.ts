@@ -187,7 +187,8 @@ export type Message =
   | Variants.AfgReceivedPrecommit
   | Variants.AfgAuthoritySet
   | Variants.StaleNodeMessage
-  | Variants.PongMessage;
+  | Variants.PongMessage
+  | Variants.NodeIOMessage;
 
 /**
  * Data type to be sent to the feed. Passing through strings means we can only serialize once,
