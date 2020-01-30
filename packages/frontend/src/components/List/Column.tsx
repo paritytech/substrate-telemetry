@@ -405,7 +405,9 @@ function formatMemory(kbs: number, stamp: Maybe<Types.Timestamp>): string {
 function formatBytes(bytes: number, stamp: Maybe<Types.Timestamp>): string {
   const ago = stamp ? ` (${formatStamp(stamp)})` : '';
 
-  if (bytes >= 1024 * 1024) {
+  if (bytes >= 1024 * 1024 * 1024) {
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB${ago}`;
+  } else if (bytes >= 1024 * 1024) {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB${ago}`;
   } else if (bytes >= 1000) {
     return `${(bytes / 1024).toFixed(1)} kB${ago}`;
