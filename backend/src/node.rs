@@ -1,7 +1,7 @@
 use bytes::Bytes;
 use std::sync::Arc;
 
-use crate::types::{NodeId, NodeDetails, NodeStats, NodeHardware, NodeLocation, BlockDetails, Block, Timestamp};
+use crate::types::{NodeId, NodeDetails, NodeStats, NodeIO, NodeHardware, NodeLocation, BlockDetails, Block, Timestamp};
 use crate::util::now;
 
 pub mod message;
@@ -19,6 +19,8 @@ pub struct Node {
     details: NodeDetails,
     /// Basic stats
     stats: NodeStats,
+    /// Node IO stats
+    io: NodeIO,
     /// Best block
     best: BlockDetails,
     /// Finalized block
@@ -42,16 +44,9 @@ impl Node {
         Node {
 
             details,
-            stats: NodeStats {
-                txcount: 0,
-                peers: 0,
-            },
-            best: BlockDetails {
-                block: Block::zero(),
-                block_timestamp: now(),
-                block_time: 0,
-                propagation_time: None,
-            },
+            stats: NodeStats::default(),
+            io: NodeIO::default(),
+            best: BlockDetails::default(),
             finalized: Block::zero(),
             throttle: 0,
             hardware: NodeHardware::default(),
@@ -68,6 +63,10 @@ impl Node {
 
     pub fn stats(&self) -> &NodeStats {
         &self.stats
+    }
+
+    pub fn io(&self) -> &NodeIO {
+        &self.io
     }
 
     pub fn best(&self) -> &Block {
@@ -105,7 +104,7 @@ impl Node {
         if block.height > self.best.block.height {
             self.stale = false;
             self.best.block = block;
-            
+
             true
         } else {
             false
@@ -152,6 +151,29 @@ impl Node {
         if self.stats != interval.stats {
             self.stats = interval.stats;
             Some(&self.stats)
+        } else {
+            None
+        }
+    }
+
+    pub fn update_io(&mut self, interval: &SystemInterval) -> Option<&NodeIO> {
+        let mut changed = false;
+
+        if let Some(size) = interval.used_state_cache_size {
+            changed |= self.io.used_state_cache_size.push(size);
+        }
+        if let Some(size) = interval.used_db_cache_size {
+            changed |= self.io.used_db_cache_size.push(size);
+        }
+        if let Some(bps) = interval.disk_read_per_sec {
+            changed |= self.io.disk_read_per_sec.push(bps);
+        }
+        if let Some(bps) = interval.disk_write_per_sec {
+            changed |= self.io.disk_write_per_sec.push(bps);
+        }
+
+        if changed {
+            Some(&self.io)
         } else {
             None
         }

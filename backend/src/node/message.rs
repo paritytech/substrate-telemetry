@@ -74,6 +74,10 @@ pub struct SystemInterval {
     #[serde(flatten)]
     pub block: Block,
     pub network_state: Option<IgnoredAny>,
+    pub used_state_cache_size: Option<f32>,
+    pub used_db_cache_size: Option<f32>,
+    pub disk_read_per_sec: Option<f32>,
+    pub disk_write_per_sec: Option<f32>,
 }
 
 #[derive(Deserialize, Debug)]

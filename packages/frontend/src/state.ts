@@ -43,6 +43,10 @@ export class Node {
   public cpu: Types.CPUUse[];
   public upload: Types.BytesPerSecond[];
   public download: Types.BytesPerSecond[];
+  public stateCacheSize: Types.Bytes[];
+  public dbCacheSize: Types.Bytes[];
+  public diskRead: Types.BytesPerSecond[];
+  public diskWrite: Types.BytesPerSecond[];
   public chartstamps: Types.Timestamp[];
 
   public height: Types.BlockNumber;
@@ -66,6 +70,7 @@ export class Node {
     id: Types.NodeId,
     nodeDetails: Types.NodeDetails,
     nodeStats: Types.NodeStats,
+    nodeIO: Types.NodeIO,
     nodeHardware: Types.NodeHardware,
     blockDetails: Types.BlockDetails,
     location: Maybe<Types.NodeLocation>,
@@ -89,6 +94,7 @@ export class Node {
     this.sortableVersion = (major * 1000 + minor * 100 + patch) | 0;
 
     this.updateStats(nodeStats);
+    this.updateIO(nodeIO);
     this.updateHardware(nodeHardware);
     this.updateBlock(blockDetails);
 
@@ -102,6 +108,17 @@ export class Node {
 
     this.peers = peers;
     this.txs = txs;
+
+    this.trigger();
+  }
+
+  public updateIO(io: Types.NodeIO) {
+    const [stateCacheSize, dbCacheSize, diskRead, diskWrite] = io;
+
+    this.stateCacheSize = stateCacheSize;
+    this.dbCacheSize = dbCacheSize;
+    this.diskRead = diskRead;
+    this.diskWrite = diskWrite;
 
     this.trigger();
   }
@@ -202,6 +219,10 @@ export namespace State {
     mem: boolean;
     upload: boolean;
     download: boolean;
+    stateCacheSize: boolean;
+    dbCacheSize: boolean;
+    diskRead: boolean;
+    diskWrite: boolean;
     blocknumber: boolean;
     blockhash: boolean;
     finalized: boolean;

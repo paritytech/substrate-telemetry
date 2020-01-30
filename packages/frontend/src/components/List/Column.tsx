@@ -31,6 +31,10 @@ import cpuIcon from '../../icons/microchip-solid.svg';
 import memoryIcon from '../../icons/memory-solid.svg';
 import uploadIcon from '../../icons/cloud-upload.svg';
 import downloadIcon from '../../icons/cloud-download.svg';
+import readIcon from '../../icons/arrow-up.svg';
+import writeIcon from '../../icons/arrow-down.svg';
+import databaseIcon from '../../icons/database.svg';
+import stateIcon from '../../icons/git-branch.svg';
 import networkIcon from '../../icons/network.svg';
 import uptimeIcon from '../../icons/pulse.svg';
 import externalLinkIcon from '../../icons/link-external.svg';
@@ -210,6 +214,74 @@ export namespace Column {
     }
   };
 
+  export const STATE_CACHE: Column = {
+    label: 'State Cache Size',
+    icon: stateIcon,
+    width: 40,
+    setting: 'stateCacheSize',
+    sortBy: ({ stateCacheSize }) => stateCacheSize.length < 3 ? 0 : stateCacheSize[stateCacheSize.length - 1],
+    render: ({ stateCacheSize, chartstamps }) => {
+      if (stateCacheSize.length < 3) {
+        return '-';
+      }
+
+      return (
+        <Sparkline width={44} height={16} stroke={1} format={formatBytes} values={stateCacheSize} stamps={chartstamps} minScale={MEMORY_SCALE} />
+      );
+    }
+  };
+
+  export const DB_CACHE: Column = {
+    label: 'Database Cache Size',
+    icon: databaseIcon,
+    width: 40,
+    setting: 'dbCacheSize',
+    sortBy: ({ dbCacheSize }) => dbCacheSize.length < 3 ? 0 : dbCacheSize[dbCacheSize.length - 1],
+    render: ({ dbCacheSize, chartstamps }) => {
+      if (dbCacheSize.length < 3) {
+        return '-';
+      }
+
+      return (
+        <Sparkline width={44} height={16} stroke={1} format={formatBytes} values={dbCacheSize} stamps={chartstamps} minScale={MEMORY_SCALE} />
+      );
+    }
+  };
+
+  export const DISK_READ: Column = {
+    label: 'Disk Read',
+    icon: readIcon,
+    width: 40,
+    setting: 'diskRead',
+    sortBy: ({ diskRead }) => diskRead.length < 3 ? 0 : diskRead[diskRead.length - 1],
+    render: ({ diskRead, chartstamps }) => {
+      if (diskRead.length < 3) {
+        return '-';
+      }
+
+      return (
+        <Sparkline width={44} height={16} stroke={1} format={formatBandwidth} values={diskRead} stamps={chartstamps} minScale={MEMORY_SCALE} />
+      );
+    }
+  };
+
+  export const DISK_WRITE: Column = {
+    label: 'Disk Write',
+    icon: writeIcon,
+    width: 40,
+    setting: 'diskWrite',
+    sortBy: ({ diskWrite }) => diskWrite.length < 3 ? 0 : diskWrite[diskWrite.length - 1],
+    render: ({ diskWrite, chartstamps }) => {
+      if (diskWrite.length < 3) {
+        return '-';
+      }
+
+      return (
+        <Sparkline width={44} height={16} stroke={1} format={formatBandwidth} values={diskWrite} stamps={chartstamps} minScale={MEMORY_SCALE} />
+      );
+    }
+  };
+
   export const BLOCK_NUMBER: Column = {
     label: 'Block',
     icon: blockIcon,
@@ -327,6 +399,18 @@ function formatMemory(kbs: number, stamp: Maybe<Types.Timestamp>): string {
     return `${(mbs / 1024).toFixed(1)} GB${ago}`;
   } else {
     return `${mbs} MB${ago}`;
+  }
+}
+
+function formatBytes(bytes: number, stamp: Maybe<Types.Timestamp>): string {
+  const ago = stamp ? ` (${formatStamp(stamp)})` : '';
+
+  if (bytes >= 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB${ago}`;
+  } else if (bytes >= 1000) {
+    return `${(bytes / 1024).toFixed(1)} kB${ago}`;
+  } else {
+    return `${bytes} B${ago}`;
   }
 }
 
