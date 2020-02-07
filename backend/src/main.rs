@@ -87,7 +87,7 @@ fn main() -> std::io::Result<()> {
     let factory = LocatorFactory::new();
     let locator = SyncArbiter::start(4, move || factory.create());
     
-    let feed_port = std::env::var("FEED_PORT").unwrap_or(8000.to_string());
+    let port = std::env::var("PORT").ok().and_then(|v| v.parse().ok()).unwrap_or(8000u16);
     
     HttpServer::new(move || {
         App::new()
@@ -100,7 +100,7 @@ fn main() -> std::io::Result<()> {
             .service(resource("/network_state/{chain}/{nid}").route(get().to_async(state_route)))
             .service(resource("/network_state/{chain}/{nid}/").route(get().to_async(state_route)))
     })
-    .bind("0.0.0.0:port".replace("port", &feed_port))? // naive replacement, until i find better way this will do
+    .bind(format!("0.0.0.0:{}", port))?
     .start();
 
     sys.run()
