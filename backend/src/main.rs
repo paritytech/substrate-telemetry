@@ -86,7 +86,9 @@ fn main() -> std::io::Result<()> {
     let aggregator = Aggregator::new().start();
     let factory = LocatorFactory::new();
     let locator = SyncArbiter::start(4, move || factory.create());
-
+    
+    let port = std::env::var("PORT").ok().and_then(|v| v.parse().ok()).unwrap_or(8000u16);
+    
     HttpServer::new(move || {
         App::new()
             .data(aggregator.clone())
@@ -98,7 +100,7 @@ fn main() -> std::io::Result<()> {
             .service(resource("/network_state/{chain}/{nid}").route(get().to_async(state_route)))
             .service(resource("/network_state/{chain}/{nid}/").route(get().to_async(state_route)))
     })
-    .bind("0.0.0.0:8000")?
+    .bind(format!("0.0.0.0:{}", port))?
     .start();
 
     sys.run()

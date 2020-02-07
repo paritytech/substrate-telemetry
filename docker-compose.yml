@@ -3,9 +3,9 @@ version: "3"
 services:
   telemetry-frontend:
     build:
-      dockerfile: Dockerfile
+      dockerfile: frontend.Dockerfile
       context: ./
-    # Copy in changes to the ui, so no need to rebulld the images.
+    # Copy in changes to the ui, so no need to rebuild the images.
     volumes:
       - /app/node_modules
       - ./packages:/app/packages
@@ -14,12 +14,9 @@ services:
       - 3000:3000
   telemetry-backend:
     build:
-      dockerfile: Dockerfile
+      dockerfile: backend.Dockerfile
       context: ./
-    command: yarn start:backend
     environment:
-      - TELEMETRY_SERVER=1024
-      - FEED_SERVER=8080
+      - PORT=8000
     ports:
-      - 8080:8080
-      - 1024:1024
+      - 8000:8000
