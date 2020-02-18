@@ -6,6 +6,7 @@ import { Connection } from './Connection';
 import { Persistent, PersistentObject, PersistentSet } from './persist';
 import { State, Node, ChainData, PINNED_CHAIN } from './state';
 import { getHashData } from './utils';
+import ConnectionInput from './components/ConnectionInput/ConnectionInput'
 import stable from 'stable';
 
 import './App.css';
@@ -105,7 +106,9 @@ export default class App extends React.Component<{}, State> {
       return this.state;
     });
 
+
     setInterval(() => this.chainsCache = [], 10000); // Wipe sorted chains cache every 10 seconds
+
   }
 
   public render() {
@@ -116,9 +119,13 @@ export default class App extends React.Component<{}, State> {
 
     if (chains.length === 0) {
       return (
-        <div className="App App-no-telemetry">
+        <div className="App">
           <OfflineIndicator status={status} />
-          Waiting for telemetry&hellip;
+          <div className="App-no-telemetry">Waiting for telemetry&hellip;</div>
+          <ConnectionInput />
+
+
+
         </div>
       );
     }

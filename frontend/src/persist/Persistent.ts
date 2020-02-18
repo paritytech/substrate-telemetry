@@ -9,7 +9,7 @@ export class Persistent<Data> {
     this.key = key;
     this.onChange = onChange;
 
-    const stored = window.localStorage.getItem(key) as Maybe<Stringified<Data>>;
+    const stored = window.localStorage.getItem(key) as any;
 
     if (stored) {
       try {
