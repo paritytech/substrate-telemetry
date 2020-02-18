@@ -1,0 +1,60 @@
+{
+  "name": "@dotstats/frontend",
+  "version": "0.1.0",
+  "author": "Parity Technologies Ltd. <admin@parity.io>",
+  "license": "GPL-3.0",
+  "description": "Polkadot Telemetry frontend",
+  "jest": {
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js"
+    ],
+    "setupFiles": [
+      "jest-localstorage-mock"
+    ],
+    "transform": {
+      "\\.(ts|tsx)$": "ts-jest"
+    },
+    "testRegex": "/test/.*\\.(spec).(ts|tsx|js)$"
+  },
+  "resolutions": {
+    "kind-of": ">=6.0.3"
+  },
+  "dependencies": {
+    "@fnando/sparkline": "maciejhirsz/sparkline",
+    "@polkadot/util-crypto": "^1.6.1",
+    "@types/react-measure": "^2.0.5",
+    "blakejs": "^1.1.0",
+    "react": "^16.12.0",
+    "react-dom": "^16.12.0",
+    "react-measure": "^2.3.0",
+    "react-scripts-ts": "2.17.0",
+    "react-svg": "^4.1.1",
+    "stable": "^0.1.8"
+  },
+  "scripts": {
+    "start": "react-scripts-ts start",
+    "build": "react-scripts-ts build",
+    "test": "echo 'FIXME: FE tests need updating'",
+    "eject": "react-scripts-ts eject"
+  },
+  "devDependencies": {
+    "@types/jest": "^23.0.2",
+    "@types/node": "^10.3.2",
+    "@types/react": "^16.3.17",
+    "@types/react-dom": "^16.0.6",
+    "@types/react-svg": "^3.0.0",
+    "babel-jest": "^23.6.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-react": "^6.24.1",
+    "enzyme": "^3.6.0",
+    "enzyme-adapter-react-16": "^1.5.0",
+    "jest": "^23.6.0",
+    "jest-localstorage-mock": "^2.2.0",
+    "mock-socket": "^8.0.2",
+    "react-test-renderer": "^16.5.2",
+    "ts-jest": "^23.10.2",
+    "typescript": "^2.9.2"
+  }
+}

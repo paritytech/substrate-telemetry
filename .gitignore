@@ -7,10 +7,10 @@ backend/target
 node_modules
 
 # testing
-packages/*/coverage
+coverage
 
 # production
-packages/*/build
+build
 
 # misc
 .DS_Store
@@ -22,3 +22,10 @@ packages/*/build
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+terraform/terraform.tfvars
+terraform/.terraform
+terraform/.terraform.tfstate.lock.info
+terraform/plan
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup

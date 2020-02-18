@@ -5,9 +5,9 @@
     "node": ">=9.5",
     "yarn": "^1.3.2"
   },
-  "workspaces": [
-    "packages/*"
-  ],
+  "resolutions": {
+    "kind-of": ">=6.0.3"
+  },
   "scripts": {
     "deploy": "scripts/deploy.sh",
     "build:all": "scripts/build-all.sh",

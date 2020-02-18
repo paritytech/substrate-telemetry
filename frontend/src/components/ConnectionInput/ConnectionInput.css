@@ -1,0 +1,25 @@
+.ConnectionInput-connection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+.ConnectionInput-connection input {
+  width: 80vw;
+  text-align: center;
+  font-size: 1.4em;
+  padding: 1em;
+  margin: 1em;
+  margin-right: 0;
+}
+.ConnectionInput-connection button {
+  width: 10vw;
+  text-align: center;
+  font-size: 1.4em;
+  padding: 1em;
+}
+.ConnectionInput-error {
+  font-size: 1em;
+  color: crimson;
+}
+

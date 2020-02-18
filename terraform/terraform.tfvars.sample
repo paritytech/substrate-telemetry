@@ -1,0 +1,21 @@
+# User Variables are declared here
+
+// GCP Project name, for example, `trustless2020`
+project_name = ""
+
+# your DigitalOcean Personal Access Token
+do_token = ""
+
+# ssh fingerprint
+ssh_fingerprint = "ca:f9:31:4a:1f:a0:45:82:ed:1e:30:21:82:b1:fc:5b"
+
+// Path of the public SSH key, for example `~/.ssh/id_rsa.pub`
+public_key_path = "~/.ssh/do_id_rsa.pub"
+
+// Path of the private SSH key, for example, `~/.ssh/id_rsa`
+private_key_path = "~/.ssh/do_id_rsa"
+
+
+// Username of the user accessing the host, for example $USER
+username = "root"
+
