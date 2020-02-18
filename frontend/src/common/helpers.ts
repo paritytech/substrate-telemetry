@@ -1,10 +1,12 @@
-import { Milliseconds, Timestamp } from './types';
+import { Milliseconds, Timestamp } from "./types";
 
 /**
  * PhantomData akin to Rust, because sometimes you need to be smarter than
  * the compiler.
  */
-export abstract class PhantomData<P> { public __PHANTOM__: P }
+export abstract class PhantomData<P> {
+  public __PHANTOM__: P;
+}
 
 /**
  * Opaque type, similar to `opaque type` in Flow, or new types in Rust/C.
@@ -47,7 +49,7 @@ export class NumStats<T extends number> {
 
   constructor(history: number) {
     if (history < 1) {
-      throw new Error('Must track at least one number');
+      throw new Error("Must track at least one number");
     }
 
     this.history = history;
@@ -109,6 +111,8 @@ export class NumStats<T extends number> {
   }
 
   private nonEmpty(): Readonly<Array<number>> {
-    return this.index < this.history ? this.stack.slice(0, this.index) : this.stack;
+    return this.index < this.history
+      ? this.stack.slice(0, this.index)
+      : this.stack;
   }
 }

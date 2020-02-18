@@ -82,7 +82,7 @@ export class List extends React.Component<List.Props, {}> {
       <React.Fragment>
         <div className="List" style={{ height }}>
           <table>
-            <Row.Header columns={selectedColumns} sortBy={sortBy} />
+            <Row.HEADER columns={selectedColumns} sortBy={sortBy} />
             <tbody style={{ transform }}>
               {
                 nodes.map((node) => <Row key={node.id} node={node} pins={pins} columns={selectedColumns} />)

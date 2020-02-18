@@ -1,21 +1,11 @@
-version: "3"
-
+version: '3'
 services:
-  telemetry-frontend:
-    build:
-      dockerfile: frontend.Dockerfile
-      context: ./
-    # Copy in changes to the ui, so no need to rebuild the images.
-    volumes:
-      - /app/node_modules
-      - ./packages:/app/packages
-    command: yarn start:frontend
+  frontend:
+    image: woss/polkadot-telemetry-frontend:latest
     ports:
-      - 3000:3000
-  telemetry-backend:
-    build:
-      dockerfile: Dockerfile
-      context: ./backend
+      - 5000:5000
+  backend:
+    image: woss/polkadot-telemetry-backend:latest
     environment:
       - PORT=8000
     ports:

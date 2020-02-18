@@ -23,7 +23,6 @@ ARG PROFILE=release
 
 COPY --from=builder /app/target/$PROFILE/telemetry /usr/local/bin
 
-
 EXPOSE 8000
 
 ENTRYPOINT ["/usr/local/bin/telemetry"]

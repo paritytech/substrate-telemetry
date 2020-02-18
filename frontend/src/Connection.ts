@@ -5,9 +5,7 @@ import { getHashData, setHashData } from './utils';
 import { AfgHandling } from './AfgHandling';
 import { VIS_AUTHORITIES_LIMIT } from './components/Consensus';
 import { Column } from './components/List';
-
-
-const { Actions } = FeedMessage;
+import { ACTIONS } from './common/feed';
 
 const TIMEOUT_BASE = (1000 * 5) as Types.Milliseconds; // 5 seconds
 const TIMEOUT_MAX = (1000 * 60 * 5) as Types.Milliseconds; // 5 minutes
@@ -134,7 +132,7 @@ export class Connection {
 
     for (const message of messages) {
       switch (message.action) {
-        case Actions.FeedVersion: {
+        case ACTIONS.FeedVersion: {
           if (message.payload !== VERSION) {
             this.state = this.update({ status: 'upgrade-requested' });
             this.clean();
@@ -148,7 +146,7 @@ export class Connection {
           break;
         }
 
-        case Actions.BestBlock: {
+        case ACTIONS.BestBlock: {
           const [best, blockTimestamp, blockAverage] = message.payload;
 
           nodes.mutEach((node) => node.newBestBlock());
@@ -158,7 +156,7 @@ export class Connection {
           break;
         }
 
-        case Actions.BestFinalized: {
+        case ACTIONS.BestFinalized: {
           const [finalized /*, hash */] = message.payload;
 
           this.state = this.update({ finalized });
@@ -166,7 +164,7 @@ export class Connection {
           break;
         }
 
-        case Actions.AddedNode: {
+        case ACTIONS.AddedNode: {
           const [id, nodeDetails, nodeStats, nodeIO, nodeHardware, blockDetails, location, connectedAt] = message.payload;
           const pinned = this.pins.has(nodeDetails[0]);
           const node = new Node(pinned, id, nodeDetails, nodeStats, nodeIO, nodeHardware, blockDetails, location, connectedAt);
@@ -176,7 +174,7 @@ export class Connection {
           break;
         }
 
-        case Actions.RemovedNode: {
+        case ACTIONS.RemovedNode: {
           const id = message.payload;
 
           nodes.remove(id);
@@ -184,7 +182,7 @@ export class Connection {
           break;
         }
 
-        case Actions.StaleNode: {
+        case ACTIONS.StaleNode: {
           const id = message.payload;
 
           nodes.mutAndSort(id, (node) => node.setStale(true));
@@ -192,7 +190,7 @@ export class Connection {
           break;
         }
 
-        case Actions.LocatedNode: {
+        case ACTIONS.LocatedNode: {
           const [id, lat, lon, city] = message.payload;
 
           nodes.mutAndMaybeSort(id, (node) => node.updateLocation([lat, lon, city]), sortByColumn === Column.LOCATION);
@@ -200,7 +198,7 @@ export class Connection {
           break;
         }
 
-        case Actions.ImportedBlock: {
+        case ACTIONS.ImportedBlock: {
           const [id, blockDetails] = message.payload;
 
           nodes.mutAndSort(id, (node) => node.updateBlock(blockDetails));
@@ -208,7 +206,7 @@ export class Connection {
           break;
         }
 
-        case Actions.FinalizedBlock: {
+        case ACTIONS.FinalizedBlock: {
           const [id, height, hash] = message.payload;
 
           nodes.mutAndMaybeSort(
@@ -220,7 +218,7 @@ export class Connection {
           break;
         }
 
-        case Actions.NodeStats: {
+        case ACTIONS.NodeStats: {
           const [id, nodeStats] = message.payload;
 
           nodes.mutAndMaybeSort(
@@ -232,7 +230,7 @@ export class Connection {
           break;
         }
 
-        case Actions.NodeHardware: {
+        case ACTIONS.NodeHardware: {
           const [id, nodeHardware] = message.payload;
 
           nodes.mutAndMaybeSort(
@@ -247,7 +245,7 @@ export class Connection {
           break;
         }
 
-        case Actions.NodeIO: {
+        case ACTIONS.NodeIO: {
           const [id, nodeIO] = message.payload;
 
           nodes.mutAndMaybeSort(
@@ -262,7 +260,7 @@ export class Connection {
           break;
         }
 
-        case Actions.TimeSync: {
+        case ACTIONS.TimeSync: {
           this.state = this.update({
             timeDiff: (timestamp() - message.payload) as Types.Milliseconds
           });
@@ -270,7 +268,7 @@ export class Connection {
           break;
         }
 
-        case Actions.AddedChain: {
+        case ACTIONS.AddedChain: {
           const [label, nodeCount] = message.payload;
           const chain = chains.get(label);
 
@@ -285,7 +283,7 @@ export class Connection {
           break;
         }
 
-        case Actions.RemovedChain: {
+        case ACTIONS.RemovedChain: {
           chains.delete(message.payload);
 
           if (this.state.subscribed === message.payload) {
@@ -297,7 +295,7 @@ export class Connection {
           break;
         }
 
-        case Actions.SubscribedTo: {
+        case ACTIONS.SubscribedTo: {
           nodes.clear();
 
           this.state = this.update({ subscribed: message.payload, nodes });
@@ -305,7 +303,7 @@ export class Connection {
           break;
         }
 
-        case Actions.UnsubscribedFrom: {
+        case ACTIONS.UnsubscribedFrom: {
           if (this.state.subscribed === message.payload) {
             nodes.clear();
 
@@ -315,13 +313,13 @@ export class Connection {
           break;
         }
 
-        case Actions.Pong: {
+        case ACTIONS.Pong: {
           this.pong(Number(message.payload));
 
           break;
         }
 
-        case Actions.AfgFinalized: {
+        case ACTIONS.AfgFinalized: {
           const [nodeAddress, finalizedNumber, finalizedHash] = message.payload;
           const no = parseInt(String(finalizedNumber), 10) as Types.BlockNumber;
           afg.receivedFinalized(nodeAddress, no, finalizedHash);
@@ -329,7 +327,7 @@ export class Connection {
           break;
         }
 
-        case Actions.AfgReceivedPrevote: {
+        case ACTIONS.AfgReceivedPrevote: {
           const [nodeAddress, blockNumber, blockHash, voter] = message.payload;
           const no = parseInt(String(blockNumber), 10) as Types.BlockNumber;
           afg.receivedPre(nodeAddress, no, blockHash, voter, "prevote");
@@ -337,7 +335,7 @@ export class Connection {
           break;
         }
 
-        case Actions.AfgReceivedPrecommit: {
+        case ACTIONS.AfgReceivedPrecommit: {
           const [nodeAddress, blockNumber, blockHash, voter] = message.payload;
           const no = parseInt(String(blockNumber), 10) as Types.BlockNumber;
           afg.receivedPre(nodeAddress, no, blockHash, voter, "precommit");
@@ -345,7 +343,7 @@ export class Connection {
           break;
         }
 
-        case Actions.AfgAuthoritySet: {
+        case ACTIONS.AfgAuthoritySet: {
           const [authoritySetId, authorities] = message.payload;
           afg.receivedAuthoritySet(authoritySetId, authorities);
 

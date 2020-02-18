@@ -1,11 +1,11 @@
-import * as React from 'react';
-import { Maybe } from './common';
-import { Node } from '../state';
-import { Icon } from './';
+import * as React from "react";
+import { Maybe } from "../common";
+import { Node } from "../state";
+import { Icon } from "./";
 
-import searchIcon from '../icons/search.svg';
+import searchIcon from "../icons/search.svg";
 
-import './Filter.css';
+import "./Filter.css";
 
 export namespace Filter {
   export interface Props {
@@ -21,21 +21,27 @@ const ESCAPE_KEY = 27;
 
 export class Filter extends React.Component<Filter.Props, {}> {
   public state = {
-    value: ''
+    value: ""
   };
 
   private filterInput: HTMLInputElement;
 
   public componentWillMount() {
-    window.addEventListener('keyup', this.onWindowKeyUp);
+    window.addEventListener("keyup", this.onWindowKeyUp);
   }
 
   public componentWillUnmount() {
-    window.removeEventListener('keyup', this.onWindowKeyUp);
+    window.removeEventListener("keyup", this.onWindowKeyUp);
   }
 
-  public shouldComponentUpdate(nextProps: Filter.Props, nextState: Filter.State): boolean {
-    return this.props.onChange !== nextProps.onChange || this.state.value !== nextState.value;
+  public shouldComponentUpdate(
+    nextProps: Filter.Props,
+    nextState: Filter.State
+  ): boolean {
+    return (
+      this.props.onChange !== nextProps.onChange ||
+      this.state.value !== nextState.value
+    );
   }
 
   public render() {
@@ -43,14 +49,19 @@ export class Filter extends React.Component<Filter.Props, {}> {
 
     let className = "Filter";
 
-    if (value === '') {
+    if (value === "") {
       className += " Filter-hidden";
     }
 
     return (
       <div className={className}>
         <Icon src={searchIcon} />
-        <input ref={this.onRef} value={value} onChange={this.onChange} onKeyUp={this.onKeyUp} />
+        <input
+          ref={this.onRef}
+          value={value}
+          onChange={this.onChange}
+          onKeyUp={this.onKeyUp}
+        />
       </div>
     );
   }
@@ -63,19 +74,19 @@ export class Filter extends React.Component<Filter.Props, {}> {
 
   private onRef = (el: HTMLInputElement) => {
     this.filterInput = el;
-  }
+  };
 
   private onChange = () => {
     this.setValue(this.filterInput.value);
-  }
+  };
 
   private onKeyUp = (event: React.KeyboardEvent<HTMLInputElement>) => {
     event.stopPropagation();
 
     if (event.keyCode === ESCAPE_KEY) {
-      this.setValue('');
+      this.setValue("");
     }
-  }
+  };
 
   private onWindowKeyUp = (event: KeyboardEvent) => {
     if (event.ctrlKey) {
@@ -86,18 +97,18 @@ export class Filter extends React.Component<Filter.Props, {}> {
     const key = event.key;
 
     const escape = value && event.keyCode === ESCAPE_KEY;
-    const singleChar = value === '' && key.length === 1;
+    const singleChar = value === "" && key.length === 1;
 
     if (escape) {
-      this.setValue('');
+      this.setValue("");
     } else if (singleChar) {
       this.setValue(key);
       this.filterInput.focus();
     }
-  }
+  };
 
   private getNodeFilter(value: string): Maybe<(node: Node) => boolean> {
-    if (value === '') {
+    if (value === "") {
       return null;
     }
 
@@ -105,9 +116,10 @@ export class Filter extends React.Component<Filter.Props, {}> {
 
     return ({ name, city }) => {
       const matchesName = name.toLowerCase().indexOf(filter) !== -1;
-      const matchesCity = city != null && city.toLowerCase().indexOf(filter) !== -1;
+      const matchesCity =
+        city != null && city.toLowerCase().indexOf(filter) !== -1;
 
       return matchesName || matchesCity;
-    }
+    };
   }
 }

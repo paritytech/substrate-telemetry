@@ -34,10 +34,10 @@ export type NodeIO = [Array<Bytes>, Array<Bytes>, Array<BytesPerSecond>, Array<B
 export type NodeHardware = [Array<MemoryUse>, Array<CPUUse>, Array<BytesPerSecond>, Array<BytesPerSecond>, Array<Timestamp>];
 export type NodeLocation = [Latitude, Longitude, City];
 
-export declare type Authority = {
-  Address: Address,
-  NodeId: Maybe<NodeId>,
-  Name: Maybe<NodeName>,
+export interface Authority {
+  Address: Address;
+  NodeId: Maybe<NodeId>;
+  Name: Maybe<NodeName>;
 };
 export declare type Authorities = Array<Address>;
 export declare type AuthoritySetId = Opaque<number, 'AuthoritySetId'>;
@@ -46,7 +46,7 @@ export declare type ConsensusItem = [BlockNumber, ConsensusView];
 export declare type ConsensusInfo = Array<ConsensusItem>;
 export declare type ConsensusView = Map<Address, ConsensusState>;
 export declare type ConsensusState = Map<Address, ConsensusDetail>;
-export declare type ConsensusDetail = {
+export interface ConsensusDetail {
   Precommit: Precommit;
   ImplicitPrecommit: ImplicitPrecommit;
   Prevote: Prevote;

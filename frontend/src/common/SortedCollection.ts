@@ -59,7 +59,7 @@ export function sortedIndexOf<T>(item: T, within: Array<T>, compare: Compare<T>)
   let max = within.length - 1;
 
   while (min !== max) {
-    let guess = (min + max) / 2 | 0;
+    const guess = (min + max) / 2 | 0;
     const other = within[guess];
 
     if (item === other) {
@@ -95,7 +95,7 @@ export class SortedCollection<Item extends { id: number }> {
   private list = Array<Item>();
   private changeRef = 0;
 
-  constructor(compare: Compare<Item>) {
+  constructor (compare: Compare<Item>) {
     this.compare = compare;
   }
 

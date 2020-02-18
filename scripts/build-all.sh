@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 
-./build-backend.sh && ./build-frontend.sh
+bash ./scripts/build-backend.sh
+bash ./scripts/build-frontend.sh

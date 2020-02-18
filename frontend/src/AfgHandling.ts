@@ -21,7 +21,7 @@ export class AfgHandling {
     authorities: Types.Authorities,
   ) {
     if (this.getState().authoritySetId != null && authoritySetId !== this.getState().authoritySetId) {
-      // the visualization is restarted when we receive a new auhority set
+      // the visualization is restarted when we receive a new authority set
       this.updateState({
         authoritySetId,
         authorities,

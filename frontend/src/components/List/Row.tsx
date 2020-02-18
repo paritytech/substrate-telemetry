@@ -51,7 +51,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
     Column.NETWORK_STATE,
   ];
 
-  public static Header = (props: HeaderProps) => {
+  public static HEADER = (props: HeaderProps) => {
     const { columns, sortBy } = props;
     const last = columns.length - 1;
 
