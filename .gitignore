@@ -23,3 +23,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+terraform/terraform.tfvars
+terraform/.terraform
+terraform/.terraform.tfstate.lock.info
+terraform/plan
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
