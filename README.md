@@ -62,4 +62,6 @@ terraform apply plan
 
 Frontend is available on the IP address you see in the output and on port `5000`
 
-Backend is awailable on the same IP and port `8000`
+Backend is available on the same IP and port `8000`
+
+Make sure that you add `ws://IP:8000/submit` when you start the polkadot
