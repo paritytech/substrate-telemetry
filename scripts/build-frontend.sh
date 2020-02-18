@@ -1,1 +1,1 @@
-cd ./packages/frontend && yarn run build && cp -r ./build ../../htdocs && cd ../../
+cd ./frontend && yarn build

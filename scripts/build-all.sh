@@ -1,1 +1,3 @@
-yarn build:common && yarn build:frontend
+#!/usr/bin/env bash
+
+./build-backend.sh && ./build-frontend.sh

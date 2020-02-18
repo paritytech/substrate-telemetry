@@ -10,7 +10,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN cargo install --path . && cargo build --$PROFILE
+RUN cargo build --$PROFILE
 
 
 # MAIN IMAGE FOR PEOPLE TO PULL --- small one#
