@@ -8,6 +8,9 @@
   "workspaces": [
     "packages/*"
   ],
+  "resolutions": {
+    "kind-of": ">=6.0.3"
+  },
   "scripts": {
     "deploy": "scripts/deploy.sh",
     "build:all": "scripts/build-all.sh",
