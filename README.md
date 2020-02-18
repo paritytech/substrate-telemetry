@@ -43,17 +43,17 @@ Now navigate to localhost:3000 in your browser to view the app.
 
 Currently terraform files are only available for DigitalOcean.
 
-
+Copy the `tfvars` 
 ```bash 
 cd terraform 
 
 cp terraform.tfvars.sample terraform.tfvars
 ```
 
+then continue
 
 ```bash
 terraform init
 terraform plan -out=plan
 terraform apply plan
-
 ```
