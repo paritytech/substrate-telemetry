@@ -17,7 +17,7 @@ mod util;
 
 use node::connector::NodeConnector;
 use feed::connector::FeedConnector;
-use aggregator::{Aggregator, GetNetworkState};
+use aggregator::{Aggregator, GetNetworkState, GetHealth};
 use util::{Locator, LocatorFactory};
 use types::NodeId;
 
@@ -77,6 +77,19 @@ fn state_route(
         })
 }
 
+fn health(
+    aggregator: web::Data<Addr<Aggregator>>
+) -> impl Future<Item = HttpResponse, Error = Error> {
+    aggregator
+        .send(GetHealth)
+        .from_err()
+        .and_then(|count| {
+            let body = format!("Connected chains: {}", count);
+
+            HttpResponse::Ok().body(body)
+        })
+}
+
 fn main() -> std::io::Result<()> {
     use web::{resource, get};
 
@@ -86,9 +99,9 @@ fn main() -> std::io::Result<()> {
     let aggregator = Aggregator::new().start();
     let factory = LocatorFactory::new();
     let locator = SyncArbiter::start(4, move || factory.create());
-    
+
     let port = std::env::var("PORT").ok().and_then(|v| v.parse().ok()).unwrap_or(8000u16);
-    
+
     HttpServer::new(move || {
         App::new()
             .data(aggregator.clone())
@@ -99,6 +112,8 @@ fn main() -> std::io::Result<()> {
             .service(resource("/feed/").route(get().to(feed_route)))
             .service(resource("/network_state/{chain}/{nid}").route(get().to_async(state_route)))
             .service(resource("/network_state/{chain}/{nid}/").route(get().to_async(state_route)))
+            .service(resource("/health").route(get().to_async(health)))
+            .service(resource("/health/").route(get().to_async(health)))
     })
     .bind(format!("0.0.0.0:{}", port))?
     .start();

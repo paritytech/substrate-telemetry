@@ -131,8 +131,15 @@ pub struct NodeCount(pub ChainId, pub usize);
 /// Message sent to the Aggregator to get the network state of a particular node
 pub struct GetNetworkState(pub Box<str>, pub NodeId);
 
+/// Message sent to the Aggregator to get a health check
+pub struct GetHealth;
+
 impl Message for GetNetworkState {
     type Result = Option<Request<Chain, GetNodeNetworkState>>;
+}
+
+impl Message for GetHealth {
+    type Result = usize;
 }
 
 impl Handler<AddNode> for Aggregator {
@@ -262,5 +269,13 @@ impl Handler<GetNetworkState> for Aggregator {
         let GetNetworkState(chain, nid) = msg;
 
         Some(self.get_chain(&*chain)?.addr.send(GetNodeNetworkState(nid)))
+    }
+}
+
+impl Handler<GetHealth> for Aggregator {
+    type Result = usize;
+
+    fn handle(&mut self, _: GetHealth, _: &mut Self::Context) -> Self::Result {
+        self.chains.len()
     }
 }
