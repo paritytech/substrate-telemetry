@@ -61,6 +61,7 @@ const ICONS = {
   'airalab-robonomics': airalabRobonomicsIcon,
   'substrate-node': paritySubstrateIcon,
   'edgeware-node': edgewareIcon,
+  'Edgeware Node': edgewareIcon,
   'joystream-node': joystreamIcon,
   'ChainX': chainXIcon,
   'ladder-node': ladderIcon,
