@@ -47,6 +47,7 @@ resource "digitalocean_droplet" "default" {
     }
   }
 
+
 }
 
 // A variable for extracting the external ip of the instance

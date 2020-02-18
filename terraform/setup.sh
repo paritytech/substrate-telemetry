@@ -9,4 +9,4 @@ echo "Switching to another branch"
 git checkout docker-improvements
 
 echo "Executing docker-compose"
-docker-compose up -d
+docker-compose -f docker-compose-prod.yml up -d
