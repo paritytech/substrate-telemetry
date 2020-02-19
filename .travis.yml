@@ -31,7 +31,6 @@ before_script:
 script: ./test.sh
 
 script:
-  - yarn
   - yarn build:all
   - yarn test
   - cd backend && cargo test
