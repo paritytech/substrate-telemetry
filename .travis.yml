@@ -31,5 +31,5 @@ before_script:
 script: ./test.sh
 
 script:
-  - cd backend && cargo test && cargo build --release
-  - cd backend && yarn build
+  - ./scripts/travis-backend.sh
+  - ./scripts/travis-frontend.sh
