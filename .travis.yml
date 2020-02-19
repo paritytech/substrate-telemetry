@@ -32,4 +32,4 @@ script: ./test.sh
 
 script:
   - cd backend && cargo test && cargo build --release
-  - cd backend && yarn build
+  - cd frontend && yarn build
