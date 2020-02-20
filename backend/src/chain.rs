@@ -392,6 +392,11 @@ impl Handler<Subscribe> for Chain {
         ));
         self.serializer.push(feed::BestFinalized(self.finalized.height, self.finalized.hash));
 
+        // Send subscribtion confirmation and chain head before doing all the nodes
+        if let Some(serialized) = self.serializer.finalize() {
+            feed.do_send(serialized);
+        }
+
         for (nid, node) in self.nodes.iter() {
             self.serializer.push(feed::AddedNode(nid, node));
             self.serializer.push(feed::FinalizedBlock(nid, node.finalized().height, node.finalized().hash));
