@@ -83,16 +83,7 @@ export class Connection {
   }
 
   public subscribe(chain: Types.ChainLabel) {
-    console.log('sub', chain);
-
-    if (this.state.subscribed != null && this.state.subscribed !== chain) {
-      this.state = this.update({
-        tab: 'list',
-      });
-      setHashData({ chain, tab: 'list' });
-    } else {
-      setHashData({ chain });
-    }
+    setHashData({ chain });
 
     this.socket.send(`subscribe:${chain}`);
   }

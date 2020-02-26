@@ -121,7 +121,7 @@ export class MultiCounter<K> {
 
   public clear() {
     this.map.clear();
-    this.changeRef = +1;
+    this.changeRef += 1;
   }
 
   public ref(): MultiCounter.StateRef {
