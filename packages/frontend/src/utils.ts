@@ -78,17 +78,16 @@ export function getHashData(): HashData {
 
 export function setHashData(val: HashData) {
   const update = Object.assign(getHashData(), val);
-
   const { tab = '', chain = '' } = update;
 
   window.location.hash = `#${tab}/${encodeURIComponent(chain)}`;
 }
 
-export namespace Stats {
-  export type StateRef = Opaque<number, 'Stats.StateRef'>;
+export namespace MultiCounter {
+  export type StateRef = Opaque<number, 'MultiCounter.StateRef'>;
 }
 
-export class Stats<K> {
+export class MultiCounter<K> {
   private map = new Map<K, number>();
   private changeRef = 0;
 
@@ -125,11 +124,11 @@ export class Stats<K> {
     this.changeRef = +1;
   }
 
-  public ref(): Stats.StateRef {
-    return this.changeRef as Stats.StateRef;
+  public ref(): MultiCounter.StateRef {
+    return this.changeRef as MultiCounter.StateRef;
   }
 
-  public hasChangedSince(ref: Stats.StateRef): boolean {
+  public hasChangedSince(ref: MultiCounter.StateRef): boolean {
     return this.changeRef > ref;
   }
 }

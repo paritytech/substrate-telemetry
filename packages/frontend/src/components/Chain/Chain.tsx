@@ -4,7 +4,7 @@ import { Types, Maybe } from '@dotstats/common';
 import { State as AppState } from '../../state';
 import { formatNumber, secondsWithPrecision, getHashData } from '../../utils';
 import { Tab } from './';
-import { Tile, Ago, List, Map, Settings, Consensus, PieChart } from '../';
+import { Tile, Ago, List, Map, Settings, Consensus, PieChart, Stats } from '../';
 import { Persistent, PersistentObject, PersistentSet } from '../../persist';
 
 import blockIcon from '../../icons/cube.svg';
@@ -15,11 +15,12 @@ import listIcon from '../../icons/list-alt-regular.svg';
 import worldIcon from '../../icons/location.svg';
 import settingsIcon from '../../icons/settings.svg';
 import consensusIcon from '../../icons/cube-alt.svg';
+import statsIcon from '../../icons/piechart.svg';
 
 import './Chain.css';
 
 export namespace Chain {
-  export type Display = 'list' | 'map' | 'settings' | 'consensus';
+  export type Display = 'list' | 'map' | 'settings' | 'consensus' | 'stats';
 
   export interface Props {
     appState: Readonly<AppState>;
@@ -50,6 +51,9 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
       case 'consensus':
         display = 'consensus';
         break;
+      case 'stats':
+        display = 'stats';
+        break;
     }
 
     this.state = {
@@ -73,6 +77,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
           <div className="Chain-tabs">
             <Tab icon={listIcon} label="List" display="list" tab="" current={currentTab} setDisplay={this.setDisplay} />
             <Tab icon={worldIcon} label="Map" display="map" tab="map" current={currentTab} setDisplay={this.setDisplay} />
+            <Tab icon={statsIcon} label="Map" display="stats" tab="stats" current={currentTab} setDisplay={this.setDisplay} />
             <Tab icon={consensusIcon} label="Consensus" display="consensus" tab="consensus" current={currentTab} setDisplay={this.setDisplay} />
             <Tab icon={settingsIcon} label="Settings" display="settings" tab="settings" current={currentTab} setDisplay={this.setDisplay} />
           </div>
@@ -88,22 +93,30 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
 
   private renderContent() {
     const { display } = this.state;
+    const { appState, settings, connection, pins, sortBy } = this.props;
 
-    if (display === 'settings') {
-      return <Settings settings={this.props.settings} />;
+    switch (display) {
+      case 'settings':
+        return (
+          <Settings settings={settings} />
+        );
+      case 'stats':
+        return (
+          <Stats nodeVersions={appState.nodeVersions} />
+        );
+      case 'consensus':
+        return (
+          <Consensus appState={appState} connection={connection} />
+        );
+      case 'list':
+        return (
+          <List appState={appState} pins={pins} sortBy={sortBy} />
+        );
+      default:
+        return (
+          <Map appState={appState} />
+        );
     }
-
-    const { appState, connection, pins, sortBy } = this.props;
-
-    if (display === 'consensus') {
-      return <Consensus appState={appState} connection={connection} />;
-    }
-
-    return (
-      display === 'list'
-        ? <List appState={appState} pins={pins} sortBy={sortBy} />
-        : <Map appState={appState} />
-    );
   }
 
   private setDisplay = (display: Chain.Display) => {

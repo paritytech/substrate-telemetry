@@ -83,6 +83,8 @@ export class Connection {
   }
 
   public subscribe(chain: Types.ChainLabel) {
+    console.log('sub', chain);
+
     if (this.state.subscribed != null && this.state.subscribed !== chain) {
       this.state = this.update({
         tab: 'list',
@@ -368,10 +370,6 @@ export class Connection {
 
     if (nodes.hasChangedSince(nodesRef) || nodeVersions.hasChangedSince(versionsRef)) {
       this.state = this.update({ nodes, nodeVersions });
-
-      if (nodeVersions.hasChangedSince(versionsRef)) {
-        console.log('update version stats', nodeVersions.list());
-      }
     }
 
     this.autoSubscribe();

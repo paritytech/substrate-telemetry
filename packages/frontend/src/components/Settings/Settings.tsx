@@ -8,7 +8,7 @@ import { PersistentObject } from '../../persist';
 import './Settings.css';
 
 export namespace Settings {
-  export type Display = 'list' | 'map' | 'settings';
+  export type Display = 'list' | 'map' | 'settings' | 'consensus' | 'stats';
 
   export interface Props {
     settings: PersistentObject<AppState.Settings>;

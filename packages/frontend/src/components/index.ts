@@ -14,3 +14,4 @@ export * from './Tooltip';
 export * from './Filter';
 export * from './PolkadotIcon';
 export * from './PieChart';
+export * from './Stats';
