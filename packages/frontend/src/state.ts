@@ -1,6 +1,8 @@
 import { Types, Maybe, SortedCollection } from '@dotstats/common';
 import { Column } from './components/List';
 
+const SEMVER_PATTERN = /^\d+\.\d+\.\d+/;
+
 export const PINNED_CHAIN = 'Kusama CC3';
 
 export class Node {
@@ -28,6 +30,7 @@ export class Node {
   public readonly name: Types.NodeName;
   public readonly implementation: Types.NodeImplementation;
   public readonly version: Types.NodeVersion;
+  public readonly semver: Types.NodeSemver;
   public readonly validator: Maybe<Types.Address>;
   public readonly networkId: Maybe<Types.NetworkId>;
   public readonly connectedAt: Types.Timestamp;
@@ -77,6 +80,7 @@ export class Node {
     connectedAt: Types.Timestamp,
   ) {
     const [name, implementation, version, validator, networkId] = nodeDetails;
+    const [semver] = (version.match(SEMVER_PATTERN) || ['?.?.?']) as [Types.NodeSemver];
 
     this.pinned = pinned;
 
@@ -84,6 +88,7 @@ export class Node {
     this.name = name;
     this.implementation = implementation;
     this.version = version;
+    this.semver = semver;
     this.validator = validator;
     this.networkId = networkId;
     this.connectedAt = connectedAt;
@@ -256,6 +261,7 @@ export interface State {
   subscribed: Maybe<Types.ChainLabel>;
   chains: Map<Types.ChainLabel, ChainData>;
   nodes: SortedCollection<Node>;
+  nodeVersions: Map<string, number>;
   settings: Readonly<State.Settings>;
   pins: Readonly<Set<Types.NodeName>>;
   sortBy: Readonly<Maybe<number>>;

@@ -4,7 +4,7 @@ import { Types, Maybe } from '@dotstats/common';
 import { State as AppState } from '../../state';
 import { formatNumber, secondsWithPrecision, getHashData } from '../../utils';
 import { Tab } from './';
-import { Tile, Ago, List, Map, Settings, Consensus } from '../';
+import { Tile, Ago, List, Map, Settings, Consensus, PieChart } from '../';
 import { Persistent, PersistentObject, PersistentSet } from '../../persist';
 
 import blockIcon from '../../icons/cube.svg';
@@ -69,6 +69,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
           <Tile icon={finalizedIcon} title="Finalized Block">#{formatNumber(finalized)}</Tile>
           <Tile icon={blockTimeIcon} title="Average Time">{ blockAverage == null ? '-' : secondsWithPrecision(blockAverage / 1000) }</Tile>
           <Tile icon={lastTimeIcon} title="Last Block"><Ago when={blockTimestamp} /></Tile>
+          <PieChart slices={[1/3, 1/3, 1/3]} radius={30} />
           <div className="Chain-tabs">
             <Tab icon={listIcon} label="List" display="list" tab="" current={currentTab} setDisplay={this.setDisplay} />
             <Tab icon={worldIcon} label="Map" display="map" tab="map" current={currentTab} setDisplay={this.setDisplay} />

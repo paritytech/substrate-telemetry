@@ -18,11 +18,11 @@ export class Connection {
 
   private static readonly utf8decoder = new TextDecoder('utf-8');
 
-  private static readonly address = window.location.protocol === 'https:'
-                                      ? `wss://${window.location.hostname}/feed/`
-                                      : `ws://127.0.0.1:8000/feed`;
+  // private static readonly address = window.location.protocol === 'https:'
+  //                                     ? `wss://${window.location.hostname}/feed/`
+  //                                     : `ws://127.0.0.1:8000/feed`;
 
-  // private static readonly address = 'wss://telemetry.polkadot.io/feed/';
+  private static readonly address = 'wss://telemetry.polkadot.io/feed/';
 
   private static async socket(): Promise<WebSocket> {
     let socket = await Connection.trySocket();
@@ -125,6 +125,7 @@ export class Connection {
     const getState = () => this.state;
     const afg = new AfgHandling(updateState, getState);
 
+    let nodesAddedOrRemoved = false;
     let sortByColumn: Maybe<Column> = null;
 
     if (sortBy != null) {
@@ -171,6 +172,7 @@ export class Connection {
           const node = new Node(pinned, id, nodeDetails, nodeStats, nodeIO, nodeHardware, blockDetails, location, connectedAt);
 
           nodes.add(node);
+          nodesAddedOrRemoved = true;
 
           break;
         }
@@ -179,6 +181,7 @@ export class Connection {
           const id = message.payload;
 
           nodes.remove(id);
+          nodesAddedOrRemoved = true;
 
           break;
         }
@@ -359,6 +362,10 @@ export class Connection {
 
     if (nodes.hasChangedSince(ref)) {
       this.state = this.update({ nodes });
+    }
+
+    if (nodesAddedOrRemoved) {
+      console.log('update version stats');
     }
 
     this.autoSubscribe();
