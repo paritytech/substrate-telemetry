@@ -1,4 +1,4 @@
-import { Types } from '@dotstats/common';
+import { Types, Opaque } from '@dotstats/common';
 
 export interface Viewport {
   width: number;
@@ -82,4 +82,54 @@ export function setHashData(val: HashData) {
   const { tab = '', chain = '' } = update;
 
   window.location.hash = `#${tab}/${encodeURIComponent(chain)}`;
+}
+
+export namespace Stats {
+  export type StateRef = Opaque<number, 'Stats.StateRef'>;
+}
+
+export class Stats<K> {
+  private map = new Map<K, number>();
+  private changeRef = 0;
+
+  public increment(key: K) {
+    const count = this.map.get(key);
+
+    if (count == null) {
+      this.map.set(key, 1);
+    } else {
+      this.map.set(key, count + 1);
+    }
+
+    this.changeRef += 1;
+  }
+
+  public decrement(key: K) {
+    const count = this.map.get(key);
+
+    if (count == null || count <= 1) {
+      this.map.delete(key);
+    } else {
+      this.map.set(key, count - 1);
+    }
+
+    this.changeRef += 1;
+  }
+
+  public list(): Array<[K, number]> {
+    return Array.from(this.map.entries()).sort((a, b) => b[1] - a[1]);
+  }
+
+  public clear() {
+    this.map.clear();
+    this.changeRef = +1;
+  }
+
+  public ref(): Stats.StateRef {
+    return this.changeRef as Stats.StateRef;
+  }
+
+  public hasChangedSince(ref: Stats.StateRef): boolean {
+    return this.changeRef > ref;
+  }
 }

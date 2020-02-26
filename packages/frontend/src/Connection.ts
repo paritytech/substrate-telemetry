@@ -118,14 +118,14 @@ export class Connection {
   }
 
   public handleMessages = (messages: FeedMessage.Message[]) => {
-    const { nodes, chains, sortBy, selectedColumns } = this.state;
-    const ref = nodes.ref();
+    const { nodes, nodeVersions, chains, sortBy, selectedColumns } = this.state;
+    const nodesRef = nodes.ref();
+    const versionsRef = nodeVersions.ref();
 
     const updateState: UpdateBound = (state) => { this.state = this.update(state); };
     const getState = () => this.state;
     const afg = new AfgHandling(updateState, getState);
 
-    let nodesAddedOrRemoved = false;
     let sortByColumn: Maybe<Column> = null;
 
     if (sortBy != null) {
@@ -172,16 +172,19 @@ export class Connection {
           const node = new Node(pinned, id, nodeDetails, nodeStats, nodeIO, nodeHardware, blockDetails, location, connectedAt);
 
           nodes.add(node);
-          nodesAddedOrRemoved = true;
+          nodeVersions.increment(node.semver);
 
           break;
         }
 
         case Actions.RemovedNode: {
           const id = message.payload;
+          const node = nodes.get(id);
 
-          nodes.remove(id);
-          nodesAddedOrRemoved = true;
+          if (node) {
+            nodes.remove(id);
+            nodeVersions.decrement(node.semver);
+          }
 
           break;
         }
@@ -292,6 +295,7 @@ export class Connection {
 
           if (this.state.subscribed === message.payload) {
             nodes.clear();
+            nodeVersions.clear();
             this.state = this.update({ subscribed: null, nodes, chains });
             this.resetConsensus();
           }
@@ -301,6 +305,7 @@ export class Connection {
 
         case Actions.SubscribedTo: {
           nodes.clear();
+          nodeVersions.clear();
 
           this.state = this.update({ subscribed: message.payload, nodes });
 
@@ -310,6 +315,7 @@ export class Connection {
         case Actions.UnsubscribedFrom: {
           if (this.state.subscribed === message.payload) {
             nodes.clear();
+            nodeVersions.clear();
 
             this.state = this.update({ subscribed: null, nodes });
           }
@@ -360,12 +366,12 @@ export class Connection {
       }
     }
 
-    if (nodes.hasChangedSince(ref)) {
-      this.state = this.update({ nodes });
-    }
+    if (nodes.hasChangedSince(nodesRef) || nodeVersions.hasChangedSince(versionsRef)) {
+      this.state = this.update({ nodes, nodeVersions });
 
-    if (nodesAddedOrRemoved) {
-      console.log('update version stats');
+      if (nodeVersions.hasChangedSince(versionsRef)) {
+        console.log('update version stats', nodeVersions.list());
+      }
     }
 
     this.autoSubscribe();
@@ -375,8 +381,9 @@ export class Connection {
     this.ping();
 
     if (this.state) {
-      const { nodes } = this.state;
+      const { nodes, nodeVersions } = this.state;
       nodes.clear();
+      nodeVersions.clear();
     }
 
     this.state = this.update({

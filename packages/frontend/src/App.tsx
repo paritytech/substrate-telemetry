@@ -5,7 +5,7 @@ import { Row, Column } from './components/List';
 import { Connection } from './Connection';
 import { Persistent, PersistentObject, PersistentSet } from './persist';
 import { State, Node, ChainData, PINNED_CHAIN } from './state';
-import { getHashData } from './utils';
+import { getHashData, Stats } from './utils';
 import stable from 'stable';
 
 import './App.css';
@@ -88,7 +88,7 @@ export default class App extends React.Component<{}, State> {
       subscribed: null,
       chains: new Map(),
       nodes: new SortedCollection(Node.compare),
-      nodeVersions: new Map(),
+      nodeVersions: new Stats(),
       settings: this.settings.raw(),
       pins: this.pins.get(),
       sortBy: this.sortBy.get(),
