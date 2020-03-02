@@ -4,12 +4,14 @@ export namespace PieChart {
   export interface Props {
     radius: number,
     slices: number[],
+    stroke?: number,
+    strokeColor?: string,
   }
 }
 
 export class PieChart extends React.Component<PieChart.Props, {}> {
   public render() {
-    const { radius, slices } = this.props;
+    const { radius, slices, stroke = 1, strokeColor = "currentColor" } = this.props;
 
     let end = -0.25;
     let ex = 0;
@@ -26,7 +28,7 @@ export class PieChart extends React.Component<PieChart.Props, {}> {
       const path = `M 0 0 L ${sx} ${sy} A ${radius} ${radius} 0 ${large} 1 ${ex} ${ey} L0 0`;
 
       return (
-        <path key={index} d={path} stroke="currentColor" fill="currentColor" strokeWidth="1" fillOpacity="0.25" />
+        <path key={index} d={path} stroke={strokeColor} fill="currentColor" strokeWidth={stroke} fillOpacity="0.25" />
       );
     });
 

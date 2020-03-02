@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Types } from '@dotstats/common';
 import { MultiCounter } from '../../utils';
+import { PieChart } from './';
 
 // import './Settings.css';
 
@@ -36,9 +37,11 @@ export class Stats extends React.Component<Stats.Props, {}> {
   	const { nodeVersions } = this.props;
   	const list = nodeVersions.list();
   	const totalCount = list.reduce((count, entry) => count + entry[1], 0);
+  	const slices = list.map(([_, count]) => count / totalCount);
 
     return (
     	<div>
+        <PieChart slices={slices} radius={60} stroke={2} strokeColor="#2C2B2B" />
 	    	{
 	    		list.map(([version, count]) => {
 	    			const percent = count / totalCount;
