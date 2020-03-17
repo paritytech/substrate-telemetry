@@ -1,6 +1,7 @@
 import { Types } from '@dotstats/common';
 
 export * from './MultiCounter';
+export * from './BlockPropagation';
 
 export interface Viewport {
   width: number;

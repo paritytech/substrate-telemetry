@@ -111,7 +111,7 @@ export class Connection {
   }
 
   public handleMessages = (messages: FeedMessage.Message[]) => {
-    const { nodes, nodeVersions, chains, sortBy, selectedColumns } = this.state;
+    const { nodes, nodeVersions, blockPropagation, chains, sortBy, selectedColumns } = this.state;
     const nodesRef = nodes.ref();
     const versionsRef = nodeVersions.ref();
 
@@ -144,7 +144,11 @@ export class Connection {
         case Actions.BestBlock: {
           const [best, blockTimestamp, blockAverage] = message.payload;
 
-          nodes.mutEach((node) => node.newBestBlock());
+          blockPropagation.reset();
+
+          nodes.mutEach((node) => {
+            node.newBestBlock()
+          });
 
           this.state = this.update({ best, blockTimestamp, blockAverage });
 

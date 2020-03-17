@@ -5,7 +5,7 @@ import { Row, Column } from './components/List';
 import { Connection } from './Connection';
 import { Persistent, PersistentObject, PersistentSet } from './persist';
 import { State, Node, ChainData, PINNED_CHAIN } from './state';
-import { getHashData, MultiCounter } from './utils';
+import { getHashData, MultiCounter, BlockPropagation } from './utils';
 import stable from 'stable';
 
 import './App.css';
@@ -89,6 +89,7 @@ export default class App extends React.Component<{}, State> {
       chains: new Map(),
       nodes: new SortedCollection(Node.compare),
       nodeVersions: new MultiCounter(),
+      blockPropagation: new BlockPropagation(),
       settings: this.settings.raw(),
       pins: this.pins.get(),
       sortBy: this.sortBy.get(),

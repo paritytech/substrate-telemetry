@@ -1,6 +1,6 @@
 import { Types, Maybe, SortedCollection } from '@dotstats/common';
 import { Column } from './components/List';
-import { MultiCounter } from './utils';
+import { MultiCounter, BlockPropagation } from './utils';
 
 const SEMVER_PATTERN = /^\d+\.\d+\.\d+/;
 
@@ -263,6 +263,7 @@ export interface State {
   chains: Map<Types.ChainLabel, ChainData>;
   nodes: SortedCollection<Node>;
   nodeVersions: MultiCounter<Types.NodeSemver>;
+  blockPropagation: BlockPropagation;
   settings: Readonly<State.Settings>;
   pins: Readonly<Set<Types.NodeName>>;
   sortBy: Readonly<Maybe<number>>;
