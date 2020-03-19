@@ -82,9 +82,16 @@ impl NodeConnector {
         }
 
         if let Details::SystemConnected(connected) = msg.details {
-            let SystemConnected { network_id, node } = connected;
+            let SystemConnected { network_id: _, mut node } = connected;
             let rec = ctx.address().recipient();
-            let network_id = network_id.map(Into::into);
+
+            // FIXME: mergin chains by network_id is not the way to do it.
+            // This will at least force all CC3 nodes to be aggregated with
+            // the rest.
+            let network_id = None; // network_id.map(Into::into);
+            if &*node.chain == "Kusama CC3" {
+                node.chain = "Kusama".into();
+            }
 
             self.aggregator.do_send(AddNode { rec, network_id, node });
         } else {
