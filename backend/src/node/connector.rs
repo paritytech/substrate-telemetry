@@ -84,6 +84,7 @@ impl NodeConnector {
         if let Details::SystemConnected(connected) = msg.details {
             let SystemConnected { network_id, node } = connected;
             let rec = ctx.address().recipient();
+            let network_id = network_id.map(Into::into);
 
             self.aggregator.do_send(AddNode { rec, network_id, node });
         } else {
@@ -141,7 +142,7 @@ impl StreamHandler<ws::Message, ws::ProtocolError> for NodeConnector {
 
         match serde_json::from_slice(&data) {
             Ok(msg) => {
-                info!("New node message: {}", std::str::from_utf8(&data).unwrap_or_else(|_| "INVALID UTF8"));
+                // info!("New node message: {}", std::str::from_utf8(&data).unwrap_or_else(|_| "INVALID UTF8"));
                 self.handle_message(msg, data, ctx)
             },
             Err(err) => {

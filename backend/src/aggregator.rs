@@ -10,7 +10,7 @@ use crate::types::{NodeDetails, NodeId};
 
 pub struct Aggregator {
     labels: HashMap<Label, ChainId>,
-    networks: HashMap<Box<str>, ChainId>,
+    networks: HashMap<Label, ChainId>,
     chains: DenseMap<ChainEntry>,
     feeds: DenseMap<Addr<FeedConnector>>,
     serializer: FeedMessageSerializer,
@@ -19,6 +19,7 @@ pub struct Aggregator {
 pub struct ChainEntry {
     addr: Addr<Chain>,
     label: Label,
+    network_id: Option<Label>,
     nodes: usize,
 }
 
@@ -38,9 +39,9 @@ impl Aggregator {
     pub fn lazy_chain(
         &mut self,
         label: &str,
-        network: Option<Box<str>>,
+        network: &Option<Label>,
         ctx: &mut <Self as Actor>::Context,
-    ) -> &mut ChainEntry {
+    ) -> ChainId {
         let cid = match self.get_chain_id(label, network.as_ref()) {
             Some(cid) => cid,
             None => {
@@ -52,6 +53,7 @@ impl Aggregator {
                     ChainEntry {
                         addr: Chain::new(cid, addr, label.clone()).start(),
                         label: label.clone(),
+                        network_id: network.clone(),
                         nodes: 1,
                     }
                 });
@@ -59,7 +61,7 @@ impl Aggregator {
                 self.labels.insert(label, cid);
 
                 if let Some(network) = network {
-                    self.networks.insert(network.into(), cid);
+                    self.networks.insert(network.clone(), cid);
                 }
 
                 self.broadcast();
@@ -68,10 +70,10 @@ impl Aggregator {
             }
         };
 
-        self.chains.get_mut(cid).expect("Entry just created above; qed")
+        cid
     }
 
-    fn get_chain_id(&self, label: &str, network: Option<&Box<str>>) -> Option<ChainId> {
+    fn get_chain_id(&self, label: &str, network: Option<&Label>) -> Option<ChainId> {
         let labels = &self.labels;
         let networks = &self.networks;
 
@@ -104,7 +106,7 @@ impl Actor for Aggregator {
 #[derive(Message)]
 pub struct AddNode {
     pub node: NodeDetails,
-    pub network_id: Option<Box<str>>,
+    pub network_id: Option<Label>,
     pub rec: Recipient<Initialize>,
 }
 
@@ -171,7 +173,18 @@ impl Handler<AddNode> for Aggregator {
     fn handle(&mut self, msg: AddNode, ctx: &mut Self::Context) {
         let AddNode { node, network_id, rec } = msg;
 
-        self.lazy_chain(&node.chain, network_id, ctx).addr.do_send(chain::AddNode {
+        let cid = self.lazy_chain(&node.chain, &network_id, ctx);
+        let chain = self.chains.get_mut(cid).expect("Entry just created above; qed");
+
+        if let Some(network_id) = network_id {
+            // Attach network id to the chain if it was not done yet
+            if chain.network_id.is_none() {
+                chain.network_id = Some(network_id.clone());
+                self.networks.insert(network_id, cid);
+            }
+        }
+
+        chain.addr.do_send(chain::AddNode {
             node,
             rec,
         });
@@ -187,6 +200,9 @@ impl Handler<DropChain> for Aggregator {
         if let Some(entry) = self.chains.remove(cid) {
             let label = &entry.label;
             self.labels.remove(label);
+            if let Some(network) = entry.network_id {
+                self.networks.remove(&network);
+            }
 
             self.serializer.push(feed::RemovedChain(label));
             info!("Dropped chain [{}] from the aggregator", label);
