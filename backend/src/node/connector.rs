@@ -82,11 +82,10 @@ impl NodeConnector {
         }
 
         if let Details::SystemConnected(connected) = msg.details {
-            let SystemConnected { chain, node } = connected;
+            let SystemConnected { network_id, node } = connected;
             let rec = ctx.address().recipient();
-            let chain = chain.into();
 
-            self.aggregator.do_send(AddNode { rec, chain, node });
+            self.aggregator.do_send(AddNode { rec, network_id, node });
         } else {
             if self.backlog.len() >= 10 {
                 self.backlog.remove(0);
@@ -142,7 +141,7 @@ impl StreamHandler<ws::Message, ws::ProtocolError> for NodeConnector {
 
         match serde_json::from_slice(&data) {
             Ok(msg) => {
-                // info!("New node message: {}", std::str::from_utf8(&data).unwrap_or_else(|_| "INVALID UTF8"));
+                info!("New node message: {}", std::str::from_utf8(&data).unwrap_or_else(|_| "INVALID UTF8"));
                 self.handle_message(msg, data, ctx)
             },
             Err(err) => {

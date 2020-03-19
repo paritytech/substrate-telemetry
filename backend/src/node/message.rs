@@ -56,7 +56,7 @@ pub enum Details {
 
 #[derive(Deserialize, Debug)]
 pub struct SystemConnected {
-    pub chain: Box<str>,
+    pub network_id: Option<Box<str>>,
     #[serde(flatten)]
     pub node: NodeDetails,
 }

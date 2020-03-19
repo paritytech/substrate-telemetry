@@ -11,6 +11,7 @@ pub use primitive_types::H256 as BlockHash;
 
 #[derive(Deserialize, Debug)]
 pub struct NodeDetails {
+    pub chain: Box<str>,
     pub name: Box<str>,
     pub implementation: Box<str>,
     pub version: Box<str>,
