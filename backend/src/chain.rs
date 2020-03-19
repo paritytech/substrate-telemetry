@@ -1,9 +1,10 @@
+use std::collections::HashMap;
 use actix::prelude::*;
 use std::sync::Arc;
 use bytes::Bytes;
 use rustc_hash::FxHashMap;
 
-use crate::aggregator::{Aggregator, DropChain, NodeCount};
+use crate::aggregator::{Aggregator, DropChain, RenameChain, NodeCount};
 use crate::node::{Node, connector::Initialize, message::{NodeMessage, Details}};
 use crate::feed::connector::{FeedId, FeedConnector, Subscribed, Unsubscribed};
 use crate::feed::{self, FeedMessageSerializer};
@@ -19,8 +20,8 @@ pub struct Chain {
     cid: ChainId,
     /// Who to inform if we Chain drops itself
     aggregator: Addr<Aggregator>,
-    /// Label of this chain
-    label: Label,
+    /// Label of this chain, along with count of nodes that use this label
+    label: (Label, usize),
     /// Dense mapping of NodeId -> Node
     nodes: DenseMap<Node>,
     /// Dense mapping of FeedId -> Addr<FeedConnector>,
@@ -39,6 +40,8 @@ pub struct Chain {
     serializer: FeedMessageSerializer,
     /// When the best block first arrived
     timestamp: Option<Timestamp>,
+    /// Some nodes might manifest a different label, note them here
+    labels: HashMap<Label, usize>,
 }
 
 impl Chain {
@@ -48,7 +51,7 @@ impl Chain {
         Chain {
             cid,
             aggregator,
-            label,
+            label: (label, 0),
             nodes: DenseMap::new(),
             feeds: DenseMap::new(),
             finality_feeds: FxHashMap::default(),
@@ -58,7 +61,54 @@ impl Chain {
             average_block_time: None,
             serializer: FeedMessageSerializer::new(),
             timestamp: None,
+            labels: HashMap::default(),
         }
+    }
+
+    fn increment_label_count(&mut self, label: &str) {
+        let count = match self.labels.get_mut(label) {
+            Some(count) => {
+                *count += 1;
+                *count
+            },
+            None => {
+                self.labels.insert(label.into(), 1);
+                1
+            },
+        };
+
+        if &*self.label.0 == label {
+            self.label.1 += 1;
+        } else {
+            if count > self.label.1 {
+                self.rename(label.into(), count);
+            }
+        }
+    }
+
+    fn decrement_label_count(&mut self, label: &str) {
+        match self.labels.get_mut(label) {
+            Some(count) => *count -= 1,
+            None => return,
+        };
+
+        if &*self.label.0 == label {
+            self.label.1 -= 1;
+
+            for (label, &count) in self.labels.iter() {
+                if count > self.label.1 {
+                    let label: Arc<_> = label.clone();
+                    self.rename(label, count);
+                    break;
+                }
+            }
+        }
+    }
+
+    fn rename(&mut self, label: Label, count: usize) {
+        self.label = (label, count);
+
+        self.aggregator.do_send(RenameChain(self.cid, self.label.0.clone()));
     }
 
     fn broadcast(&mut self) {
@@ -132,7 +182,7 @@ impl Actor for Chain {
     type Context = Context<Self>;
 
     fn stopped(&mut self, _: &mut Self::Context) {
-        self.aggregator.do_send(DropChain(self.label.clone()));
+        self.aggregator.do_send(DropChain(self.cid));
 
         for (_, feed) in self.feeds.iter() {
             feed.do_send(Unsubscribed)
@@ -190,6 +240,8 @@ impl Handler<AddNode> for Chain {
     type Result = ();
 
     fn handle(&mut self, msg: AddNode, ctx: &mut Self::Context) {
+        self.increment_label_count(&msg.node.chain);
+
         let nid = self.nodes.add(Node::new(msg.node));
 
         if let Err(_) = msg.rec.do_send(Initialize(nid, ctx.address())) {
@@ -221,7 +273,7 @@ impl Chain {
                 self.best = *block;
                 info!(
                     "[{}] [{}/{}] new best block ({}) {:?}",
-                    self.label,
+                    self.label.0,
                     nodes_len,
                     self.feeds.len(),
                     self.best.height,
@@ -361,10 +413,12 @@ impl Handler<RemoveNode> for Chain {
     fn handle(&mut self, msg: RemoveNode, ctx: &mut Self::Context) {
         let RemoveNode(nid) = msg;
 
-        self.nodes.remove(nid);
+        if let Some(node) = self.nodes.remove(nid) {
+            self.decrement_label_count(&node.details().chain);
+        }
 
         if self.nodes.is_empty() {
-            info!("[{}] Lost all nodes, dropping...", self.label);
+            info!("[{}] Lost all nodes, dropping...", self.label.0);
             ctx.stop();
         }
 
@@ -383,7 +437,7 @@ impl Handler<Subscribe> for Chain {
 
         feed.do_send(Subscribed(fid, ctx.address().recipient()));
 
-        self.serializer.push(feed::SubscribedTo(&self.label));
+        self.serializer.push(feed::SubscribedTo(&self.label.0));
         self.serializer.push(feed::TimeSync(now()));
         self.serializer.push(feed::BestBlock(
             self.best.height,
@@ -445,7 +499,7 @@ impl Handler<Unsubscribe> for Chain {
         let Unsubscribe(fid) = msg;
 
         if let Some(feed) = self.feeds.get(fid) {
-            self.serializer.push(feed::UnsubscribedFrom(&self.label));
+            self.serializer.push(feed::UnsubscribedFrom(&self.label.0));
 
             if let Some(serialized) = self.serializer.finalize() {
                 feed.do_send(serialized);

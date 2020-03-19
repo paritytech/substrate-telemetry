@@ -82,11 +82,11 @@ impl NodeConnector {
         }
 
         if let Details::SystemConnected(connected) = msg.details {
-            let SystemConnected { chain, node } = connected;
+            let SystemConnected { network_id, node } = connected;
             let rec = ctx.address().recipient();
-            let chain = chain.into();
+            let network_id = network_id.map(Into::into);
 
-            self.aggregator.do_send(AddNode { rec, chain, node });
+            self.aggregator.do_send(AddNode { rec, network_id, node });
         } else {
             if self.backlog.len() >= 10 {
                 self.backlog.remove(0);
