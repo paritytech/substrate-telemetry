@@ -8,4 +8,4 @@ COPY ./scripts ./scripts
 COPY ./packages ./packages
 COPY ./package.json ./yarn.lock ./tsconfig.json ./
 
-RUN yarn 
+RUN yarn && yarn cache clean
