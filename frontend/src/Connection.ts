@@ -14,8 +14,38 @@ import { VIS_AUTHORITIES_LIMIT } from './components/Consensus'
 import { Column } from './components/List'
 import { ACTIONS } from './common/feed'
 
-const TIMEOUT_BASE = (1000 * 5) as Types.Milliseconds // 3 seconds
+const TIMEOUT_BASE = 1000 as Types.Milliseconds // 1 second
 const TIMEOUT_MAX = (1000 * 60 * 5) as Types.Milliseconds // 5 minutes
+
+export function getTelemetryURL(): string {
+  // DEFAULT VALUE
+  let telemetryURL = 'wss://telemetry.polkadot.io'
+
+  const {
+    SUBSTRATE_TELEMETRY_URL: SUBSTRATE_TELEMETRY_URL_SYSTEM,
+  } = process.env as any
+  const { SUBSTRATE_TELEMETRY_URL } = window.process_env
+
+  // First get what user entered
+  if (localStorage.getItem('SUBSTRATE_TELEMETRY_URL')) {
+    telemetryURL = localStorage.getItem('SUBSTRATE_TELEMETRY_URL')
+  }
+  // Second try to get it from the Process env --- NODEJS
+  else if (SUBSTRATE_TELEMETRY_URL_SYSTEM) {
+    telemetryURL = SUBSTRATE_TELEMETRY_URL_SYSTEM
+  }
+  // then if nothing of above try to get it from the global window --- BROWSER
+  else if (SUBSTRATE_TELEMETRY_URL) {
+    telemetryURL = SUBSTRATE_TELEMETRY_URL
+  }
+
+  return telemetryURL
+}
+
+export function setTelemetryURL(url: string): string {
+  localStorage.setItem('SUBSTRATE_TELEMETRY_URL', url)
+  return url
+}
 
 export class Connection {
   public static async create(
@@ -31,7 +61,9 @@ export class Connection {
     let socket = await Connection.trySocket()
     let timeout = TIMEOUT_BASE
 
+    console.log(socket)
     while (!socket) {
+      console.log('Trying to connect to the telemetry backend')
       await sleep(timeout)
 
       timeout = Math.min(timeout * 2, TIMEOUT_MAX) as Types.Milliseconds
@@ -58,10 +90,12 @@ export class Connection {
         clean()
         resolve(null)
       }
-      const address = localStorage.getItem('connectionURI')
+      // const address = localStorage.getItem('SUBSTRATE_TELEMETRY_URL')
+      const address = getTelemetryURL()
       if (!address) {
         resolve(null)
       }
+
       const socket = new WebSocket(address)
 
       socket.binaryType = 'arraybuffer'

@@ -1,5 +1,4 @@
 #### BUILDER IMAGE -- quite big one ####
-
 FROM node:13-alpine as builder
 LABEL maintainer="Daniel Maricic daniel@woss.io"
 LABEL version="0.1.0"
@@ -11,24 +10,37 @@ WORKDIR /opt/build
 
 RUN apk add --no-cache python make g++
 
-COPY . . 
+# copy all the src files
+COPY . .
+
+# make the env.sh executable
+RUN apk add --no-cache bash; chmod +x env.sh
+
+# build the app
 RUN yarn && yarn build --${PROFILE}}
 
 
-# MAIN IMAGE FOR PEOPLE TO PULL --- small one#
 
+
+# MAIN IMAGE FOR PEOPLE TO PULL --- small one#
 FROM node:13-alpine
 LABEL maintainer="Daniel Maricic daniel@woss.io"
 LABEL version="0.1.0"
-LABEL description="Polkadot Telemetry frontend build image"
+LABEL description="Polkadot Telemetry frontend"
 
 ARG PROFILE=production
+
+ENV SUBSTRATE_TELEMETRY_URL=
 
 EXPOSE 3000
 
 WORKDIR /app
 
 COPY --from=builder /opt/build/build  /app
+
+# create the env vars after the build
+RUN apk add --no-cache bash; env.sh
+
 
 RUN npm install -g serve
 

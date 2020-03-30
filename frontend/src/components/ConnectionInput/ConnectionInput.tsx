@@ -1,6 +1,7 @@
 import * as React from 'react'
 
 import './ConnectionInput.css'
+import { setTelemetryURL } from 'src/Connection'
 function ConnectionInput() {
   const [connectionURI, setConnectionURI] = React.useState('')
   const [error, setError] = React.useState('')
@@ -14,13 +15,11 @@ function ConnectionInput() {
     const matcher = /^(ws|wss)/g
 
     const matches = connectionURI.match(matcher)
-    console.log(matches)
+
     if (!matches || matches.length !== 1) {
       setError('Please check your URL')
     } else {
-      localStorage.setItem('connectionURI', connectionURI)
-
-      // window.process_env.SUBSTRATE_TELEMETRY_URL
+      setTelemetryURL(connectionURI)
     }
   }
   return (
