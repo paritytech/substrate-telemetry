@@ -5,17 +5,12 @@
     "node": ">=9.5",
     "yarn": "^1.3.2"
   },
-
   "resolutions": {
     "kind-of": ">=6.0.3"
   },
   "scripts": {
-    "deploy": "scripts/deploy.sh",
-    "build:all": "scripts/build-all.sh",
-    "start:frontend": "scripts/start-frontend.sh",
-    "build:frontend": "scripts/build-frontend.sh",
-    "build:common": "tsc -p packages/common",
-    "check:common": "tsc -p packages/common --noEmit",
+    "build:all": "scripts/travis/build-all.sh",
+    "build:frontend": "scripts/travis/build-frontend.sh",
     "test": "scripts/test.sh"
   }
 }
