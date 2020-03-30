@@ -1,26 +1,26 @@
-import * as React from 'react';
-import { Types, Maybe } from '../../common';
-import { Node } from '../../state';
-import { Persistent, PersistentSet } from '../../persist';
-import { HeaderCell, Column } from './';
+import * as React from 'react'
+import { Types, Maybe } from '../../common'
+import { Node } from '../../state'
+import { Persistent, PersistentSet } from '../../persist'
+import { HeaderCell, Column } from './'
 
-import './Row.css';
+import './Row.css'
 
 export namespace Row {
   export interface Props {
-    node: Node;
-    pins: PersistentSet<Types.NodeName>;
-    columns: Column[];
+    node: Node
+    pins: PersistentSet<Types.NodeName>
+    columns: Column[]
   }
 
   export interface State {
-    update: number;
+    update: number
   }
 }
 
 interface HeaderProps {
-  columns: Column[];
-  sortBy: Persistent<Maybe<number>>;
+  columns: Column[]
+  sortBy: Persistent<Maybe<number>>
 }
 
 export class Row extends React.Component<Row.Props, Row.State> {
@@ -49,11 +49,11 @@ export class Row extends React.Component<Row.Props, Row.State> {
     Column.BLOCK_LAST_TIME,
     Column.UPTIME,
     Column.NETWORK_STATE,
-  ];
+  ]
 
   public static HEADER = (props: HeaderProps) => {
-    const { columns, sortBy } = props;
-    const last = columns.length - 1;
+    const { columns, sortBy } = props
+    const last = columns.length - 1
 
     return (
       <thead>
@@ -69,21 +69,21 @@ export class Row extends React.Component<Row.Props, Row.State> {
           ))}
         </tr>
       </thead>
-    );
-  };
+    )
+  }
 
-  public state = { update: 0 };
+  public state = { update: 0 }
 
   public componentDidMount() {
-    const { node } = this.props;
+    const { node } = this.props
 
-    node.subscribe(this.onUpdate);
+    node.subscribe(this.onUpdate)
   }
 
   public componentWillUnmount() {
-    const { node } = this.props;
+    const { node } = this.props
 
-    node.unsubscribe(this.onUpdate);
+    node.unsubscribe(this.onUpdate)
   }
 
   public shouldComponentUpdate(
@@ -93,24 +93,24 @@ export class Row extends React.Component<Row.Props, Row.State> {
     return (
       this.props.node.id !== nextProps.node.id ||
       this.state.update !== nextState.update
-    );
+    )
   }
 
   public render() {
-    const { node, columns } = this.props;
+    const { node, columns } = this.props
 
-    let className = 'Row';
+    let className = 'Row'
 
     if (node.propagationTime != null) {
-      className += ' Row-synced';
+      className += ' Row-synced'
     }
 
     if (node.pinned) {
-      className += ' Row-pinned';
+      className += ' Row-pinned'
     }
 
     if (node.stale) {
-      className += ' Row-stale';
+      className += ' Row-stale'
     }
 
     return (
@@ -119,20 +119,20 @@ export class Row extends React.Component<Row.Props, Row.State> {
           <td key={index}>{render(node)}</td>
         ))}
       </tr>
-    );
+    )
   }
 
   public toggle = () => {
-    const { pins, node } = this.props;
+    const { pins, node } = this.props
 
     if (node.pinned) {
-      pins.delete(node.name);
+      pins.delete(node.name)
     } else {
-      pins.add(node.name);
+      pins.add(node.name)
     }
-  };
+  }
 
   private onUpdate = () => {
-    this.setState({ update: this.state.update + 1 });
-  };
+    this.setState({ update: this.state.update + 1 })
+  }
 }

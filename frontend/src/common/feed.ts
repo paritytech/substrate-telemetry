@@ -1,5 +1,5 @@
-import { Maybe } from './helpers';
-import { stringify, parse, Stringified } from './stringify';
+import { Maybe } from './helpers'
+import { stringify, parse, Stringified } from './stringify'
 import {
   FeedVersion,
   Address,
@@ -20,7 +20,7 @@ import {
   Milliseconds,
   ChainLabel,
   AuthoritySetInfo,
-} from './types';
+} from './types'
 
 export const ACTIONS = {
   FeedVersion: 0x00 as 0x00,
@@ -45,33 +45,33 @@ export const ACTIONS = {
   AfgAuthoritySet: 0x13 as 0x13,
   StaleNode: 0x14 as 0x14,
   NodeIO: 0x15 as 0x15,
-};
+}
 
-export type Action = typeof ACTIONS[keyof typeof ACTIONS];
-export type Payload = Message['payload'];
+export type Action = typeof ACTIONS[keyof typeof ACTIONS]
+export type Payload = Message['payload']
 
 export namespace Variants {
   export interface MessageBase {
-    action: Action;
+    action: Action
   }
 
   export interface FeedVersionMessage extends MessageBase {
-    action: typeof ACTIONS.FeedVersion;
-    payload: FeedVersion;
+    action: typeof ACTIONS.FeedVersion
+    payload: FeedVersion
   }
 
   export interface BestBlockMessage extends MessageBase {
-    action: typeof ACTIONS.BestBlock;
-    payload: [BlockNumber, Timestamp, Maybe<Milliseconds>];
+    action: typeof ACTIONS.BestBlock
+    payload: [BlockNumber, Timestamp, Maybe<Milliseconds>]
   }
 
   export interface BestFinalizedBlockMessage extends MessageBase {
-    action: typeof ACTIONS.BestFinalized;
-    payload: [BlockNumber, BlockHash];
+    action: typeof ACTIONS.BestFinalized
+    payload: [BlockNumber, BlockHash]
   }
 
   export interface AddedNodeMessage extends MessageBase {
-    action: typeof ACTIONS.AddedNode;
+    action: typeof ACTIONS.AddedNode
     payload: [
       NodeId,
       NodeDetails,
@@ -81,97 +81,97 @@ export namespace Variants {
       BlockDetails,
       Maybe<NodeLocation>,
       Timestamp
-    ];
+    ]
   }
 
   export interface RemovedNodeMessage extends MessageBase {
-    action: typeof ACTIONS.RemovedNode;
-    payload: NodeId;
+    action: typeof ACTIONS.RemovedNode
+    payload: NodeId
   }
 
   export interface LocatedNodeMessage extends MessageBase {
-    action: typeof ACTIONS.LocatedNode;
-    payload: [NodeId, Latitude, Longitude, City];
+    action: typeof ACTIONS.LocatedNode
+    payload: [NodeId, Latitude, Longitude, City]
   }
 
   export interface ImportedBlockMessage extends MessageBase {
-    action: typeof ACTIONS.ImportedBlock;
-    payload: [NodeId, BlockDetails];
+    action: typeof ACTIONS.ImportedBlock
+    payload: [NodeId, BlockDetails]
   }
 
   export interface FinalizedBlockMessage extends MessageBase {
-    action: typeof ACTIONS.FinalizedBlock;
-    payload: [NodeId, BlockNumber, BlockHash];
+    action: typeof ACTIONS.FinalizedBlock
+    payload: [NodeId, BlockNumber, BlockHash]
   }
 
   export interface NodeStatsMessage extends MessageBase {
-    action: typeof ACTIONS.NodeStats;
-    payload: [NodeId, NodeStats];
+    action: typeof ACTIONS.NodeStats
+    payload: [NodeId, NodeStats]
   }
 
   export interface NodeHardwareMessage extends MessageBase {
-    action: typeof ACTIONS.NodeHardware;
-    payload: [NodeId, NodeHardware];
+    action: typeof ACTIONS.NodeHardware
+    payload: [NodeId, NodeHardware]
   }
 
   export interface NodeIOMessage extends MessageBase {
-    action: typeof ACTIONS.NodeIO;
-    payload: [NodeId, NodeIO];
+    action: typeof ACTIONS.NodeIO
+    payload: [NodeId, NodeIO]
   }
 
   export interface TimeSyncMessage extends MessageBase {
-    action: typeof ACTIONS.TimeSync;
-    payload: Timestamp;
+    action: typeof ACTIONS.TimeSync
+    payload: Timestamp
   }
 
   export interface AddedChainMessage extends MessageBase {
-    action: typeof ACTIONS.AddedChain;
-    payload: [ChainLabel, NodeCount];
+    action: typeof ACTIONS.AddedChain
+    payload: [ChainLabel, NodeCount]
   }
 
   export interface RemovedChainMessage extends MessageBase {
-    action: typeof ACTIONS.RemovedChain;
-    payload: ChainLabel;
+    action: typeof ACTIONS.RemovedChain
+    payload: ChainLabel
   }
 
   export interface SubscribedToMessage extends MessageBase {
-    action: typeof ACTIONS.SubscribedTo;
-    payload: ChainLabel;
+    action: typeof ACTIONS.SubscribedTo
+    payload: ChainLabel
   }
 
   export interface UnsubscribedFromMessage extends MessageBase {
-    action: typeof ACTIONS.UnsubscribedFrom;
-    payload: ChainLabel;
+    action: typeof ACTIONS.UnsubscribedFrom
+    payload: ChainLabel
   }
 
   export interface PongMessage extends MessageBase {
-    action: typeof ACTIONS.Pong;
-    payload: string; // just echo whatever `ping` sent
+    action: typeof ACTIONS.Pong
+    payload: string // just echo whatever `ping` sent
   }
 
   export interface AfgFinalizedMessage extends MessageBase {
-    action: typeof ACTIONS.AfgFinalized;
-    payload: [Address, BlockNumber, BlockHash];
+    action: typeof ACTIONS.AfgFinalized
+    payload: [Address, BlockNumber, BlockHash]
   }
 
   export interface AfgAuthoritySet extends MessageBase {
-    action: typeof ACTIONS.AfgAuthoritySet;
-    payload: AuthoritySetInfo;
+    action: typeof ACTIONS.AfgAuthoritySet
+    payload: AuthoritySetInfo
   }
 
   export interface AfgReceivedPrecommit extends MessageBase {
-    action: typeof ACTIONS.AfgReceivedPrecommit;
-    payload: [Address, BlockNumber, BlockHash, Address];
+    action: typeof ACTIONS.AfgReceivedPrecommit
+    payload: [Address, BlockNumber, BlockHash, Address]
   }
 
   export interface AfgReceivedPrevote extends MessageBase {
-    action: typeof ACTIONS.AfgReceivedPrevote;
-    payload: [Address, BlockNumber, BlockHash, Address];
+    action: typeof ACTIONS.AfgReceivedPrevote
+    payload: [Address, BlockNumber, BlockHash, Address]
   }
 
   export interface StaleNodeMessage extends MessageBase {
-    action: typeof ACTIONS.StaleNode;
-    payload: NodeId;
+    action: typeof ACTIONS.StaleNode
+    payload: NodeId
   }
 }
 
@@ -197,14 +197,14 @@ export type Message =
   | Variants.AfgAuthoritySet
   | Variants.StaleNodeMessage
   | Variants.PongMessage
-  | Variants.NodeIOMessage;
+  | Variants.NodeIOMessage
 
 /**
  * Data type to be sent to the feed. Passing through strings means we can only serialize once,
  * no matter how many feed clients are listening in.
  */
 export interface SquashedMessages extends Array<Action | Payload> {}
-export type Data = Stringified<SquashedMessages>;
+export type Data = Stringified<SquashedMessages>
 
 /**
  * Serialize an array of `Message`s to a single JSON string.
@@ -214,36 +214,36 @@ export type Data = Stringified<SquashedMessages>;
  * Action `string`s are converted to opcodes using the `actionToCode` mapping.
  */
 export function serialize(messages: Array<Message>): Data {
-  const squashed: SquashedMessages = new Array(messages.length * 2);
-  let index = 0;
+  const squashed: SquashedMessages = new Array(messages.length * 2)
+  let index = 0
 
   messages.forEach((message) => {
-    const { action, payload } = message;
+    const { action, payload } = message
 
-    squashed[index++] = action;
-    squashed[index++] = payload;
-  });
+    squashed[index++] = action
+    squashed[index++] = payload
+  })
 
-  return stringify(squashed);
+  return stringify(squashed)
 }
 
 /**
  * Deserialize data to an array of `Message`s.
  */
 export function deserialize(data: Data): Array<Message> {
-  const json = parse(data);
+  const json = parse(data)
 
   if (!Array.isArray(json) || json.length === 0 || json.length % 2 !== 0) {
-    throw new Error('Invalid FeedMessage.Data');
+    throw new Error('Invalid FeedMessage.Data')
   }
 
-  const messages = new Array<Message>(json.length / 2);
+  const messages = new Array<Message>(json.length / 2)
 
   for (const index of messages.keys()) {
-    const [action, payload] = json.slice(index * 2);
+    const [action, payload] = json.slice(index * 2)
 
-    messages[index] = { action, payload } as Message;
+    messages[index] = { action, payload } as Message
   }
 
-  return messages;
+  return messages
 }

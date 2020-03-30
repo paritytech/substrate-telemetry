@@ -28,13 +28,11 @@
     "blakejs": "^1.1.0",
     "husky": "^4.2.3",
     "lint-staged": "^10.1.0",
-    "prettier": "^2.0.2",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
     "react-measure": "^2.3.0",
     "react-scripts-ts": "2.17.0",
     "react-svg": "^4.1.1",
-    "tslint": "^6.1.0",
     "stable": "^0.1.8"
   },
   "scripts": {
@@ -60,9 +58,10 @@
     "jest": "^23.6.0",
     "jest-localstorage-mock": "^2.2.0",
     "mock-socket": "^8.0.2",
-    "prettier": "2.0.2",
+    "prettier": "^2.0.2",
     "react-test-renderer": "^16.5.2",
     "ts-jest": "^23.10.2",
+    "tslint": "^6.1.0",
     "tslint-config-prettier": "^1.18.0",
     "tslint-plugin-prettier": "^2.3.0",
     "typescript": "^2.9.2"

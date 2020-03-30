@@ -1,16 +1,16 @@
-import { Types } from './common';
-import { State, UpdateBound } from './state';
+import { Types } from './common'
+import { State, UpdateBound } from './state'
 
 // Number of blocks which are kept in memory
-const BLOCKS_LIMIT = 50;
+const BLOCKS_LIMIT = 50
 
 export class AfgHandling {
-  private updateState: UpdateBound;
-  private getState: () => Readonly<State>;
+  private updateState: UpdateBound
+  private getState: () => Readonly<State>
 
   constructor(updateState: UpdateBound, getState: () => Readonly<State>) {
-    this.updateState = updateState;
-    this.getState = getState;
+    this.updateState = updateState
+    this.getState = getState
   }
 
   public receivedAuthoritySet(
@@ -27,7 +27,7 @@ export class AfgHandling {
         authorities,
         consensusInfo: [],
         displayConsensusLoadingScreen: false,
-      });
+      })
     } else if (this.getState().authoritySetId == null) {
       // initial display
       this.updateState({
@@ -35,9 +35,9 @@ export class AfgHandling {
         authorities,
         consensusInfo: [],
         displayConsensusLoadingScreen: true,
-      });
+      })
     }
-    return null;
+    return null
   }
 
   public receivedFinalized(
@@ -45,9 +45,9 @@ export class AfgHandling {
     finalizedNumber: Types.BlockNumber,
     finalizedHash: Types.BlockHash
   ) {
-    const state = this.getState();
+    const state = this.getState()
     if (finalizedNumber < state.best - BLOCKS_LIMIT) {
-      return;
+      return
     }
 
     const data = {
@@ -61,13 +61,13 @@ export class AfgHandling {
       // we can set them and display them in the ui.
       Prevote: true,
       Precommit: true,
-    } as Types.ConsensusDetail;
+    } as Types.ConsensusDetail
     this.initialiseConsensusView(
       state.consensusInfo,
       finalizedNumber,
       addr,
       addr
-    );
+    )
 
     this.updateConsensusInfo(
       state.consensusInfo,
@@ -75,16 +75,16 @@ export class AfgHandling {
       addr,
       addr,
       data as Partial<Types.ConsensusDetail>
-    );
+    )
 
     // Finalizing a block implicitly includes finalizing all
     // preceding blocks. This function marks the preceding
     // blocks as implicitly finalized on and stores a pointer
     // to the block which contains the explicit finalization.
     const op = (i: Types.BlockNumber, index: number): boolean => {
-      const consensusDetail = state.consensusInfo[index][1][addr][addr];
+      const consensusDetail = state.consensusInfo[index][1][addr][addr]
       if (consensusDetail.Finalized || consensusDetail.ImplicitFinalized) {
-        return false;
+        return false
       }
 
       state.consensusInfo[index][1][addr][addr] = {
@@ -101,13 +101,13 @@ export class AfgHandling {
         Precommit: true,
         ImplicitPrevote: true,
         ImplicitPrecommit: true,
-      };
-      return true;
-    };
-    this.backfill(state.consensusInfo, finalizedNumber, op, addr, addr);
+      }
+      return true
+    }
+    this.backfill(state.consensusInfo, finalizedNumber, op, addr, addr)
 
-    this.pruneBlocks(state.consensusInfo);
-    this.updateState({ consensusInfo: state.consensusInfo });
+    this.pruneBlocks(state.consensusInfo)
+    this.updateState({ consensusInfo: state.consensusInfo })
   }
 
   public receivedPre(
@@ -117,32 +117,32 @@ export class AfgHandling {
     voter: Types.Address,
     what: string
   ) {
-    const state = this.getState();
+    const state = this.getState()
     if (height < state.best - BLOCKS_LIMIT) {
-      return;
+      return
     }
 
-    const data = what === 'prevote' ? { Prevote: true } : { Precommit: true };
-    this.initialiseConsensusView(state.consensusInfo, height, addr, voter);
+    const data = what === 'prevote' ? { Prevote: true } : { Precommit: true }
+    this.initialiseConsensusView(state.consensusInfo, height, addr, voter)
     this.updateConsensusInfo(
       state.consensusInfo,
       height,
       addr,
       voter,
       data as Partial<Types.ConsensusDetail>
-    );
+    )
 
     // A Prevote or Precommit on a block implicitly includes
     // a vote on all preceding blocks. This function marks
     // the preceding blocks as implicitly voted on and stores
     // a pointer to the block which contains the explicit vote.
     const op = (i: Types.BlockNumber, index: number): boolean => {
-      const consensusDetail = state.consensusInfo[index][1][addr][voter];
+      const consensusDetail = state.consensusInfo[index][1][addr][voter]
       if (
         what === 'prevote' &&
         (consensusDetail.Prevote || consensusDetail.ImplicitPrevote)
       ) {
-        return false;
+        return false
       }
       if (
         what === 'precommit' &&
@@ -151,25 +151,25 @@ export class AfgHandling {
         // if it is not we continue backfilling (and set it during that process).
         (consensusDetail.Prevote || consensusDetail.ImplicitPrevote)
       ) {
-        return false;
+        return false
       }
 
       if (what === 'prevote') {
-        consensusInfo[index][1][addr][voter].ImplicitPrevote = true;
+        consensusInfo[index][1][addr][voter].ImplicitPrevote = true
       } else if (what === 'precommit') {
-        consensusInfo[index][1][addr][voter].ImplicitPrecommit = true;
+        consensusInfo[index][1][addr][voter].ImplicitPrecommit = true
 
         // Extrapolate. Precommit implies Prevote.
-        consensusInfo[index][1][addr][voter].ImplicitPrevote = true;
+        consensusInfo[index][1][addr][voter].ImplicitPrevote = true
       }
-      consensusInfo[index][1][addr][voter].ImplicitPointer = height;
-      return true;
-    };
-    const consensusInfo = this.getState().consensusInfo;
-    this.backfill(consensusInfo, height, op, addr, voter);
+      consensusInfo[index][1][addr][voter].ImplicitPointer = height
+      return true
+    }
+    const consensusInfo = this.getState().consensusInfo
+    this.backfill(consensusInfo, height, op, addr, voter)
 
-    this.pruneBlocks(consensusInfo);
-    this.updateState({ consensusInfo });
+    this.pruneBlocks(consensusInfo)
+    this.updateState({ consensusInfo })
   }
 
   // Initializes the `ConsensusView` with empty objects.
@@ -179,25 +179,25 @@ export class AfgHandling {
     own: Types.Address,
     other: Types.Address
   ) {
-    const found = consensusInfo.find(([blockNumber]) => blockNumber === height);
+    const found = consensusInfo.find(([blockNumber]) => blockNumber === height)
 
-    let consensusView;
+    let consensusView
     if (found) {
-      [, consensusView] = found;
-      this.initialiseConsensusViewByRef(consensusView, own, other);
+      ;[, consensusView] = found
+      this.initialiseConsensusViewByRef(consensusView, own, other)
     } else {
-      consensusView = {} as Types.ConsensusView;
+      consensusView = {} as Types.ConsensusView
 
-      this.initialiseConsensusViewByRef(consensusView, own, other);
+      this.initialiseConsensusViewByRef(consensusView, own, other)
 
-      const item: Types.ConsensusItem = [height, consensusView];
+      const item: Types.ConsensusItem = [height, consensusView]
       const insertPos = consensusInfo.findIndex(
         ([elHeight, elView]) => elHeight < height
-      );
+      )
       if (insertPos >= 0) {
-        consensusInfo.splice(insertPos, 0, item);
+        consensusInfo.splice(insertPos, 0, item)
       } else {
-        consensusInfo.push(item);
+        consensusInfo.push(item)
       }
     }
   }
@@ -209,11 +209,11 @@ export class AfgHandling {
     other: Types.Address
   ) {
     if (!consensusView[own]) {
-      consensusView[own] = {} as Types.ConsensusState;
+      consensusView[own] = {} as Types.ConsensusState
     }
 
     if (!consensusView[own][other]) {
-      consensusView[own][other] = {} as Types.ConsensusDetail;
+      consensusView[own][other] = {} as Types.ConsensusDetail
     }
   }
 
@@ -235,13 +235,13 @@ export class AfgHandling {
     // until 0 (which could be unfortunate if the first received
     // block is e.g. 28317.
     if (consensusInfo.length < 2) {
-      return;
+      return
     }
 
-    let firstBlockNumber = consensusInfo[consensusInfo.length - 1][0];
-    const limit = this.getState().best - BLOCKS_LIMIT;
+    let firstBlockNumber = consensusInfo[consensusInfo.length - 1][0]
+    const limit = this.getState().best - BLOCKS_LIMIT
     if (firstBlockNumber < limit) {
-      firstBlockNumber = limit as Types.BlockNumber;
+      firstBlockNumber = limit as Types.BlockNumber
     }
 
     if (start - 1 < firstBlockNumber) {
@@ -252,30 +252,30 @@ export class AfgHandling {
       // most of them could e.g. be at 3000 and one is hanging behind
       // and sending info for 2000. then we can't start backfilling
       // from 2000.
-      return;
+      return
     }
 
-    let counter = 0;
+    let counter = 0
     while (start-- > 0) {
-      counter++;
+      counter++
       if (counter >= BLOCKS_LIMIT) {
-        break;
+        break
       }
 
-      const startBlockNumber = start as Types.BlockNumber;
-      this.initialiseConsensusView(consensusInfo, startBlockNumber, own, other);
+      const startBlockNumber = start as Types.BlockNumber
+      this.initialiseConsensusView(consensusInfo, startBlockNumber, own, other)
       const index = consensusInfo.findIndex(
         ([blockNumber]) => blockNumber === start
-      );
-      const cont = f(start, index);
+      )
+      const cont = f(start, index)
       if (!cont) {
-        break;
+        break
       }
 
       // we don't want to fill into nirvana
-      const firstBlockReached = startBlockNumber <= firstBlockNumber;
+      const firstBlockReached = startBlockNumber <= firstBlockNumber
       if (firstBlockReached) {
-        break;
+        break
       }
     }
   }
@@ -289,21 +289,21 @@ export class AfgHandling {
   ) {
     const found = consensusInfo.findIndex(
       ([blockNumber]) => blockNumber === height
-    );
+    )
     if (found < 0) {
-      return;
+      return
     }
 
     for (const k in data) {
       if (data.hasOwnProperty(k)) {
-        consensusInfo[found][1][addr][voter][k] = data[k];
+        consensusInfo[found][1][addr][voter][k] = data[k]
       }
     }
   }
 
   private pruneBlocks(consensusInfo: Types.ConsensusInfo) {
     if (consensusInfo.length >= BLOCKS_LIMIT) {
-      consensusInfo.length = BLOCKS_LIMIT;
+      consensusInfo.length = BLOCKS_LIMIT
     }
   }
 }
