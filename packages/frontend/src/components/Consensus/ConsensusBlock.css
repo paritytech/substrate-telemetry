@@ -21,7 +21,8 @@
   border-bottom: 1px dashed #999;
 }
 
-.Consensus .finalizedInfo, .legend {
+.Consensus .finalizedInfo,
+.legend {
   border-bottom: 1px dotted #555555;
 }
 
@@ -89,7 +90,7 @@
 }
 
 .Consensus .explicit {
-  fill: #E70E81;
+  fill: #e70e81;
 }
 
 .Consensus .nodeName {
@@ -134,7 +135,8 @@
   cursor: pointer;
 }
 
-.Consensus .Row th, .Consensus .Row td {
+.Consensus .Row th,
+.Consensus .Row td {
   text-align: left;
   padding: 2px;
 }
@@ -199,4 +201,3 @@
 .Consensus .even {
   background-color: #333;
 }
-

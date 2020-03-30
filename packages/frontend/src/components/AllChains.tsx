@@ -7,9 +7,9 @@ import './AllChains.css';
 
 export namespace AllChains {
   export interface Props {
-    chains: ChainData[],
-    subscribed: Maybe<Types.ChainLabel>,
-    connection: Promise<Connection>
+    chains: ChainData[];
+    subscribed: Maybe<Types.ChainLabel>;
+    connection: Promise<Connection>;
   }
 }
 
@@ -31,15 +31,23 @@ export class AllChains extends React.Component<AllChains.Props, {}> {
   private renderChain(chain: ChainData): React.ReactNode {
     const { label, nodeCount } = chain;
 
-    const className = label === this.props.subscribed
-      ? 'AllChains-chain AllChains-chain-selected'
-      : 'AllChains-chain';
+    const className =
+      label === this.props.subscribed
+        ? 'AllChains-chain AllChains-chain-selected'
+        : 'AllChains-chain';
 
     return (
-      <a key={label} className={className} onClick={this.subscribe.bind(this, label)}>
-        {label} <span className="AllChains-node-count" title="Node Count">{nodeCount}</span>
+      <a
+        key={label}
+        className={className}
+        onClick={this.subscribe.bind(this, label)}
+      >
+        {label}{' '}
+        <span className="AllChains-node-count" title="Node Count">
+          {nodeCount}
+        </span>
       </a>
-    )
+    );
   }
 
   private async subscribe(chain: Types.ChainLabel) {

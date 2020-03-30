@@ -31,8 +31,8 @@ export class Map extends React.Component<Map.Props, Map.State> {
     width: 0,
     height: 0,
     top: 0,
-    left: 0
-  }
+    left: 0,
+  };
 
   public componentWillMount() {
     this.onResize();
@@ -52,8 +52,7 @@ export class Map extends React.Component<Map.Props, Map.State> {
     return (
       <React.Fragment>
         <div className="Map">
-        {
-          nodes.map((node) => {
+          {nodes.map((node) => {
             const { lat, lon } = node;
 
             const focused = filter == null || filter(node);
@@ -66,23 +65,32 @@ export class Map extends React.Component<Map.Props, Map.State> {
             const position = this.pixelPosition(lat, lon);
 
             return (
-              <Location key={node.id} position={position} focused={focused} node={node} />
+              <Location
+                key={node.id}
+                position={position}
+                focused={focused}
+                node={node}
+              />
             );
-          })
-        }
+          })}
         </div>
         <Filter onChange={this.onFilterChange} />
       </React.Fragment>
     );
   }
 
-  private pixelPosition(lat: Types.Latitude, lon: Types.Longitude): Location.Position {
+  private pixelPosition(
+    lat: Types.Latitude,
+    lon: Types.Longitude
+  ): Location.Position {
     const { state } = this;
 
     // Longitude ranges -180 (west) to +180 (east)
     // Latitude ranges +90 (north) to -90 (south)
     const left = Math.round(((180 + lon) / 360) * state.width + state.left);
-    const top = Math.round(((90 - lat) / 180) * state.height * MAP_HEIGHT_ADJUST + state.top);
+    const top = Math.round(
+      ((90 - lat) / 180) * state.height * MAP_HEIGHT_ADJUST + state.top
+    );
 
     let quarter: Location.Quarter = 0;
 
@@ -121,9 +129,9 @@ export class Map extends React.Component<Map.Props, Map.State> {
     }
 
     this.setState({ top, left, width, height });
-  }
+  };
 
   private onFilterChange = (filter: Maybe<(node: Node) => boolean>) => {
     this.setState({ filter });
-  }
+  };
 }

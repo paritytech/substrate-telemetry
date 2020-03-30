@@ -1,5 +1,10 @@
 import * as React from 'react';
-import { formatNumber, trimHash, milliOrSecond, secondsWithPrecision } from '../../utils';
+import {
+  formatNumber,
+  trimHash,
+  milliOrSecond,
+  secondsWithPrecision,
+} from '../../utils';
 import { Ago, Icon, PolkadotIcon } from '../';
 import { Node } from '../../state';
 
@@ -60,10 +65,13 @@ export class Location extends React.Component<Location.Props, Location.State> {
     }
 
     return (
-      <div className={className} style={{ left, top }} onMouseOver={this.onMouseOver} onMouseOut={this.onMouseOut}>
-      {
-        this.state.hover ? this.renderDetails() : null
-      }
+      <div
+        className={className}
+        style={{ left, top }}
+        onMouseOver={this.onMouseOver}
+        onMouseOut={this.onMouseOut}
+      >
+        {this.state.hover ? this.renderDetails() : null}
         <div className="Location-ping" />
       </div>
     );
@@ -88,10 +96,14 @@ export class Location extends React.Component<Location.Props, Location.State> {
     if (validator) {
       validatorRow = (
         <tr>
-          <td><Icon src={nodeValidatorIcon} alt="Node" /></td>
+          <td>
+            <Icon src={nodeValidatorIcon} alt="Node" />
+          </td>
           <td colSpan={5}>
             {trimHash(validator, 30)}
-            <span className="Location-validator"><PolkadotIcon account={validator} size={16} /></span>
+            <span className="Location-validator">
+              <PolkadotIcon account={validator} size={16} />
+            </span>
           </td>
         </tr>
       );
@@ -101,28 +113,57 @@ export class Location extends React.Component<Location.Props, Location.State> {
       <table className="Location-details Location-details">
         <tbody>
           <tr>
-            <td><Icon src={nodeIcon} alt="Node" /></td><td colSpan={5}>{name}</td>
+            <td>
+              <Icon src={nodeIcon} alt="Node" />
+            </td>
+            <td colSpan={5}>{name}</td>
           </tr>
           {validatorRow}
           <tr>
-            <td><Icon src={nodeTypeIcon} alt="Implementation" /></td><td colSpan={5}>{implementation} v{version}</td>
+            <td>
+              <Icon src={nodeTypeIcon} alt="Implementation" />
+            </td>
+            <td colSpan={5}>
+              {implementation} v{version}
+            </td>
           </tr>
           <tr>
-            <td><Icon src={nodeLocationIcon} alt="Location" /></td><td colSpan={5}>{city}</td>
+            <td>
+              <Icon src={nodeLocationIcon} alt="Location" />
+            </td>
+            <td colSpan={5}>{city}</td>
           </tr>
           <tr>
-            <td><Icon src={blockIcon} alt="Block" /></td><td colSpan={5}>#{formatNumber(height)}</td>
+            <td>
+              <Icon src={blockIcon} alt="Block" />
+            </td>
+            <td colSpan={5}>#{formatNumber(height)}</td>
           </tr>
           <tr>
-            <td><Icon src={blockHashIcon} alt="Block Hash" /></td><td colSpan={5}>{trimHash(hash, 20)}</td>
+            <td>
+              <Icon src={blockHashIcon} alt="Block Hash" />
+            </td>
+            <td colSpan={5}>{trimHash(hash, 20)}</td>
           </tr>
           <tr>
-            <td><Icon src={blockTimeIcon} alt="Block Time" /></td>
-            <td style={{ width: 80 }}>{secondsWithPrecision(blockTime/1000)}</td>
-            <td><Icon src={propagationTimeIcon} alt="Block Propagation Time" /></td>
-            <td style={{ width: 58 }}>{propagationTime == null ? '∞' : milliOrSecond(propagationTime)}</td>
-            <td><Icon src={lastTimeIcon} alt="Last Block Time" /></td>
-            <td style={{ minWidth: 82 }}><Ago when={blockTimestamp} /></td>
+            <td>
+              <Icon src={blockTimeIcon} alt="Block Time" />
+            </td>
+            <td style={{ width: 80 }}>
+              {secondsWithPrecision(blockTime / 1000)}
+            </td>
+            <td>
+              <Icon src={propagationTimeIcon} alt="Block Propagation Time" />
+            </td>
+            <td style={{ width: 58 }}>
+              {propagationTime == null ? '∞' : milliOrSecond(propagationTime)}
+            </td>
+            <td>
+              <Icon src={lastTimeIcon} alt="Last Block Time" />
+            </td>
+            <td style={{ minWidth: 82 }}>
+              <Ago when={blockTimestamp} />
+            </td>
           </tr>
         </tbody>
       </table>
@@ -131,9 +172,9 @@ export class Location extends React.Component<Location.Props, Location.State> {
 
   private onMouseOver = () => {
     this.setState({ hover: true });
-  }
+  };
 
   private onMouseOut = () => {
     this.setState({ hover: false });
-  }
+  };
 }

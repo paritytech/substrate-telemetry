@@ -33,5 +33,5 @@ export class Tab extends React.Component<Tab.Props, {}> {
     const { tab, display, setDisplay } = this.props;
     setHashData({ tab });
     setDisplay(display);
-  }
+  };
 }

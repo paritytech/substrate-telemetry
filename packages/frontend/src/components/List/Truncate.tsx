@@ -18,13 +18,21 @@ export class Truncate extends React.Component<Truncate.Props, {}> {
     }
 
     return (
-      <Tooltip text={text} position={position} copy={copy} className="Row-Tooltip">
+      <Tooltip
+        text={text}
+        position={position}
+        copy={copy}
+        className="Row-Tooltip"
+      >
         <div className="Row-truncate">{text}</div>
       </Tooltip>
     );
   }
 
   public shouldComponentUpdate(nextProps: Truncate.Props): boolean {
-    return this.props.text !== nextProps.text || this.props.position !== nextProps.position;
+    return (
+      this.props.text !== nextProps.text ||
+      this.props.position !== nextProps.position
+    );
   }
 }

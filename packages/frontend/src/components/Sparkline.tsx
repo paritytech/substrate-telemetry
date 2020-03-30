@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { Types, Maybe } from "@dotstats/common";
-import sparkline from "@fnando/sparkline";
+import { Types, Maybe } from '@dotstats/common';
+import sparkline from '@fnando/sparkline';
 import { Tooltip } from './';
 
 import './Sparkline.css';
@@ -33,7 +33,12 @@ export class Sparkline extends React.Component<Sparkline.Props, {}> {
   public shouldComponentUpdate(nextProps: Sparkline.Props): boolean {
     const { stroke, width, height, minScale, format } = this.props;
 
-    if (stroke !== nextProps.stroke || width !== nextProps.width || height !== nextProps.height || format !== nextProps.format) {
+    if (
+      stroke !== nextProps.stroke ||
+      width !== nextProps.width ||
+      height !== nextProps.height ||
+      format !== nextProps.format
+    ) {
       return true;
     }
 
@@ -54,22 +59,33 @@ export class Sparkline extends React.Component<Sparkline.Props, {}> {
 
     return (
       <Tooltip text="-" onInit={this.onTooltipInit}>
-        <svg className="Sparkline" ref={this.onRef} width={width} height={height} strokeWidth={stroke} />
+        <svg
+          className="Sparkline"
+          ref={this.onRef}
+          width={width}
+          height={height}
+          strokeWidth={stroke}
+        />
       </Tooltip>
     );
   }
 
   private onRef = (el: SVGSVGElement) => {
     this.el = el;
-  }
+  };
 
   private onTooltipInit = (update: Tooltip.UpdateCallback) => {
     this.update = update;
-  }
+  };
 
-  private onMouseMove = (event: MouseEvent, data: { value: number, index: number }) => {
+  private onMouseMove = (
+    event: MouseEvent,
+    data: { value: number; index: number }
+  ) => {
     const { format, stamps } = this.props;
-    const str = format ? format(data.value, stamps ? stamps[data.index] : null) : `${data.value}`;
+    const str = format
+      ? format(data.value, stamps ? stamps[data.index] : null)
+      : `${data.value}`;
     this.update(str);
-  }
+  };
 }

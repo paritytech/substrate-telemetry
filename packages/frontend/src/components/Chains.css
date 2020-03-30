@@ -1,5 +1,5 @@
 .Chains {
-  background: #B5AEAE;
+  background: #b5aeae;
   color: #000;
   padding: 0 76px 0 16px;
   height: 40px;
@@ -9,10 +9,10 @@
 
 .Chains-chain {
   padding: 0 12px;
-  background: #B5AEAE;
+  background: #b5aeae;
   color: #444;
   display: inline-block;
-  border-right: 1px solid rgba(255,255,255,0.5);
+  border-right: 1px solid rgba(255, 255, 255, 0.5);
   height: 40px;
   line-height: 40px;
   cursor: pointer;
@@ -22,7 +22,7 @@
 }
 
 .Chains-chain:first-child {
-  border-left: 1px solid rgba(255,255,255,0.5);
+  border-left: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .Chains-all-chains {
@@ -43,7 +43,8 @@
   top: 6px;
 }
 
-.Chains-all-chains .Icon, .Chains-fork-me .Icon {
+.Chains-all-chains .Icon,
+.Chains-fork-me .Icon {
   font-size: 28px;
   margin: 0;
   height: 28px;
@@ -55,10 +56,10 @@
   display: inline-block;
   padding: 0 0.5em 0.1em;
   border-radius: 1em;
-  background: #8C8787;
+  background: #8c8787;
   color: #fff;
   font-weight: normal;
-  text-shadow: rgba(0,0,0,0.5) 0 1px 0;
+  text-shadow: rgba(0, 0, 0, 0.5) 0 1px 0;
   font-size: 0.9em;
   line-height: 1.4em;
   margin: 0 -0.3em 0 0.3em;
@@ -70,5 +71,5 @@
 }
 
 .Chains-chain-selected .Chains-node-count {
-  background: #E6007A;
+  background: #e6007a;
 }

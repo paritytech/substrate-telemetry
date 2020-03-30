@@ -29,16 +29,21 @@ export class Settings extends React.Component<Settings.Props, {}> {
         <div className="Settings-category">
           <h1>List View</h1>
           <h2>Visible Columns</h2>
-          {
-            Row.columns
-              .map(({ label, icon, setting }, index) => {
-                if (!setting) {
-                  return null;
-                }
+          {Row.columns.map(({ label, icon, setting }, index) => {
+            if (!setting) {
+              return null;
+            }
 
-                return <Setting key={index} setting={setting} settings={settings} icon={icon} label={label} />;
-              })
-          }
+            return (
+              <Setting
+                key={index}
+                setting={setting}
+                settings={settings}
+                icon={icon}
+                label={label}
+              />
+            );
+          })}
         </div>
       </div>
     );

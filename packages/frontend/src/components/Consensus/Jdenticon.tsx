@@ -3,8 +3,8 @@ import * as React from 'react';
 import './Jdenticon.css';
 
 export interface Props {
-  hash: string,
-  size: string
+  hash: string;
+  size: string;
 }
 
 class Jdenticon extends React.Component<Props, {}> {
@@ -26,13 +26,15 @@ class Jdenticon extends React.Component<Props, {}> {
 
   public render() {
     const { hash, size } = this.props;
-    return <svg
-      className="Jdenticon"
-      ref={element => this.handleRef(element)}
-      width={size}
-      height={size}
-      data-jdenticon-value={hash}
-      />;
+    return (
+      <svg
+        className="Jdenticon"
+        ref={(element) => this.handleRef(element)}
+        width={size}
+        height={size}
+        data-jdenticon-value={hash}
+      />
+    );
   }
 
   private handleRef(element: any) {

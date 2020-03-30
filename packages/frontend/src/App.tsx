@@ -46,9 +46,9 @@ export default class App extends React.Component<{}, State> {
         blockpropagation: true,
         blocklasttime: false,
         uptime: false,
-        networkstate: false
+        networkstate: false,
       },
-      settings => {
+      (settings) => {
         const selectedColumns = this.selectedColumns(settings);
 
         this.sortBy.set(null);
@@ -56,15 +56,15 @@ export default class App extends React.Component<{}, State> {
       }
     );
 
-    this.pins = new PersistentSet<Types.NodeName>('pinned_names', pins => {
+    this.pins = new PersistentSet<Types.NodeName>('pinned_names', (pins) => {
       const { nodes } = this.state;
 
-      nodes.mutEachAndSort(node => node.setPinned(pins.has(node.name)));
+      nodes.mutEachAndSort((node) => node.setPinned(pins.has(node.name)));
 
       this.setState({ nodes, pins });
     });
 
-    this.sortBy = new Persistent<Maybe<number>>('sortBy', null, sortBy => {
+    this.sortBy = new Persistent<Maybe<number>>('sortBy', null, (sortBy) => {
       const compare = this.getComparator(sortBy);
 
       this.state.nodes.setComparator(compare);
@@ -92,12 +92,12 @@ export default class App extends React.Component<{}, State> {
       pins: this.pins.get(),
       sortBy: this.sortBy.get(),
       selectedColumns: this.selectedColumns(this.settings.raw()),
-      tab
+      tab,
     };
 
     this.state.nodes.setComparator(this.getComparator(this.sortBy.get()));
 
-    this.connection = Connection.create(this.pins, changes => {
+    this.connection = Connection.create(this.pins, (changes) => {
       if (changes) {
         this.setState(changes);
       }
@@ -184,7 +184,7 @@ export default class App extends React.Component<{}, State> {
       }
     }
 
-    this.connection.then(connection => {
+    this.connection.then((connection) => {
       connection.subscribe(chains[index]);
     });
   };

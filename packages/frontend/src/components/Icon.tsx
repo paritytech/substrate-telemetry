@@ -7,20 +7,30 @@ export interface Props {
   alt?: string;
   className?: string;
   onClick?: () => void;
-};
+}
 
 export class Icon extends React.Component<{}, Props> {
   public props: Props;
 
   public shouldComponentUpdate(nextProps: Props) {
-    return this.props.src !== nextProps.src
-        || this.props.alt !== nextProps.alt
-        || this.props.className !== nextProps.className;
+    return (
+      this.props.src !== nextProps.src ||
+      this.props.alt !== nextProps.alt ||
+      this.props.className !== nextProps.className
+    );
   }
 
   public render() {
     const { alt, className, onClick, src } = this.props;
 
-    return <ReactSVG key={this.props.src} title={alt} className={`Icon ${ className || '' }`} path={src} onClick={onClick} />;
+    return (
+      <ReactSVG
+        key={this.props.src}
+        title={alt}
+        className={`Icon ${className || ''}`}
+        path={src}
+        onClick={onClick}
+      />
+    );
   }
 }

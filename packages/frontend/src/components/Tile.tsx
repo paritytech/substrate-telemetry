@@ -4,9 +4,9 @@ import { Icon } from './Icon';
 
 export namespace Tile {
   export interface Props {
-    title: string,
-    icon: string,
-    children?: React.ReactNode,
+    title: string;
+    icon: string;
+    children?: React.ReactNode;
   }
 }
 
