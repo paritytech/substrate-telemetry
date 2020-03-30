@@ -2,21 +2,10 @@ version: '3'
 services:
   frontend:
     image: woss/polkadot-telemetry-frontend:latest
-    build:
-      dockerfile: Dockerfile
-      context: ./frontend
-    volumes:
-      - ./frontend:/app
-    environment:
-      - PORT=5000
-    command: yarn start
     ports:
       - 5000:5000
   backend:
     image: woss/polkadot-telemetry-backend:latest
-    build:
-      dockerfile: Dockerfile
-      context: ./backend
     environment:
       - PORT=8000
     ports:
