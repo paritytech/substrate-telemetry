@@ -19,6 +19,8 @@ function ConnectionInput() {
       setError('Please check your URL')
     } else {
       localStorage.setItem('connectionURI', connectionURI)
+
+      // window.process_env.SUBSTRATE_TELEMETRY_URL
     }
   }
   return (
