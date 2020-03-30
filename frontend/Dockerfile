@@ -1,4 +1,4 @@
-#### BUILDER IMAGE -- quite big one ####
+### BUILDER IMAGE -- quite big one ####
 FROM node:13-alpine as builder
 LABEL maintainer="Daniel Maricic daniel@woss.io"
 LABEL version="0.1.0"
@@ -13,8 +13,7 @@ RUN apk add --no-cache python make g++
 # copy all the src files
 COPY . .
 
-# make the env.sh executable
-RUN apk add --no-cache bash; chmod +x env.sh
+
 
 # build the app
 RUN yarn && yarn build --${PROFILE}}
@@ -38,8 +37,16 @@ WORKDIR /app
 
 COPY --from=builder /opt/build/build  /app
 
+COPY env.sh .
+
+# # make the env.sh executable
+RUN apk add --no-cache bash; chmod +x env.sh
+
+
+RUN ls -la
+
 # create the env vars after the build
-RUN apk add --no-cache bash; env.sh
+RUN ./env.sh
 
 
 RUN npm install -g serve

@@ -3,7 +3,7 @@
 # This script is used when the docker container starts and does the magic to
 # bring the ENV variables to the generated static UI.
 
-TARGET=./build/env-config.js
+TARGET=./env-config.js
 
 # Recreate config file
 echo -n > $TARGET
