@@ -52,15 +52,22 @@ Follow up installation instructions from the [Polkadot repo](https://github.com/
 ### Run via Docker
 
 To run via docker make sure that you have Docker Desktop
-
-- If you dont you can download for you OS here [Docker Desktop](https://www.docker.com/products/docker-desktop)
-
-```sh
+  - If you don't you can download for you OS here [Docker Desktop](https://www.docker.com/products/docker-desktop)
+```
 docker-compose up --build -d
 ```
-
-- -d stands for detach, if you would like to see logs i recommend using [Kitmatic](https://kitematic.com/) or don't use the -d
-- --build will build the images and rebuild, but this is not required every time
-- If you want to makes UI changes, there is no need to rebuild the image as the files are being copied in via volumes.
+ - `-d` stands for detach, if you would like to see logs I recommend using [Kitmatic](https://kitematic.com/) or don't use the -d
+ - `--build` will build the images and rebuild, but this is not required every time
+ - If you want to makes UI changes, there is no need to rebuild the image as the files are being copied in via volumes.
 
 Now navigate to localhost:3000 in your browser to view the app.
+
+## Docker
+
+### Build Frontend
+
+From the root of the repo:
+
+```
+docker build -t telemetry-frontend -f packages/frontend/Dockerfile .
+```

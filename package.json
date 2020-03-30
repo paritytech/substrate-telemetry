@@ -9,6 +9,7 @@
     "kind-of": ">=6.0.3"
   },
   "scripts": {
+<<<<<<< HEAD
     "start": "cd frontend && yarn start",
     "build": "npm-run-all --parallel build:*",
     "build:frontend": "cd frontend && yarn build",
@@ -21,5 +22,14 @@
   },
   "devDependencies": {
     "npm-run-all": "^4.1.5"
+=======
+    "build": "yarn build:common && yarn build:frontend",
+    "build:common": "tsc -p packages/common",
+    "build:frontend": "cd ./packages/frontend && yarn run build && cp -r ./build ../../htdocs",
+    "start:frontend": "yarn build:common && cd packages/frontend && yarn start",
+    "check:common": "tsc -p packages/common --noEmit",
+    "deploy": "yarn build:all && pm2 restart index",
+    "test": "yarn && tsc -p packages/common && node packages/common/test | tap-spec && cd packages/frontend"
+>>>>>>> 3adacb8... Switch the image to nginx with ENV support
   }
 }
