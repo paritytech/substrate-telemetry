@@ -53,11 +53,5 @@
     "react-test-renderer": "^16.5.2",
     "ts-jest": "^23.10.2",
     "typescript": "^2.9.2"
-  },
-  "browserslist": [
-    ">0.2%",
-    "not dead",
-    "not ie <= 11",
-    "not op_mini all"
-  ]
+  }
 }
