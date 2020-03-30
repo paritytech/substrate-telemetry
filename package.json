@@ -25,7 +25,8 @@
 =======
     "build": "yarn build:common && yarn build:frontend",
     "build:common": "tsc -p packages/common",
-    "build:frontend": "cd ./packages/frontend && yarn run build && cp -r ./build ../../htdocs",
+    "build:frontend": "cd ./packages/frontend && yarn run build",
+    "htdocs": "yarn build:frontend && cp -r ./build ../../htdocs",
     "start:frontend": "yarn build:common && cd packages/frontend && yarn start",
     "check:common": "tsc -p packages/common --noEmit",
     "deploy": "yarn build:all && pm2 restart index",

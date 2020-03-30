@@ -64,10 +64,10 @@ Now navigate to localhost:3000 in your browser to view the app.
 
 ## Docker
 
-### Build Frontend
+### Build & Publish the Frontend docker image
 
-From the root of the repo:
+The building process is standard. You just need to notice that the Dockerfile is in ./packages/frontend/ and tell docker about it. The context must remain the repository's root though.
 
 ```
-docker build -t telemetry-frontend -f packages/frontend/Dockerfile .
+DOCKER_USER=chevdor ./scripts/build-docker-frontend.sh 
 ```
