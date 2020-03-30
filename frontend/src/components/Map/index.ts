@@ -1,2 +1,2 @@
-export * from './Map';
-export * from './Location';
+export * from './Map'
+export * from './Location'

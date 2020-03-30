@@ -1,25 +1,25 @@
-import * as React from 'react';
-import { Types, Maybe } from '../common';
-import sparkline from '@fnando/sparkline';
-import { Tooltip } from './';
+import * as React from 'react'
+import { Types, Maybe } from '../common'
+import sparkline from '@fnando/sparkline'
+import { Tooltip } from './'
 
-import './Sparkline.css';
+import './Sparkline.css'
 
 export namespace Sparkline {
   export interface Props {
-    stroke: number;
-    width: number;
-    height: number;
-    values: number[];
-    stamps?: Types.Timestamp[];
-    minScale?: number;
-    format?: (value: number, stamp: Maybe<Types.Timestamp>) => string;
+    stroke: number
+    width: number
+    height: number
+    values: number[]
+    stamps?: Types.Timestamp[]
+    minScale?: number
+    format?: (value: number, stamp: Maybe<Types.Timestamp>) => string
   }
 }
 
 export class Sparkline extends React.Component<Sparkline.Props, {}> {
-  private el: SVGSVGElement;
-  private update: Tooltip.UpdateCallback;
+  private el: SVGSVGElement
+  private update: Tooltip.UpdateCallback
 
   public componentDidMount() {
     sparkline(this.el, this.props.values, {
@@ -27,11 +27,11 @@ export class Sparkline extends React.Component<Sparkline.Props, {}> {
       minScale: this.props.minScale,
       interactive: true,
       onmousemove: this.onMouseMove,
-    });
+    })
   }
 
   public shouldComponentUpdate(nextProps: Sparkline.Props): boolean {
-    const { stroke, width, height, minScale, format } = this.props;
+    const { stroke, width, height, minScale, format } = this.props
 
     if (
       stroke !== nextProps.stroke ||
@@ -39,7 +39,7 @@ export class Sparkline extends React.Component<Sparkline.Props, {}> {
       height !== nextProps.height ||
       format !== nextProps.format
     ) {
-      return true;
+      return true
     }
 
     if (this.props.values !== nextProps.values) {
@@ -48,14 +48,14 @@ export class Sparkline extends React.Component<Sparkline.Props, {}> {
         minScale,
         interactive: true,
         onmousemove: this.onMouseMove,
-      });
+      })
     }
 
-    return false;
+    return false
   }
 
   public render() {
-    const { stroke, width, height } = this.props;
+    const { stroke, width, height } = this.props
 
     return (
       <Tooltip text="-" onInit={this.onTooltipInit}>
@@ -67,25 +67,25 @@ export class Sparkline extends React.Component<Sparkline.Props, {}> {
           strokeWidth={stroke}
         />
       </Tooltip>
-    );
+    )
   }
 
   private onRef = (el: SVGSVGElement) => {
-    this.el = el;
-  };
+    this.el = el
+  }
 
   private onTooltipInit = (update: Tooltip.UpdateCallback) => {
-    this.update = update;
-  };
+    this.update = update
+  }
 
   private onMouseMove = (
     event: MouseEvent,
     data: { value: number; index: number }
   ) => {
-    const { format, stamps } = this.props;
+    const { format, stamps } = this.props
     const str = format
       ? format(data.value, stamps ? stamps[data.index] : null)
-      : `${data.value}`;
-    this.update(str);
-  };
+      : `${data.value}`
+    this.update(str)
+  }
 }

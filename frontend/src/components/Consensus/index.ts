@@ -1,2 +1,2 @@
-export * from './Consensus';
-export * from './ConsensusBlock';
+export * from './Consensus'
+export * from './ConsensusBlock'

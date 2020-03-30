@@ -2,5 +2,5 @@
 
 cd ./frontend
 
-yarn 
+yarn
 yarn build
