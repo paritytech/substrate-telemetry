@@ -43,11 +43,8 @@ COPY env.sh .
 RUN apk add --no-cache bash; chmod +x env.sh
 
 
-RUN ls -la
-
 # create the env vars after the build
 RUN ./env.sh
-
 
 RUN npm install -g serve
 
