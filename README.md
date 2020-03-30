@@ -63,4 +63,4 @@ docker-compose up --build -d
 - --build will build the images and rebuild, but this is not required every time
 - If you want to makes UI changes, there is no need to rebuild the image as the files are being copied in via volumes.
 
-Now navigate to localhost:3000 in your browser to view the app.
+Now navigate to [http://localhost:3000](http://ocalhost:3000:/) in your browser to view the app.
