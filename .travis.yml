@@ -30,7 +30,7 @@ before_script:
 
 script:
   - yarn
-  - cd frontend && yarn
+  - yarn build
   - yarn test
   - yarn check
   - yarn build
