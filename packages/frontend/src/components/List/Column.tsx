@@ -73,7 +73,7 @@ const ICONS = {
   'dothereum': dothereumIcon,
   'katalchain': katalchainIcon,
   'bifrost-node': bifrostIcon,
-  'Totem Meccano CanaryNet': totemIcon,
+  'totem-meccano-node': totemIcon,
   'Totem': totemIcon,
 };
 
