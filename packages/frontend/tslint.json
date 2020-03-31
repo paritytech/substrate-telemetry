@@ -1,22 +1,23 @@
 {
-  "extends": ["tslint:recommended", "tslint-react", "tslint-plugin-prettier", "tslint-config-prettier"],
+  "extends": [
+    "tslint:recommended",
+    "tslint-react",
+    "tslint-plugin-prettier",
+    "tslint-config-prettier"
+  ],
   "linterOptions": {
-    "exclude": [
-      "config/**/*.js",
-      "node_modules/**/*.ts"
-    ]
+    "exclude": ["config/**/*.js", "node_modules/**/*.ts"]
   },
   "rules": {
     "prettier": true,
     "ordered-imports": false,
     "object-literal-sort-keys": false,
     "no-console": false,
-    "no-unused-variable": [true, {"ignore-pattern": "^_"}],
     "no-empty": false,
     "no-namespace": false,
     "no-bitwise": false,
-    "interface-name": false,
     "quotemark": [true, "single", "jsx-double"],
-    "semicolon": [true, "never"]
+    "semicolon": [true, "always", "ignore-bound-class-methods"],
+    "interface-name": false
   }
 }

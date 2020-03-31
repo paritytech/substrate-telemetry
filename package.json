@@ -14,6 +14,8 @@
   "scripts": {
     "deploy": "scripts/deploy.sh",
     "build:all": "scripts/build-all.sh",
+    "check:frontend": "cd packages/frontend; yarn pretty:check",
+    "check:all": "yarn check:common && yarn check:frontend",
     "start:frontend": "scripts/start-frontend.sh",
     "build:frontend": "scripts/build-frontend.sh",
     "build:common": "tsc -p packages/common",
