@@ -22,6 +22,8 @@ cargo build --release
 ### Terminal 2 - Frontend
 
 ```sh
+cd frontend
+yarn
 yarn start
 ```
 
