@@ -4,22 +4,48 @@ extern crate log;
 use std::net::Ipv4Addr;
 
 use actix::prelude::*;
-use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Error};
-use actix_web_actors::ws;
 use actix_http::ws::Codec;
+use actix_web::{web, App, Error, HttpRequest, HttpResponse, HttpServer};
+use actix_web_actors::ws;
+use clap::Clap;
 
-mod types;
 mod aggregator;
 mod chain;
-mod node;
 mod feed;
+mod node;
+mod types;
 mod util;
 
-use node::connector::NodeConnector;
+use aggregator::{Aggregator, GetHealth, GetNetworkState};
 use feed::connector::FeedConnector;
-use aggregator::{Aggregator, GetNetworkState, GetHealth};
-use util::{Locator, LocatorFactory};
+use node::connector::NodeConnector;
 use types::NodeId;
+use util::{Locator, LocatorFactory};
+
+const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+const AUTHORS: &'static str = env!("CARGO_PKG_AUTHORS");
+const NAME: &'static str = "Substrate Telemetry Backend";
+const ABOUT: &'static str = "This is the Telemetry Backend that injects and provide the data sent by Substrate/Polkadot nodes";
+
+#[derive(Clap)]
+#[clap(name = NAME, version = VERSION, author = AUTHORS, about = ABOUT)]
+struct Opts {
+    #[clap(
+        short = "p",
+        long = "port",
+        default_value = "8000",
+        help = "This is the port Telemetry is listening to."
+    )]
+    port: u16,
+
+    #[clap(
+        short = "b",
+        long = "bind",
+        default_value = "127.0.0.1",
+        help = "This is the address of the network interface Telemetry is listening to. This is restricted localhost by default and should be fine for most use cases. If you are using Telemetry in a container, you likely want to set this to '0.0.0.0'"
+    )]
+    bind: String,
+}
 
 /// Entry point for connecting nodes
 fn node_route(
@@ -61,7 +87,7 @@ fn feed_route(
 
 fn state_route(
     path: web::Path<(Box<str>, NodeId)>,
-    aggregator: web::Data<Addr<Aggregator>>
+    aggregator: web::Data<Addr<Aggregator>>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {
     let (chain, nid) = path.into_inner();
 
@@ -69,31 +95,31 @@ fn state_route(
         .send(GetNetworkState(chain, nid))
         .flatten()
         .from_err()
-        .and_then(|data| {
-            match data.and_then(|nested| nested) {
-                Some(body) => HttpResponse::Ok().content_type("application/json").body(body),
-                None => HttpResponse::Ok().body("Node has disconnected or has not submitted its network state yet"),
-            }
+        .and_then(|data| match data.and_then(|nested| nested) {
+            Some(body) => HttpResponse::Ok()
+                .content_type("application/json")
+                .body(body),
+            None => HttpResponse::Ok()
+                .body("Node has disconnected or has not submitted its network state yet"),
         })
 }
 
 fn health(
-    aggregator: web::Data<Addr<Aggregator>>
+    aggregator: web::Data<Addr<Aggregator>>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {
-    aggregator
-        .send(GetHealth)
-        .from_err()
-        .and_then(|count| {
-            let body = format!("Connected chains: {}", count);
+    aggregator.send(GetHealth).from_err().and_then(|count| {
+        let body = format!("Connected chains: {}", count);
 
-            HttpResponse::Ok().body(body)
-        })
+        HttpResponse::Ok().body(body)
+    })
 }
 
 /// Telemetry entry point. Listening by default on 127.0.0.1:8000.
 /// This can be changed using the `PORT` and `BIND` ENV variables.
 fn main() -> std::io::Result<()> {
-    use web::{resource, get};
+    use web::{get, resource};
+
+    let opts: Opts = Opts::parse();
 
     simple_logger::init_with_level(log::Level::Info).expect("Must be able to start a logger");
 
@@ -101,9 +127,6 @@ fn main() -> std::io::Result<()> {
     let aggregator = Aggregator::new().start();
     let factory = LocatorFactory::new();
     let locator = SyncArbiter::start(4, move || factory.create());
-
-    let port = std::env::var("PORT").ok().and_then(|v| v.parse().ok()).unwrap_or(8000u16);
-    let bind_address = std::env::var("BIND").ok().unwrap_or("127.0.0.1".to_string());
 
     HttpServer::new(move || {
         App::new()
@@ -118,7 +141,7 @@ fn main() -> std::io::Result<()> {
             .service(resource("/health").route(get().to_async(health)))
             .service(resource("/health/").route(get().to_async(health)))
     })
-    .bind(format!("{}:{}", bind_address, port))?
+    .bind(format!("{}:{}", opts.bind, opts.port))?
     .start();
 
     sys.run()
