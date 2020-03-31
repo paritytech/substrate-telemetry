@@ -1,28 +1,28 @@
-import * as React from 'react'
-import { Maybe } from '../../common'
-import { State as AppState } from '../../state'
-import { Setting } from './'
-import { Row } from '../List'
-import { PersistentObject } from '../../persist'
+import * as React from 'react';
+import { Maybe } from '../../common';
+import { State as AppState } from '../../state';
+import { Setting } from './';
+import { Row } from '../List';
+import { PersistentObject } from '../../persist';
 
-import './Settings.css'
+import './Settings.css';
 
 export namespace Settings {
-  export type Display = 'list' | 'map' | 'settings'
+  export type Display = 'list' | 'map' | 'settings';
 
   export interface Props {
-    settings: PersistentObject<AppState.Settings>
+    settings: PersistentObject<AppState.Settings>;
   }
 
   export interface State {
-    display: Display
-    filter: Maybe<string>
+    display: Display;
+    filter: Maybe<string>;
   }
 }
 
 export class Settings extends React.Component<Settings.Props, {}> {
   public render() {
-    const { settings } = this.props
+    const { settings } = this.props;
 
     return (
       <div className="Settings">
@@ -31,7 +31,7 @@ export class Settings extends React.Component<Settings.Props, {}> {
           <h2>Visible Columns</h2>
           {Row.columns.map(({ label, icon, setting }, index) => {
             if (!setting) {
-              return null
+              return null;
             }
 
             return (
@@ -42,10 +42,10 @@ export class Settings extends React.Component<Settings.Props, {}> {
                 icon={icon}
                 label={label}
               />
-            )
+            );
           })}
         </div>
       </div>
-    )
+    );
   }
 }

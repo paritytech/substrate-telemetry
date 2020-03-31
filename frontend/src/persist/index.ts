@@ -1,3 +1,3 @@
-export * from './Persistent'
-export * from './PersistentObject'
-export * from './PersistentSet'
+export * from './Persistent';
+export * from './PersistentObject';
+export * from './PersistentSet';

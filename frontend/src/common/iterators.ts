@@ -3,7 +3,7 @@ export function* map<T, U>(
   fn: (item: T) => U
 ): IterableIterator<U> {
   for (const item of iter) {
-    yield fn(item)
+    yield fn(item);
   }
 }
 
@@ -11,22 +11,22 @@ export function* chain<T>(
   a: IterableIterator<T>,
   b: IterableIterator<T>
 ): IterableIterator<T> {
-  yield* a
-  yield* b
+  yield* a;
+  yield* b;
 }
 
 export function* zip<T, U>(
   a: IterableIterator<T>,
   b: IterableIterator<U>
 ): IterableIterator<[T, U]> {
-  let itemA = a.next()
-  let itemB = b.next()
+  let itemA = a.next();
+  let itemB = b.next();
 
   while (!itemA.done && !itemB.done) {
-    yield [itemA.value, itemB.value]
+    yield [itemA.value, itemB.value];
 
-    itemA = a.next()
-    itemB = b.next()
+    itemA = a.next();
+    itemB = b.next();
   }
 }
 
@@ -36,10 +36,10 @@ export function* take<T>(
 ): IterableIterator<T> {
   for (const item of iter) {
     if (n-- === 0) {
-      return
+      return;
     }
 
-    yield item
+    yield item;
   }
 }
 
@@ -49,7 +49,7 @@ export function skip<T>(
 ): IterableIterator<T> {
   while (n-- !== 0 && !iter.next().done) {}
 
-  return iter
+  return iter;
 }
 
 export function reduce<T, R>(
@@ -58,27 +58,27 @@ export function reduce<T, R>(
   accumulator: R
 ): R {
   for (const item of iter) {
-    accumulator = fn(accumulator, item)
+    accumulator = fn(accumulator, item);
   }
 
-  return accumulator
+  return accumulator;
 }
 
 export function join(
   iter: IterableIterator<{ toString: () => string }>,
   glue: string
 ): string {
-  const first = iter.next()
+  const first = iter.next();
 
   if (first.done) {
-    return ''
+    return '';
   }
 
-  let result = first.value.toString()
+  let result = first.value.toString();
 
   for (const item of iter) {
-    result += glue + item
+    result += glue + item;
   }
 
-  return result
+  return result;
 }

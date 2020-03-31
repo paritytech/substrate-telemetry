@@ -1,24 +1,24 @@
-import * as React from 'react'
+import * as React from 'react';
 
-import './ConnectionInput.css'
+import './ConnectionInput.css';
 function ConnectionInput() {
-  const [connectionURI, setConnectionURI] = React.useState('')
-  const [error, setError] = React.useState('')
+  const [connectionURI, setConnectionURI] = React.useState('');
+  const [error, setError] = React.useState('');
   function handleChange(e) {
-    setError('')
-    const val = e.target.value
-    setConnectionURI(val)
+    setError('');
+    const val = e.target.value;
+    setConnectionURI(val);
   }
   function handleSubmit(e) {
-    e.preventDefault()
-    const matcher = /^(ws|wss)/g
+    e.preventDefault();
+    const matcher = /^(ws|wss)/g;
 
-    const matches = connectionURI.match(matcher)
-    console.log(matches)
+    const matches = connectionURI.match(matcher);
+    console.log(matches);
     if (!matches || matches.length !== 1) {
-      setError('Please check your URL')
+      setError('Please check your URL');
     } else {
-      localStorage.setItem('connectionURI', connectionURI)
+      localStorage.setItem('connectionURI', connectionURI);
 
       // window.process_env.SUBSTRATE_TELEMETRY_URL
     }
@@ -39,7 +39,7 @@ function ConnectionInput() {
         <span className="ConnectionInput-error">{error}</span>
       </div>
     </div>
-  )
+  );
 }
 
-export default ConnectionInput
+export default ConnectionInput;

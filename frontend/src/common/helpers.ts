@@ -1,11 +1,11 @@
-import { Milliseconds, Timestamp } from './types'
+import { Milliseconds, Timestamp } from './types';
 
 /**
  * PhantomData akin to Rust, because sometimes you need to be smarter than
  * the compiler.
  */
 export abstract class PhantomData<P> {
-  public __PHANTOM__: P
+  public __PHANTOM__: P;
 }
 
 /**
@@ -18,23 +18,23 @@ export abstract class PhantomData<P> {
  * type MyType = Opaque<number, 'MyType'>;
  * ```
  */
-export type Opaque<T, P> = T & PhantomData<P>
+export type Opaque<T, P> = T & PhantomData<P>;
 
 /**
  * Just a readable shorthand for null-ish-able types, akin to `T?` in Flow.
  */
-export type Maybe<T> = T | null | undefined
+export type Maybe<T> = T | null | undefined;
 
 /**
  * Asynchronous sleep
  */
 export function sleep(time: Milliseconds): Promise<void> {
   return new Promise<void>((resolve, _reject) => {
-    setTimeout(() => resolve(), time)
-  })
+    setTimeout(() => resolve(), time);
+  });
 }
 
-export const timestamp = Date.now as () => Timestamp
+export const timestamp = Date.now as () => Timestamp;
 
 export function noop() {}
 
@@ -43,21 +43,21 @@ export function noop() {}
  * Provides means to get an average of said numbers.
  */
 export class NumStats<T extends number> {
-  private readonly stack: Array<T>
-  private readonly history: number
-  private index = 0
+  private readonly stack: Array<T>;
+  private readonly history: number;
+  private index = 0;
 
   constructor(history: number) {
     if (history < 1) {
-      throw new Error('Must track at least one number')
+      throw new Error('Must track at least one number');
     }
 
-    this.history = history
-    this.stack = new Array(history)
+    this.history = history;
+    this.stack = new Array(history);
   }
 
   public push(val: T) {
-    this.stack[this.index++ % this.history] = val
+    this.stack[this.index++ % this.history] = val;
   }
 
   /**
@@ -67,17 +67,17 @@ export class NumStats<T extends number> {
    */
   public average(): T {
     if (this.index === 0) {
-      return 0 as T
+      return 0 as T;
     }
 
-    const list = this.nonEmpty()
-    let sum = 0
+    const list = this.nonEmpty();
+    let sum = 0;
 
     for (const n of list as Array<number>) {
-      sum += n
+      sum += n;
     }
 
-    return (sum / list.length) as T
+    return (sum / list.length) as T;
   }
 
   /**
@@ -89,30 +89,30 @@ export class NumStats<T extends number> {
    */
   public averageWithoutExtremes(extremes: number): T {
     if (this.index === 0) {
-      return 0 as T
+      return 0 as T;
     }
 
-    const list = this.nonEmpty()
-    const count = list.length - extremes * 2
+    const list = this.nonEmpty();
+    const count = list.length - extremes * 2;
 
     if (count < 1) {
       // Not enough entries to remove desired number of extremes,
       // fall back to regular average
-      return this.average()
+      return this.average();
     }
 
-    let sum = 0
+    let sum = 0;
 
     for (const n of list.sort((a, b) => a - b).slice(extremes, -extremes)) {
-      sum += n
+      sum += n;
     }
 
-    return (sum / count) as T
+    return (sum / count) as T;
   }
 
   private nonEmpty(): Readonly<Array<number>> {
     return this.index < this.history
       ? this.stack.slice(0, this.index)
-      : this.stack
+      : this.stack;
   }
 }

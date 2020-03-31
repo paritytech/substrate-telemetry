@@ -1,67 +1,67 @@
-import * as React from 'react'
+import * as React from 'react';
 import {
   formatNumber,
   trimHash,
   milliOrSecond,
   secondsWithPrecision,
-} from '../../utils'
-import { Ago, Icon, PolkadotIcon } from '../'
-import { Node } from '../../state'
+} from '../../utils';
+import { Ago, Icon, PolkadotIcon } from '../';
+import { Node } from '../../state';
 
-import nodeIcon from '../../icons/server.svg'
-import nodeValidatorIcon from '../../icons/shield.svg'
-import nodeTypeIcon from '../../icons/terminal.svg'
-import nodeLocationIcon from '../../icons/location.svg'
-import blockIcon from '../../icons/package.svg'
-import blockHashIcon from '../../icons/file-binary.svg'
-import blockTimeIcon from '../../icons/history.svg'
-import propagationTimeIcon from '../../icons/dashboard.svg'
-import lastTimeIcon from '../../icons/watch.svg'
+import nodeIcon from '../../icons/server.svg';
+import nodeValidatorIcon from '../../icons/shield.svg';
+import nodeTypeIcon from '../../icons/terminal.svg';
+import nodeLocationIcon from '../../icons/location.svg';
+import blockIcon from '../../icons/package.svg';
+import blockHashIcon from '../../icons/file-binary.svg';
+import blockTimeIcon from '../../icons/history.svg';
+import propagationTimeIcon from '../../icons/dashboard.svg';
+import lastTimeIcon from '../../icons/watch.svg';
 
-import './Location.css'
+import './Location.css';
 
 export namespace Location {
-  export type Quarter = 0 | 1 | 2 | 3
+  export type Quarter = 0 | 1 | 2 | 3;
 
   export interface Props {
-    node: Node
-    position: Position
-    focused: boolean
+    node: Node;
+    position: Position;
+    focused: boolean;
   }
 
   export interface Position {
-    left: number
-    top: number
-    quarter: Quarter
+    left: number;
+    top: number;
+    quarter: Quarter;
   }
 
   export interface State {
-    hover: boolean
+    hover: boolean;
   }
 }
 
 export class Location extends React.Component<Location.Props, Location.State> {
-  public readonly state = { hover: false }
+  public readonly state = { hover: false };
 
   public render() {
-    const { node, position, focused } = this.props
-    const { left, top, quarter } = position
-    const { height, propagationTime, city } = node
+    const { node, position, focused } = this.props;
+    const { left, top, quarter } = position;
+    const { height, propagationTime, city } = node;
 
     if (!city) {
-      return null
+      return null;
     }
 
-    let className = `Location Location-quarter${quarter}`
+    let className = `Location Location-quarter${quarter}`;
 
     if (focused) {
       if (propagationTime != null) {
-        className += ' Location-synced'
+        className += ' Location-synced';
       } else if (height % 2 === 1) {
-        className += ' Location-odd'
+        className += ' Location-odd';
       }
     } else {
-      className += ' Location-dimmed'
+      className += ' Location-dimmed';
     }
 
     return (
@@ -74,7 +74,7 @@ export class Location extends React.Component<Location.Props, Location.State> {
         {this.state.hover ? this.renderDetails() : null}
         <div className="Location-ping" />
       </div>
-    )
+    );
   }
 
   private renderDetails() {
@@ -89,9 +89,9 @@ export class Location extends React.Component<Location.Props, Location.State> {
       blockTimestamp,
       propagationTime,
       city,
-    } = this.props.node
+    } = this.props.node;
 
-    let validatorRow = null
+    let validatorRow = null;
 
     if (validator) {
       validatorRow = (
@@ -106,7 +106,7 @@ export class Location extends React.Component<Location.Props, Location.State> {
             </span>
           </td>
         </tr>
-      )
+      );
     }
 
     return (
@@ -167,14 +167,14 @@ export class Location extends React.Component<Location.Props, Location.State> {
           </tr>
         </tbody>
       </table>
-    )
+    );
   }
 
   private onMouseOver = () => {
-    this.setState({ hover: true })
-  }
+    this.setState({ hover: true });
+  };
 
   private onMouseOut = () => {
-    this.setState({ hover: false })
-  }
+    this.setState({ hover: false });
+  };
 }

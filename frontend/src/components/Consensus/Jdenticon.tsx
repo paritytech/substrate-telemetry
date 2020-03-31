@@ -1,31 +1,31 @@
-import * as React from 'react'
+import * as React from 'react';
 
-import './Jdenticon.css'
+import './Jdenticon.css';
 
 export interface Props {
-  hash: string
-  size: string
+  hash: string;
+  size: string;
 }
 
 class Jdenticon extends React.Component<Props, {}> {
-  private element = null
+  private element = null;
 
   public componentDidUpdate() {
-    const jdenticon = (window as any).jdenticon
+    const jdenticon = (window as any).jdenticon;
     if (jdenticon) {
-      jdenticon.update(this.element)
+      jdenticon.update(this.element);
     }
   }
 
   public componentDidMount() {
-    const jdenticon = (window as any).jdenticon
+    const jdenticon = (window as any).jdenticon;
     if (jdenticon) {
-      jdenticon.update(this.element)
+      jdenticon.update(this.element);
     }
   }
 
   public render() {
-    const { hash, size } = this.props
+    const { hash, size } = this.props;
     return (
       <svg
         className="Jdenticon"
@@ -34,12 +34,12 @@ class Jdenticon extends React.Component<Props, {}> {
         height={size}
         data-jdenticon-value={hash}
       />
-    )
+    );
   }
 
   private handleRef(element: any) {
-    this.element = element
+    this.element = element;
   }
 }
 
-export default Jdenticon
+export default Jdenticon;
