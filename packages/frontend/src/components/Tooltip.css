@@ -12,7 +12,7 @@
   left: 50%;
   transform: translateX(-50%);
   display: none;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
   pointer-events: none;
   transition: color 0.15s ease-in-out;
 }

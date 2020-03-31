@@ -1,5 +1,5 @@
 .Setting {
-  color: #635F5F;
+  color: #635f5f;
   padding: 0;
   margin: 0 0 8px 0;
   cursor: pointer;
@@ -25,8 +25,8 @@
 }
 
 .Setting-on .Setting-switch {
-  background: #E6007A;
-  border-color: #E6007A;
+  background: #e6007a;
+  border-color: #e6007a;
 }
 
 .Setting-knob {

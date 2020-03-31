@@ -1,5 +1,5 @@
 .Consensus .ConsensusList {
-  opacity: 0.0; /* the box should only show up once flexing has been applied */
+  opacity: 0; /* the box should only show up once flexing has been applied */
 }
 
 .Consensus .ConsensusList table {
@@ -10,11 +10,11 @@
   display: flex;
   align-items: stretch;
   flex-direction: row;
-  opacity: 1.0;
+  opacity: 1;
 }
 
 .Consensus .flexContainerLargeRow .firstInRow {
-  width: 100%
+  width: 100%;
 }
 
 .Consensus .flexContainerLargeRow .firstInRow .emptylegend,
@@ -29,7 +29,7 @@
   align-items: stretch;
   flex-direction: row;
   flex-wrap: wrap;
-  opacity: 1.0;
+  opacity: 1;
 }
 
 .Consensus .flexContainerSmallRow div {

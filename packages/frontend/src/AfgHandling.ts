@@ -8,19 +8,19 @@ export class AfgHandling {
   private updateState: UpdateBound;
   private getState: () => Readonly<State>;
 
-  constructor(
-    updateState: UpdateBound,
-    getState: () => Readonly<State>,
-  ) {
+  constructor(updateState: UpdateBound, getState: () => Readonly<State>) {
     this.updateState = updateState;
     this.getState = getState;
   }
 
   public receivedAuthoritySet(
     authoritySetId: Types.AuthoritySetId,
-    authorities: Types.Authorities,
+    authorities: Types.Authorities
   ) {
-    if (this.getState().authoritySetId != null && authoritySetId !== this.getState().authoritySetId) {
+    if (
+      this.getState().authoritySetId != null &&
+      authoritySetId !== this.getState().authoritySetId
+    ) {
       // the visualization is restarted when we receive a new auhority set
       this.updateState({
         authoritySetId,
@@ -43,12 +43,12 @@ export class AfgHandling {
   public receivedFinalized(
     addr: Types.Address,
     finalizedNumber: Types.BlockNumber,
-    finalizedHash: Types.BlockHash,
+    finalizedHash: Types.BlockHash
   ) {
     const state = this.getState();
     if (finalizedNumber < state.best - BLOCKS_LIMIT) {
       return;
-    };
+    }
 
     const data = {
       Finalized: true,
@@ -62,15 +62,26 @@ export class AfgHandling {
       Prevote: true,
       Precommit: true,
     } as Types.ConsensusDetail;
-    this.initialiseConsensusView(state.consensusInfo, finalizedNumber, addr, addr);
+    this.initialiseConsensusView(
+      state.consensusInfo,
+      finalizedNumber,
+      addr,
+      addr
+    );
 
-    this.updateConsensusInfo(state.consensusInfo, finalizedNumber, addr, addr, data as Partial<Types.ConsensusDetail>);
+    this.updateConsensusInfo(
+      state.consensusInfo,
+      finalizedNumber,
+      addr,
+      addr,
+      data as Partial<Types.ConsensusDetail>
+    );
 
     // Finalizing a block implicitly includes finalizing all
     // preceding blocks. This function marks the preceding
     // blocks as implicitly finalized on and stores a pointer
     // to the block which contains the explicit finalization.
-    const op = (i: Types.BlockNumber, index: number) : boolean => {
+    const op = (i: Types.BlockNumber, index: number): boolean => {
       const consensusDetail = state.consensusInfo[index][1][addr][addr];
       if (consensusDetail.Finalized || consensusDetail.ImplicitFinalized) {
         return false;
@@ -96,7 +107,7 @@ export class AfgHandling {
     this.backfill(state.consensusInfo, finalizedNumber, op, addr, addr);
 
     this.pruneBlocks(state.consensusInfo);
-    this.updateState({consensusInfo: state.consensusInfo});
+    this.updateState({ consensusInfo: state.consensusInfo });
   }
 
   public receivedPre(
@@ -104,37 +115,48 @@ export class AfgHandling {
     height: Types.BlockNumber,
     hash: Types.BlockHash,
     voter: Types.Address,
-    what: string,
+    what: string
   ) {
     const state = this.getState();
     if (height < state.best - BLOCKS_LIMIT) {
       return;
-    };
+    }
 
-    const data = what === "prevote" ? { Prevote: true } : { Precommit: true };
+    const data = what === 'prevote' ? { Prevote: true } : { Precommit: true };
     this.initialiseConsensusView(state.consensusInfo, height, addr, voter);
-    this.updateConsensusInfo(state.consensusInfo, height, addr, voter, data as Partial<Types.ConsensusDetail>);
+    this.updateConsensusInfo(
+      state.consensusInfo,
+      height,
+      addr,
+      voter,
+      data as Partial<Types.ConsensusDetail>
+    );
 
     // A Prevote or Precommit on a block implicitly includes
     // a vote on all preceding blocks. This function marks
     // the preceding blocks as implicitly voted on and stores
     // a pointer to the block which contains the explicit vote.
-    const op = (i: Types.BlockNumber, index: number) : boolean => {
+    const op = (i: Types.BlockNumber, index: number): boolean => {
       const consensusDetail = state.consensusInfo[index][1][addr][voter];
-      if (what === "prevote" && (consensusDetail.Prevote || consensusDetail.ImplicitPrevote)) {
+      if (
+        what === 'prevote' &&
+        (consensusDetail.Prevote || consensusDetail.ImplicitPrevote)
+      ) {
         return false;
       }
-      if (what === "precommit" && (consensusDetail.Precommit || consensusDetail.ImplicitPrecommit)
-
-          // because of extrapolation a prevote needs to be set as well.
-          // if it is not we continue backfilling (and set it during that process).
-          && (consensusDetail.Prevote || consensusDetail.ImplicitPrevote)) {
+      if (
+        what === 'precommit' &&
+        (consensusDetail.Precommit || consensusDetail.ImplicitPrecommit) &&
+        // because of extrapolation a prevote needs to be set as well.
+        // if it is not we continue backfilling (and set it during that process).
+        (consensusDetail.Prevote || consensusDetail.ImplicitPrevote)
+      ) {
         return false;
       }
 
-      if (what === "prevote") {
+      if (what === 'prevote') {
         consensusInfo[index][1][addr][voter].ImplicitPrevote = true;
-      } else if (what === "precommit") {
+      } else if (what === 'precommit') {
         consensusInfo[index][1][addr][voter].ImplicitPrecommit = true;
 
         // Extrapolate. Precommit implies Prevote.
@@ -147,7 +169,7 @@ export class AfgHandling {
     this.backfill(consensusInfo, height, op, addr, voter);
 
     this.pruneBlocks(consensusInfo);
-    this.updateState({consensusInfo});
+    this.updateState({ consensusInfo });
   }
 
   // Initializes the `ConsensusView` with empty objects.
@@ -155,10 +177,9 @@ export class AfgHandling {
     consensusInfo: Types.ConsensusInfo,
     height: Types.BlockNumber,
     own: Types.Address,
-    other: Types.Address,
+    other: Types.Address
   ) {
-    const found =
-      consensusInfo.find(([blockNumber,]) => blockNumber === height);
+    const found = consensusInfo.find(([blockNumber]) => blockNumber === height);
 
     let consensusView;
     if (found) {
@@ -170,7 +191,9 @@ export class AfgHandling {
       this.initialiseConsensusViewByRef(consensusView, own, other);
 
       const item: Types.ConsensusItem = [height, consensusView];
-      const insertPos = consensusInfo.findIndex(([elHeight, elView]) => elHeight < height);
+      const insertPos = consensusInfo.findIndex(
+        ([elHeight, elView]) => elHeight < height
+      );
       if (insertPos >= 0) {
         consensusInfo.splice(insertPos, 0, item);
       } else {
@@ -183,7 +206,7 @@ export class AfgHandling {
   private initialiseConsensusViewByRef(
     consensusView: Types.ConsensusView,
     own: Types.Address,
-    other: Types.Address,
+    other: Types.Address
   ) {
     if (!consensusView[own]) {
       consensusView[own] = {} as Types.ConsensusState;
@@ -204,7 +227,7 @@ export class AfgHandling {
     start: Types.BlockNumber,
     f: (i: Types.BlockNumber, index: number) => boolean,
     own: Types.Address,
-    other: Types.Address,
+    other: Types.Address
   ) {
     // if this is the first block then we don't fill latter blocks
     // if there is only one block, then it also doesn't make
@@ -241,8 +264,9 @@ export class AfgHandling {
 
       const startBlockNumber = start as Types.BlockNumber;
       this.initialiseConsensusView(consensusInfo, startBlockNumber, own, other);
-      const index =
-        consensusInfo.findIndex(([blockNumber,]) => blockNumber === start);
+      const index = consensusInfo.findIndex(
+        ([blockNumber]) => blockNumber === start
+      );
       const cont = f(start, index);
       if (!cont) {
         break;
@@ -261,10 +285,11 @@ export class AfgHandling {
     height: Types.BlockNumber,
     addr: Types.Address,
     voter: Types.Address,
-    data: Partial<Types.ConsensusDetail>,
+    data: Partial<Types.ConsensusDetail>
   ) {
-    const found =
-      consensusInfo.findIndex(([blockNumber,]) => blockNumber === height);
+    const found = consensusInfo.findIndex(
+      ([blockNumber]) => blockNumber === height
+    );
     if (found < 0) {
       return;
     }

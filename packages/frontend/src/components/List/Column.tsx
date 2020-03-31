@@ -3,7 +3,12 @@ import { Types, Maybe, timestamp } from '@dotstats/common';
 import { State, Node } from '../../state';
 import { Truncate } from './';
 import { Ago, Icon, Tooltip, Sparkline, PolkadotIcon } from '../';
-import { formatNumber, getHashData, milliOrSecond, secondsWithPrecision } from '../../utils';
+import {
+  formatNumber,
+  getHashData,
+  milliOrSecond,
+  secondsWithPrecision,
+} from '../../utils';
 
 export interface Column {
   label: string;
@@ -64,17 +69,17 @@ const ICONS = {
   'edgeware-node': edgewareIcon,
   'Edgeware Node': edgewareIcon,
   'joystream-node': joystreamIcon,
-  'ChainX': chainXIcon,
+  ChainX: chainXIcon,
   'ladder-node': ladderIcon,
   'cennznet-node': cennznetIcon,
-  'Darwinia': darwiniaIcon,
+  Darwinia: darwiniaIcon,
   'Darwinia Testnet': darwiniaIcon,
   'turing-node': turingIcon,
-  'dothereum': dothereumIcon,
-  'katalchain': katalchainIcon,
+  dothereum: dothereumIcon,
+  katalchain: katalchainIcon,
   'bifrost-node': bifrostIcon,
   'totem-meccano-node': totemIcon,
-  'Totem': totemIcon,
+  Totem: totemIcon,
 };
 
 export namespace Column {
@@ -82,7 +87,7 @@ export namespace Column {
     label: 'Node',
     icon: nodeIcon,
     sortBy: ({ sortableName }) => sortableName,
-    render: ({ name }) => <Truncate text={name} position="left" />
+    render: ({ name }) => <Truncate text={name} position="left" />,
   };
 
   export const VALIDATOR: Column = {
@@ -92,8 +97,16 @@ export namespace Column {
     setting: 'validator',
     sortBy: ({ validator }) => validator || '',
     render: ({ validator }) => {
-      return validator ? <Tooltip text={validator} copy={true}><span className="Row-validator"><PolkadotIcon account={validator} size={16} /></span></Tooltip> : '-';
-    }
+      return validator ? (
+        <Tooltip text={validator} copy={true}>
+          <span className="Row-validator">
+            <PolkadotIcon account={validator} size={16} />
+          </span>
+        </Tooltip>
+      ) : (
+        '-'
+      );
+    },
   };
 
   export const LOCATION: Column = {
@@ -102,7 +115,8 @@ export namespace Column {
     width: 140,
     setting: 'location',
     sortBy: ({ city }) => city || '',
-    render: ({ city }) => city ? <Truncate position="left" text={city} /> : '-'
+    render: ({ city }) =>
+      city ? <Truncate position="left" text={city} /> : '-',
   };
 
   export const IMPLEMENTATION: Column = {
@@ -120,7 +134,7 @@ export namespace Column {
           <Icon src={implIcon} /> {semver}
         </Tooltip>
       );
-    }
+    },
   };
 
   export const NETWORK_ID: Column = {
@@ -129,7 +143,8 @@ export namespace Column {
     width: 90,
     setting: 'networkId',
     sortBy: ({ networkId }) => networkId || '',
-    render: ({ networkId }) => networkId ? <Truncate position="left" text={networkId} /> : '-'
+    render: ({ networkId }) =>
+      networkId ? <Truncate position="left" text={networkId} /> : '-',
   };
 
   export const PEERS: Column = {
@@ -138,7 +153,7 @@ export namespace Column {
     width: 26,
     setting: 'peers',
     sortBy: ({ peers }) => peers,
-    render: ({ peers }) => `${peers}`
+    render: ({ peers }) => `${peers}`,
   };
 
   export const TXS: Column = {
@@ -147,7 +162,7 @@ export namespace Column {
     width: 26,
     setting: 'txs',
     sortBy: ({ txs }) => txs,
-    render: ({ txs }) => `${txs}`
+    render: ({ txs }) => `${txs}`,
   };
 
   export const CPU: Column = {
@@ -155,16 +170,24 @@ export namespace Column {
     icon: cpuIcon,
     width: 40,
     setting: 'cpu',
-    sortBy: ({ cpu }) => cpu.length < 3 ? 0 : cpu[cpu.length - 1],
+    sortBy: ({ cpu }) => (cpu.length < 3 ? 0 : cpu[cpu.length - 1]),
     render: ({ cpu, chartstamps }) => {
       if (cpu.length < 3) {
         return '-';
       }
 
       return (
-        <Sparkline width={44} height={16} stroke={1} format={formatCPU} values={cpu} stamps={chartstamps} minScale={100} />
+        <Sparkline
+          width={44}
+          height={16}
+          stroke={1}
+          format={formatCPU}
+          values={cpu}
+          stamps={chartstamps}
+          minScale={100}
+        />
       );
-    }
+    },
   };
 
   export const MEM: Column = {
@@ -172,16 +195,24 @@ export namespace Column {
     icon: memoryIcon,
     width: 40,
     setting: 'mem',
-    sortBy: ({ mem }) => mem.length < 3 ? 0 : mem[mem.length - 1],
+    sortBy: ({ mem }) => (mem.length < 3 ? 0 : mem[mem.length - 1]),
     render: ({ mem, chartstamps }) => {
       if (mem.length < 3) {
         return '-';
       }
 
       return (
-        <Sparkline width={44} height={16} stroke={1} format={formatMemory} values={mem} stamps={chartstamps} minScale={MEMORY_SCALE} />
+        <Sparkline
+          width={44}
+          height={16}
+          stroke={1}
+          format={formatMemory}
+          values={mem}
+          stamps={chartstamps}
+          minScale={MEMORY_SCALE}
+        />
       );
-    }
+    },
   };
 
   export const UPLOAD: Column = {
@@ -189,16 +220,24 @@ export namespace Column {
     icon: uploadIcon,
     width: 40,
     setting: 'upload',
-    sortBy: ({ upload }) => upload.length < 3 ? 0 : upload[upload.length - 1],
+    sortBy: ({ upload }) => (upload.length < 3 ? 0 : upload[upload.length - 1]),
     render: ({ upload, chartstamps }) => {
       if (upload.length < 3) {
         return '-';
       }
 
       return (
-        <Sparkline width={44} height={16} stroke={1} format={formatBandwidth} values={upload} stamps={chartstamps} minScale={BANDWIDTH_SCALE} />
+        <Sparkline
+          width={44}
+          height={16}
+          stroke={1}
+          format={formatBandwidth}
+          values={upload}
+          stamps={chartstamps}
+          minScale={BANDWIDTH_SCALE}
+        />
       );
-    }
+    },
   };
 
   export const DOWNLOAD: Column = {
@@ -206,16 +245,25 @@ export namespace Column {
     icon: downloadIcon,
     width: 40,
     setting: 'download',
-    sortBy: ({ download }) => download.length < 3 ? 0 : download[download.length - 1],
+    sortBy: ({ download }) =>
+      download.length < 3 ? 0 : download[download.length - 1],
     render: ({ download, chartstamps }) => {
       if (download.length < 3) {
         return '-';
       }
 
       return (
-        <Sparkline width={44} height={16} stroke={1} format={formatBandwidth} values={download} stamps={chartstamps} minScale={BANDWIDTH_SCALE} />
+        <Sparkline
+          width={44}
+          height={16}
+          stroke={1}
+          format={formatBandwidth}
+          values={download}
+          stamps={chartstamps}
+          minScale={BANDWIDTH_SCALE}
+        />
       );
-    }
+    },
   };
 
   export const STATE_CACHE: Column = {
@@ -223,16 +271,25 @@ export namespace Column {
     icon: stateIcon,
     width: 40,
     setting: 'stateCacheSize',
-    sortBy: ({ stateCacheSize }) => stateCacheSize.length < 3 ? 0 : stateCacheSize[stateCacheSize.length - 1],
+    sortBy: ({ stateCacheSize }) =>
+      stateCacheSize.length < 3 ? 0 : stateCacheSize[stateCacheSize.length - 1],
     render: ({ stateCacheSize, chartstamps }) => {
       if (stateCacheSize.length < 3) {
         return '-';
       }
 
       return (
-        <Sparkline width={44} height={16} stroke={1} format={formatBytes} values={stateCacheSize} stamps={chartstamps} minScale={MEMORY_SCALE} />
+        <Sparkline
+          width={44}
+          height={16}
+          stroke={1}
+          format={formatBytes}
+          values={stateCacheSize}
+          stamps={chartstamps}
+          minScale={MEMORY_SCALE}
+        />
       );
-    }
+    },
   };
 
   export const DB_CACHE: Column = {
@@ -240,16 +297,25 @@ export namespace Column {
     icon: databaseIcon,
     width: 40,
     setting: 'dbCacheSize',
-    sortBy: ({ dbCacheSize }) => dbCacheSize.length < 3 ? 0 : dbCacheSize[dbCacheSize.length - 1],
+    sortBy: ({ dbCacheSize }) =>
+      dbCacheSize.length < 3 ? 0 : dbCacheSize[dbCacheSize.length - 1],
     render: ({ dbCacheSize, chartstamps }) => {
       if (dbCacheSize.length < 3) {
         return '-';
       }
 
       return (
-        <Sparkline width={44} height={16} stroke={1} format={formatBytes} values={dbCacheSize} stamps={chartstamps} minScale={MEMORY_SCALE} />
+        <Sparkline
+          width={44}
+          height={16}
+          stroke={1}
+          format={formatBytes}
+          values={dbCacheSize}
+          stamps={chartstamps}
+          minScale={MEMORY_SCALE}
+        />
       );
-    }
+    },
   };
 
   export const DISK_READ: Column = {
@@ -257,16 +323,25 @@ export namespace Column {
     icon: readIcon,
     width: 40,
     setting: 'diskRead',
-    sortBy: ({ diskRead }) => diskRead.length < 3 ? 0 : diskRead[diskRead.length - 1],
+    sortBy: ({ diskRead }) =>
+      diskRead.length < 3 ? 0 : diskRead[diskRead.length - 1],
     render: ({ diskRead, chartstamps }) => {
       if (diskRead.length < 3) {
         return '-';
       }
 
       return (
-        <Sparkline width={44} height={16} stroke={1} format={formatBandwidth} values={diskRead} stamps={chartstamps} minScale={MEMORY_SCALE} />
+        <Sparkline
+          width={44}
+          height={16}
+          stroke={1}
+          format={formatBandwidth}
+          values={diskRead}
+          stamps={chartstamps}
+          minScale={MEMORY_SCALE}
+        />
       );
-    }
+    },
   };
 
   export const DISK_WRITE: Column = {
@@ -274,16 +349,25 @@ export namespace Column {
     icon: writeIcon,
     width: 40,
     setting: 'diskWrite',
-    sortBy: ({ diskWrite }) => diskWrite.length < 3 ? 0 : diskWrite[diskWrite.length - 1],
+    sortBy: ({ diskWrite }) =>
+      diskWrite.length < 3 ? 0 : diskWrite[diskWrite.length - 1],
     render: ({ diskWrite, chartstamps }) => {
       if (diskWrite.length < 3) {
         return '-';
       }
 
       return (
-        <Sparkline width={44} height={16} stroke={1} format={formatBandwidth} values={diskWrite} stamps={chartstamps} minScale={MEMORY_SCALE} />
+        <Sparkline
+          width={44}
+          height={16}
+          stroke={1}
+          format={formatBandwidth}
+          values={diskWrite}
+          stamps={chartstamps}
+          minScale={MEMORY_SCALE}
+        />
       );
-    }
+    },
   };
 
   export const BLOCK_NUMBER: Column = {
@@ -292,7 +376,7 @@ export namespace Column {
     width: 88,
     setting: 'blocknumber',
     sortBy: ({ height }) => height || 0,
-    render: ({ height }) => `#${formatNumber(height)}`
+    render: ({ height }) => `#${formatNumber(height)}`,
   };
 
   export const BLOCK_HASH: Column = {
@@ -301,7 +385,7 @@ export namespace Column {
     width: 154,
     setting: 'blockhash',
     sortBy: ({ hash }) => hash || '',
-    render: ({ hash }) => <Truncate position="right" text={hash} copy={true} />
+    render: ({ hash }) => <Truncate position="right" text={hash} copy={true} />,
   };
 
   export const FINALIZED: Column = {
@@ -310,7 +394,7 @@ export namespace Column {
     width: 88,
     setting: 'finalized',
     sortBy: ({ finalized }) => finalized || 0,
-    render: ({ finalized }) => `#${formatNumber(finalized)}`
+    render: ({ finalized }) => `#${formatNumber(finalized)}`,
   };
 
   export const FINALIZED_HASH: Column = {
@@ -319,7 +403,9 @@ export namespace Column {
     width: 154,
     setting: 'finalizedhash',
     sortBy: ({ finalizedHash }) => finalizedHash || '',
-    render: ({ finalizedHash }) => <Truncate position="right" text={finalizedHash} copy={true} />
+    render: ({ finalizedHash }) => (
+      <Truncate position="right" text={finalizedHash} copy={true} />
+    ),
   };
 
   export const BLOCK_TIME: Column = {
@@ -327,8 +413,8 @@ export namespace Column {
     icon: blockTimeIcon,
     width: 80,
     setting: 'blocktime',
-    sortBy: ({ blockTime }) => blockTime == null ? Infinity : blockTime,
-    render: ({ blockTime }) => `${secondsWithPrecision(blockTime/1000)}`
+    sortBy: ({ blockTime }) => (blockTime == null ? Infinity : blockTime),
+    render: ({ blockTime }) => `${secondsWithPrecision(blockTime / 1000)}`,
   };
 
   export const BLOCK_PROPAGATION: Column = {
@@ -336,8 +422,10 @@ export namespace Column {
     icon: propagationTimeIcon,
     width: 58,
     setting: 'blockpropagation',
-    sortBy: ({ propagationTime }) => propagationTime == null ? Infinity : propagationTime,
-    render: ({ propagationTime }) => propagationTime == null ? '∞' : milliOrSecond(propagationTime)
+    sortBy: ({ propagationTime }) =>
+      propagationTime == null ? Infinity : propagationTime,
+    render: ({ propagationTime }) =>
+      propagationTime == null ? '∞' : milliOrSecond(propagationTime),
   };
 
   export const BLOCK_LAST_TIME: Column = {
@@ -346,7 +434,7 @@ export namespace Column {
     width: 100,
     setting: 'blocklasttime',
     sortBy: ({ blockTimestamp }) => blockTimestamp || 0,
-    render: ({ blockTimestamp }) => <Ago when={blockTimestamp} />
+    render: ({ blockTimestamp }) => <Ago when={blockTimestamp} />,
   };
 
   export const UPTIME: Column = {
@@ -355,7 +443,7 @@ export namespace Column {
     width: 58,
     setting: 'uptime',
     sortBy: ({ connectedAt }) => connectedAt || 0,
-    render: ({ connectedAt }) => <Ago when={connectedAt} justTime={true} />
+    render: ({ connectedAt }) => <Ago when={connectedAt} justTime={true} />,
   };
 
   export const NETWORK_STATE: Column = {
@@ -371,33 +459,40 @@ export namespace Column {
       }
 
       const uri = `${URI_BASE}${encodeURIComponent(chainLabel)}/${id}/`;
-      return <a href={uri} target="_blank"><Icon src={externalLinkIcon} /></a>;
+      return (
+        <a href={uri} target="_blank">
+          <Icon src={externalLinkIcon} />
+        </a>
+      );
     },
   };
-};
+}
 
 const SEMVER_PATTERN = /^\d+\.\d+\.\d+/;
 const BANDWIDTH_SCALE = 1024 * 1024;
 const MEMORY_SCALE = 2 * 1024 * 1024;
-const URI_BASE = window.location.protocol === 'https:'
-                                    ? `/network_state/`
-                                    : `http://${window.location.hostname}:8000/network_state/`;
+const URI_BASE =
+  window.location.protocol === 'https:'
+    ? `/network_state/`
+    : `http://${window.location.hostname}:8000/network_state/`;
 
 function formatStamp(stamp: Types.Timestamp): string {
-  const passed = (timestamp() - stamp) / 1000 | 0;
+  const passed = ((timestamp() - stamp) / 1000) | 0;
 
-  const hours = passed / 3600 | 0;
-  const minutes = (passed % 3600) / 60 | 0;
-  const seconds = (passed % 60) | 0;
+  const hours = (passed / 3600) | 0;
+  const minutes = ((passed % 3600) / 60) | 0;
+  const seconds = passed % 60 | 0;
 
-  return hours ? `${hours}h ago`
-       : minutes ? `${minutes}m ago`
-       : `${seconds}s ago`;
+  return hours
+    ? `${hours}h ago`
+    : minutes
+    ? `${minutes}m ago`
+    : `${seconds}s ago`;
 }
 
 function formatMemory(kbs: number, stamp: Maybe<Types.Timestamp>): string {
   const ago = stamp ? ` (${formatStamp(stamp)})` : '';
-  const mbs = kbs / 1024 | 0;
+  const mbs = (kbs / 1024) | 0;
 
   if (mbs >= 1000) {
     return `${(mbs / 1024).toFixed(1)} GB${ago}`;
@@ -434,10 +529,7 @@ function formatBandwidth(bps: number, stamp: Maybe<Types.Timestamp>): string {
 
 function formatCPU(cpu: number, stamp: Maybe<Types.Timestamp>): string {
   const ago = stamp ? ` (${formatStamp(stamp)})` : '';
-  const fractionDigits = cpu > 100 ? 0
-                       : cpu > 10 ? 1
-                       : cpu > 1 ? 2
-                       : 3;
+  const fractionDigits = cpu > 100 ? 0 : cpu > 10 ? 1 : cpu > 1 ? 2 : 3;
 
   return `${cpu.toFixed(fractionDigits)}%${ago}`;
 }

@@ -1,5 +1,5 @@
 .Row {
-  color: #B5AEAE;
+  color: #b5aeae;
   cursor: pointer;
 }
 
@@ -12,7 +12,8 @@
   text-decoration: underline;
 }
 
-.Row-Header th, .Row td {
+.Row-Header th,
+.Row td {
   text-align: left;
   padding: 6px 13px;
   height: 19px;
@@ -32,7 +33,7 @@
 
 .Row-Header th.HeaderCell-sorted {
   cursor: pointer;
-  background: #E6007A;
+  background: #e6007a;
   color: #fff;
 }
 
@@ -57,17 +58,17 @@
 }
 
 .Row-pinned td:first-child {
-  border-left: 3px solid #E6007A;
+  border-left: 3px solid #e6007a;
   padding-left: 10px;
 }
 
 .Row-pinned td:last-child {
-  border-right: 3px solid #E6007A;
+  border-right: 3px solid #e6007a;
   padding-right: 10px;
 }
 
 .Row-pinned.Row-synced {
-  color: #E6007A;
+  color: #e6007a;
 }
 
 .Row-stale {
@@ -75,7 +76,7 @@
 }
 
 .Row:hover {
-  background-color: #1E1E1E;
+  background-color: #1e1e1e;
 }
 
 .Row-validator {

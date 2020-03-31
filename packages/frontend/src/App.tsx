@@ -52,8 +52,8 @@ export default class App extends React.Component<{}, State> {
         const selectedColumns = this.selectedColumns(settings);
 
         this.sortBy.set(null);
-        this.setState({ settings, selectedColumns, sortBy: null })
-      },
+        this.setState({ settings, selectedColumns, sortBy: null });
+      }
     );
 
     this.pins = new PersistentSet<Types.NodeName>('pinned_names', (pins) => {
@@ -105,7 +105,7 @@ export default class App extends React.Component<{}, State> {
       return this.state;
     });
 
-    setInterval(() => this.chainsCache = [], 10000); // Wipe sorted chains cache every 10 seconds
+    setInterval(() => (this.chainsCache = []), 10000); // Wipe sorted chains cache every 10 seconds
   }
 
   public render() {
@@ -123,15 +123,30 @@ export default class App extends React.Component<{}, State> {
       );
     }
 
-    const overlay = tab === 'all-chains'
-      ? <AllChains chains={chains} subscribed={subscribed} connection={this.connection} />
-      : null;
+    const overlay =
+      tab === 'all-chains' ? (
+        <AllChains
+          chains={chains}
+          subscribed={subscribed}
+          connection={this.connection}
+        />
+      ) : null;
 
     return (
       <div className="App">
         <OfflineIndicator status={status} />
-        <Chains chains={chains} subscribed={subscribed} connection={this.connection} />
-        <Chain appState={this.state} connection={this.connection} settings={this.settings} pins={this.pins} sortBy={this.sortBy} />
+        <Chains
+          chains={chains}
+          subscribed={subscribed}
+          connection={this.connection}
+        />
+        <Chain
+          appState={this.state}
+          connection={this.connection}
+          settings={this.settings}
+          pins={this.pins}
+          sortBy={this.sortBy}
+        />
         {overlay}
       </div>
     );
@@ -148,7 +163,8 @@ export default class App extends React.Component<{}, State> {
   }
 
   private onKeyPress = (event: KeyboardEvent) => {
-    if (event.keyCode !== 9) { // TAB KEY
+    if (event.keyCode !== 9) {
+      // TAB KEY
       return;
     }
 
@@ -170,41 +186,42 @@ export default class App extends React.Component<{}, State> {
 
     this.connection.then((connection) => {
       connection.subscribe(chains[index]);
-    })
-  }
+    });
+  };
 
   private onHashChange = (event: Event) => {
     const { tab = '' } = getHashData();
 
     this.setState({ tab });
-  }
+  };
 
   private chains(): ChainData[] {
     if (this.chainsCache.length === this.state.chains.size) {
       return this.chainsCache;
     }
 
-    this.chainsCache = stable
-      .inplace(
-        Array.from(this.state.chains.values()),
-        (a, b) => {
-          if (a.label === PINNED_CHAIN) {
-            return -1;
-          }
-
-          if (b.label === PINNED_CHAIN) {
-            return 1;
-          }
-
-          return b.nodeCount - a.nodeCount;
+    this.chainsCache = stable.inplace(
+      Array.from(this.state.chains.values()),
+      (a, b) => {
+        if (a.label === PINNED_CHAIN) {
+          return -1;
         }
-      );
+
+        if (b.label === PINNED_CHAIN) {
+          return 1;
+        }
+
+        return b.nodeCount - a.nodeCount;
+      }
+    );
 
     return this.chainsCache;
   }
 
   private selectedColumns(settings: State.Settings): Column[] {
-    return Row.columns.filter(({ setting }) => setting == null || settings[setting]);
+    return Row.columns.filter(
+      ({ setting }) => setting == null || settings[setting]
+    );
   }
 
   private getComparator(sortBy: Maybe<number>): Compare<Node> {
@@ -228,7 +245,7 @@ export default class App extends React.Component<{}, State> {
           } else {
             return Node.compare(a, b);
           }
-        }
+        };
       }
     }
 

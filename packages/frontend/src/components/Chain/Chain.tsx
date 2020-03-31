@@ -65,21 +65,57 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     return (
       <div className="Chain">
         <div className="Chain-header">
-          <Tile icon={blockIcon} title="Best Block">#{formatNumber(best)}</Tile>
-          <Tile icon={finalizedIcon} title="Finalized Block">#{formatNumber(finalized)}</Tile>
-          <Tile icon={blockTimeIcon} title="Average Time">{ blockAverage == null ? '-' : secondsWithPrecision(blockAverage / 1000) }</Tile>
-          <Tile icon={lastTimeIcon} title="Last Block"><Ago when={blockTimestamp} /></Tile>
+          <Tile icon={blockIcon} title="Best Block">
+            #{formatNumber(best)}
+          </Tile>
+          <Tile icon={finalizedIcon} title="Finalized Block">
+            #{formatNumber(finalized)}
+          </Tile>
+          <Tile icon={blockTimeIcon} title="Average Time">
+            {blockAverage == null
+              ? '-'
+              : secondsWithPrecision(blockAverage / 1000)}
+          </Tile>
+          <Tile icon={lastTimeIcon} title="Last Block">
+            <Ago when={blockTimestamp} />
+          </Tile>
           <div className="Chain-tabs">
-            <Tab icon={listIcon} label="List" display="list" tab="" current={currentTab} setDisplay={this.setDisplay} />
-            <Tab icon={worldIcon} label="Map" display="map" tab="map" current={currentTab} setDisplay={this.setDisplay} />
-            <Tab icon={consensusIcon} label="Consensus" display="consensus" tab="consensus" current={currentTab} setDisplay={this.setDisplay} />
-            <Tab icon={settingsIcon} label="Settings" display="settings" tab="settings" current={currentTab} setDisplay={this.setDisplay} />
+            <Tab
+              icon={listIcon}
+              label="List"
+              display="list"
+              tab=""
+              current={currentTab}
+              setDisplay={this.setDisplay}
+            />
+            <Tab
+              icon={worldIcon}
+              label="Map"
+              display="map"
+              tab="map"
+              current={currentTab}
+              setDisplay={this.setDisplay}
+            />
+            <Tab
+              icon={consensusIcon}
+              label="Consensus"
+              display="consensus"
+              tab="consensus"
+              current={currentTab}
+              setDisplay={this.setDisplay}
+            />
+            <Tab
+              icon={settingsIcon}
+              label="Settings"
+              display="settings"
+              tab="settings"
+              current={currentTab}
+              setDisplay={this.setDisplay}
+            />
           </div>
         </div>
         <div className="Chain-content-container">
-          <div className="Chain-content">
-            {this.renderContent()}
-          </div>
+          <div className="Chain-content">{this.renderContent()}</div>
         </div>
       </div>
     );
@@ -98,10 +134,10 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
       return <Consensus appState={appState} connection={connection} />;
     }
 
-    return (
-      display === 'list'
-        ? <List appState={appState} pins={pins} sortBy={sortBy} />
-        : <Map appState={appState} />
+    return display === 'list' ? (
+      <List appState={appState} pins={pins} sortBy={sortBy} />
+    ) : (
+      <Map appState={appState} />
     );
   }
 

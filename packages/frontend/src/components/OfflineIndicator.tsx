@@ -7,16 +7,22 @@ import upgradeIcon from '../icons/flame.svg';
 
 export namespace OfflineIndicator {
   export interface Props {
-    status: State["status"];
+    status: State['status'];
   }
 }
 
-export function OfflineIndicator(props: OfflineIndicator.Props): React.ReactElement<any> | null {
+export function OfflineIndicator(
+  props: OfflineIndicator.Props
+): React.ReactElement<any> | null {
   switch (props.status) {
     case 'online':
       return null;
     case 'offline':
-      return <div className="OfflineIndicator"><Icon src={offlineIcon} alt="Offline" /></div>;
+      return (
+        <div className="OfflineIndicator">
+          <Icon src={offlineIcon} alt="Offline" />
+        </div>
+      );
     case 'upgrade-requested':
       return (
         <div className="OfflineIndicator OfflineIndicator-upgrade">

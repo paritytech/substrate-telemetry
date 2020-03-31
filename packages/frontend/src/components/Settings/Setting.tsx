@@ -19,7 +19,7 @@ export class Setting extends React.Component<Setting.Props, {}> {
     const { icon, label, setting, settings } = this.props;
 
     const checked = settings.get(setting);
-    const className = checked ? "Setting Setting-on" : "Setting";
+    const className = checked ? 'Setting Setting-on' : 'Setting';
 
     return (
       <div className={className} onClick={this.toggle}>
@@ -36,5 +36,5 @@ export class Setting extends React.Component<Setting.Props, {}> {
     const { setting, settings } = this.props;
 
     settings.set(setting, !settings.get(setting));
-  }
+  };
 }

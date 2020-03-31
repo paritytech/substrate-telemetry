@@ -7,8 +7,10 @@ export class Node {
   public static compare(a: Node, b: Node): number {
     if (a.pinned === b.pinned && a.stale === b.stale) {
       if (a.height === b.height) {
-        const aPropagation = a.propagationTime == null ? Infinity : a.propagationTime as number;
-        const bPropagation = b.propagationTime == null ? Infinity : b.propagationTime as number;
+        const aPropagation =
+          a.propagationTime == null ? Infinity : (a.propagationTime as number);
+        const bPropagation =
+          b.propagationTime == null ? Infinity : (b.propagationTime as number);
 
         // Ascending sort by propagation time
         return aPropagation - bPropagation;
@@ -74,7 +76,7 @@ export class Node {
     nodeHardware: Types.NodeHardware,
     blockDetails: Types.BlockDetails,
     location: Maybe<Types.NodeLocation>,
-    connectedAt: Types.Timestamp,
+    connectedAt: Types.Timestamp
   ) {
     const [name, implementation, version, validator, networkId] = nodeDetails;
 
@@ -88,7 +90,9 @@ export class Node {
     this.networkId = networkId;
     this.connectedAt = connectedAt;
 
-    const [major = 0, minor = 0, patch = 0] = (version || '0.0.0').split('.').map((n) => parseInt(n, 10) | 0);
+    const [major = 0, minor = 0, patch = 0] = (version || '0.0.0')
+      .split('.')
+      .map((n) => parseInt(n, 10) | 0);
 
     this.sortableName = name.toLocaleLowerCase();
     this.sortableVersion = (major * 1000 + minor * 100 + patch) | 0;
@@ -262,8 +266,12 @@ export interface State {
   selectedColumns: Column[];
 }
 
-export type Update = <K extends keyof State>(changes: Pick<State, K> | null) => Readonly<State>;
-export type UpdateBound = <K extends keyof State>(changes: Pick<State, K> | null) => void;
+export type Update = <K extends keyof State>(
+  changes: Pick<State, K> | null
+) => Readonly<State>;
+export type UpdateBound = <K extends keyof State>(
+  changes: Pick<State, K> | null
+) => void;
 
 export interface ChainData {
   label: Types.ChainLabel;

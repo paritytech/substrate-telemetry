@@ -5,7 +5,9 @@ export class PersistentSet<Item> {
   private value: Set<Item>;
 
   constructor(key: string, onChange: (value: Set<Item>) => void) {
-    this.inner = new Persistent(key, [], (raw: Readonly<Item[]>) => onChange(this.value = new Set(raw as Item[])));
+    this.inner = new Persistent(key, [], (raw: Readonly<Item[]>) =>
+      onChange((this.value = new Set(raw as Item[])))
+    );
     this.value = new Set(this.inner.get() as Item[]);
   }
 

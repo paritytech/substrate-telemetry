@@ -21,7 +21,7 @@ const ESCAPE_KEY = 27;
 
 export class Filter extends React.Component<Filter.Props, {}> {
   public state = {
-    value: ''
+    value: '',
   };
 
   private filterInput: HTMLInputElement;
@@ -34,23 +34,34 @@ export class Filter extends React.Component<Filter.Props, {}> {
     window.removeEventListener('keyup', this.onWindowKeyUp);
   }
 
-  public shouldComponentUpdate(nextProps: Filter.Props, nextState: Filter.State): boolean {
-    return this.props.onChange !== nextProps.onChange || this.state.value !== nextState.value;
+  public shouldComponentUpdate(
+    nextProps: Filter.Props,
+    nextState: Filter.State
+  ): boolean {
+    return (
+      this.props.onChange !== nextProps.onChange ||
+      this.state.value !== nextState.value
+    );
   }
 
   public render() {
     const { value } = this.state;
 
-    let className = "Filter";
+    let className = 'Filter';
 
     if (value === '') {
-      className += " Filter-hidden";
+      className += ' Filter-hidden';
     }
 
     return (
       <div className={className}>
         <Icon src={searchIcon} />
-        <input ref={this.onRef} value={value} onChange={this.onChange} onKeyUp={this.onKeyUp} />
+        <input
+          ref={this.onRef}
+          value={value}
+          onChange={this.onChange}
+          onKeyUp={this.onKeyUp}
+        />
       </div>
     );
   }
@@ -63,11 +74,11 @@ export class Filter extends React.Component<Filter.Props, {}> {
 
   private onRef = (el: HTMLInputElement) => {
     this.filterInput = el;
-  }
+  };
 
   private onChange = () => {
     this.setValue(this.filterInput.value);
-  }
+  };
 
   private onKeyUp = (event: React.KeyboardEvent<HTMLInputElement>) => {
     event.stopPropagation();
@@ -75,7 +86,7 @@ export class Filter extends React.Component<Filter.Props, {}> {
     if (event.keyCode === ESCAPE_KEY) {
       this.setValue('');
     }
-  }
+  };
 
   private onWindowKeyUp = (event: KeyboardEvent) => {
     if (event.ctrlKey) {
@@ -94,7 +105,7 @@ export class Filter extends React.Component<Filter.Props, {}> {
       this.setValue(key);
       this.filterInput.focus();
     }
-  }
+  };
 
   private getNodeFilter(value: string): Maybe<(node: Node) => boolean> {
     if (value === '') {
@@ -105,9 +116,10 @@ export class Filter extends React.Component<Filter.Props, {}> {
 
     return ({ name, city }) => {
       const matchesName = name.toLowerCase().indexOf(filter) !== -1;
-      const matchesCity = city != null && city.toLowerCase().indexOf(filter) !== -1;
+      const matchesCity =
+        city != null && city.toLowerCase().indexOf(filter) !== -1;
 
       return matchesName || matchesCity;
-    }
+    };
   }
 }

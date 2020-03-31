@@ -26,7 +26,7 @@ function copyToClipboard(text: string) {
   el.select();
   document.execCommand('copy');
   document.body.removeChild(el);
-};
+}
 
 export class Tooltip extends React.Component<Tooltip.Props, Tooltip.State> {
   public state = { copied: false };
@@ -69,7 +69,9 @@ export class Tooltip extends React.Component<Tooltip.Props, Tooltip.State> {
 
     return (
       <div className={containerClass} onClick={this.onClick}>
-        <div className={tooltipClass} ref={this.onRef}>{copied ? 'Copied to clipboard!' : text}</div>
+        <div className={tooltipClass} ref={this.onRef}>
+          {copied ? 'Copied to clipboard!' : text}
+        </div>
         {this.props.children}
       </div>
     );
@@ -77,11 +79,11 @@ export class Tooltip extends React.Component<Tooltip.Props, Tooltip.State> {
 
   private onRef = (el: HTMLDivElement) => {
     this.el = el;
-  }
+  };
 
   private update = (text: string) => {
     this.el.textContent = text;
-  }
+  };
 
   private onClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (this.props.copy !== true) {
@@ -96,9 +98,9 @@ export class Tooltip extends React.Component<Tooltip.Props, Tooltip.State> {
 
     this.setState({ copied: true });
     this.timer = setTimeout(this.restore, 2000);
-  }
+  };
 
   private restore = () => {
     this.setState({ copied: false });
-  }
+  };
 }

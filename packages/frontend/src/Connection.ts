@@ -1,5 +1,19 @@
-import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from '@dotstats/common';
-import { State, Update, Node, UpdateBound, ChainData, PINNED_CHAIN } from './state';
+import {
+  VERSION,
+  timestamp,
+  FeedMessage,
+  Types,
+  Maybe,
+  sleep,
+} from '@dotstats/common';
+import {
+  State,
+  Update,
+  Node,
+  UpdateBound,
+  ChainData,
+  PINNED_CHAIN,
+} from './state';
 import { PersistentSet } from './persist';
 import { getHashData, setHashData } from './utils';
 import { AfgHandling } from './AfgHandling';
@@ -12,15 +26,19 @@ const TIMEOUT_BASE = (1000 * 5) as Types.Milliseconds; // 5 seconds
 const TIMEOUT_MAX = (1000 * 60 * 5) as Types.Milliseconds; // 5 minutes
 
 export class Connection {
-  public static async create(pins: PersistentSet<Types.NodeName>, update: Update): Promise<Connection> {
+  public static async create(
+    pins: PersistentSet<Types.NodeName>,
+    update: Update
+  ): Promise<Connection> {
     return new Connection(await Connection.socket(), update, pins);
   }
 
   private static readonly utf8decoder = new TextDecoder('utf-8');
 
-  private static readonly address = window.location.protocol === 'https:'
-                                      ? `wss://${window.location.hostname}/feed/`
-                                      : `ws://127.0.0.1:8000/feed`;
+  private static readonly address =
+    window.location.protocol === 'https:'
+      ? `wss://${window.location.hostname}/feed/`
+      : `ws://127.0.0.1:8000/feed`;
 
   // private static readonly address = 'wss://telemetry.polkadot.io/feed/';
 
@@ -58,7 +76,7 @@ export class Connection {
 
       const socket = new WebSocket(Connection.address);
 
-      socket.binaryType = "arraybuffer";
+      socket.binaryType = 'arraybuffer';
       socket.addEventListener('open', onSuccess);
       socket.addEventListener('error', onFailure);
       socket.addEventListener('close', onFailure);
@@ -75,7 +93,11 @@ export class Connection {
   private readonly update: Update;
   private readonly pins: PersistentSet<Types.NodeName>;
 
-  constructor(socket: WebSocket, update: Update, pins: PersistentSet<Types.NodeName>) {
+  constructor(
+    socket: WebSocket,
+    update: Update,
+    pins: PersistentSet<Types.NodeName>
+  ) {
     this.socket = socket;
     this.update = update;
     this.pins = pins;
@@ -97,7 +119,7 @@ export class Connection {
 
   public subscribeConsensus(chain: Types.ChainLabel) {
     if (this.state.authorities.length <= VIS_AUTHORITIES_LIMIT) {
-      setHashData({chain});
+      setHashData({ chain });
       this.resubscribeSendFinality = true;
       this.socket.send(`send-finality:${chain}`);
     }
@@ -121,14 +143,17 @@ export class Connection {
     const { nodes, chains, sortBy, selectedColumns } = this.state;
     const ref = nodes.ref();
 
-    const updateState: UpdateBound = (state) => { this.state = this.update(state); };
+    const updateState: UpdateBound = (state) => {
+      this.state = this.update(state);
+    };
     const getState = () => this.state;
     const afg = new AfgHandling(updateState, getState);
 
     let sortByColumn: Maybe<Column> = null;
 
     if (sortBy != null) {
-      sortByColumn = sortBy < 0 ? selectedColumns[~sortBy] : selectedColumns[sortBy];
+      sortByColumn =
+        sortBy < 0 ? selectedColumns[~sortBy] : selectedColumns[sortBy];
     }
 
     for (const message of messages) {
@@ -166,9 +191,28 @@ export class Connection {
         }
 
         case Actions.AddedNode: {
-          const [id, nodeDetails, nodeStats, nodeIO, nodeHardware, blockDetails, location, connectedAt] = message.payload;
+          const [
+            id,
+            nodeDetails,
+            nodeStats,
+            nodeIO,
+            nodeHardware,
+            blockDetails,
+            location,
+            connectedAt,
+          ] = message.payload;
           const pinned = this.pins.has(nodeDetails[0]);
-          const node = new Node(pinned, id, nodeDetails, nodeStats, nodeIO, nodeHardware, blockDetails, location, connectedAt);
+          const node = new Node(
+            pinned,
+            id,
+            nodeDetails,
+            nodeStats,
+            nodeIO,
+            nodeHardware,
+            blockDetails,
+            location,
+            connectedAt
+          );
 
           nodes.add(node);
 
@@ -194,7 +238,11 @@ export class Connection {
         case Actions.LocatedNode: {
           const [id, lat, lon, city] = message.payload;
 
-          nodes.mutAndMaybeSort(id, (node) => node.updateLocation([lat, lon, city]), sortByColumn === Column.LOCATION);
+          nodes.mutAndMaybeSort(
+            id,
+            (node) => node.updateLocation([lat, lon, city]),
+            sortByColumn === Column.LOCATION
+          );
 
           break;
         }
@@ -213,7 +261,8 @@ export class Connection {
           nodes.mutAndMaybeSort(
             id,
             (node) => node.updateFinalized(height, hash),
-            sortByColumn === Column.FINALIZED || sortByColumn === Column.FINALIZED_HASH,
+            sortByColumn === Column.FINALIZED ||
+              sortByColumn === Column.FINALIZED_HASH
           );
 
           break;
@@ -225,7 +274,7 @@ export class Connection {
           nodes.mutAndMaybeSort(
             id,
             (node) => node.updateStats(nodeStats),
-            sortByColumn === Column.PEERS || sortByColumn === Column.TXS,
+            sortByColumn === Column.PEERS || sortByColumn === Column.TXS
           );
 
           break;
@@ -237,10 +286,10 @@ export class Connection {
           nodes.mutAndMaybeSort(
             id,
             (node) => node.updateHardware(nodeHardware),
-            sortByColumn === Column.CPU
-              || sortByColumn === Column.MEM
-              || sortByColumn === Column.UPLOAD
-              || sortByColumn === Column.DOWNLOAD,
+            sortByColumn === Column.CPU ||
+              sortByColumn === Column.MEM ||
+              sortByColumn === Column.UPLOAD ||
+              sortByColumn === Column.DOWNLOAD
           );
 
           break;
@@ -252,10 +301,10 @@ export class Connection {
           nodes.mutAndMaybeSort(
             id,
             (node) => node.updateIO(nodeIO),
-            sortByColumn === Column.STATE_CACHE
-              || sortByColumn === Column.DB_CACHE
-              || sortByColumn === Column.DISK_READ
-              || sortByColumn === Column.DISK_WRITE,
+            sortByColumn === Column.STATE_CACHE ||
+              sortByColumn === Column.DB_CACHE ||
+              sortByColumn === Column.DISK_READ ||
+              sortByColumn === Column.DISK_WRITE
           );
 
           break;
@@ -263,7 +312,7 @@ export class Connection {
 
         case Actions.TimeSync: {
           this.state = this.update({
-            timeDiff: (timestamp() - message.payload) as Types.Milliseconds
+            timeDiff: (timestamp() - message.payload) as Types.Milliseconds,
           });
 
           break;
@@ -331,7 +380,7 @@ export class Connection {
         case Actions.AfgReceivedPrevote: {
           const [nodeAddress, blockNumber, blockHash, voter] = message.payload;
           const no = parseInt(String(blockNumber), 10) as Types.BlockNumber;
-          afg.receivedPre(nodeAddress, no, blockHash, voter, "prevote");
+          afg.receivedPre(nodeAddress, no, blockHash, voter, 'prevote');
 
           break;
         }
@@ -339,7 +388,7 @@ export class Connection {
         case Actions.AfgReceivedPrecommit: {
           const [nodeAddress, blockNumber, blockHash, voter] = message.payload;
           const no = parseInt(String(blockNumber), 10) as Types.BlockNumber;
-          afg.receivedPre(nodeAddress, no, blockHash, voter, "precommit");
+          afg.receivedPre(nodeAddress, no, blockHash, voter, 'precommit');
 
           break;
         }
@@ -362,7 +411,7 @@ export class Connection {
     }
 
     this.autoSubscribe();
-  }
+  };
 
   private bindSocket() {
     this.ping();
@@ -398,7 +447,7 @@ export class Connection {
     this.socket.send(`ping:${this.pingId}`);
 
     this.pingTimeout = setTimeout(this.ping, 30000);
-  }
+  };
 
   private pong(id: number) {
     if (!this.pingSent) {
@@ -430,12 +479,15 @@ export class Connection {
   }
 
   private handleFeedData = (event: MessageEvent) => {
-    const data = typeof event.data === 'string'
-      ? event.data as any as FeedMessage.Data
-      : Connection.utf8decoder.decode(event.data) as any as FeedMessage.Data;
+    const data =
+      typeof event.data === 'string'
+        ? ((event.data as any) as FeedMessage.Data)
+        : ((Connection.utf8decoder.decode(
+            event.data
+          ) as any) as FeedMessage.Data);
 
     this.handleMessages(FeedMessage.deserialize(data));
-  }
+  };
 
   private autoSubscribe() {
     const { subscribed, chains } = this.state;
@@ -480,5 +532,5 @@ export class Connection {
     this.socket.close();
     this.socket = await Connection.socket();
     this.bindSocket();
-  }
+  };
 }

@@ -6,14 +6,20 @@ export interface Viewport {
 }
 
 export function viewport(): Viewport {
-  const width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-  const height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+  const width = Math.max(
+    document.documentElement.clientWidth,
+    window.innerWidth || 0
+  );
+  const height = Math.max(
+    document.documentElement.clientHeight,
+    window.innerHeight || 0
+  );
 
   return { width, height };
 }
 
 export function formatNumber(num: number): string {
-  const input =  num.toString();
+  const input = num.toString();
 
   let output = '';
   let length = input.length;
@@ -38,7 +44,9 @@ export function trimHash(hash: string, length: number): string {
   return hash.substr(0, side) + '..' + hash.substr(-side, side);
 }
 
-export function milliOrSecond(num: Types.Milliseconds | Types.PropagationTime): string {
+export function milliOrSecond(
+  num: Types.Milliseconds | Types.PropagationTime
+): string {
   if (num < 10000) {
     return `${num}ms`;
   }
@@ -47,21 +55,25 @@ export function milliOrSecond(num: Types.Milliseconds | Types.PropagationTime): 
 }
 
 export function secondsWithPrecision(num: number): string {
-  const intString = (num | 0).toString()
+  const intString = (num | 0).toString();
   const intDigits = intString.length;
 
   switch (intDigits) {
-    case 1: return num.toFixed(3) + 's';
-    case 2: return num.toFixed(2) + 's';
-    case 3: return num.toFixed(1) + 's';
-    default: return intString + 's';
+    case 1:
+      return num.toFixed(3) + 's';
+    case 2:
+      return num.toFixed(2) + 's';
+    case 3:
+      return num.toFixed(1) + 's';
+    default:
+      return intString + 's';
   }
 }
 
 export interface HashData {
   tab?: string;
   chain?: Types.ChainLabel;
-};
+}
 
 export function getHashData(): HashData {
   const { hash } = window.location;

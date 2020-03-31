@@ -5,7 +5,11 @@ export class Persistent<Data> {
   private readonly key: string;
   private value: Data;
 
-  constructor(key: string, initial: Data, onChange: (value: Readonly<Data>) => void) {
+  constructor(
+    key: string,
+    initial: Data,
+    onChange: (value: Readonly<Data>) => void
+  ) {
     this.key = key;
     this.onChange = onChange;
 
@@ -23,7 +27,7 @@ export class Persistent<Data> {
 
     window.addEventListener('storage', (event) => {
       if (event.key === this.key) {
-        this.value = parse(event.newValue as any as Stringified<Data>);
+        this.value = parse((event.newValue as any) as Stringified<Data>);
 
         this.onChange(this.value);
       }
@@ -36,7 +40,10 @@ export class Persistent<Data> {
 
   public set(value: Data) {
     this.value = value;
-    window.localStorage.setItem(this.key, stringify(this.value) as any as string);
+    window.localStorage.setItem(
+      this.key,
+      (stringify(this.value) as any) as string
+    );
     this.onChange(this.value);
   }
 }

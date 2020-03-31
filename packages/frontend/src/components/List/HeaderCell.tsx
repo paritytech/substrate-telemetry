@@ -20,19 +20,29 @@ export class HeaderCell extends React.Component<HeaderCell.Props, {}> {
   public render() {
     const { column, index, last } = this.props;
     const { icon, width, label } = column;
-    const position = index === 0 ? 'left'
-                   : index === last ? 'right'
-                   : 'center';
+    const position = index === 0 ? 'left' : index === last ? 'right' : 'center';
 
     const sortBy = this.props.sortBy.get();
-    const className = column.sortBy == null ? '' : sortBy === index || sortBy === ~index ? 'HeaderCell-sorted' : 'HeaderCell-sortable';
-    const i = sortBy === index ? sortAscIcon : sortBy === ~index ? sortDescIcon : icon;
+    const className =
+      column.sortBy == null
+        ? ''
+        : sortBy === index || sortBy === ~index
+        ? 'HeaderCell-sorted'
+        : 'HeaderCell-sortable';
+    const i =
+      sortBy === index ? sortAscIcon : sortBy === ~index ? sortDescIcon : icon;
 
     return (
-      <th className={className} style={width ? { width } : undefined} onClick={this.toggleSort}>
-        <Tooltip text={label} inline={true} position={position}><Icon src={i} /></Tooltip>
+      <th
+        className={className}
+        style={width ? { width } : undefined}
+        onClick={this.toggleSort}
+      >
+        <Tooltip text={label} inline={true} position={position}>
+          <Icon src={i} />
+        </Tooltip>
       </th>
-    )
+    );
   }
 
   private toggleSort = () => {
@@ -50,5 +60,5 @@ export class HeaderCell extends React.Component<HeaderCell.Props, {}> {
     } else {
       sortBy.set(index);
     }
-  }
+  };
 }
