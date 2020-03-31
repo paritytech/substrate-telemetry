@@ -32,3 +32,4 @@ script:
   - yarn
   - yarn check:all
   - yarn build:all
+  - cd backend && cargo test
