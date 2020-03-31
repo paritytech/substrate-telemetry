@@ -90,6 +90,8 @@ fn health(
         })
 }
 
+/// Telemetry entry point. Listening by default on 127.0.0.1:8000.
+/// This can be changed using the `PORT` and `BIND` ENV variables.
 fn main() -> std::io::Result<()> {
     use web::{resource, get};
 
@@ -101,6 +103,7 @@ fn main() -> std::io::Result<()> {
     let locator = SyncArbiter::start(4, move || factory.create());
 
     let port = std::env::var("PORT").ok().and_then(|v| v.parse().ok()).unwrap_or(8000u16);
+    let bind_address = std::env::var("BIND").ok().unwrap_or("127.0.0.1".to_string());
 
     HttpServer::new(move || {
         App::new()
@@ -115,7 +118,7 @@ fn main() -> std::io::Result<()> {
             .service(resource("/health").route(get().to_async(health)))
             .service(resource("/health/").route(get().to_async(health)))
     })
-    .bind(format!("0.0.0.0:{}", port))?
+    .bind(format!("{}:{}", bind_address, port))?
     .start();
 
     sys.run()

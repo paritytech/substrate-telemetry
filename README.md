@@ -16,6 +16,19 @@ cd backend
 cargo build --release
 ./target/release/telemetry
 ```
+
+By default, telemetry will listen on the local interface only (127.0.0.1) on port 8000. You may change both those values:
+
+Use another port:
+```
+PORT=8123 telemetry
+```
+
+You may also change the the listening interface. This is especially required if you are using docker:
+```
+BIND=0.0.0.0 telemetry
+```
+
 ### Terminal 2 - Frontend
 ```
 yarn start:frontend
