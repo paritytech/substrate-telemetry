@@ -4,12 +4,12 @@ import './ConnectionInput.css';
 function ConnectionInput() {
   const [connectionURI, setConnectionURI] = React.useState('');
   const [error, setError] = React.useState('');
-  function handleChange(e) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setError('');
     const val = e.target.value;
     setConnectionURI(val);
   }
-  function handleSubmit(e) {
+  function handleSubmit(e: React.SyntheticEvent) {
     e.preventDefault();
     const matcher = /^(ws|wss)/g;
 
