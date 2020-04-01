@@ -31,20 +31,12 @@ const ABOUT: &'static str = "This is the Telemetry Backend that injects and prov
 #[clap(name = NAME, version = VERSION, author = AUTHORS, about = ABOUT)]
 struct Opts {
     #[clap(
-        short = "p",
-        long = "port",
-        default_value = "8000",
-        help = "This is the port Telemetry is listening to."
+        short = "l",
+        long = "listen",
+        default_value = "127.0.0.1:8000",
+        help = "This is the socket address Telemetry is listening to. This is restricted localhost (127.0.0.1) by default and should be fine for most use cases. If you are using Telemetry in a container, you likely want to set this to '0.0.0.0:8000'"
     )]
-    port: u16,
-
-    #[clap(
-        short = "b",
-        long = "bind",
-        default_value = "127.0.0.1",
-        help = "This is the address of the network interface Telemetry is listening to. This is restricted localhost by default and should be fine for most use cases. If you are using Telemetry in a container, you likely want to set this to '0.0.0.0'"
-    )]
-    bind: String,
+    socket: std::net::SocketAddr,
 }
 
 /// Entry point for connecting nodes
@@ -119,10 +111,9 @@ fn health(
 fn main() -> std::io::Result<()> {
     use web::{get, resource};
 
-    let opts: Opts = Opts::parse();
-
     simple_logger::init_with_level(log::Level::Info).expect("Must be able to start a logger");
 
+    let opts: Opts = Opts::parse();
     let sys = System::new("substrate-telemetry");
     let aggregator = Aggregator::new().start();
     let factory = LocatorFactory::new();
@@ -141,7 +132,7 @@ fn main() -> std::io::Result<()> {
             .service(resource("/health").route(get().to_async(health)))
             .service(resource("/health/").route(get().to_async(health)))
     })
-    .bind(format!("{}:{}", opts.bind, opts.port))?
+    .bind(format!("{}", opts.socket))?
     .start();
 
     sys.run()

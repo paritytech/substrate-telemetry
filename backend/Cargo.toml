@@ -10,9 +10,6 @@ actix = "0.8"
 actix-web = { git = "https://github.com/maciejhirsz/actix-web" }
 actix-web-actors = { git = "https://github.com/maciejhirsz/actix-web" }
 actix-http = { git = "https://github.com/maciejhirsz/actix-web" }
-# actix-web = "1.0.8"
-# actix-web-actors = "1.0.2"
-# actix-http = "0.2.10"
 bytes = "0.4"
 chrono = { version = "0.4", features = ["serde"] }
 fnv = "1.0.6"
