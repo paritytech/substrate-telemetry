@@ -1,5 +1,6 @@
 import { Types } from './common';
 import { State, UpdateBound } from './state';
+import { ConsensusDetail } from './common/types';
 
 // Number of blocks which are kept in memory
 const BLOCKS_LIMIT = 50;

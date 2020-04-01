@@ -13,7 +13,7 @@
     "allowSyntheticDefaultImports": true,
     "noEmitOnError": false,
     "pretty": true,
-    "forceConsistentCasingInFileNames": false,
+    "forceConsistentCasingInFileNames": true,
     "noErrorTruncation": true,
     "noImplicitReturns": true,
     "noImplicitAny": true,

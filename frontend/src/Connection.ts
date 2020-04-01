@@ -63,8 +63,11 @@ export class Connection {
         clean();
         resolve(null);
       }
-
-      const socket = new WebSocket(Connection.address);
+      const address = localStorage.getItem('connectionURI');
+      if (!address) {
+        resolve(null);
+      }
+      const socket = new WebSocket(address || 'ws://localhost:8000');
 
       socket.binaryType = 'arraybuffer';
       socket.addEventListener('open', onSuccess);
