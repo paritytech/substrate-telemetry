@@ -4,10 +4,7 @@
     "outDir": "build",
     "module": "commonjs",
     "target": "ES2017",
-    "lib": [
-      "es6",
-      "dom"
-    ],
+    "lib": ["es6", "dom"],
     "sourceMap": true,
     "allowJs": false,
     "jsx": "react",
@@ -21,18 +18,11 @@
     "noImplicitReturns": true,
     "noImplicitAny": false,
     "noImplicitThis": true,
-    "strictNullChecks": false,
+    "strictNullChecks": true,
     "suppressImplicitAnyIndexErrors": true,
     "resolveJsonModule": true,
     "noUnusedParameters": false
   },
-  "exclude": [
-    "node_modules",
-    "build"
-  ],
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "./declarations/**/*.d.ts"
-  ]
+  "exclude": ["node_modules", "build"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "./declarations/**/*.d.ts"]
 }
