@@ -2,14 +2,14 @@
   "compilerOptions": {
     "baseUrl": ".",
     "outDir": "build",
-    "module": "esnext",
+    "module": "commonjs",
     "target": "ES2017",
     "lib": [
       "es6",
       "dom"
     ],
     "sourceMap": true,
-    "allowJs": true,
+    "allowJs": false,
     "jsx": "react",
     "rootDir": "src",
     "moduleResolution": "node",
