@@ -113,7 +113,6 @@ export class AfgHandling {
   public receivedPre(
     addr: Types.Address,
     height: Types.BlockNumber,
-    hash: Types.BlockHash,
     voter: Types.Address,
     what: string
   ) {
@@ -136,7 +135,7 @@ export class AfgHandling {
     // a vote on all preceding blocks. This function marks
     // the preceding blocks as implicitly voted on and stores
     // a pointer to the block which contains the explicit vote.
-    const op = (i: Types.BlockNumber, index: number): boolean => {
+    const op = ( index: number): boolean => {
       const consensusDetail = state.consensusInfo[index][1][addr][voter];
       if (
         what === 'prevote' &&
@@ -192,7 +191,7 @@ export class AfgHandling {
 
       const item: Types.ConsensusItem = [height, consensusView];
       const insertPos = consensusInfo.findIndex(
-        ([elHeight, elView]) => elHeight < height
+        ([elHeight]) => elHeight < height
       );
       if (insertPos >= 0) {
         consensusInfo.splice(insertPos, 0, item);
