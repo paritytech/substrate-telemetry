@@ -16,7 +16,7 @@
     "forceConsistentCasingInFileNames": false,
     "noErrorTruncation": true,
     "noImplicitReturns": true,
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "noImplicitThis": true,
     "strictNullChecks": true,
     "suppressImplicitAnyIndexErrors": true,

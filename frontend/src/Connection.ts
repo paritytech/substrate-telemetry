@@ -62,7 +62,7 @@ export class Connection {
       if (!address) {
         resolve(null);
       }
-      const socket = new WebSocket(address);
+      const socket = new WebSocket(address || 'ws://localhost:8000');
 
       socket.binaryType = 'arraybuffer';
       socket.addEventListener('open', onSuccess);
