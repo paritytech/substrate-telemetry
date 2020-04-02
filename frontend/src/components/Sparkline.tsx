@@ -79,7 +79,7 @@ export class Sparkline extends React.Component<Sparkline.Props, {}> {
   };
 
   private onMouseMove = (
-    event: MouseEvent,
+    _event: MouseEvent,
     data: { value: number; index: number }
   ) => {
     const { format, stamps } = this.props;

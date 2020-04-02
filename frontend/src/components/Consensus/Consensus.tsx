@@ -357,7 +357,7 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
 
   private getSmallRow(blocks: Types.ConsensusInfo) {
     const smallBlockSizeChanged = (
-      isFirstBlock: boolean,
+      _isFirstBlock: boolean,
       rect: BoundingRect
     ) => {
       if (this.smallBlocksSizeDetected(this.state)) {

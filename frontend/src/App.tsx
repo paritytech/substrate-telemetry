@@ -191,7 +191,7 @@ export default class App extends React.Component<{}, State> {
     });
   };
 
-  private onHashChange = (event: Event) => {
+  private onHashChange = () => {
     const { tab = '' } = getHashData();
 
     this.setState({ tab });
