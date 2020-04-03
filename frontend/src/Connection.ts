@@ -27,6 +27,11 @@ export class Connection {
 
   private static readonly utf8decoder = new TextDecoder('utf-8');
 
+  private static readonly address =
+    window.location.protocol === 'https:'
+      ? `wss://${window.location.hostname}/feed/`
+      : `ws://127.0.0.1:8000/feed`;
+
   private static async socket(): Promise<WebSocket> {
     let socket = await Connection.trySocket();
     let timeout = TIMEOUT_BASE;
@@ -58,11 +63,8 @@ export class Connection {
         clean();
         resolve(null);
       }
-      const address = localStorage.getItem('connectionURI');
-      if (!address) {
-        resolve(null);
-      }
-      const socket = new WebSocket(address || 'ws://localhost:8000');
+
+      const socket = new WebSocket(Connection.address);
 
       socket.binaryType = 'arraybuffer';
       socket.addEventListener('open', onSuccess);

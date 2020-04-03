@@ -6,7 +6,6 @@ import { Connection } from './Connection';
 import { Persistent, PersistentObject, PersistentSet } from './persist';
 import { State, Node, ChainData, PINNED_CHAIN } from './state';
 import { getHashData } from './utils';
-import ConnectionInput from './components/ConnectionInput/ConnectionInput';
 import stable from 'stable';
 
 import './App.css';
@@ -117,10 +116,9 @@ export default class App extends React.Component<{}, State> {
 
     if (chains.length === 0) {
       return (
-        <div className="App">
+        <div className="App App-no-telemetry">
           <OfflineIndicator status={status} />
-          <div className="App-no-telemetry">Waiting for telemetry&hellip;</div>
-          <ConnectionInput />
+          Waiting for telemetry&hellip;
         </div>
       );
     }
