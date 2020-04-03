@@ -368,7 +368,7 @@ export class Connection {
         case ACTIONS.AfgReceivedPrevote: {
           const [nodeAddress, blockNumber, blockHash, voter] = message.payload;
           const no = parseInt(String(blockNumber), 10) as Types.BlockNumber;
-          afg.receivedPre(nodeAddress, no, blockHash, voter, 'prevote');
+          afg.receivedPre(nodeAddress, no, voter, 'prevote');
 
           break;
         }
@@ -376,7 +376,7 @@ export class Connection {
         case ACTIONS.AfgReceivedPrecommit: {
           const [nodeAddress, blockNumber, blockHash, voter] = message.payload;
           const no = parseInt(String(blockNumber), 10) as Types.BlockNumber;
-          afg.receivedPre(nodeAddress, no, blockHash, voter, 'precommit');
+          afg.receivedPre(nodeAddress, no, voter, 'precommit');
 
           break;
         }

@@ -135,7 +135,7 @@ export class AfgHandling {
     // a vote on all preceding blocks. This function marks
     // the preceding blocks as implicitly voted on and stores
     // a pointer to the block which contains the explicit vote.
-    const op = ( index: number): boolean => {
+    const op = (index: number): boolean => {
       const consensusDetail = state.consensusInfo[index][1][addr][voter];
       if (
         what === 'prevote' &&

@@ -91,7 +91,7 @@ export class Location extends React.Component<Location.Props, Location.State> {
       city,
     } = this.props.node;
 
-    let validatorRow = (<div/>);
+    let validatorRow = <div />;
 
     if (validator) {
       validatorRow = (
