@@ -14,7 +14,7 @@ import { VIS_AUTHORITIES_LIMIT } from './components/Consensus';
 import { Column } from './components/List';
 import { ACTIONS } from './common/feed';
 
-const TIMEOUT_BASE = (1000 * 5) as Types.Milliseconds; // 3 seconds
+const TIMEOUT_BASE = (1000 * 5) as Types.Milliseconds; // 5 seconds
 const TIMEOUT_MAX = (1000 * 60 * 5) as Types.Milliseconds; // 5 minutes
 
 export class Connection {
