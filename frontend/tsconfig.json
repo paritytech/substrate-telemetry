@@ -2,7 +2,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "outDir": "build",
-    "module": "commonjs",
+    "module": "esnext",
     "target": "ES2017",
     "lib": ["es6", "dom"],
     "sourceMap": true,
