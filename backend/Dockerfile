@@ -1,8 +1,7 @@
 #### BUILDER IMAGE -- quite big one ####
-FROM fredrikfornwall/rust-static-builder as builder
+FROM fredrikfornwall/rust-static-builder-nightly as builder
 LABEL maintainer="Daniel Maricic daniel@woss.io"
-LABEL version="0.1.0"
-LABEL description="Polkadot Telemetry backend build image"
+LABEL description="Polkadot Telemetry backend builder image"
 
 ARG PROFILE=release
 WORKDIR /app
@@ -13,9 +12,8 @@ RUN cargo build --${PROFILE} --bins --target x86_64-unknown-linux-musl
 
 
 # MAIN IMAGE FOR PEOPLE TO PULL --- small one#
-FROM alpine
+FROM fredrikfornwall/scratch-with-certificates
 LABEL maintainer="Daniel Maricic daniel@woss.io"
-LABEL version="0.1.0"
 LABEL description="Polkadot Telemetry backend"
 
 ARG PROFILE=release
@@ -25,4 +23,4 @@ COPY --from=builder /app/target/x86_64-unknown-linux-musl/$PROFILE/telemetry /us
 
 EXPOSE 8000
 
-ENTRYPOINT ["telemetry"] 
+ENTRYPOINT ["telemetry"]
