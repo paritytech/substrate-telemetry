@@ -1,4 +1,4 @@
-import { parse, Stringified, stringify } from '../common';
+import { parse, Stringified, stringify, Maybe } from '../common';
 
 export class Persistent<Data> {
   private readonly onChange: (value: Data) => void;
@@ -13,7 +13,7 @@ export class Persistent<Data> {
     this.key = key;
     this.onChange = onChange;
 
-    const stored = window.localStorage.getItem(key) as any;
+    const stored = window.localStorage.getItem(key) as Maybe<Stringified<Data>>;
 
     if (stored) {
       try {
