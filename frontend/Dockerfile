@@ -3,7 +3,7 @@ FROM node:12 as builder
 LABEL maintainer="Daniel Maricic daniel@woss.io"
 LABEL description="Polkadot Telemetry frontend builder image"
 
-WORKDIR /opt/build
+WORKDIR /opt/builder
 
 COPY . .
 RUN yarn install && \
@@ -20,12 +20,12 @@ ENV SUBSTRATE_TELEMETRY_URL=
 
 WORKDIR /usr/share/nginx/html
 
-COPY packages/frontend/env.sh .
-RUN apk add --no-cache bash; chmod +x env.sh
+COPY --from=builder /opt/builder/env.sh /usr/bin/
+RUN apk add --no-cache bash; chmod +x /usr/bin/env.sh
 
-COPY nginx/nginx.conf /etc/nginx/nginx.conf
-COPY --from=builder /opt/build/packages/frontend/build /usr/share/nginx/html
+COPY --from=builder /opt/builder/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY --from=builder /opt/builder/build /usr/share/nginx/html
 
 EXPOSE 80
 
-CMD ["/bin/bash", "-c", "/usr/share/nginx/html/env.sh && nginx -g \"daemon off;\""]
+CMD ["/bin/bash", "-c", "/usr/bin/env.sh && nginx -g \"daemon off;\""]
