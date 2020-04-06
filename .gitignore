@@ -7,10 +7,10 @@ backend/target
 node_modules
 
 # testing
-packages/*/coverage
+coverage
 
 # production
-packages/*/build
+build
 
 # misc
 .DS_Store
