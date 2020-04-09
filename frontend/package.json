@@ -12,7 +12,8 @@
     "test:coverage": "nyc yarn test",
     "eject": "react-scripts-ts eject",
     "pretty:check": "prettier --check src/**/*.{ts,tsx}",
-    "pretty:fix": "prettier --write src"
+    "pretty:fix": "prettier --write src",
+    "clean": "rm -rf node_modules build .nyc env-config.js"
   },
   "dependencies": {
     "@fnando/sparkline": "maciejhirsz/sparkline",
