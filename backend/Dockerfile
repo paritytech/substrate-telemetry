@@ -12,9 +12,9 @@ RUN cargo build --${PROFILE} --bins --target x86_64-unknown-linux-musl
 
 
 # MAIN IMAGE FOR PEOPLE TO PULL --- small one#
-FROM fredrikfornwall/scratch-with-certificates
+FROM scratch
 LABEL maintainer="Daniel Maricic daniel@woss.io"
-LABEL description="Polkadot Telemetry backend"
+LABEL description="Polkadot Telemetry backend, static build"
 
 ARG PROFILE=release
 WORKDIR /usr/local/bin
