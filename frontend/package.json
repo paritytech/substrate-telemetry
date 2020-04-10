@@ -8,7 +8,7 @@
     "precommit": "lint-staged",
     "start": "react-scripts-ts start",
     "build": "react-scripts-ts build",
-    "test": "tape -r ts-node/register test/**/*spec.ts | tap-prettify -",
+    "test": "TS_NODE_PROJECT=tsconfig.test.json tape -r ts-node/register test/**/*spec.ts | tap-prettify -",
     "test:coverage": "nyc yarn test",
     "eject": "react-scripts-ts eject",
     "pretty:check": "prettier --check src/**/*.{ts,tsx}",
