@@ -1,6 +1,6 @@
 #### BUILDER IMAGE  ####
 FROM node:12 as builder
-LABEL maintainer="Daniel Maricic daniel@woss.io"
+LABEL maintainer="Chevdor <chevdor@gmail.com>"
 LABEL description="Polkadot Telemetry frontend builder image"
 
 WORKDIR /opt/builder
@@ -13,7 +13,7 @@ RUN yarn install && \
 
 #### OUTPUT IMAGE ####
 FROM nginx:stable-alpine
-LABEL maintainer="Daniel Maricic daniel@woss.io"
+LABEL maintainer="Chevdor <chevdor@gmail.com>"
 LABEL description="Polkadot Telemetry frontend"
 
 ENV SUBSTRATE_TELEMETRY_URL=
