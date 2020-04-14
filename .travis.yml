@@ -29,8 +29,8 @@ before_script:
   - curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh -s -- -f
 
 script:
+  - cd frontend
   - yarn
-  - yarn build
   - yarn test
   - yarn check
   - yarn build
