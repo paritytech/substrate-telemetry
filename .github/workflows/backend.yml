@@ -1,9 +1,9 @@
-name: Rust
+name: Backend CI
 
 on:
   push:
     paths:
-      - 'backend'
+      - 'backend/**'
   pull_request:
     paths:
       - 'backend/**'
