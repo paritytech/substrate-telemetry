@@ -1,5 +1,5 @@
-frontend:
+Frontend:
   - frontend/**/*
 
-backend:
+Backend:
   - backend/**/*
