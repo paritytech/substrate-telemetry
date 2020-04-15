@@ -51,16 +51,25 @@ polkadot --dev --telemetry-url ws://localhost:8000/submit
 
 ### Run via Docker
 
-To run via docker make sure that you have Docker Desktop
-
-- If you don't you can download for you OS here [Docker Desktop](https://www.docker.com/products/docker-desktop)
+To run via docker make sure that you have Docker Desktop.
+If you don't you can download for you OS here [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
 ```sh
 docker-compose up --build -d
 ```
 
-- -d stands for detach, if you would like to see logs i recommend using [Kitmatic](https://kitematic.com/) or don't use the -d
-- --build will build the images and rebuild, but this is not required every time
-- If you want to makes UI changes, there is no need to rebuild the image as the files are being copied in via volumes.
+- `-d` stands for detach, if you would like to see logs I recommend using [Kitmatic](https://kitematic.com/) or don't use the -d
+ - `--build` will build the images and rebuild, but this is not required every time
+ - If you want to makes UI changes, there is no need to rebuild the image as the files are being copied in via volumes.
 
 Now navigate to localhost:3000 in your browser to view the app.
+
+## Docker
+
+### Build & Publish the Frontend docker image
+
+The building process is standard. You just need to notice that the Dockerfile is in ./packages/frontend/ and tell docker about it. The context must remain the repository's root though.
+
+```
+DOCKER_USER=chevdor ./scripts/build-docker-frontend.sh 
+```
