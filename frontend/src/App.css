@@ -6,8 +6,8 @@
 
 .App-no-telemetry {
   width: 100vw;
-  /* height: 100vh; */
-  /* line-height: 80vh; */
+  height: 100vh;
+  line-height: 80vh;
   font-size: 56px;
   font-weight: 100;
   text-align: center;
