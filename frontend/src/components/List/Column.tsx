@@ -53,6 +53,7 @@ import edgewareIcon from '../../icons/edgeware.svg';
 import joystreamIcon from '../../icons/joystream.svg';
 import ladderIcon from '../../icons/laddernetwork.svg';
 import cennznetIcon from '../../icons/cennznet.svg';
+import crabIcon from '../../icons/crab.svg';
 import darwiniaIcon from '../../icons/darwinia.svg';
 import turingIcon from '../../icons/turingnetwork.svg';
 import dothereumIcon from '../../icons/dothereum.svg';
@@ -76,6 +77,7 @@ const ICONS = {
   ChainX: chainXIcon,
   'ladder-node': ladderIcon,
   'cennznet-node': cennznetIcon,
+  Crab: crabIcon,
   Darwinia: darwiniaIcon,
   'Darwinia Testnet': darwiniaIcon,
   'turing-node': turingIcon,
