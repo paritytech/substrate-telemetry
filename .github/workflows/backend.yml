@@ -1,0 +1,24 @@
+name: Backend CI
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+      - '!frontend/**'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build
+      working-directory: ./backend
+      run: cargo build --verbose
+    - name: Run tests
+      working-directory: ./backend
+      run: cargo test --verbose
+    - name: Request help
+      working-directory: ./backend
+      run: cargo run --release -- --help
