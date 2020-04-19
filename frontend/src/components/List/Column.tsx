@@ -53,26 +53,31 @@ import edgewareIcon from '../../icons/edgeware.svg';
 import joystreamIcon from '../../icons/joystream.svg';
 import ladderIcon from '../../icons/laddernetwork.svg';
 import cennznetIcon from '../../icons/cennznet.svg';
+import crabIcon from '../../icons/crab.svg';
 import darwiniaIcon from '../../icons/darwinia.svg';
 import turingIcon from '../../icons/turingnetwork.svg';
 import dothereumIcon from '../../icons/dothereum.svg';
 import katalchainIcon from '../../icons/katalchain.svg';
 import bifrostIcon from '../../icons/bifrost.svg';
 import totemIcon from '../../icons/totem.svg';
+import nodleIcon from '../../icons/nodle.svg';
 
 import unknownImplementationIcon from '../../icons/question-solid.svg';
 
 const ICONS = {
   'parity-polkadot': parityPolkadotIcon,
+  'Parity Polkadot': parityPolkadotIcon,
   'polkadot-js': polkadotJsIcon,
   'airalab-robonomics': airalabRobonomicsIcon,
   'substrate-node': paritySubstrateIcon,
+  'Substrate Node': paritySubstrateIcon,
   'edgeware-node': edgewareIcon,
   'Edgeware Node': edgewareIcon,
   'joystream-node': joystreamIcon,
   ChainX: chainXIcon,
   'ladder-node': ladderIcon,
   'cennznet-node': cennznetIcon,
+  Crab: crabIcon,
   Darwinia: darwiniaIcon,
   'Darwinia Testnet': darwiniaIcon,
   'turing-node': turingIcon,
@@ -81,6 +86,7 @@ const ICONS = {
   'bifrost-node': bifrostIcon,
   'totem-meccano-node': totemIcon,
   Totem: totemIcon,
+  'Nodle Chain Node': nodleIcon,
 };
 
 export namespace Column {
