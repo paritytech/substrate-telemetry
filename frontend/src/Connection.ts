@@ -37,12 +37,18 @@ export class Connection {
   private static getAddress(): string {
     const ENV_URL = 'SUBSTRATE_TELEMETRY_URL';
 
-    if (process.env && process.env[ENV_URL]) return process.env[ENV_URL] as string;
-    if (window.process_env && window.process_env[ENV_URL])
-      return window.process_env[ENV_URL];
+    if (process.env && process.env[ENV_URL]) {
+      return process.env[ENV_URL] as string;
+    }
 
-    if (window.location.protocol === 'https:')
+    if (window.process_env && window.process_env[ENV_URL]) {
+      return window.process_env[ENV_URL];
+    }
+
+    if (window.location.protocol === 'https:') {
       return `wss://${window.location.hostname}/feed/`;
+    }
+
     return `ws://127.0.0.1:8000/feed`;
   }
 
@@ -62,31 +68,27 @@ export class Connection {
 
   private static async trySocket(): Promise<Maybe<WebSocket>> {
     return new Promise<Maybe<WebSocket>>((resolve, _) => {
-      if (!Connection.address) {
-        resolve(null);
-      } else {
-        function clean() {
-          socket.removeEventListener('open', onSuccess);
-          socket.removeEventListener('close', onFailure);
-          socket.removeEventListener('error', onFailure);
-        }
-
-        function onSuccess() {
-          clean();
-          resolve(socket);
-        }
-
-        function onFailure() {
-          clean();
-          resolve(null);
-        }
-        const socket = new WebSocket(Connection.address);
-
-        socket.binaryType = 'arraybuffer';
-        socket.addEventListener('open', onSuccess);
-        socket.addEventListener('error', onFailure);
-        socket.addEventListener('close', onFailure);
+      function clean() {
+        socket.removeEventListener('open', onSuccess);
+        socket.removeEventListener('close', onFailure);
+        socket.removeEventListener('error', onFailure);
       }
+
+      function onSuccess() {
+        clean();
+        resolve(socket);
+      }
+
+      function onFailure() {
+        clean();
+        resolve(null);
+      }
+      const socket = new WebSocket(Connection.address);
+
+      socket.binaryType = 'arraybuffer';
+      socket.addEventListener('open', onSuccess);
+      socket.addEventListener('error', onFailure);
+      socket.addEventListener('close', onFailure);
     });
   }
 
