@@ -17,7 +17,7 @@
   width: 100%;
 }
 
-.Consensus .flexContainerLargeRow .firstInRow .emptylegend,
+.Consensus .flexContainerLargeRow .firstInRow .emptyLegend,
 .Consensus .flexContainerLargeRow .firstInRow .nameLegend {
   width: 99%;
   flex-grow: 1000000000;
@@ -134,7 +134,7 @@
   width: auto !important;
 }
 
-.Consensus .flexContainerLargeRow .noStretchOnLastRow .firstInRow .emptylegend {
+.Consensus .flexContainerLargeRow .noStretchOnLastRow .firstInRow .emptyLegend {
   width: auto !important;
 }
 

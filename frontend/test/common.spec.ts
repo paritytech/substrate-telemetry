@@ -1,13 +1,11 @@
-const test = require('tape');
-const common = require('../build/common');
-
+import * as test from 'tape';
+import { sortedInsert, sortedIndexOf } from '../src/common';
 test('sortedInsert', (assert) => {
-  const { sortedInsert } = common;
-  const cmp = (a, b) => a - b;
+  const cmp = (a: number, b: number) => a - b;
 
-  let mod = sortedInsert(3, [1, 2, 4, 5], cmp);
+  let _mod = sortedInsert(3, [1, 2, 4, 5], cmp);
 
-  function assertInsert(item, into, equals) {
+  function assertInsert(item: number, into: number[], equals: number[]) {
     sortedInsert(item, into, cmp);
     assert.same(into, equals, `Inserts ${item}`);
   }
@@ -26,14 +24,13 @@ test('sortedInsert', (assert) => {
 });
 
 test('sortedInsert fuzz', (assert) => {
-  const { sortedInsert } = common;
-  const cmp = (a, b) => a - b;
+  const cmp = (a: number, b: number) => a - b;
   const scramble = () => Math.random() - 0.5;
   const sorted = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
   for (let i = 0; i < 50; i++) {
     const scrambled = sorted.sort(scramble);
-    const resorted = [];
+    const resorted: number[] = [];
 
     for (const item of scrambled) {
       sortedInsert(item, resorted, cmp);
@@ -46,9 +43,8 @@ test('sortedInsert fuzz', (assert) => {
 });
 
 test('sortedInsert indexes', (assert) => {
-  const { sortedInsert } = common;
-  const cmp = (a, b) => a - b;
-  const into = [];
+  const cmp = (a: number, b: number) => a - b;
+  const into:number[] = [];
 
   assert.equals(sortedInsert(5, into, cmp), 0, 'Insert 5');
   assert.same(into, [5], 'Elements check out');
@@ -72,21 +68,27 @@ test('sortedInsert indexes', (assert) => {
   assert.end();
 });
 
+type ValueObj = {
+  value: number;
+};
+
 test('sortedIndexOf', (assert) => {
-  const { sortedIndexOf } = common;
-  const cmp = (a, b) => a.value - b.value;
-  const array = [];
+  const cmp = (a: ValueObj, b: ValueObj) => a.value - b.value;
+  const array: Array<ValueObj> = [];
 
   for (let i = 1; i <= 1000; i++) {
     array.push({ value: i >> 1 });
   }
 
   for (let i = 0; i < 50; i++) {
-    let index = Math.random() * 1000 | 0;
+    let index = (Math.random() * 1000) | 0;
+    const item = array[index];
 
-    item = array[index];
-
-    assert.equals(sortedIndexOf(item, array, cmp), array.indexOf(item), `Correct for ${item.value}`);
+    assert.equals(
+      sortedIndexOf(item, array, cmp),
+      array.indexOf(item),
+      `Correct for ${item.value}`
+    );
   }
 
   assert.end();
