@@ -31,6 +31,6 @@ before_script:
 script:
   - cd frontend
   - yarn
+  - yarn pretty:check
   - yarn test
-  - yarn check
   - yarn build
