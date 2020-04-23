@@ -28,7 +28,7 @@ jobs:
       working-directory: ./frontend
       run: yarn install
     - name: check
-      run: yarn check
+      run: yarn pretty:check
       working-directory: ./frontend
     - name: Test
       run: yarn test
