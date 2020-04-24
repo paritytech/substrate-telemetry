@@ -1,3 +1,6 @@
+![Frontend](https://github.com/paritytech/substrate-telemetry/workflows/Frontend%20CI/badge.svg)
+![Backend](https://github.com/paritytech/substrate-telemetry/workflows/Backend%20CI/badge.svg)
+
 # Polkadot Telemetry
 
 ## Overview
@@ -37,7 +40,7 @@ This example listen on all interfaces and on port :8888
 
 ```sh
 cd frontend
-yarn
+yarn install
 yarn start
 ```
 
@@ -49,7 +52,41 @@ Follow up installation instructions from the [Polkadot repo](https://github.com/
 polkadot --dev --telemetry-url ws://localhost:8000/submit
 ```
 
-### Run via Docker
+## Docker
+
+### Run the backend and frontend
+
+Obviously, the frontend need to be aware of the backend. In a similar way, your node will need to connect to the backend.
+For the sake of brevity below, I will name the containers `backend` and `frontend`. In a complex environment, you will want to use names such as `telemetry-backend` for instance to avoid conflicts with other `backend` containers.
+
+Let's start the backend first. We will be using the published 'chevdor' images here, feel free to replace with you own image.
+
+```
+docker run --rm -i --name backend -p 8000:8000 chevdor/substrate-telemetry-backend -l 0.0.0.0:8000
+```
+
+Let's now start the frontend:
+
+```
+docker run --rm -i --name frontend --link backend -p 80:80 -e SUBSTRATE_TELEMETRY_URL=ws://localhost:8000/feed chevdor/substrate-telemetry-frontend
+```
+
+WARNING: Do not forget the /feed part of the URL...
+
+NOTE: Here we used `SUBSTRATE_TELEMETRY_URL=ws://localhost:8000/feed`. This will work if you test on your laptop but NOT if your backend runs on a remote server. Keep in mind that the frontend docker image is serving a static site running your browser. The `SUBSTRATE_TELEMETRY_URL` is the WebSocket url that your browser will use to reach the backend. Say your backend runs on a remore server at `192.168.0.100`, you will need to set the IP/url accordingly.
+
+At that point, you can already open your browser at [http://localhost](http://localhost/) and see that telemetry is waiting for data.
+
+Let's bring some data in with  a node:
+
+```
+docker run --rm -i --name substrate --link backend -p 9944:9944 chevdor/substrate substrate --dev --telemetry-url 'ws://backend:8000/submit 0'
+```
+
+You should now see your noe showing up in the telemetry frontend:
+![image](doc/screenshot01.png)
+
+### Run via docker-compose
 
 To run via docker make sure that you have Docker Desktop.
 If you don't you can download for you OS here [Docker Desktop](https://www.docker.com/products/docker-desktop)
@@ -62,14 +99,12 @@ docker-compose up --build -d
  - `--build` will build the images and rebuild, but this is not required every time
  - If you want to makes UI changes, there is no need to rebuild the image as the files are being copied in via volumes.
 
-Now navigate to localhost:3000 in your browser to view the app.
-
-## Docker
+Now navigate to [http://localhost:3000](http://localhost:3000/) in your browser to view the app.
 
 ### Build & Publish the Frontend docker image
 
 The building process is standard. You just need to notice that the Dockerfile is in ./packages/frontend/ and tell docker about it. The context must remain the repository's root though.
 
 ```
-DOCKER_USER=chevdor ./scripts/build-docker-frontend.sh 
+DOCKER_USER=chevdor ./scripts/build-docker-frontend.sh
 ```
