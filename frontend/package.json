@@ -1,6 +1,6 @@
 {
   "name": "@dotstats/frontend",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "Parity Technologies Ltd. <admin@parity.io>",
   "license": "GPL-3.0",
   "description": "Polkadot Telemetry frontend",
