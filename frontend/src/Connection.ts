@@ -17,6 +17,12 @@ import { ACTIONS } from './common/feed';
 const TIMEOUT_BASE = (1000 * 5) as Types.Milliseconds; // 5 seconds
 const TIMEOUT_MAX = (1000 * 60 * 5) as Types.Milliseconds; // 5 minutes
 
+declare global {
+  interface Window {
+    process_env: string;
+  }
+}
+
 export class Connection {
   public static async create(
     pins: PersistentSet<Types.NodeName>,
@@ -26,11 +32,25 @@ export class Connection {
   }
 
   private static readonly utf8decoder = new TextDecoder('utf-8');
+  private static readonly address = Connection.getAddress();
 
-  private static readonly address =
-    window.location.protocol === 'https:'
-      ? `wss://${window.location.hostname}/feed/`
-      : `ws://127.0.0.1:8000/feed`;
+  private static getAddress(): string {
+    const ENV_URL = 'SUBSTRATE_TELEMETRY_URL';
+
+    if (process.env && process.env[ENV_URL]) {
+      return process.env[ENV_URL] as string;
+    }
+
+    if (window.process_env && window.process_env[ENV_URL]) {
+      return window.process_env[ENV_URL];
+    }
+
+    if (window.location.protocol === 'https:') {
+      return `wss://${window.location.hostname}/feed/`;
+    }
+
+    return `ws://127.0.0.1:8000/feed`;
+  }
 
   private static async socket(): Promise<WebSocket> {
     let socket = await Connection.trySocket();
@@ -63,7 +83,6 @@ export class Connection {
         clean();
         resolve(null);
       }
-
       const socket = new WebSocket(Connection.address);
 
       socket.binaryType = 'arraybuffer';
@@ -82,7 +101,6 @@ export class Connection {
   private state: Readonly<State>;
   private readonly update: Update;
   private readonly pins: PersistentSet<Types.NodeName>;
-
   constructor(
     socket: WebSocket,
     update: Update,

@@ -19,6 +19,6 @@ jobs:
     - name: Run tests
       working-directory: ./backend
       run: cargo test --verbose
-    - name: Request help
+    - name: Build release and call executable
       working-directory: ./backend
       run: cargo run --release -- --help

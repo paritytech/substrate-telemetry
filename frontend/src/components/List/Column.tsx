@@ -79,7 +79,6 @@ const ICONS = {
   'cennznet-node': cennznetIcon,
   Crab: crabIcon,
   Darwinia: darwiniaIcon,
-  'Darwinia Testnet': darwiniaIcon,
   'turing-node': turingIcon,
   dothereum: dothereumIcon,
   katalchain: katalchainIcon,

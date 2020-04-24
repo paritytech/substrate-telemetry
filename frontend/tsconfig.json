@@ -13,7 +13,7 @@
     "allowSyntheticDefaultImports": true,
     "noEmitOnError": false,
     "pretty": true,
-    "forceConsistentCasingInFileNames": false,
+    "forceConsistentCasingInFileNames": true,
     "noErrorTruncation": true,
     "noImplicitReturns": true,
     "noImplicitAny": true,
@@ -21,8 +21,9 @@
     "strictNullChecks": true,
     "suppressImplicitAnyIndexErrors": true,
     "resolveJsonModule": true,
-    "noUnusedParameters": true
+    "noUnusedParameters": true,
+    "skipLibCheck": true
   },
   "exclude": ["node_modules", "build"],
-  "include": ["src/**/*.ts", "src/**/*.tsx", "./declarations/**/*.d.ts"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "declarations/**/*.d.ts"]
 }
