@@ -83,6 +83,8 @@ Let's bring some data in with  a node:
 docker run --rm -i --name substrate --link backend -p 9944:9944 chevdor/substrate substrate --dev --telemetry-url 'ws://backend:8000/submit 0'
 ```
 
+You should now see your noe showing up in the telemetry frontend:
+![image](doc/screenshot01.png)
 
 ### Run via docker-compose
 
