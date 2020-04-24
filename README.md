@@ -40,7 +40,7 @@ This example listen on all interfaces and on port :8888
 
 ```sh
 cd frontend
-yarn
+yarn install
 yarn start
 ```
 
