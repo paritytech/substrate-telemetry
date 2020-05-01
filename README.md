@@ -59,31 +59,35 @@ polkadot --dev --telemetry-url ws://localhost:8000/submit
 Obviously, the frontend need to be aware of the backend. In a similar way, your node will need to connect to the backend.
 For the sake of brevity below, I will name the containers `backend` and `frontend`. In a complex environment, you will want to use names such as `telemetry-backend` for instance to avoid conflicts with other `backend` containers.
 
-Let's start the backend first. We will be using the published 'chevdor' images here, feel free to replace with you own image.
+Let's start the backend first. We will be using the published [chevdor](https://hub.docker.com/u/chevdor) images here, feel free to replace with your own image.
 
 ```
-docker run --rm -i --name backend -p 8000:8000 chevdor/substrate-telemetry-backend -l 0.0.0.0:8000
+docker run --rm -i --name backend -p 8000:8000 \
+  chevdor/substrate-telemetry-backend -l 0.0.0.0:8000
 ```
 
 Let's now start the frontend:
 
 ```
-docker run --rm -i --name frontend --link backend -p 80:80 -e SUBSTRATE_TELEMETRY_URL=ws://localhost:8000/feed chevdor/substrate-telemetry-frontend
+docker run --rm -i --name frontend --link backend -p 80:80 \
+  -e SUBSTRATE_TELEMETRY_URL=ws://localhost:8000/feed \
+  chevdor/substrate-telemetry-frontend
 ```
 
-WARNING: Do not forget the /feed part of the URL...
+WARNING: Do not forget the `/feed` part of the URL...
 
-NOTE: Here we used `SUBSTRATE_TELEMETRY_URL=ws://localhost:8000/feed`. This will work if you test on your laptop but NOT if your backend runs on a remote server. Keep in mind that the frontend docker image is serving a static site running your browser. The `SUBSTRATE_TELEMETRY_URL` is the WebSocket url that your browser will use to reach the backend. Say your backend runs on a remore server at `192.168.0.100`, you will need to set the IP/url accordingly.
+NOTE: Here we used `SUBSTRATE_TELEMETRY_URL=ws://localhost:8000/feed`. This will work if you test with everything running locally on your machine but NOT if your backend runs on a remote server. Keep in mind that the frontend docker image is serving a static site running your browser. The `SUBSTRATE_TELEMETRY_URL` is the WebSocket url that your browser will use to reach the backend. Say your backend runs on a remore server at `192.168.0.100`, you will need to set the IP/url accordingly in `SUBSTRATE_TELEMETRY_URL`.
 
 At that point, you can already open your browser at [http://localhost](http://localhost/) and see that telemetry is waiting for data.
 
 Let's bring some data in with  a node:
 
 ```
-docker run --rm -i --name substrate --link backend -p 9944:9944 chevdor/substrate substrate --dev --telemetry-url 'ws://backend:8000/submit 0'
+docker run --rm -i --name substrate --link backend -p 9944:9944 \
+  chevdor/substrate substrate --dev --telemetry-url 'ws://backend:8000/submit 0'
 ```
 
-You should now see your noe showing up in the telemetry frontend:
+You should now see your node showing up in your local [telemetry frontend](http://localhost/):
 ![image](doc/screenshot01.png)
 
 ### Run via docker-compose
