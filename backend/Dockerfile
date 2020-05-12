@@ -1,5 +1,5 @@
 #### BUILDER IMAGE -- quite big one ####
-FROM fredrikfornwall/rust-static-builder-nightly as builder
+FROM paritytech/musl-ci-linux as builder
 LABEL maintainer="Daniel Maricic daniel@woss.io"
 LABEL description="Polkadot Telemetry backend builder image"
 
