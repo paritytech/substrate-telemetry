@@ -4,7 +4,7 @@ import { AllChains, Chains, Chain, Ago, OfflineIndicator } from './components';
 import { Row, Column } from './components/List';
 import { Connection } from './Connection';
 import { Persistent, PersistentObject, PersistentSet } from './persist';
-import { State, Node, ChainData, PINNED_CHAIN } from './state';
+import { State, Node, ChainData, comparePinnedChains } from './state';
 import { getHashData } from './utils';
 import stable from 'stable';
 
@@ -203,12 +203,10 @@ export default class App extends React.Component<{}, State> {
     this.chainsCache = stable.inplace(
       Array.from(this.state.chains.values()),
       (a, b) => {
-        if (a.label === PINNED_CHAIN) {
-          return -1;
-        }
+        const pinned = comparePinnedChains(a.label, b.label);
 
-        if (b.label === PINNED_CHAIN) {
-          return 1;
+        if (pinned !== 0) {
+          return pinned;
         }
 
         return b.nodeCount - a.nodeCount;
