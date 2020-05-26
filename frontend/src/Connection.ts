@@ -5,7 +5,7 @@ import {
   Node,
   UpdateBound,
   ChainData,
-  PINNED_CHAIN,
+  PINNED_CHAINS,
 } from './state';
 import { PersistentSet } from './persist';
 import { getHashData, setHashData } from './utils';
@@ -518,7 +518,7 @@ export class Connection {
     let topChain: Maybe<ChainData> = null;
 
     for (const chain of chains.values()) {
-      if (chain.label === PINNED_CHAIN) {
+      if (PINNED_CHAINS[chain.label] === 1) {
         topChain = chain;
         break;
       }

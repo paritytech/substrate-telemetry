@@ -1,7 +1,17 @@
 import { Types, Maybe, SortedCollection } from './common';
 import { Column } from './components/List';
 
-export const PINNED_CHAIN = 'Kusama';
+export const PINNED_CHAINS = {
+  Kusama: 2,
+  'Polkadot CC1': 1,
+};
+
+export function comparePinnedChains(a: string, b: string) {
+  const aWeight = PINNED_CHAINS[a] || 1024;
+  const bWeight = PINNED_CHAINS[b] || 1024;
+
+  return aWeight - bWeight;
+}
 
 export class Node {
   public static compare(a: Node, b: Node): number {
