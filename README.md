@@ -95,7 +95,7 @@ If you don't you can download for you OS here [Docker Desktop](https://www.docke
 docker-compose up --build -d
 ```
 
-- `-d` stands for detach, if you would like to see logs i recommend using [Kitmatic](https://kitematic.com/) or don't use the `-d`
+- `-d` stands for detach, if you would like to see logs I recommend using [Kitmatic](https://kitematic.com/) or don't use the `-d`
 - `--build` will build the images and rebuild, but this is not required every time
 - If you want to makes UI changes, there is no need to rebuild the image as the files are being copied in via volumes.
 
