@@ -1,4 +1,6 @@
-import { Types } from './common';
+import { Types } from '../common';
+
+export * from './MultiCounter';
 
 export interface Viewport {
   width: number;

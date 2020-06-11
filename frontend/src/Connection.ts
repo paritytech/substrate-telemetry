@@ -35,21 +35,22 @@ export class Connection {
   private static readonly address = Connection.getAddress();
 
   private static getAddress(): string {
-    const ENV_URL = 'SUBSTRATE_TELEMETRY_URL';
+    return 'wss://telemetry.polkadot.io/feed/';
+    // const ENV_URL = 'SUBSTRATE_TELEMETRY_URL';
 
-    if (process.env && process.env[ENV_URL]) {
-      return process.env[ENV_URL] as string;
-    }
+    // if (process.env && process.env[ENV_URL]) {
+    //   return process.env[ENV_URL] as string;
+    // }
 
-    if (window.process_env && window.process_env[ENV_URL]) {
-      return window.process_env[ENV_URL];
-    }
+    // if (window.process_env && window.process_env[ENV_URL]) {
+    //   return window.process_env[ENV_URL];
+    // }
 
-    if (window.location.protocol === 'https:') {
-      return `wss://${window.location.hostname}/feed/`;
-    }
+    // if (window.location.protocol === 'https:') {
+    //   return `wss://${window.location.hostname}/feed/`;
+    // }
 
-    return `ws://127.0.0.1:8000/feed`;
+    // return `ws://127.0.0.1:8000/feed`;
   }
 
   private static async socket(): Promise<WebSocket> {
@@ -148,8 +149,10 @@ export class Connection {
   }
 
   public handleMessages = (messages: FeedMessage.Message[]) => {
-    const { nodes, chains, sortBy, selectedColumns } = this.state;
-    const ref = nodes.ref();
+    const { nodes, nodeVersions, chains, sortBy, selectedColumns } = this.state;
+
+    const nodesRef = nodes.ref();
+    const versionsRef = nodeVersions.ref();
 
     const updateState: UpdateBound = (state) => {
       this.state = this.update(state);
@@ -223,14 +226,19 @@ export class Connection {
           );
 
           nodes.add(node);
+          nodeVersions.increment(node.semver);
 
           break;
         }
 
         case ACTIONS.RemovedNode: {
           const id = message.payload;
+          const node = nodes.get(id);
 
-          nodes.remove(id);
+          if (node) {
+            nodes.remove(id);
+            nodeVersions.decrement(node.semver);
+          }
 
           break;
         }
@@ -346,6 +354,7 @@ export class Connection {
 
           if (this.state.subscribed === message.payload) {
             nodes.clear();
+            nodeVersions.clear();
             this.state = this.update({ subscribed: null, nodes, chains });
             this.resetConsensus();
           }
@@ -355,6 +364,7 @@ export class Connection {
 
         case ACTIONS.SubscribedTo: {
           nodes.clear();
+          nodeVersions.clear();
 
           this.state = this.update({ subscribed: message.payload, nodes });
 
@@ -364,6 +374,7 @@ export class Connection {
         case ACTIONS.UnsubscribedFrom: {
           if (this.state.subscribed === message.payload) {
             nodes.clear();
+            nodeVersions.clear();
 
             this.state = this.update({ subscribed: null, nodes });
           }
@@ -414,7 +425,10 @@ export class Connection {
       }
     }
 
-    if (nodes.hasChangedSince(ref)) {
+    if (
+      nodes.hasChangedSince(nodesRef) ||
+      nodeVersions.hasChangedSince(versionsRef)
+    ) {
       this.state = this.update({ nodes });
     }
 

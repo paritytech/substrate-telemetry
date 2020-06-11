@@ -131,8 +131,7 @@ export namespace Column {
     width: 90,
     setting: 'implementation',
     sortBy: ({ sortableVersion }) => sortableVersion,
-    render: ({ implementation, version }) => {
-      const [semver] = version.match(SEMVER_PATTERN) || ['?.?.?'];
+    render: ({ implementation, version, semver }) => {
       const implIcon = ICONS[implementation] || unknownImplementationIcon;
 
       return (

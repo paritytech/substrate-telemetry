@@ -1,5 +1,9 @@
 import { Types, Maybe, SortedCollection } from './common';
 import { Column } from './components/List';
+import { MultiCounter } from './utils';
+
+const SEMVER_PATTERN = /^\d+\.\d+\.\d+/;
+type SemverPattern = [Types.NodeSemver];
 
 export const PINNED_CHAINS = {
   Kusama: 2,
@@ -40,6 +44,7 @@ export class Node {
   public readonly name: Types.NodeName;
   public readonly implementation: Types.NodeImplementation;
   public readonly version: Types.NodeVersion;
+  public readonly semver: Types.NodeSemver;
   public readonly validator: Maybe<Types.Address>;
   public readonly networkId: Maybe<Types.NetworkId>;
   public readonly connectedAt: Types.Timestamp;
@@ -88,7 +93,10 @@ export class Node {
     location: Maybe<Types.NodeLocation>,
     connectedAt: Types.Timestamp
   ) {
+    const NO_SEMVER = ['?.?.?'];
     const [name, implementation, version, validator, networkId] = nodeDetails;
+    const [semver] = (version.match(SEMVER_PATTERN) ||
+      NO_SEMVER) as SemverPattern;
 
     this.pinned = pinned;
 
@@ -96,6 +104,7 @@ export class Node {
     this.name = name;
     this.implementation = implementation;
     this.version = version;
+    this.semver = semver;
     this.validator = validator;
     this.networkId = networkId;
     this.connectedAt = connectedAt;
@@ -270,6 +279,7 @@ export interface State {
   subscribed: Maybe<Types.ChainLabel>;
   chains: Map<Types.ChainLabel, ChainData>;
   nodes: SortedCollection<Node>;
+  nodeVersions: MultiCounter<Types.NodeSemver>;
   settings: Readonly<State.Settings>;
   pins: Readonly<Set<Types.NodeName>>;
   sortBy: Readonly<Maybe<number>>;
