@@ -432,6 +432,10 @@ export class Connection {
       this.state = this.update({ nodes });
     }
 
+    if (nodeVersions.hasChangedSince(versionsRef)) {
+      console.log(nodeVersions);
+    }
+
     this.autoSubscribe();
   };
 

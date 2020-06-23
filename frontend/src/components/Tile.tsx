@@ -8,6 +8,10 @@ export namespace Tile {
     icon: string;
     children?: React.ReactNode;
   }
+
+  export interface PropsRaw {
+    children?: React.ReactNode;
+  }
 }
 
 export function Tile(props: Tile.Props) {
@@ -18,4 +22,8 @@ export function Tile(props: Tile.Props) {
       <span className="Tile-content">{props.children}</span>
     </div>
   );
+}
+
+export function TileRaw(props: Tile.PropsRaw) {
+  return <div className="Tile">{props.children}</div>;
 }

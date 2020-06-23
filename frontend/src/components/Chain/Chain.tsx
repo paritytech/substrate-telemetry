@@ -4,7 +4,7 @@ import { Types, Maybe } from '../../common';
 import { State as AppState } from '../../state';
 import { formatNumber, secondsWithPrecision, getHashData } from '../../utils';
 import { Tab } from './';
-import { Tile, Ago, List, Map, Settings, Consensus } from '../';
+import { Tile, TileRaw, Ago, List, Map, Settings, Consensus } from '../';
 import { Persistent, PersistentObject, PersistentSet } from '../../persist';
 
 import blockIcon from '../../icons/cube.svg';
@@ -79,6 +79,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
           <Tile icon={lastTimeIcon} title="Last Block">
             <Ago when={blockTimestamp} />
           </Tile>
+          <TileRaw>Hello</TileRaw>
           <div className="Chain-tabs">
             <Tab
               icon={listIcon}
