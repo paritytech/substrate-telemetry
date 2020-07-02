@@ -24,6 +24,7 @@ COPY --from=builder /opt/builder/env.sh /usr/bin/
 RUN apk add --no-cache bash; chmod +x /usr/bin/env.sh
 
 COPY --from=builder /opt/builder/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY --from=builder /opt/builder/nginx/default /etc/nginx/sites-available/default
 COPY --from=builder /opt/builder/build /usr/share/nginx/html
 
 EXPOSE 80

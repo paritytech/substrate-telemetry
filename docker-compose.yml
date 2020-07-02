@@ -3,13 +3,13 @@ version: "3"
 services:
   telemetry-frontend:
     build:
-      dockerfile: frontend.Dockerfile
-      context: ./
+      dockerfile: Dockerfile
+      context: ./frontend/
     # Copy in changes to the ui, so no need to rebuild the images.
     volumes:
       - /app/node_modules
       - ./packages:/app/packages
-    command: yarn start:frontend
+    # command: yarn start:frontend
     ports:
       - 3000:3000
   telemetry-backend:
@@ -20,3 +20,5 @@ services:
       - PORT=8000
     ports:
       - 8000:8000
+    expose:
+      - 8000
