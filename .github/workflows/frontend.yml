@@ -43,7 +43,7 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         dockerfile: Dockerfile
-        repository: paritytech/substrate-telemetry-frontend-${{ github.event.client_payload.id }}
+        repository: paritytech/substrate-telemetry-frontend
         tags: latest
         add_git_labels: true
         tag_with_ref: true
