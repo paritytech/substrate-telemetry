@@ -30,5 +30,6 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
         dockerfile: Dockerfile
         repository: paritytech/substrate-telemetry-backend
+        push: ${{ startsWith(github.ref, 'refs/tags/') }}
         tags: latest
         add_git_labels: true
