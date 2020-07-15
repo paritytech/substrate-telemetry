@@ -9,9 +9,8 @@ services:
     volumes:
       - /app/node_modules
       - ./packages:/app/packages
-    # command: yarn start:frontend
     ports:
-      - 3000:3000
+      - 3000:80
   telemetry-backend:
     build:
       dockerfile: backend.Dockerfile
