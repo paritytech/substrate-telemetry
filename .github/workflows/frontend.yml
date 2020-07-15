@@ -46,5 +46,3 @@ jobs:
         repository: paritytech/substrate-telemetry-frontend
         tags: latest
         add_git_labels: true
-        tag_with_ref: true
-        tag_with_sha: true
