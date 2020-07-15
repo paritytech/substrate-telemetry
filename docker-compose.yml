@@ -13,8 +13,8 @@ services:
       - 3000:80
   telemetry-backend:
     build:
-      dockerfile: backend.Dockerfile
-      context: ./
+      dockerfile: Dockerfile
+      context: ./backend/
     environment:
       - PORT=8000
     ports:
