@@ -13,3 +13,4 @@ export * from './Sparkline';
 export * from './Tooltip';
 export * from './Filter';
 export * from './PolkadotIcon';
+export * from './VersionsTile';

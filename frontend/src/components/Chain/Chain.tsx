@@ -4,7 +4,7 @@ import { Types, Maybe } from '../../common';
 import { State as AppState } from '../../state';
 import { formatNumber, secondsWithPrecision, getHashData } from '../../utils';
 import { Tab } from './';
-import { Tile, TileRaw, Ago, List, Map, Settings, Consensus } from '../';
+import { Tile, VersionsTile, Ago, List, Map, Settings, Consensus } from '../';
 import { Persistent, PersistentObject, PersistentSet } from '../../persist';
 
 import blockIcon from '../../icons/cube.svg';
@@ -61,6 +61,8 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     const { appState } = this.props;
     const { best, finalized, blockTimestamp, blockAverage } = appState;
     const { display: currentTab } = this.state;
+    const { nodeVersions } = appState;
+    const nodeVersionsRef = nodeVersions.ref();
 
     return (
       <div className="Chain">
@@ -79,7 +81,10 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
           <Tile icon={lastTimeIcon} title="Last Block">
             <Ago when={blockTimestamp} />
           </Tile>
-          <TileRaw>Hello</TileRaw>
+          <VersionsTile
+            nodeVersions={nodeVersions}
+            stateRef={nodeVersionsRef}
+          />
           <div className="Chain-tabs">
             <Tab
               icon={listIcon}
