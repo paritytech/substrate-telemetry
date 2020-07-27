@@ -89,8 +89,10 @@ impl NodeConnector {
             // This will at least force all CC3 nodes to be aggregated with
             // the rest.
             let network_id = None; // network_id.map(Into::into);
-            if &*node.chain == "Kusama CC3" {
-                node.chain = "Kusama".into();
+            match &*node.chain {
+                "Kusama CC3" => node.chain = "Kusama".into(),
+                "Polkadot CC1" => node.chain = "Polkadot".into(),
+                _ => (),
             }
 
             self.aggregator.do_send(AddNode { rec, network_id, node });

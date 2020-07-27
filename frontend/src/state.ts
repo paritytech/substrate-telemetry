@@ -3,7 +3,7 @@ import { Column } from './components/List';
 
 export const PINNED_CHAINS = {
   Kusama: 2,
-  'Polkadot CC1': 1,
+  Polkadot: 1,
 };
 
 export function comparePinnedChains(a: string, b: string) {

@@ -1881,7 +1881,7 @@ dependencies = [
 
 [[package]]
 name = "telemetry"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "actix 0.8.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-http 0.2.10 (git+https://github.com/maciejhirsz/actix-web)",
