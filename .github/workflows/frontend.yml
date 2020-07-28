@@ -36,7 +36,6 @@ jobs:
     - name: Build
       working-directory: ./frontend
       run: yarn build
-
     - name: Build and Push template image
       working-directory: ./frontend
       uses: docker/build-push-action@v1 # https://github.com/docker/build-push-action

@@ -22,7 +22,6 @@ jobs:
     - name: Build release and call executable
       working-directory: ./backend
       run: cargo run --release -- --help
-
     - name: Build and Push template image
       working-directory: ./backend
       uses: docker/build-push-action@v1 # https://github.com/docker/build-push-action
