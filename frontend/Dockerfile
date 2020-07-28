@@ -10,7 +10,6 @@ RUN yarn install && \
     yarn build && \
     yarn cache clean
 
-
 #### OUTPUT IMAGE ####
 FROM nginx:stable-alpine
 LABEL maintainer="Chevdor <chevdor@gmail.com>"
