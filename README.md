@@ -54,6 +54,8 @@ polkadot --dev --telemetry-url ws://localhost:8000/submit
 
 ## Docker
 
+*Pre-built docker images are available at `parity/substrate-telemetry-frontend` and `parity/substrate-telemetry-backend`.*
+
 ### Run the backend and frontend
 
 Obviously, the frontend need to be aware of the backend. In a similar way, your node will need to connect to the backend.
