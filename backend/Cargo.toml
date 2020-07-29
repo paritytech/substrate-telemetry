@@ -22,7 +22,7 @@ num-traits = "0.2"
 parking_lot = "0.9"
 reqwest = "0.9.18"
 rustc-hash = "1.0.1"
-clap = { git = "https://github.com/clap-rs/clap/" }
+clap = "3.0.0-beta.1"
 
 [profile.release]
 lto = true

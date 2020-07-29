@@ -34,7 +34,7 @@ struct Opts {
         short = "l",
         long = "listen",
         default_value = "127.0.0.1:8000",
-        help = "This is the socket address Telemetry is listening to. This is restricted localhost (127.0.0.1) by default and should be fine for most use cases. If you are using Telemetry in a container, you likely want to set this to '0.0.0.0:8000'"
+        about = "This is the socket address Telemetry is listening to. This is restricted localhost (127.0.0.1) by default and should be fine for most use cases. If you are using Telemetry in a container, you likely want to set this to '0.0.0.0:8000'"
     )]
     socket: std::net::SocketAddr,
 }
