@@ -65,8 +65,6 @@ pub struct SystemConnected {
 pub struct SystemInterval {
     #[serde(flatten)]
     pub stats: NodeStats,
-    pub memory: Option<f32>,
-    pub cpu: Option<f32>,
     pub bandwidth_upload: Option<f64>,
     pub bandwidth_download: Option<f64>,
     pub finalized_height: Option<BlockNumber>,
@@ -75,9 +73,6 @@ pub struct SystemInterval {
     pub block: Block,
     pub network_state: Option<IgnoredAny>,
     pub used_state_cache_size: Option<f32>,
-    pub used_db_cache_size: Option<f32>,
-    pub disk_read_per_sec: Option<f32>,
-    pub disk_write_per_sec: Option<f32>,
 }
 
 #[derive(Deserialize, Debug)]

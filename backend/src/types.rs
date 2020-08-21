@@ -28,9 +28,6 @@ pub struct NodeStats {
 #[derive(Default)]
 pub struct NodeIO {
     pub used_state_cache_size: MeanList<f32>,
-    pub used_db_cache_size: MeanList<f32>,
-    pub disk_read_per_sec: MeanList<f32>,
-    pub disk_write_per_sec: MeanList<f32>,
 }
 
 #[derive(Deserialize, Debug, Clone, Copy)]
@@ -61,10 +58,6 @@ impl Default for BlockDetails {
 
 #[derive(Default)]
 pub struct NodeHardware {
-    /// CPU use means
-    pub cpu: MeanList<f32>,
-    /// Memory use means
-    pub memory: MeanList<f32>,
     /// Upload uses means
     pub upload: MeanList<f64>,
     /// Download uses means
@@ -112,11 +105,8 @@ impl Serialize for NodeIO {
     where
         S: Serializer,
     {
-        let mut tup = serializer.serialize_tuple(4)?;
+        let mut tup = serializer.serialize_tuple(1)?;
         tup.serialize_element(self.used_state_cache_size.slice())?;
-        tup.serialize_element(self.used_db_cache_size.slice())?;
-        tup.serialize_element(self.disk_read_per_sec.slice())?;
-        tup.serialize_element(self.disk_write_per_sec.slice())?;
         tup.end()
     }
 }
@@ -154,9 +144,7 @@ impl Serialize for NodeHardware {
     where
         S: Serializer,
     {
-        let mut tup = serializer.serialize_tuple(5)?;
-        tup.serialize_element(self.memory.slice())?;
-        tup.serialize_element(self.cpu.slice())?;
+        let mut tup = serializer.serialize_tuple(3)?;
         tup.serialize_element(self.upload.slice())?;
         tup.serialize_element(self.download.slice())?;
         tup.serialize_element(self.chart_stamps.slice())?;

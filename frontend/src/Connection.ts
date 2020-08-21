@@ -294,10 +294,7 @@ export class Connection {
           nodes.mutAndMaybeSort(
             id,
             (node) => node.updateHardware(nodeHardware),
-            sortByColumn === Column.CPU ||
-              sortByColumn === Column.MEM ||
-              sortByColumn === Column.UPLOAD ||
-              sortByColumn === Column.DOWNLOAD
+            sortByColumn === Column.UPLOAD || sortByColumn === Column.DOWNLOAD
           );
 
           break;
@@ -309,10 +306,7 @@ export class Connection {
           nodes.mutAndMaybeSort(
             id,
             (node) => node.updateIO(nodeIO),
-            sortByColumn === Column.STATE_CACHE ||
-              sortByColumn === Column.DB_CACHE ||
-              sortByColumn === Column.DISK_READ ||
-              sortByColumn === Column.DISK_WRITE
+            sortByColumn === Column.STATE_CACHE
           );
 
           break;
