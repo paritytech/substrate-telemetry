@@ -130,12 +130,6 @@ impl Node {
     pub fn update_hardware(&mut self, interval: &SystemInterval) -> bool {
         let mut changed = false;
 
-        if let Some(cpu) = interval.cpu {
-            changed |= self.hardware.cpu.push(cpu);
-        }
-        if let Some(memory) = interval.memory {
-            changed |= self.hardware.memory.push(memory);
-        }
         if let Some(upload) = interval.bandwidth_upload {
             changed |= self.hardware.upload.push(upload);
         }
@@ -161,15 +155,6 @@ impl Node {
 
         if let Some(size) = interval.used_state_cache_size {
             changed |= self.io.used_state_cache_size.push(size);
-        }
-        if let Some(size) = interval.used_db_cache_size {
-            changed |= self.io.used_db_cache_size.push(size);
-        }
-        if let Some(bps) = interval.disk_read_per_sec {
-            changed |= self.io.disk_read_per_sec.push(bps);
-        }
-        if let Some(bps) = interval.disk_write_per_sec {
-            changed |= self.io.disk_write_per_sec.push(bps);
         }
 
         if changed {

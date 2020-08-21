@@ -51,14 +51,9 @@ export class Node {
   public pinned: boolean;
   public peers: Types.PeerCount;
   public txs: Types.TransactionCount;
-  public mem: Types.MemoryUse[];
-  public cpu: Types.CPUUse[];
   public upload: Types.BytesPerSecond[];
   public download: Types.BytesPerSecond[];
   public stateCacheSize: Types.Bytes[];
-  public dbCacheSize: Types.Bytes[];
-  public diskRead: Types.BytesPerSecond[];
-  public diskWrite: Types.BytesPerSecond[];
   public chartstamps: Types.Timestamp[];
 
   public height: Types.BlockNumber;
@@ -127,21 +122,16 @@ export class Node {
   }
 
   public updateIO(io: Types.NodeIO) {
-    const [stateCacheSize, dbCacheSize, diskRead, diskWrite] = io;
+    const [stateCacheSize] = io;
 
     this.stateCacheSize = stateCacheSize;
-    this.dbCacheSize = dbCacheSize;
-    this.diskRead = diskRead;
-    this.diskWrite = diskWrite;
 
     this.trigger();
   }
 
   public updateHardware(hardware: Types.NodeHardware) {
-    const [mem, cpu, upload, download, chartstamps] = hardware;
+    const [upload, download, chartstamps] = hardware;
 
-    this.mem = mem;
-    this.cpu = cpu;
     this.upload = upload;
     this.download = download;
     this.chartstamps = chartstamps;
@@ -229,14 +219,9 @@ export namespace State {
     networkId: boolean;
     peers: boolean;
     txs: boolean;
-    cpu: boolean;
-    mem: boolean;
     upload: boolean;
     download: boolean;
     stateCacheSize: boolean;
-    dbCacheSize: boolean;
-    diskRead: boolean;
-    diskWrite: boolean;
     blocknumber: boolean;
     blockhash: boolean;
     finalized: boolean;

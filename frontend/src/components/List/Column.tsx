@@ -32,13 +32,8 @@ import blockHashIcon from '../../icons/file-binary.svg';
 import blockTimeIcon from '../../icons/history.svg';
 import propagationTimeIcon from '../../icons/dashboard.svg';
 import lastTimeIcon from '../../icons/watch.svg';
-import cpuIcon from '../../icons/microchip-solid.svg';
-import memoryIcon from '../../icons/memory-solid.svg';
 import uploadIcon from '../../icons/cloud-upload.svg';
 import downloadIcon from '../../icons/cloud-download.svg';
-import readIcon from '../../icons/arrow-up.svg';
-import writeIcon from '../../icons/arrow-down.svg';
-import databaseIcon from '../../icons/database.svg';
 import stateIcon from '../../icons/git-branch.svg';
 import networkIcon from '../../icons/network.svg';
 import uptimeIcon from '../../icons/pulse.svg';
@@ -171,56 +166,6 @@ export namespace Column {
     render: ({ txs }) => `${txs}`,
   };
 
-  export const CPU: Column = {
-    label: '% CPU Use',
-    icon: cpuIcon,
-    width: 40,
-    setting: 'cpu',
-    sortBy: ({ cpu }) => (cpu.length < 3 ? 0 : cpu[cpu.length - 1]),
-    render: ({ cpu, chartstamps }) => {
-      if (cpu.length < 3) {
-        return '-';
-      }
-
-      return (
-        <Sparkline
-          width={44}
-          height={16}
-          stroke={1}
-          format={formatCPU}
-          values={cpu}
-          stamps={chartstamps}
-          minScale={100}
-        />
-      );
-    },
-  };
-
-  export const MEM: Column = {
-    label: 'Memory Use',
-    icon: memoryIcon,
-    width: 40,
-    setting: 'mem',
-    sortBy: ({ mem }) => (mem.length < 3 ? 0 : mem[mem.length - 1]),
-    render: ({ mem, chartstamps }) => {
-      if (mem.length < 3) {
-        return '-';
-      }
-
-      return (
-        <Sparkline
-          width={44}
-          height={16}
-          stroke={1}
-          format={formatMemory}
-          values={mem}
-          stamps={chartstamps}
-          minScale={MEMORY_SCALE}
-        />
-      );
-    },
-  };
-
   export const UPLOAD: Column = {
     label: 'Upload Bandwidth',
     icon: uploadIcon,
@@ -291,84 +236,6 @@ export namespace Column {
           stroke={1}
           format={formatBytes}
           values={stateCacheSize}
-          stamps={chartstamps}
-          minScale={MEMORY_SCALE}
-        />
-      );
-    },
-  };
-
-  export const DB_CACHE: Column = {
-    label: 'Database Cache Size',
-    icon: databaseIcon,
-    width: 40,
-    setting: 'dbCacheSize',
-    sortBy: ({ dbCacheSize }) =>
-      dbCacheSize.length < 3 ? 0 : dbCacheSize[dbCacheSize.length - 1],
-    render: ({ dbCacheSize, chartstamps }) => {
-      if (dbCacheSize.length < 3) {
-        return '-';
-      }
-
-      return (
-        <Sparkline
-          width={44}
-          height={16}
-          stroke={1}
-          format={formatBytes}
-          values={dbCacheSize}
-          stamps={chartstamps}
-          minScale={MEMORY_SCALE}
-        />
-      );
-    },
-  };
-
-  export const DISK_READ: Column = {
-    label: 'Disk Read',
-    icon: readIcon,
-    width: 40,
-    setting: 'diskRead',
-    sortBy: ({ diskRead }) =>
-      diskRead.length < 3 ? 0 : diskRead[diskRead.length - 1],
-    render: ({ diskRead, chartstamps }) => {
-      if (diskRead.length < 3) {
-        return '-';
-      }
-
-      return (
-        <Sparkline
-          width={44}
-          height={16}
-          stroke={1}
-          format={formatBandwidth}
-          values={diskRead}
-          stamps={chartstamps}
-          minScale={MEMORY_SCALE}
-        />
-      );
-    },
-  };
-
-  export const DISK_WRITE: Column = {
-    label: 'Disk Write',
-    icon: writeIcon,
-    width: 40,
-    setting: 'diskWrite',
-    sortBy: ({ diskWrite }) =>
-      diskWrite.length < 3 ? 0 : diskWrite[diskWrite.length - 1],
-    render: ({ diskWrite, chartstamps }) => {
-      if (diskWrite.length < 3) {
-        return '-';
-      }
-
-      return (
-        <Sparkline
-          width={44}
-          height={16}
-          stroke={1}
-          format={formatBandwidth}
-          values={diskWrite}
           stamps={chartstamps}
           minScale={MEMORY_SCALE}
         />
