@@ -48,6 +48,8 @@ impl Actor for NodeConnector {
 
 impl NodeConnector {
     pub fn new(aggregator: Addr<Aggregator>, locator: Recipient<LocateRequest>, ip: Option<Ipv4Addr>) -> Self {
+        info!("Node connected: {:?}", ip);
+
         Self {
             // Garbage id, will be replaced by the Initialize message
             nid: !0,
