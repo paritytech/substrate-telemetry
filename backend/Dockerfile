@@ -19,6 +19,7 @@ LABEL description="Polkadot Telemetry backend, static build"
 ARG PROFILE=release
 WORKDIR /usr/local/bin
 
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /app/target/x86_64-unknown-linux-musl/$PROFILE/telemetry /usr/local/bin
 
 EXPOSE 8000
