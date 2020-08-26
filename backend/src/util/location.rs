@@ -136,7 +136,16 @@ impl Locator {
     where
         for<'de> T: Deserialize<'de>,
     {
-        match self.client.get(url).send()?.json::<T>() {
+        let mut result = match self.client.get(url).send() {
+            Ok(result) => result,
+            Err(error) => {
+                info!("Failed query {} ({:?})", url, error);
+
+                return Err(error);
+            }
+        };
+
+        match result.json::<T>() {
             Ok(result) => Ok(Some(result)),
             Err(err) => {
                 debug!("JSON error for ip location: {:?}", err);
