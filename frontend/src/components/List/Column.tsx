@@ -105,8 +105,8 @@ export namespace Column {
           </span>
         </Tooltip>
       ) : (
-          '-'
-        );
+        '-'
+      );
     },
   };
 
@@ -359,8 +359,8 @@ function formatStamp(stamp: Types.Timestamp): string {
   return hours
     ? `${hours}h ago`
     : minutes
-      ? `${minutes}m ago`
-      : `${seconds}s ago`;
+    ? `${minutes}m ago`
+    : `${seconds}s ago`;
 }
 
 function formatMemory(kbs: number, stamp: Maybe<Types.Timestamp>): string {
