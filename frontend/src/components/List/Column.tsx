@@ -73,7 +73,7 @@ const ICONS = {
   'ladder-node': ladderIcon,
   'cennznet-node': cennznetIcon,
   Crab: crabIcon,
-  "Darwinia Crab": crabIcon,
+  'Darwinia Crab': crabIcon,
   Darwinia: darwiniaIcon,
   'turing-node': turingIcon,
   dothereum: dothereumIcon,
