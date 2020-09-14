@@ -142,12 +142,22 @@ impl Node {
     }
 
     pub fn update_stats(&mut self, interval: &SystemInterval) -> Option<&NodeStats> {
-        if self.stats != interval.stats {
-            self.stats = interval.stats;
-            Some(&self.stats)
-        } else {
-            None
-        }
+      let mut changed = false;
+
+      if let Some(peers) = interval.peers {
+          self.stats.peers = peers;
+          changed = true;
+      }
+      if let Some(txcount) = interval.txcount {
+          self.stats.txcount = txcount;
+          changed = true;
+      }
+
+      if changed {
+          Some(&self.stats)
+      } else {
+          None
+      }
     }
 
     pub fn update_io(&mut self, interval: &SystemInterval) -> Option<&NodeIO> {

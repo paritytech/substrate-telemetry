@@ -2,7 +2,7 @@ use actix::prelude::*;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use serde::de::IgnoredAny;
-use crate::node::{NodeDetails, NodeStats};
+use crate::node::NodeDetails;
 use crate::types::{Block, BlockNumber, BlockHash};
 
 #[derive(Deserialize, Debug, Message)]
@@ -63,14 +63,14 @@ pub struct SystemConnected {
 
 #[derive(Deserialize, Debug)]
 pub struct SystemInterval {
-    #[serde(flatten)]
-    pub stats: NodeStats,
+    pub peers: Option<u64>,
+    pub txcount: Option<u64>,
     pub bandwidth_upload: Option<f64>,
     pub bandwidth_download: Option<f64>,
     pub finalized_height: Option<BlockNumber>,
     pub finalized_hash: Option<BlockHash>,
     #[serde(flatten)]
-    pub block: Block,
+    pub block: Option<Block>,
     pub network_state: Option<IgnoredAny>,
     pub used_state_cache_size: Option<f32>,
 }
@@ -132,9 +132,8 @@ impl Block {
 impl Details {
     pub fn best_block(&self) -> Option<&Block> {
         match self {
-            Details::BlockImport(block) | Details::SystemInterval(SystemInterval { block, .. }) => {
-                Some(block)
-            }
+            Details::BlockImport(block) => Some(block),
+            Details::SystemInterval(SystemInterval { block, .. }) => block.as_ref(),
             _ => None,
         }
     }
