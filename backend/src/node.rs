@@ -151,7 +151,7 @@ impl Node {
           }
       }
       if let Some(txcount) = interval.txcount {
-          if txcoint != self.stats.txcount {
+          if txcount != self.stats.txcount {
               self.stats.txcount = txcount;
               changed = true;
           }
