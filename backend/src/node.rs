@@ -145,12 +145,16 @@ impl Node {
       let mut changed = false;
 
       if let Some(peers) = interval.peers {
-          self.stats.peers = peers;
-          changed = true;
+          if peers != self.stats.peers {
+              self.stats.peers = peers;
+              changed = true;
+          }
       }
       if let Some(txcount) = interval.txcount {
-          self.stats.txcount = txcount;
-          changed = true;
+          if txcoint != self.stats.txcount {
+              self.stats.txcount = txcount;
+              changed = true;
+          }
       }
 
       if changed {
