@@ -104,6 +104,7 @@ impl Actor for Aggregator {
 
 /// Message sent from the NodeConnector to the Aggregator upon getting all node details
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct AddNode {
     pub node: NodeDetails,
     pub network_id: Option<Label>,
@@ -112,9 +113,11 @@ pub struct AddNode {
 
 /// Message sent from the Chain to the Aggregator when the Chain loses all nodes
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct DropChain(pub ChainId);
 
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct RenameChain(pub ChainId, pub Label);
 
 /// Message sent from the FeedConnector to the Aggregator when subscribing to a new chain
@@ -129,6 +132,7 @@ impl Message for Subscribe {
 
 /// Message sent from the FeedConnector to the Aggregator consensus requested
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct SendFinality {
     pub chain: Label,
     pub fid: FeedId,
@@ -136,6 +140,7 @@ pub struct SendFinality {
 
 /// Message sent from the FeedConnector to the Aggregator no more consensus required
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct NoMoreFinality {
     pub chain: Label,
     pub fid: FeedId,
@@ -143,29 +148,32 @@ pub struct NoMoreFinality {
 
 /// Message sent from the FeedConnector to the Aggregator when first connected
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct Connect(pub Addr<FeedConnector>);
 
 /// Message sent from the FeedConnector to the Aggregator when disconnecting
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct Disconnect(pub FeedId);
 
 /// Message sent from the Chain to the Aggergator when the node count on the chain changes
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct NodeCount(pub ChainId, pub usize);
 
 /// Message sent to the Aggregator to get the network state of a particular node
-pub struct GetNetworkState(pub Box<str>, pub NodeId);
+// pub struct GetNetworkState(pub Box<str>, pub NodeId);
 
 /// Message sent to the Aggregator to get a health check
-pub struct GetHealth;
+// pub struct GetHealth;
 
-impl Message for GetNetworkState {
-    type Result = Option<Request<Chain, GetNodeNetworkState>>;
-}
+// impl Message for GetNetworkState {
+//     type Result = Option<Request<Chain, GetNodeNetworkState>>;
+// }
 
-impl Message for GetHealth {
-    type Result = usize;
-}
+// impl Message for GetHealth {
+//     type Result = usize;
+// }
 
 impl Handler<AddNode> for Aggregator {
     type Result = ();
@@ -330,20 +338,20 @@ impl Handler<NodeCount> for Aggregator {
     }
 }
 
-impl Handler<GetNetworkState> for Aggregator {
-    type Result = <GetNetworkState as Message>::Result;
+// impl Handler<GetNetworkState> for Aggregator {
+//     type Result = <GetNetworkState as Message>::Result;
 
-    fn handle(&mut self, msg: GetNetworkState, _: &mut Self::Context) -> Self::Result {
-        let GetNetworkState(chain, nid) = msg;
+//     fn handle(&mut self, msg: GetNetworkState, _: &mut Self::Context) -> Self::Result {
+//         let GetNetworkState(chain, nid) = msg;
 
-        Some(self.get_chain(&*chain)?.addr.send(GetNodeNetworkState(nid)))
-    }
-}
+//         Some(self.get_chain(&*chain)?.addr.send(GetNodeNetworkState(nid)))
+//     }
+// }
 
-impl Handler<GetHealth> for Aggregator {
-    type Result = usize;
+// impl Handler<GetHealth> for Aggregator {
+//     type Result = usize;
 
-    fn handle(&mut self, _: GetHealth, _: &mut Self::Context) -> Self::Result {
-        self.chains.len()
-    }
-}
+//     fn handle(&mut self, _: GetHealth, _: &mut Self::Context) -> Self::Result {
+//         self.chains.len()
+//     }
+// }

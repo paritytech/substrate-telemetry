@@ -6,6 +6,7 @@ use crate::node::NodeDetails;
 use crate::types::{Block, BlockNumber, BlockHash};
 
 #[derive(Deserialize, Debug, Message)]
+#[rtype(result = "()")]
 pub struct NodeMessage {
     pub level: Level,
     pub ts: DateTime<Utc>,

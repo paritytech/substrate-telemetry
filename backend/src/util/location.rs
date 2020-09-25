@@ -47,6 +47,7 @@ impl Actor for Locator {
 }
 
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct LocateRequest {
     pub ip: Ipv4Addr,
     pub nid: NodeId,

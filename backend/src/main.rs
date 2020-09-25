@@ -46,7 +46,7 @@ fn node_route(
     aggregator: web::Data<Addr<Aggregator>>,
     locator: web::Data<Addr<Locator>>,
 ) -> Result<HttpResponse, Error> {
-    let ip = req.connection_info().remote().and_then(|mut addr| {
+    let ip = req.connection_info().realip_remote_addr().and_then(|mut addr| {
         if let Some(port_idx) = addr.find(":") {
             addr = &addr[..port_idx];
         }
@@ -77,34 +77,34 @@ fn feed_route(
     )
 }
 
-fn state_route(
-    path: web::Path<(Box<str>, NodeId)>,
-    aggregator: web::Data<Addr<Aggregator>>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
-    let (chain, nid) = path.into_inner();
+// fn state_route(
+//     path: web::Path<(Box<str>, NodeId)>,
+//     aggregator: web::Data<Addr<Aggregator>>,
+// ) -> impl Future<Output = Result<HttpResponse, Error>> {
+//     let (chain, nid) = path.into_inner();
 
-    aggregator
-        .send(GetNetworkState(chain, nid))
-        .flatten()
-        .from_err()
-        .and_then(|data| match data.and_then(|nested| nested) {
-            Some(body) => HttpResponse::Ok()
-                .content_type("application/json")
-                .body(body),
-            None => HttpResponse::Ok()
-                .body("Node has disconnected or has not submitted its network state yet"),
-        })
-}
+//     aggregator
+//         .send(GetNetworkState(chain, nid))
+//         .flatten()
+//         .from_err()
+//         .and_then(|data| match data.and_then(|nested| nested) {
+//             Some(body) => HttpResponse::Ok()
+//                 .content_type("application/json")
+//                 .body(body),
+//             None => HttpResponse::Ok()
+//                 .body("Node has disconnected or has not submitted its network state yet"),
+//         })
+// }
 
-fn health(
-    aggregator: web::Data<Addr<Aggregator>>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
-    aggregator.send(GetHealth).from_err().and_then(|count| {
-        let body = format!("Connected chains: {}", count);
+// fn health(
+//     aggregator: web::Data<Addr<Aggregator>>,
+// ) -> impl Future<Output = Result<HttpResponse, Error>> {
+//     aggregator.send(GetHealth).from_err().and_then(|count| {
+//         let body = format!("Connected chains: {}", count);
 
-        HttpResponse::Ok().body(body)
-    })
-}
+//         HttpResponse::Ok().body(body)
+//     })
+// }
 
 /// Telemetry entry point. Listening by default on 127.0.0.1:8000.
 /// This can be changed using the `PORT` and `BIND` ENV variables.
@@ -127,10 +127,10 @@ fn main() -> std::io::Result<()> {
             .service(resource("/submit/").route(get().to(node_route)))
             .service(resource("/feed").route(get().to(feed_route)))
             .service(resource("/feed/").route(get().to(feed_route)))
-            .service(resource("/network_state/{chain}/{nid}").route(get().to_async(state_route)))
-            .service(resource("/network_state/{chain}/{nid}/").route(get().to_async(state_route)))
-            .service(resource("/health").route(get().to_async(health)))
-            .service(resource("/health/").route(get().to_async(health)))
+            // .service(resource("/network_state/{chain}/{nid}").route(get().to_async(state_route)))
+            // .service(resource("/network_state/{chain}/{nid}/").route(get().to_async(state_route)))
+            // .service(resource("/health").route(get().to_async(health)))
+            // .service(resource("/health/").route(get().to_async(health)))
     })
     .bind(format!("{}", opts.socket))?
     .start();
