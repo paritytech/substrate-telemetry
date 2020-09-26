@@ -56,6 +56,7 @@ import katalchainIcon from '../../icons/katalchain.svg';
 import bifrostIcon from '../../icons/bifrost.svg';
 import totemIcon from '../../icons/totem.svg';
 import nodleIcon from '../../icons/nodle.svg';
+import zeroIcon from '../../icons/zero.svg';
 
 import unknownImplementationIcon from '../../icons/question-solid.svg';
 
@@ -81,6 +82,7 @@ const ICONS = {
   'totem-meccano-node': totemIcon,
   Totem: totemIcon,
   'Nodle Chain Node': nodleIcon,
+  'subzero': zeroIcon,
 };
 
 export namespace Column {
