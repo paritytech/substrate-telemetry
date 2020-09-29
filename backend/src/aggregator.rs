@@ -121,13 +121,11 @@ pub struct DropChain(pub ChainId);
 pub struct RenameChain(pub ChainId, pub Label);
 
 /// Message sent from the FeedConnector to the Aggregator when subscribing to a new chain
+#[derive(Message)]
+#[rtype(result = "bool")]
 pub struct Subscribe {
     pub chain: Label,
     pub feed: Addr<FeedConnector>,
-}
-
-impl Message for Subscribe {
-    type Result = bool;
 }
 
 /// Message sent from the FeedConnector to the Aggregator consensus requested
@@ -162,18 +160,14 @@ pub struct Disconnect(pub FeedId);
 pub struct NodeCount(pub ChainId, pub usize);
 
 /// Message sent to the Aggregator to get the network state of a particular node
-// pub struct GetNetworkState(pub Box<str>, pub NodeId);
+#[derive(Message)]
+#[rtype(result = "Option<Request<Chain, GetNodeNetworkState>>")]
+pub struct GetNetworkState(pub Box<str>, pub NodeId);
 
 /// Message sent to the Aggregator to get a health check
-// pub struct GetHealth;
-
-// impl Message for GetNetworkState {
-//     type Result = Option<Request<Chain, GetNodeNetworkState>>;
-// }
-
-// impl Message for GetHealth {
-//     type Result = usize;
-// }
+#[derive(Message)]
+#[rtype(result = "usize")]
+pub struct GetHealth;
 
 impl Handler<AddNode> for Aggregator {
     type Result = ();
@@ -213,7 +207,7 @@ impl Handler<DropChain> for Aggregator {
             }
 
             self.serializer.push(feed::RemovedChain(label));
-            info!("Dropped chain [{}] from the aggregator", label);
+            log::info!("Dropped chain [{}] from the aggregator", label);
             self.broadcast();
         }
 
@@ -292,7 +286,7 @@ impl Handler<Connect> for Aggregator {
 
         let fid = self.feeds.add(connector.clone());
 
-        info!("Feed #{} connected", fid);
+        log::info!("Feed #{} connected", fid);
 
         connector.do_send(Connected(fid));
 
@@ -315,7 +309,7 @@ impl Handler<Disconnect> for Aggregator {
     fn handle(&mut self, msg: Disconnect, _: &mut Self::Context) {
         let Disconnect(fid) = msg;
 
-        info!("Feed #{} disconnected", fid);
+        log::info!("Feed #{} disconnected", fid);
 
         self.feeds.remove(fid);
     }
@@ -338,20 +332,20 @@ impl Handler<NodeCount> for Aggregator {
     }
 }
 
-// impl Handler<GetNetworkState> for Aggregator {
-//     type Result = <GetNetworkState as Message>::Result;
+impl Handler<GetNetworkState> for Aggregator {
+    type Result = <GetNetworkState as Message>::Result;
 
-//     fn handle(&mut self, msg: GetNetworkState, _: &mut Self::Context) -> Self::Result {
-//         let GetNetworkState(chain, nid) = msg;
+    fn handle(&mut self, msg: GetNetworkState, _: &mut Self::Context) -> Self::Result {
+        let GetNetworkState(chain, nid) = msg;
 
-//         Some(self.get_chain(&*chain)?.addr.send(GetNodeNetworkState(nid)))
-//     }
-// }
+        Some(self.get_chain(&*chain)?.addr.send(GetNodeNetworkState(nid)))
+    }
+}
 
-// impl Handler<GetHealth> for Aggregator {
-//     type Result = usize;
+impl Handler<GetHealth> for Aggregator {
+    type Result = usize;
 
-//     fn handle(&mut self, _: GetHealth, _: &mut Self::Context) -> Self::Result {
-//         self.chains.len()
-//     }
-// }
+    fn handle(&mut self, _: GetHealth, _: &mut Self::Context) -> Self::Result {
+        self.chains.len()
+    }
+}

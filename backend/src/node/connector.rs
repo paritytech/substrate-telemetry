@@ -148,7 +148,15 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for NodeConnector {
                 return;
             }
             Ok(ws::Message::Nop) => return,
-            Err(error) => error!("{:?}", error),
+            Ok(ws::Message::Continuation(_)) => {
+                log::error!("Continuation not supported");
+                return;
+            }
+            Err(error) => {
+                log::error!("{:?}", error);
+                ctx.stop();
+                return;
+            }
         };
 
         match serde_json::from_slice(&data) {

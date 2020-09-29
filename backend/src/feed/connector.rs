@@ -88,14 +88,12 @@ impl FeedConnector {
                     feed: ctx.address(),
                 })
                 .into_actor(self)
-                .then(|res, actor, _| {
+                .then(|res, act, _| {
                     match res {
                         Ok(true) => (),
-                        // Chain not found, reset hash
-                        _ => actor.chain_hash = 0,
+                        _ => act.chain_hash = 0,
                     }
-
-                    fut::ok(())
+                    async {}.into_actor(act)
                 })
                 .wait(ctx);
             }
@@ -145,25 +143,29 @@ pub struct Connected(pub FeedId);
 pub struct Serialized(pub Bytes);
 
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for FeedConnector {
-    fn handle(&mut self, msg: ws::Message, ctx: &mut Self::Context) {
+    fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
         match msg {
-            ws::Message::Ping(msg) => {
+            Ok(ws::Message::Ping(msg)) => {
                 self.hb = Instant::now();
                 ctx.pong(&msg);
             }
-            ws::Message::Pong(_) => self.hb = Instant::now(),
-            ws::Message::Text(text) => {
+            Ok(ws::Message::Pong(_)) => self.hb = Instant::now(),
+            Ok(ws::Message::Text(text)) => {
                 if let Some(idx) = text.find(':') {
                     let cmd = &text[..idx];
                     let payload = &text[idx+1..];
 
-                    info!("New FEED message: {}", cmd);
+                    log::info!("New FEED message: {}", cmd);
 
                     self.handle_cmd(cmd, payload, ctx);
                 }
             }
-            ws::Message::Close(_) => ctx.stop(),
-            _ => (),
+            Ok(ws::Message::Close(_)) => ctx.stop(),
+            Ok(_) => (),
+            Err(error) => {
+                log::error!("{:?}", error);
+                ctx.stop();
+            }
         }
     }
 }

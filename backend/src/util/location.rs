@@ -98,7 +98,7 @@ impl Handler<LocateRequest> for Locator {
 
         let location = match self.iplocate(ip) {
             Ok(location) => location,
-            Err(err) => return debug!("GET error for ip location: {:?}", err),
+            Err(err) => return log::debug!("GET error for ip location: {:?}", err),
         };
 
         self.cache.write().insert(ip, location.clone());
@@ -140,7 +140,7 @@ impl Locator {
         match self.client.get(url).send()?.json::<T>() {
             Ok(result) => Ok(Some(result)),
             Err(err) => {
-                debug!("JSON error for ip location: {:?}", err);
+                log::debug!("JSON error for ip location: {:?}", err);
                 Ok(None)
             }
         }

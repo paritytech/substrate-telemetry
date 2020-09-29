@@ -46,7 +46,7 @@ pub struct Chain {
 
 impl Chain {
     pub fn new(cid: ChainId, aggregator: Addr<Aggregator>, label: Label) -> Self {
-        info!("[{}] Created", label);
+        log::info!("[{}] Created", label);
 
         Chain {
             cid,
@@ -279,7 +279,7 @@ impl Chain {
         if node.update_block(*block) {
             if block.height > self.best.height {
                 self.best = *block;
-                info!(
+                log::info!(
                     "[{}] [{}/{}] new best block ({}) {:?}",
                     self.label.0,
                     nodes_len,
@@ -426,7 +426,7 @@ impl Handler<RemoveNode> for Chain {
         }
 
         if self.nodes.is_empty() {
-            info!("[{}] Lost all nodes, dropping...", self.label.0);
+            log::info!("[{}] Lost all nodes, dropping...", self.label.0);
             ctx.stop();
         }
 

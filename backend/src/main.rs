@@ -1,5 +1,5 @@
-#[macro_use]
-extern crate log;
+// #[macro_use]
+// extern crate log;
 
 use std::net::Ipv4Addr;
 
@@ -8,6 +8,7 @@ use actix_http::ws::Codec;
 use actix_web::{web, App, Error, HttpRequest, HttpResponse, HttpServer};
 use actix_web_actors::ws;
 use clap::Clap;
+use simple_logger::SimpleLogger;
 
 mod aggregator;
 mod chain;
@@ -40,7 +41,7 @@ struct Opts {
 }
 
 /// Entry point for connecting nodes
-fn node_route(
+async fn node_route(
     req: HttpRequest,
     stream: web::Payload,
     aggregator: web::Data<Addr<Aggregator>>,
@@ -65,7 +66,7 @@ fn node_route(
 }
 
 /// Entry point for connecting feeds
-fn feed_route(
+async fn feed_route(
     req: HttpRequest,
     stream: web::Payload,
     aggregator: web::Data<Addr<Aggregator>>,
@@ -77,44 +78,59 @@ fn feed_route(
     )
 }
 
-// fn state_route(
-//     path: web::Path<(Box<str>, NodeId)>,
-//     aggregator: web::Data<Addr<Aggregator>>,
-// ) -> impl Future<Output = Result<HttpResponse, Error>> {
-//     let (chain, nid) = path.into_inner();
+/// Entry point for network state dump
+async fn state_route(
+    path: web::Path<(Box<str>, NodeId)>,
+    aggregator: web::Data<Addr<Aggregator>>,
+) -> Result<HttpResponse, Error> {
+    let (chain, nid) = path.into_inner();
 
-//     aggregator
-//         .send(GetNetworkState(chain, nid))
-//         .flatten()
-//         .from_err()
-//         .and_then(|data| match data.and_then(|nested| nested) {
-//             Some(body) => HttpResponse::Ok()
-//                 .content_type("application/json")
-//                 .body(body),
-//             None => HttpResponse::Ok()
-//                 .body("Node has disconnected or has not submitted its network state yet"),
-//         })
-// }
+    let res = match aggregator.send(GetNetworkState(chain, nid)).await {
+        Ok(Some(res)) => res.await,
+        Ok(None) => Ok(None),
+        Err(error) => Err(error)
+    };
 
-// fn health(
-//     aggregator: web::Data<Addr<Aggregator>>,
-// ) -> impl Future<Output = Result<HttpResponse, Error>> {
-//     aggregator.send(GetHealth).from_err().and_then(|count| {
-//         let body = format!("Connected chains: {}", count);
+    match res {
+        Ok(Some(body)) => {
+            HttpResponse::Ok().content_type("application/json").body(body).await
+        },
+        Ok(None) => {
+            HttpResponse::Ok().body("Node has disconnected or has not submitted its network state yet").await
+        },
+        Err(error) => {
+            log::error!("Network state mailbox error: {:?}", error);
 
-//         HttpResponse::Ok().body(body)
-//     })
-// }
+            HttpResponse::InternalServerError().await
+        }
+    }
+}
+
+/// Entry check for health check monitoring bots
+async fn health(aggregator: web::Data<Addr<Aggregator>>) -> Result<HttpResponse, Error> {
+    match aggregator.send(GetHealth).await {
+        Ok(count) => {
+            let body = format!("Connected chains: {}", count);
+
+            HttpResponse::Ok().body(body).await
+        },
+        Err(error) => {
+            log::error!("Health check mailbox error: {:?}", error);
+
+            HttpResponse::InternalServerError().await
+        }
+    }
+}
 
 /// Telemetry entry point. Listening by default on 127.0.0.1:8000.
 /// This can be changed using the `PORT` and `BIND` ENV variables.
-fn main() -> std::io::Result<()> {
+#[actix_rt::main]
+async fn main() -> std::io::Result<()> {
     use web::{get, resource};
 
-    simple_logger::init_with_level(log::Level::Info).expect("Must be able to start a logger");
+    SimpleLogger::new().with_level(log::LevelFilter::Info).init().expect("Must be able to start a logger");
 
     let opts: Opts = Opts::parse();
-    let sys = System::new("substrate-telemetry");
     let aggregator = Aggregator::new().start();
     let factory = LocatorFactory::new();
     let locator = SyncArbiter::start(4, move || factory.create());
@@ -127,13 +143,12 @@ fn main() -> std::io::Result<()> {
             .service(resource("/submit/").route(get().to(node_route)))
             .service(resource("/feed").route(get().to(feed_route)))
             .service(resource("/feed/").route(get().to(feed_route)))
-            // .service(resource("/network_state/{chain}/{nid}").route(get().to_async(state_route)))
-            // .service(resource("/network_state/{chain}/{nid}/").route(get().to_async(state_route)))
-            // .service(resource("/health").route(get().to_async(health)))
-            // .service(resource("/health/").route(get().to_async(health)))
+            .service(resource("/network_state/{chain}/{nid}").route(get().to(state_route)))
+            .service(resource("/network_state/{chain}/{nid}/").route(get().to(state_route)))
+            .service(resource("/health").route(get().to(health)))
+            .service(resource("/health/").route(get().to(health)))
     })
     .bind(format!("{}", opts.socket))?
-    .start();
-
-    sys.run()
+    .run()
+    .await
 }
