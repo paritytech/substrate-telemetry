@@ -88,12 +88,13 @@ impl FeedConnector {
                     feed: ctx.address(),
                 })
                 .into_actor(self)
-                .then(|res, act, _| {
+                .then(|res, actor, _| {
                     match res {
                         Ok(true) => (),
-                        _ => act.chain_hash = 0,
+                        // Chain not found, reset hash
+                        _ => actor.chain_hash = 0,
                     }
-                    async {}.into_actor(act)
+                    async {}.into_actor(actor)
                 })
                 .wait(ctx);
             }

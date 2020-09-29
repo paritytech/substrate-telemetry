@@ -1,6 +1,3 @@
-// #[macro_use]
-// extern crate log;
-
 use std::net::Ipv4Addr;
 
 use actix::prelude::*;
