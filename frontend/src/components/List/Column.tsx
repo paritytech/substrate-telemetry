@@ -82,7 +82,7 @@ const ICONS = {
   'totem-meccano-node': totemIcon,
   Totem: totemIcon,
   'Nodle Chain Node': nodleIcon,
-  'subzero': zeroIcon,
+  subzero: zeroIcon,
 };
 
 export namespace Column {
