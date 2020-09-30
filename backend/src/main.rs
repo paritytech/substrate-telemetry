@@ -103,7 +103,7 @@ async fn state_route(
     }
 }
 
-/// Entry check for health check monitoring bots
+/// Entry point for health check monitoring bots
 async fn health(aggregator: web::Data<Addr<Aggregator>>) -> Result<HttpResponse, Error> {
     match aggregator.send(GetHealth).await {
         Ok(count) => {
