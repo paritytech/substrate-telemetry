@@ -226,7 +226,7 @@ impl Node {
         if let Ok(stringified) = serde_json::from_str::<String>(json) {
             Some(stringified.into())
         } else {
-            Some(json.into())
+            Some(json.to_owned().into())
         }
     }
 

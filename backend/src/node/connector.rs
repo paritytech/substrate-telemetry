@@ -107,6 +107,7 @@ impl NodeConnector {
 }
 
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct Initialize(pub NodeId, pub Addr<Chain>);
 
 impl Handler<Initialize> for NodeConnector {
@@ -130,23 +131,32 @@ impl Handler<Initialize> for NodeConnector {
     }
 }
 
-impl StreamHandler<ws::Message, ws::ProtocolError> for NodeConnector {
-    fn handle(&mut self, msg: ws::Message, ctx: &mut Self::Context) {
+impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for NodeConnector {
+    fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
         self.hb = Instant::now();
 
         let data = match msg {
-            ws::Message::Ping(msg) => {
+            Ok(ws::Message::Ping(msg)) => {
                 ctx.pong(&msg);
                 return;
             }
-            ws::Message::Pong(_) => return,
-            ws::Message::Text(text) => text.into(),
-            ws::Message::Binary(data) => data,
-            ws::Message::Close(_) => {
+            Ok(ws::Message::Pong(_)) => return,
+            Ok(ws::Message::Text(text)) => text.into(),
+            Ok(ws::Message::Binary(data)) => data,
+            Ok(ws::Message::Close(_)) => {
                 ctx.stop();
                 return;
             }
-            ws::Message::Nop => return,
+            Ok(ws::Message::Nop) => return,
+            Ok(ws::Message::Continuation(_)) => {
+                log::error!("Continuation not supported");
+                return;
+            }
+            Err(error) => {
+                log::error!("{:?}", error);
+                ctx.stop();
+                return;
+            }
         };
 
         match serde_json::from_slice(&data) {

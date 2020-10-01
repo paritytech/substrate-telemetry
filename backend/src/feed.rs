@@ -1,3 +1,4 @@
+use std::mem;
 use serde::Serialize;
 use serde::ser::{Serializer, SerializeTuple};
 
@@ -20,15 +21,13 @@ pub struct FeedMessageSerializer {
     buffer: Vec<u8>,
 }
 
+const BUFCAP: usize = 128;
+
 impl FeedMessageSerializer {
     pub fn new() -> Self {
         Self {
-            buffer: Vec::new(),
+            buffer: Vec::with_capacity(BUFCAP),
         }
-    }
-
-    pub fn clear(&mut self) {
-        self.buffer.clear();
     }
 
     pub fn push<Message>(&mut self, msg: Message)
@@ -52,8 +51,8 @@ impl FeedMessageSerializer {
         }
 
         self.buffer.push(b']');
-        let bytes = self.buffer[..].into();
-        self.clear();
+
+        let bytes = mem::replace(&mut self.buffer, Vec::with_capacity(BUFCAP)).into();
 
         Some(Serialized(bytes))
     }
