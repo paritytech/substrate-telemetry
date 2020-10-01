@@ -2,7 +2,7 @@ use std::net::Ipv4Addr;
 
 use actix::prelude::*;
 use actix_http::ws::Codec;
-use actix_web::{web, App, Error, HttpRequest, HttpResponse, HttpServer};
+use actix_web::{web, get, middleware, App, Error, HttpRequest, HttpResponse, HttpServer};
 use actix_web_actors::ws;
 use clap::Clap;
 use simple_logger::SimpleLogger;
@@ -38,6 +38,7 @@ struct Opts {
 }
 
 /// Entry point for connecting nodes
+#[get("/submit/")]
 async fn node_route(
     req: HttpRequest,
     stream: web::Payload,
@@ -63,6 +64,7 @@ async fn node_route(
 }
 
 /// Entry point for connecting feeds
+#[get("/feed/")]
 async fn feed_route(
     req: HttpRequest,
     stream: web::Payload,
@@ -76,6 +78,7 @@ async fn feed_route(
 }
 
 /// Entry point for network state dump
+#[get("/network_state/{chain}/{nid}/")]
 async fn state_route(
     path: web::Path<(Box<str>, NodeId)>,
     aggregator: web::Data<Addr<Aggregator>>,
@@ -104,6 +107,7 @@ async fn state_route(
 }
 
 /// Entry point for health check monitoring bots
+#[get("/health/")]
 async fn health(aggregator: web::Data<Addr<Aggregator>>) -> Result<HttpResponse, Error> {
     match aggregator.send(GetHealth).await {
         Ok(count) => {
@@ -121,10 +125,8 @@ async fn health(aggregator: web::Data<Addr<Aggregator>>) -> Result<HttpResponse,
 
 /// Telemetry entry point. Listening by default on 127.0.0.1:8000.
 /// This can be changed using the `PORT` and `BIND` ENV variables.
-#[actix_rt::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    use web::{get, resource};
-
     SimpleLogger::new().with_level(log::LevelFilter::Info).init().expect("Must be able to start a logger");
 
     let opts: Opts = Opts::parse();
@@ -134,16 +136,13 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .wrap(middleware::NormalizePath::default())
             .data(aggregator.clone())
             .data(locator.clone())
-            .service(resource("/submit").route(get().to(node_route)))
-            .service(resource("/submit/").route(get().to(node_route)))
-            .service(resource("/feed").route(get().to(feed_route)))
-            .service(resource("/feed/").route(get().to(feed_route)))
-            .service(resource("/network_state/{chain}/{nid}").route(get().to(state_route)))
-            .service(resource("/network_state/{chain}/{nid}/").route(get().to(state_route)))
-            .service(resource("/health").route(get().to(health)))
-            .service(resource("/health/").route(get().to(health)))
+            .service(node_route)
+            .service(feed_route)
+            .service(state_route)
+            .service(health)
     })
     .bind(format!("{}", opts.socket))?
     .run()
