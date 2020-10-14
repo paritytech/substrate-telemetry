@@ -30,9 +30,6 @@
     "stable": "^0.1.8",
     "tslint": "^6.1.1"
   },
-  "resolutions": {
-    "chalk": "^2.4.2"
-    },
   "devDependencies": {
     "@types/node": "^13.13.2",
     "@types/react": "^16.9.34",
@@ -56,5 +53,16 @@
     "src/**/*.{ts,tsx,json,css}": [
       "pretty:fix"
     ]
+  },
+  "resolutions": {
+    "chalk": "^2.4.2",
+    "node-forge": ">=0.10.0",
+    "yargs-parser": ">=13.1.2",
+    "dot-prop": ">=4.2.1",
+    "lodash": ">=4.17.19",
+    "serialize-javascript": ">=3.1.0",
+    "js-yaml": ">=3.13.1",
+    "webpack-dev-server": "^2.11.4",
+    "mem": ">=4.0.0"
   }
 }
