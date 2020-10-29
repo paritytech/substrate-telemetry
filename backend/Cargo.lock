@@ -939,7 +939,6 @@ checksum = "95314d38584ffbfda215621d723e0a3906f032e03ae5551e650058dac83d4797"
 dependencies = [
  "futures-channel",
  "futures-core",
- "futures-executor",
  "futures-io",
  "futures-sink",
  "futures-task",
@@ -970,17 +969,6 @@ checksum = "ab90cde24b3319636588d0c35fe03b1333857621051837ed769faefb4c2162e4"
 dependencies = [
  "futures 0.1.30",
  "num_cpus",
-]
-
-[[package]]
-name = "futures-executor"
-version = "0.3.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5f8e0c9258abaea85e78ebdda17ef9666d390e987f006be6080dfe354b708cb"
-dependencies = [
- "futures-core",
- "futures-task",
- "futures-util",
 ]
 
 [[package]]
@@ -2395,7 +2383,6 @@ dependencies = [
  "chrono",
  "clap",
  "fnv",
- "futures 0.3.7",
  "log",
  "num-traits",
  "parking_lot 0.11.0",
