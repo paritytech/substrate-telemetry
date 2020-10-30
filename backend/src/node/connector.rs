@@ -1,9 +1,11 @@
 use std::time::{Duration, Instant};
 use std::net::Ipv4Addr;
+use std::mem;
 
-use bytes::Bytes;
+use bytes::{Bytes, BytesMut};
 use actix::prelude::*;
 use actix_web_actors::ws;
+use actix_http::ws::Item;
 use crate::aggregator::{Aggregator, AddNode};
 use crate::chain::{Chain, UpdateNode, RemoveNode};
 use crate::node::NodeId;
@@ -14,6 +16,8 @@ use crate::util::LocateRequest;
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(20);
 /// How long before lack of client response causes a timeout
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(60);
+/// Continuation buffer limit, 1mb
+const CONT_BUF_LIMIT: usize = 1024 * 1024;
 
 pub struct NodeConnector {
     /// Id of the node this connector is responsible for handling
@@ -30,6 +34,8 @@ pub struct NodeConnector {
     ip: Option<Ipv4Addr>,
     /// Actix address of location services
     locator: Recipient<LocateRequest>,
+    /// Buffer for constructing continuation messages
+    contbuf: BytesMut,
 }
 
 impl Actor for NodeConnector {
@@ -57,6 +63,7 @@ impl NodeConnector {
             backlog: Vec::new(),
             ip,
             locator,
+            contbuf: BytesMut::new(),
         }
     }
 
@@ -104,6 +111,27 @@ impl NodeConnector {
             self.backlog.push(msg);
         }
     }
+
+    fn start_frame(&mut self, bytes: &[u8]) {
+        if !self.contbuf.is_empty() {
+            log::error!("Unused continuation buffer");
+            self.contbuf.clear();
+        }
+        self.continue_frame(bytes);
+    }
+
+    fn continue_frame(&mut self, bytes: &[u8]) {
+        if self.contbuf.len() + bytes.len() <= CONT_BUF_LIMIT {
+            self.contbuf.extend_from_slice(&bytes);
+        } else {
+            log::error!("Continuation buffer overflow");
+            self.contbuf = BytesMut::new();
+        }
+    }
+
+    fn finish_frame(&mut self) -> Bytes {
+        mem::replace(&mut self.contbuf, BytesMut::new()).freeze()
+    }
 }
 
 #[derive(Message)]
@@ -148,9 +176,19 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for NodeConnector {
                 return;
             }
             Ok(ws::Message::Nop) => return,
-            Ok(ws::Message::Continuation(_)) => {
-                log::error!("Continuation not supported");
-                return;
+            Ok(ws::Message::Continuation(cont)) => match cont {
+                Item::FirstText(bytes) | Item::FirstBinary(bytes) => {
+                    self.start_frame(&bytes);
+                    return;
+                }
+                Item::Continue(bytes) => {
+                    self.continue_frame(&bytes);
+                    return;
+                }
+                Item::Last(bytes) => {
+                    self.continue_frame(&bytes);
+                    self.finish_frame()
+                }
             }
             Err(error) => {
                 log::error!("{:?}", error);
