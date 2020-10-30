@@ -6,7 +6,7 @@ use crate::feed::connector::{FeedConnector, Connected, FeedId};
 use crate::util::DenseMap;
 use crate::feed::{self, FeedMessageSerializer};
 use crate::chain::{self, Chain, ChainId, Label, GetNodeNetworkState};
-use crate::types::{NodeDetails, NodeId};
+use crate::types::{ConnId, NodeDetails, NodeId};
 
 pub struct Aggregator {
     labels: HashMap<Label, ChainId>,
@@ -106,8 +106,11 @@ impl Actor for Aggregator {
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct AddNode {
+    /// Details of the node being added to the aggregator
     pub node: NodeDetails,
-    pub network_id: Option<Label>,
+    /// Connection id used by the node connector for multiplexing parachains
+    pub conn_id: ConnId,
+    /// Recipient for the initialization message
     pub rec: Recipient<Initialize>,
 }
 
@@ -173,21 +176,14 @@ impl Handler<AddNode> for Aggregator {
     type Result = ();
 
     fn handle(&mut self, msg: AddNode, ctx: &mut Self::Context) {
-        let AddNode { node, network_id, rec } = msg;
+        let AddNode { node, conn_id, rec } = msg;
 
-        let cid = self.lazy_chain(&node.chain, &network_id, ctx);
+        let cid = self.lazy_chain(&node.chain, &None, ctx);
         let chain = self.chains.get_mut(cid).expect("Entry just created above; qed");
-
-        if let Some(network_id) = network_id {
-            // Attach network id to the chain if it was not done yet
-            if chain.network_id.is_none() {
-                chain.network_id = Some(network_id.clone());
-                self.networks.insert(network_id, cid);
-            }
-        }
 
         chain.addr.do_send(chain::AddNode {
             node,
+            conn_id,
             rec,
         });
     }

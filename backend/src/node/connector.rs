@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::time::{Duration, Instant};
 use std::net::Ipv4Addr;
 use std::mem;
@@ -11,13 +12,14 @@ use crate::chain::{Chain, UpdateNode, RemoveNode};
 use crate::node::NodeId;
 use crate::node::message::{NodeMessage, Details, SystemConnected};
 use crate::util::LocateRequest;
+use crate::types::ConnId;
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(20);
 /// How long before lack of client response causes a timeout
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(60);
-/// Continuation buffer limit, 1mb
-const CONT_BUF_LIMIT: usize = 1024 * 1024;
+/// Continuation buffer limit, 10mb
+const CONT_BUF_LIMIT: usize = 10 * 1024 * 1024;
 
 pub struct NodeConnector {
     /// Id of the node this connector is responsible for handling
@@ -26,10 +28,11 @@ pub struct NodeConnector {
     hb: Instant,
     /// Aggregator actor address
     aggregator: Addr<Aggregator>,
-    /// Chain actor address
-    chain: Option<Addr<Chain>>,
+    /// Mapping message connection id to addresses of chains for multiplexing
+    /// a node running multiple parachains
+    chains: BTreeMap<ConnId, Addr<Chain>>,
     /// Backlog of messages to be sent once we get a recipient handle to the chain
-    backlog: Vec<NodeMessage>,
+    backlogs: BTreeMap<ConnId, Vec<NodeMessage>>,
     /// IP address of the node this connector is responsible for
     ip: Option<Ipv4Addr>,
     /// Actix address of location services
@@ -46,7 +49,7 @@ impl Actor for NodeConnector {
     }
 
     fn stopped(&mut self, _: &mut Self::Context) {
-        if let Some(chain) = self.chain.as_ref() {
+        for chain in self.chains.values() {
             chain.do_send(RemoveNode(self.nid));
         }
     }
@@ -59,8 +62,8 @@ impl NodeConnector {
             nid: !0,
             hb: Instant::now(),
             aggregator,
-            chain: None,
-            backlog: Vec::new(),
+            chains: BTreeMap::new(),
+            backlogs: BTreeMap::new(),
             ip,
             locator,
             contbuf: BytesMut::new(),
@@ -78,7 +81,9 @@ impl NodeConnector {
     }
 
     fn handle_message(&mut self, msg: NodeMessage, data: Bytes, ctx: &mut <Self as Actor>::Context) {
-        if let Some(chain) = self.chain.as_ref() {
+        let conn_id = msg.id.unwrap_or(0);
+
+        if let Some(chain) = self.chains.get(&conn_id) {
             chain.do_send(UpdateNode {
                 nid: self.nid,
                 msg,
@@ -92,23 +97,22 @@ impl NodeConnector {
             let SystemConnected { network_id: _, mut node } = connected;
             let rec = ctx.address().recipient();
 
-            // FIXME: mergin chains by network_id is not the way to do it.
-            // This will at least force all CC3 nodes to be aggregated with
-            // the rest.
-            let network_id = None; // network_id.map(Into::into);
+            // FIXME: Use genesis hash instead of names to avoid this mess
             match &*node.chain {
                 "Kusama CC3" => node.chain = "Kusama".into(),
                 "Polkadot CC1" => node.chain = "Polkadot".into(),
                 _ => (),
             }
 
-            self.aggregator.do_send(AddNode { rec, network_id, node });
+            self.aggregator.do_send(AddNode { rec, conn_id, node });
         } else {
-            if self.backlog.len() >= 10 {
-                self.backlog.remove(0);
+            let backlog = self.backlogs.entry(conn_id).or_default();
+
+            if backlog.len() >= 10 {
+                backlog.remove(0);
             }
 
-            self.backlog.push(msg);
+            backlog.push(msg);
         }
     }
 
@@ -136,21 +140,26 @@ impl NodeConnector {
 
 #[derive(Message)]
 #[rtype(result = "()")]
-pub struct Initialize(pub NodeId, pub Addr<Chain>);
+pub struct Initialize {
+    pub nid: NodeId,
+    pub conn_id: ConnId,
+    pub chain: Addr<Chain>,
+}
 
 impl Handler<Initialize> for NodeConnector {
     type Result = ();
 
     fn handle(&mut self, msg: Initialize, _: &mut Self::Context) {
-        let Initialize(nid, chain) = msg;
-        let backlog = std::mem::replace(&mut self.backlog, Vec::new());
+        let Initialize { nid, conn_id, chain } = msg;
 
-        for msg in backlog {
-            chain.do_send(UpdateNode { nid, msg, raw: None });
+        if let Some(backlog) = self.backlogs.remove(&conn_id) {
+            for msg in backlog {
+                chain.do_send(UpdateNode { nid, msg, raw: None });
+            }
         }
 
         self.nid = nid;
-        self.chain = Some(chain.clone());
+        self.chains.insert(conn_id, chain.clone());
 
         // Acquire the node's physical location
         if let Some(ip) = self.ip {
