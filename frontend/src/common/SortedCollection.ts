@@ -97,14 +97,35 @@ export namespace SortedCollection {
   export type StateRef = Opaque<number, 'SortedCollection.StateRef'>;
 }
 
+interface Focus {
+  start: number;
+  end: number;
+}
+
 export class SortedCollection<Item extends { id: number }> {
+  // Comparator function used to sort the collection
   private compare: Compare<Item>;
+  // Mapping item `id` to the `Item`, this uses array as a structure with
+  // the assumption that `id`s provided are increments from `0`, and that
+  // vacant `id`s will be re-used in the future.
   private map = Array<Maybe<Item>>();
+  // Actual sorted list of `Item`s.
   private list = Array<Item>();
+  // Internal tracker for changes, this number increments whenever the
+  // order of the **focused** elements in the collection changes
   private changeRef = 0;
+  // Marks the range of indicies that are focused for tracking.
+  // **Note:** `start` is inclusive, while `end` is exclusive (much like
+  // `Array.slice()`).
+  private focus: Focus = { start: 0, end: 0 };
 
   constructor(compare: Compare<Item>) {
     this.compare = compare;
+  }
+
+  // Set a new focus within which order changes bump `changeRef`
+  public setFocus(start: number, end: number) {
+    this.focus = { start, end };
   }
 
   public setComparator(compare: Compare<Item>) {
@@ -112,10 +133,6 @@ export class SortedCollection<Item extends { id: number }> {
     this.list = this.map.filter((item) => item != null) as Item[];
     this.list.sort(compare);
     this.changeRef += 1;
-  }
-
-  public ref(): SortedCollection.StateRef {
-    return this.changeRef as SortedCollection.StateRef;
   }
 
   public add(item: Item) {
@@ -131,9 +148,11 @@ export class SortedCollection<Item extends { id: number }> {
 
     this.map[item.id] = item;
 
-    sortedInsert(item, this.list, this.compare);
+    const index = sortedInsert(item, this.list, this.compare);
 
-    this.changeRef += 1;
+    if (index < this.focus.end) {
+      this.changeRef += 1;
+    }
   }
 
   public remove(id: number) {
@@ -147,7 +166,9 @@ export class SortedCollection<Item extends { id: number }> {
     this.list.splice(index, 1);
     this.map[id] = null;
 
-    this.changeRef += 1;
+    if (index < this.focus.end) {
+      this.changeRef += 1;
+    }
   }
 
   public get(id: number): Maybe<Item> {
@@ -184,7 +205,13 @@ export class SortedCollection<Item extends { id: number }> {
     const newIndex = sortedInsert(item, this.list, this.compare);
 
     if (newIndex !== index) {
-      this.changeRef += 1;
+      const outOfFocus =
+        (index < this.focus.start && newIndex < this.focus.start) ||
+        (index >= this.focus.end && newIndex >= this.focus.end);
+
+      if (!outOfFocus) {
+        this.changeRef += 1;
+      }
     }
   }
 
@@ -207,6 +234,7 @@ export class SortedCollection<Item extends { id: number }> {
   public mutEachAndSort(mutator: (item: Item) => void) {
     this.list.forEach(mutator);
     this.list.sort(this.compare);
+    this.changeRef += 1;
   }
 
   public clear() {
@@ -216,6 +244,12 @@ export class SortedCollection<Item extends { id: number }> {
     this.changeRef += 1;
   }
 
+  // Get the reference to current ordering state of focused items.
+  public ref(): SortedCollection.StateRef {
+    return this.changeRef as SortedCollection.StateRef;
+  }
+
+  // Check if order of focused items has changed since obtaining a `ref`.
   public hasChangedSince(ref: SortedCollection.StateRef): boolean {
     return this.changeRef > ref;
   }
