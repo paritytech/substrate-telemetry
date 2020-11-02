@@ -123,11 +123,6 @@ export class SortedCollection<Item extends { id: number }> {
     this.compare = compare;
   }
 
-  // Set a new `Focus`. Any changes to the order of items within the `Focus` will trigger an increase to `changeRef`, which in turn triggers a re-render.
-  public setFocus(start: number, end: number) {
-    this.focus = { start, end };
-  }
-
   public setComparator(compare: Compare<Item>) {
     this.compare = compare;
     this.list = this.map.filter((item) => item != null) as Item[];
@@ -242,6 +237,12 @@ export class SortedCollection<Item extends { id: number }> {
     this.list = [];
 
     this.changeRef += 1;
+  }
+
+  // Set a new `Focus`. Any changes to the order of items within the `Focus`
+  // will increment `changeRef`.
+  public setFocus(start: number, end: number) {
+    this.focus = { start, end };
   }
 
   // Get the reference to current ordering state of focused items.
