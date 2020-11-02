@@ -149,7 +149,7 @@ export class Connection {
 
   public handleMessages = (messages: FeedMessage.Message[]) => {
     const { nodes, chains, sortBy, selectedColumns } = this.state;
-    const ref = nodes.ref();
+    const { ref } = nodes;
 
     const updateState: UpdateBound = (state) => {
       this.state = this.update(state);

@@ -246,7 +246,7 @@ export class SortedCollection<Item extends { id: number }> {
   }
 
   // Get the reference to current ordering state of focused items.
-  public ref(): SortedCollection.StateRef {
+  public get ref(): SortedCollection.StateRef {
     return this.changeRef as SortedCollection.StateRef;
   }
 
