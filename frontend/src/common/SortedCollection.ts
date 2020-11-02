@@ -123,7 +123,7 @@ export class SortedCollection<Item extends { id: number }> {
     this.compare = compare;
   }
 
-  // Set a new focus within which order changes bump `changeRef`
+  // Set a new `Focus`. Any changes to the order of items within the `Focus` will trigger an increase to `changeRef`, which in turn triggers a re-render.
   public setFocus(start: number, end: number) {
     this.focus = { start, end };
   }
