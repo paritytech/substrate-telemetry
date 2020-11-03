@@ -97,10 +97,12 @@ export class Connection {
   private pingSent: Maybe<Types.Timestamp> = null;
   private resubscribeTo: Maybe<Types.ChainLabel> = getHashData().chain;
   private resubscribeSendFinality: boolean = getHashData().tab === 'consensus';
+  private updateThrottle = false;
   private socket: WebSocket;
   private state: Readonly<State>;
   private readonly update: Update;
   private readonly pins: PersistentSet<Types.NodeName>;
+
   constructor(
     socket: WebSocket,
     update: Update,
@@ -408,8 +410,12 @@ export class Connection {
       }
     }
 
-    if (nodes.hasChangedSince(ref)) {
-      this.state = this.update({ nodes });
+    if (nodes.hasChangedSince(ref) && !this.updateThrottle) {
+      this.updateThrottle = true;
+      window.requestAnimationFrame(() => {
+        this.update({ nodes });
+        this.updateThrottle = false;
+      });
     }
 
     this.autoSubscribe();

@@ -37,7 +37,6 @@ export class List extends React.Component<List.Props, {}> {
   };
 
   private relativeTop = -1;
-  private scrolling = false;
 
   public componentDidMount() {
     this.onScroll();
@@ -108,10 +107,6 @@ export class List extends React.Component<List.Props, {}> {
   }
 
   private onScroll = () => {
-    if (this.scrolling) {
-      return;
-    }
-
     const relativeTop = divisibleBy(
       window.scrollY - (HEADER + TR_HEIGHT),
       TR_HEIGHT * ROW_MARGIN
@@ -122,13 +117,7 @@ export class List extends React.Component<List.Props, {}> {
     }
 
     this.relativeTop = relativeTop;
-    this.scrolling = true;
 
-    window.requestAnimationFrame(this.onScrollRAF);
-  };
-
-  private onScrollRAF = () => {
-    const { relativeTop } = this;
     const { viewportHeight } = this.state;
     const top = Math.max(relativeTop, 0);
     const height =
@@ -139,8 +128,6 @@ export class List extends React.Component<List.Props, {}> {
     if (listStart !== this.state.listStart || listEnd !== this.state.listEnd) {
       this.setState({ listStart, listEnd });
     }
-
-    this.scrolling = false;
   };
 
   private onResize = () => {
