@@ -98,37 +98,35 @@ impl NodeConnector {
     fn handle_message(&mut self, msg: NodeMessage, data: Bytes, ctx: &mut <Self as Actor>::Context) {
         let conn_id = msg.id.unwrap_or(0);
 
-        let backlog = match self.multiplex.entry(conn_id).or_default() {
+        match self.multiplex.entry(conn_id).or_default() {
             ConnMultiplex::Connected { nid, chain } => {
                 chain.do_send(UpdateNode {
                     nid: *nid,
                     msg,
                     raw: Some(data),
                 });
-
-                return;
             }
-            ConnMultiplex::Waiting { backlog } => backlog,
-        };
+            ConnMultiplex::Waiting { backlog } => {
+                if let Details::SystemConnected(connected) = msg.details {
+                    let SystemConnected { network_id: _, mut node } = connected;
+                    let rec = ctx.address().recipient();
 
-        if let Details::SystemConnected(connected) = msg.details {
-            let SystemConnected { network_id: _, mut node } = connected;
-            let rec = ctx.address().recipient();
+                    // FIXME: Use genesis hash instead of names to avoid this mess
+                    match &*node.chain {
+                        "Kusama CC3" => node.chain = "Kusama".into(),
+                        "Polkadot CC1" => node.chain = "Polkadot".into(),
+                        _ => (),
+                    }
 
-            // FIXME: Use genesis hash instead of names to avoid this mess
-            match &*node.chain {
-                "Kusama CC3" => node.chain = "Kusama".into(),
-                "Polkadot CC1" => node.chain = "Polkadot".into(),
-                _ => (),
+                    self.aggregator.do_send(AddNode { rec, conn_id, node });
+                } else {
+                    if backlog.len() >= 10 {
+                        backlog.remove(0);
+                    }
+
+                    backlog.push(msg);
+                }
             }
-
-            self.aggregator.do_send(AddNode { rec, conn_id, node });
-        } else {
-            if backlog.len() >= 10 {
-                backlog.remove(0);
-            }
-
-            backlog.push(msg);
         }
     }
 
