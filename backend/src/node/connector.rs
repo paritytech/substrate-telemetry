@@ -23,7 +23,7 @@ const CONT_BUF_LIMIT: usize = 10 * 1024 * 1024;
 
 pub struct NodeConnector {
     /// Multiplexing connections by id
-    multiplex: BTreeMap<ConnId, NodeMultiplex>,
+    multiplex: BTreeMap<ConnId, ConnMultiplex>,
     /// Client must send ping at least once per 10 seconds (CLIENT_TIMEOUT),
     hb: Instant,
     /// Aggregator actor address
@@ -36,7 +36,7 @@ pub struct NodeConnector {
     contbuf: BytesMut,
 }
 
-enum NodeMultiplex {
+enum ConnMultiplex {
     Connected {
         /// Id of the node this multiplex connector is responsible for handling
         nid: NodeId,
@@ -49,9 +49,9 @@ enum NodeMultiplex {
     }
 }
 
-impl Default for NodeMultiplex {
+impl Default for ConnMultiplex {
     fn default() -> Self {
-        NodeMultiplex::Waiting {
+        ConnMultiplex::Waiting {
             backlog: Vec::new(),
         }
     }
@@ -66,7 +66,7 @@ impl Actor for NodeConnector {
 
     fn stopped(&mut self, _: &mut Self::Context) {
         for mx in self.multiplex.values() {
-            if let NodeMultiplex::Connected { chain, nid } = mx {
+            if let ConnMultiplex::Connected { chain, nid } = mx {
                 chain.do_send(RemoveNode(*nid));
             }
         }
@@ -99,7 +99,7 @@ impl NodeConnector {
         let conn_id = msg.id.unwrap_or(0);
 
         let backlog = match self.multiplex.entry(conn_id).or_default() {
-            NodeMultiplex::Connected { nid, chain } => {
+            ConnMultiplex::Connected { nid, chain } => {
                 chain.do_send(UpdateNode {
                     nid: *nid,
                     msg,
@@ -108,7 +108,7 @@ impl NodeConnector {
 
                 return;
             }
-            NodeMultiplex::Waiting { backlog } => backlog,
+            ConnMultiplex::Waiting { backlog } => backlog,
         };
 
         if let Details::SystemConnected(connected) = msg.details {
@@ -170,12 +170,12 @@ impl Handler<Initialize> for NodeConnector {
 
         let mx = self.multiplex.entry(conn_id).or_default();
 
-        if let NodeMultiplex::Waiting { backlog } = mx {
+        if let ConnMultiplex::Waiting { backlog } = mx {
             for msg in backlog.drain(..) {
                 chain.do_send(UpdateNode { nid, msg, raw: None });
             }
 
-            *mx = NodeMultiplex::Connected {
+            *mx = ConnMultiplex::Connected {
                 nid,
                 chain: chain.clone(),
             };
