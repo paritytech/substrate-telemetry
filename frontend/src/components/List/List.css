@@ -1,3 +1,9 @@
+.List {
+  /* Prevents the list from auto-scrolling while cascading node
+   * updates on new block, which helps with performance. */
+  overflow-anchor: none;
+}
+
 .List-no-nodes {
   font-size: 30px;
   padding-top: 20vh;
