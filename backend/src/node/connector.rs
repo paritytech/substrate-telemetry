@@ -22,23 +22,39 @@ const CLIENT_TIMEOUT: Duration = Duration::from_secs(60);
 const CONT_BUF_LIMIT: usize = 10 * 1024 * 1024;
 
 pub struct NodeConnector {
-    /// Id of the node this connector is responsible for handling
-    nid: NodeId,
+    /// Multiplexing connections by id
+    multiplex: BTreeMap<ConnId, NodeMultiplex>,
     /// Client must send ping at least once per 10 seconds (CLIENT_TIMEOUT),
     hb: Instant,
     /// Aggregator actor address
     aggregator: Addr<Aggregator>,
-    /// Mapping message connection id to addresses of chains for multiplexing
-    /// a node running multiple parachains
-    chains: BTreeMap<ConnId, Addr<Chain>>,
-    /// Backlog of messages to be sent once we get a recipient handle to the chain
-    backlogs: BTreeMap<ConnId, Vec<NodeMessage>>,
     /// IP address of the node this connector is responsible for
     ip: Option<Ipv4Addr>,
     /// Actix address of location services
     locator: Recipient<LocateRequest>,
     /// Buffer for constructing continuation messages
     contbuf: BytesMut,
+}
+
+enum NodeMultiplex {
+    Connected {
+        /// Id of the node this multiplex connector is responsible for handling
+        nid: NodeId,
+        /// Chain address to which this multiplex connector is delegating messages
+        chain: Addr<Chain>,
+    },
+    Waiting {
+        /// Backlog of messages to be sent once we get a recipient handle to the chain
+        backlog: Vec<NodeMessage>,
+    }
+}
+
+impl Default for NodeMultiplex {
+    fn default() -> Self {
+        NodeMultiplex::Waiting {
+            backlog: Vec::new(),
+        }
+    }
 }
 
 impl Actor for NodeConnector {
@@ -49,8 +65,10 @@ impl Actor for NodeConnector {
     }
 
     fn stopped(&mut self, _: &mut Self::Context) {
-        for chain in self.chains.values() {
-            chain.do_send(RemoveNode(self.nid));
+        for mx in self.multiplex.values() {
+            if let NodeMultiplex::Connected { chain, nid } = mx {
+                chain.do_send(RemoveNode(*nid));
+            }
         }
     }
 }
@@ -58,12 +76,9 @@ impl Actor for NodeConnector {
 impl NodeConnector {
     pub fn new(aggregator: Addr<Aggregator>, locator: Recipient<LocateRequest>, ip: Option<Ipv4Addr>) -> Self {
         Self {
-            // Garbage id, will be replaced by the Initialize message
-            nid: !0,
+            multiplex: BTreeMap::new(),
             hb: Instant::now(),
             aggregator,
-            chains: BTreeMap::new(),
-            backlogs: BTreeMap::new(),
             ip,
             locator,
             contbuf: BytesMut::new(),
@@ -83,15 +98,18 @@ impl NodeConnector {
     fn handle_message(&mut self, msg: NodeMessage, data: Bytes, ctx: &mut <Self as Actor>::Context) {
         let conn_id = msg.id.unwrap_or(0);
 
-        if let Some(chain) = self.chains.get(&conn_id) {
-            chain.do_send(UpdateNode {
-                nid: self.nid,
-                msg,
-                raw: Some(data)
-            });
+        let backlog = match self.multiplex.entry(conn_id).or_default() {
+            NodeMultiplex::Connected { nid, chain } => {
+                chain.do_send(UpdateNode {
+                    nid: *nid,
+                    msg,
+                    raw: Some(data),
+                });
 
-            return;
-        }
+                return;
+            }
+            NodeMultiplex::Waiting { backlog } => backlog,
+        };
 
         if let Details::SystemConnected(connected) = msg.details {
             let SystemConnected { network_id: _, mut node } = connected;
@@ -106,8 +124,6 @@ impl NodeConnector {
 
             self.aggregator.do_send(AddNode { rec, conn_id, node });
         } else {
-            let backlog = self.backlogs.entry(conn_id).or_default();
-
             if backlog.len() >= 10 {
                 backlog.remove(0);
             }
@@ -152,14 +168,18 @@ impl Handler<Initialize> for NodeConnector {
     fn handle(&mut self, msg: Initialize, _: &mut Self::Context) {
         let Initialize { nid, conn_id, chain } = msg;
 
-        if let Some(backlog) = self.backlogs.remove(&conn_id) {
-            for msg in backlog {
+        let mx = self.multiplex.entry(conn_id).or_default();
+
+        if let NodeMultiplex::Waiting { backlog } = mx {
+            for msg in backlog.drain(..) {
                 chain.do_send(UpdateNode { nid, msg, raw: None });
             }
-        }
 
-        self.nid = nid;
-        self.chains.insert(conn_id, chain.clone());
+            *mx = NodeMultiplex::Connected {
+                nid,
+                chain: chain.clone(),
+            };
+        };
 
         // Acquire the node's physical location
         if let Some(ip) = self.ip {
