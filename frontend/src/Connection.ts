@@ -92,15 +92,23 @@ export class Connection {
     });
   }
 
+  // id sent to the backend used to pair responses
   private pingId = 0;
+  // timeout handler for ping messages
   private pingTimeout: NodeJS.Timer;
+  // timestamp at which the last ping has been sent
   private pingSent: Maybe<Types.Timestamp> = null;
+  // chain label to resubsribe to on reconnect
   private resubscribeTo: Maybe<Types.ChainLabel> = getHashData().chain;
+  // flag whether or not FE should subscribe to consensus updates on reconnect
   private resubscribeSendFinality: boolean = getHashData().tab === 'consensus';
+  // flag used to throttle DOM updates to window frame rate
+  private isUpdating = false;
   private socket: WebSocket;
   private state: Readonly<State>;
   private readonly update: Update;
   private readonly pins: PersistentSet<Types.NodeName>;
+
   constructor(
     socket: WebSocket,
     update: Update,
@@ -149,7 +157,7 @@ export class Connection {
 
   public handleMessages = (messages: FeedMessage.Message[]) => {
     const { nodes, chains, sortBy, selectedColumns } = this.state;
-    const ref = nodes.ref();
+    const nodesStateRef = nodes.ref;
 
     const updateState: UpdateBound = (state) => {
       this.state = this.update(state);
@@ -408,8 +416,12 @@ export class Connection {
       }
     }
 
-    if (nodes.hasChangedSince(ref)) {
-      this.state = this.update({ nodes });
+    if (nodes.hasChangedSince(nodesStateRef) && !this.isUpdating) {
+      this.isUpdating = true;
+      window.requestAnimationFrame(() => {
+        this.update({ nodes });
+        this.isUpdating = false;
+      });
     }
 
     this.autoSubscribe();

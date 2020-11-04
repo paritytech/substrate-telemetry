@@ -37,7 +37,6 @@ export class List extends React.Component<List.Props, {}> {
   };
 
   private relativeTop = -1;
-  private scrolling = false;
 
   public componentDidMount() {
     this.onScroll();
@@ -52,11 +51,11 @@ export class List extends React.Component<List.Props, {}> {
   }
 
   public render() {
-    const { selectedColumns } = this.props.appState;
-    const { pins, sortBy } = this.props;
-    const { filter } = this.state;
+    const { pins, sortBy, appState } = this.props;
+    const { selectedColumns } = appState;
+    const { filter, listStart, listEnd } = this.state;
 
-    let nodes = this.props.appState.nodes.sorted();
+    let nodes = appState.nodes.sorted();
 
     if (filter != null) {
       nodes = nodes.filter(filter);
@@ -73,9 +72,12 @@ export class List extends React.Component<List.Props, {}> {
           </React.Fragment>
         );
       }
+      // With filter present, we can no longer guarantee that focus corresponds
+      // to rendering view, so we put the whole list in focus
+      appState.nodes.setFocus(0, nodes.length);
+    } else {
+      appState.nodes.setFocus(listStart, listEnd);
     }
-
-    const { listStart, listEnd } = this.state;
 
     const height = TH_HEIGHT + nodes.length * TR_HEIGHT;
     const transform = `translateY(${listStart * TR_HEIGHT}px)`;
@@ -105,10 +107,6 @@ export class List extends React.Component<List.Props, {}> {
   }
 
   private onScroll = () => {
-    if (this.scrolling) {
-      return;
-    }
-
     const relativeTop = divisibleBy(
       window.scrollY - (HEADER + TR_HEIGHT),
       TR_HEIGHT * ROW_MARGIN
@@ -119,13 +117,7 @@ export class List extends React.Component<List.Props, {}> {
     }
 
     this.relativeTop = relativeTop;
-    this.scrolling = true;
 
-    window.requestAnimationFrame(this.onScrollRAF);
-  };
-
-  private onScrollRAF = () => {
-    const { relativeTop } = this;
     const { viewportHeight } = this.state;
     const top = Math.max(relativeTop, 0);
     const height =
@@ -136,8 +128,6 @@ export class List extends React.Component<List.Props, {}> {
     if (listStart !== this.state.listStart || listEnd !== this.state.listEnd) {
       this.setState({ listStart, listEnd });
     }
-
-    this.scrolling = false;
   };
 
   private onResize = () => {
