@@ -34,7 +34,7 @@ export class Map extends React.Component<Map.Props, Map.State> {
     left: 0,
   };
 
-  public componentWillMount() {
+  public componentDidMount() {
     this.onResize();
 
     window.addEventListener('resize', this.onResize);

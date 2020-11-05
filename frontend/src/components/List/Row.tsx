@@ -67,32 +67,19 @@ export class Row extends React.Component<Row.Props, Row.State> {
     );
   };
 
-  public state = { update: 0 };
+  private renderedChangeRef = 0;
 
-  public componentDidMount() {
-    const { node } = this.props;
-
-    node.subscribe(this.onUpdate);
-  }
-
-  public componentWillUnmount() {
-    const { node } = this.props;
-
-    node.unsubscribe(this.onUpdate);
-  }
-
-  public shouldComponentUpdate(
-    nextProps: Row.Props,
-    nextState: Row.State
-  ): boolean {
+  public shouldComponentUpdate(nextProps: Row.Props): boolean {
     return (
       this.props.node.id !== nextProps.node.id ||
-      this.state.update !== nextState.update
+      this.renderedChangeRef !== nextProps.node.changeRef
     );
   }
 
   public render() {
     const { node, columns } = this.props;
+
+    this.renderedChangeRef = node.changeRef;
 
     let className = 'Row';
 
@@ -125,9 +112,5 @@ export class Row extends React.Component<Row.Props, Row.State> {
     } else {
       pins.add(node.name);
     }
-  };
-
-  private onUpdate = () => {
-    this.setState({ update: this.state.update + 1 });
   };
 }

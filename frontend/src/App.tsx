@@ -165,7 +165,7 @@ export default class App extends React.Component<{}, State> {
     );
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     window.addEventListener('keydown', this.onKeyPress);
     window.addEventListener('hashchange', this.onHashChange);
   }

@@ -69,7 +69,8 @@ export class Node {
   public lon: Maybe<Types.Longitude>;
   public city: Maybe<Types.City>;
 
-  private readonly subscriptions = new Set<(node: Node) => void>();
+  private _changeRef = 0;
+  // private readonly subscriptions = new Set<(node: Node) => void>();
   private readonly subscriptionsConsensus = new Set<(node: Node) => void>();
 
   constructor(
@@ -188,26 +189,12 @@ export class Node {
     }
   }
 
-  public subscribe(handler: (node: Node) => void) {
-    this.subscriptions.add(handler);
-  }
-
-  public unsubscribe(handler: (node: Node) => void) {
-    this.subscriptions.delete(handler);
-  }
-
-  public subscribeConsensus(handler: (node: Node) => void) {
-    this.subscriptionsConsensus.add(handler);
-  }
-
-  public unsubscribeConsensus(handler: (node: Node) => void) {
-    this.subscriptionsConsensus.delete(handler);
+  public get changeRef(): number {
+    return this._changeRef;
   }
 
   private trigger() {
-    for (const handler of this.subscriptions.values()) {
-      handler(this);
-    }
+    this._changeRef += 1;
   }
 }
 

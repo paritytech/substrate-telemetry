@@ -29,6 +29,8 @@ export namespace List {
   }
 }
 
+type Key = number;
+
 export class List extends React.Component<List.Props, {}> {
   public state = {
     filter: null,
@@ -37,7 +39,9 @@ export class List extends React.Component<List.Props, {}> {
     listEnd: 0,
   };
 
+  private nextKey: Key = 0;
   private relativeTop = -1;
+  private previousKeys = new Map<Types.NodeId, Key>();
 
   public componentDidMount() {
     this.onScroll();
@@ -85,20 +89,51 @@ export class List extends React.Component<List.Props, {}> {
 
     nodes = nodes.slice(listStart, listEnd);
 
+    const keys: Array<Maybe<Key>> = nodes.map((node) => {
+      const key = this.previousKeys.get(node.id);
+
+      if (key) {
+        this.previousKeys.delete(node.id);
+        return key;
+      } else {
+        return null;
+      }
+    });
+
+    const unusedKeys = Array.from(this.previousKeys.values());
+
+    let search = 0;
+
+    const nextUnusedKey = () => {
+      if (search < unusedKeys.length) {
+        return unusedKeys[search++];
+      } else {
+        return this.nextKey++;
+      }
+    };
+
+    this.previousKeys.clear();
+
     return (
       <React.Fragment>
         <div className="List" style={{ height }}>
           <table>
             <Row.HEADER columns={selectedColumns} sortBy={sortBy} />
             <tbody style={{ transform }}>
-              {nodes.map((node) => (
-                <Row
-                  key={node.id}
-                  node={node}
-                  pins={pins}
-                  columns={selectedColumns}
-                />
-              ))}
+              {nodes.map((node, i) => {
+                const newKey = (keys[i] || nextUnusedKey()) as number;
+
+                this.previousKeys.set(node.id, newKey);
+
+                return (
+                  <Row
+                    key={newKey}
+                    node={node}
+                    pins={pins}
+                    columns={selectedColumns}
+                  />
+                );
+              })}
             </tbody>
           </table>
         </div>

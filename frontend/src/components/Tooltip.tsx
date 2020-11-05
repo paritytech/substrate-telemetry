@@ -32,7 +32,7 @@ export class Tooltip extends React.Component<Tooltip.Props, Tooltip.State> {
   public state = { copied: false };
 
   private el: HTMLDivElement;
-  private timer: NodeJS.Timer;
+  private timer: NodeJS.Timer | null = null;
 
   public componentDidMount() {
     if (this.props.onInit) {
@@ -41,7 +41,9 @@ export class Tooltip extends React.Component<Tooltip.Props, Tooltip.State> {
   }
 
   public componentWillUnmount() {
-    clearTimeout(this.timer);
+    if (this.timer) {
+      clearTimeout(this.timer);
+    }
   }
 
   public render() {
@@ -94,7 +96,9 @@ export class Tooltip extends React.Component<Tooltip.Props, Tooltip.State> {
 
     event.stopPropagation();
 
-    clearTimeout(this.timer);
+    if (this.timer) {
+      clearTimeout(this.timer);
+    }
 
     this.setState({ copied: true });
     this.timer = setTimeout(this.restore, 2000);
@@ -102,5 +106,6 @@ export class Tooltip extends React.Component<Tooltip.Props, Tooltip.State> {
 
   private restore = () => {
     this.setState({ copied: false });
+    this.timer = null;
   };
 }

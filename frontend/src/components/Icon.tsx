@@ -80,15 +80,16 @@ export class Icon extends React.Component<{}, Props> {
 
     // Use xlink:href for a shadow DOM reference to the rendered icon
     return (
-      <svg
-        xmlns={W3SVG}
-        xmlnsXlink="http://www.w3.org/1999/xlink"
+      <div
         key={src}
         className={`Icon ${className || ''}`}
+        title={alt}
         onClick={onClick}
       >
-        <use xlinkHref={`#${symbol}`} />
-      </svg>
+        <svg xmlns={W3SVG} xmlnsXlink="http://www.w3.org/1999/xlink">
+          <use xlinkHref={`#${symbol}`} />
+        </svg>
+      </div>
     );
   }
 }

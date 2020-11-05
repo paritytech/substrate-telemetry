@@ -181,7 +181,13 @@ export class SortedCollection<Item extends { id: number }> {
       return;
     }
 
+    const index = sortedIndexOf(item, this.list, this.compare);
+
     mutator(item);
+
+    if (index >= this.focus.start && index < this.focus.end) {
+      this.changeRef += 1;
+    }
   }
 
   public mutAndSort(id: number, mutator: (item: Item) => void) {
