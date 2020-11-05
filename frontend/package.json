@@ -16,7 +16,6 @@
     "clean": "rm -rf node_modules build .nyc env-config.js report*.json yarn-error.log"
   },
   "dependencies": {
-    "@fnando/sparkline": "maciejhirsz/sparkline",
     "@polkadot/util-crypto": "^2.8.1",
     "@types/react-measure": "^2.0.6",
     "blakejs": "^1.1.0",

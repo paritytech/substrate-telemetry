@@ -184,10 +184,6 @@
     lodash "^4.17.13"
     to-fast-properties "^2.0.0"
 
-"@fnando/sparkline@maciejhirsz/sparkline":
-  version "0.3.10"
-  resolved "https://codeload.github.com/maciejhirsz/sparkline/tar.gz/2bdb002b171436be078a84f1e4e617a44ef1fb42"
-
 "@istanbuljs/load-nyc-config@^1.0.0":
   version "1.0.0"
   resolved "https://registry.npmjs.org/@istanbuljs/load-nyc-config/-/load-nyc-config-1.0.0.tgz#10602de5570baea82f8afbfa2630b24e7a8cfe5b"

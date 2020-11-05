@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { Types, Maybe } from '../common';
-import sparkline from '@fnando/sparkline';
 import { Tooltip } from './';
 
 import './Sparkline.css';
@@ -18,60 +17,63 @@ export namespace Sparkline {
 }
 
 export class Sparkline extends React.Component<Sparkline.Props, {}> {
-  private el: SVGSVGElement;
+  private cursor: SVGPathElement;
   private update: Tooltip.UpdateCallback;
 
-  public componentDidMount() {
-    sparkline(this.el, this.props.values, {
-      spotRadius: 0.1,
-      minScale: this.props.minScale,
-      interactive: true,
-      onmousemove: this.onMouseMove,
-    });
-  }
-
   public shouldComponentUpdate(nextProps: Sparkline.Props): boolean {
-    const { stroke, width, height, minScale, format } = this.props;
+    const { stroke, width, height, minScale, format, values } = this.props;
 
-    if (
+    return (
+      values !== nextProps.values ||
       stroke !== nextProps.stroke ||
       width !== nextProps.width ||
       height !== nextProps.height ||
       format !== nextProps.format
-    ) {
-      return true;
-    }
-
-    if (this.props.values !== nextProps.values) {
-      sparkline(this.el, nextProps.values, {
-        spotRadius: 0.1,
-        minScale,
-        interactive: true,
-        onmousemove: this.onMouseMove,
-      });
-    }
-
-    return false;
+    );
   }
 
   public render() {
-    const { stroke, width, height } = this.props;
+    const { stroke, width, height, minScale, values } = this.props;
+    const padding = stroke / 2;
+    const paddedHeight = height - padding;
+    const paddedWidth = width - 2;
+
+    const max = Math.max(minScale || 0, ...values);
+    const offset = paddedWidth / (values.length - 1);
+
+    let path = '';
+
+    values.forEach((value, index) => {
+      const x = 1 + index * offset;
+      const y = padding + (1 - value / max) * paddedHeight;
+
+      if (path) {
+        path += ` L ${x} ${y}`;
+      } else {
+        path = `${x} ${y}`;
+      }
+    });
 
     return (
       <Tooltip text="-" onInit={this.onTooltipInit}>
         <svg
           className="Sparkline"
-          ref={this.onRef}
           width={width}
           height={height}
           strokeWidth={stroke}
-        />
+          onMouseMove={this.onMouseMove}
+          onMouseLeave={this.onMouseLeave}
+        >
+          <path d={`M 0 ${height} L ${path} V ${height} Z`} stroke="none" />
+          <path d={`M ${path}`} fill="none" />
+          <path strokeWidth="2" ref={this.onRef} />
+        </svg>
       </Tooltip>
     );
   }
 
-  private onRef = (el: SVGSVGElement) => {
-    this.el = el;
+  private onRef = (cursor: SVGPathElement) => {
+    this.cursor = cursor;
   };
 
   private onTooltipInit = (update: Tooltip.UpdateCallback) => {
@@ -79,13 +81,22 @@ export class Sparkline extends React.Component<Sparkline.Props, {}> {
   };
 
   private onMouseMove = (
-    _event: MouseEvent,
-    data: { value: number; index: number }
+    event: React.MouseEvent<SVGSVGElement, MouseEvent>
   ) => {
-    const { format, stamps } = this.props;
+    const { width, height, values, format, stamps } = this.props;
+    const offset = (width - 2) / (values.length - 1);
+    const cur =
+      Math.round((event.nativeEvent.offsetX - 1 - offset / 2) / offset) | 0;
+
+    this.cursor.setAttribute('d', `M ${1 + offset * cur} 0 V ${height}`);
+
     const str = format
-      ? format(data.value, stamps ? stamps[data.index] : null)
-      : `${data.value}`;
+      ? format(values[cur], stamps ? stamps[cur] : null)
+      : `${values[cur]}`;
     this.update(str);
+  };
+
+  private onMouseLeave = () => {
+    this.cursor.removeAttribute('d');
   };
 }
