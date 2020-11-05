@@ -4,7 +4,7 @@ import { AllChains, Chains, Chain, Ago, OfflineIndicator } from './components';
 import { Row, Column } from './components/List';
 import { Connection } from './Connection';
 import { Persistent, PersistentObject, PersistentSet } from './persist';
-import { State, Node, ChainData, comparePinnedChains } from './state';
+import { State, Update, Node, ChainData, comparePinnedChains } from './state';
 import { getHashData } from './utils';
 import stable from 'stable';
 
@@ -13,6 +13,7 @@ import './App.css';
 export default class App extends React.Component<{}, State> {
   public state: State;
   private chainsCache: ChainData[] = [];
+  private isUpading = false;
   private readonly settings: PersistentObject<State.Settings>;
   private readonly pins: PersistentSet<Types.NodeName>;
   private readonly sortBy: Persistent<Maybe<number>>;
@@ -97,16 +98,27 @@ export default class App extends React.Component<{}, State> {
 
     this.state.nodes.setComparator(this.getComparator(this.sortBy.get()));
 
-    this.connection = Connection.create(this.pins, (changes) => {
-      if (changes) {
-        this.setState(changes);
-      }
-
-      return this.state;
-    });
+    this.connection = Connection.create(this.pins, this.setStateLazy);
 
     setInterval(() => (this.chainsCache = []), 10000); // Wipe sorted chains cache every 10 seconds
   }
+
+  private setStateLazy: Update = (changes) => {
+    // Apply new changes to the state immediately
+    Object.assign(this.state, changes);
+
+    // Trigger React update on next animation frame only once
+    if (!this.isUpading) {
+      this.isUpading = true;
+
+      window.requestAnimationFrame(() => {
+        this.setState({});
+        this.isUpading = false;
+      });
+    }
+
+    return this.state;
+  };
 
   public render() {
     const { timeDiff, subscribed, status, tab } = this.state;
@@ -142,6 +154,7 @@ export default class App extends React.Component<{}, State> {
         />
         <Chain
           appState={this.state}
+          appUpdate={this.setStateLazy}
           connection={this.connection}
           settings={this.settings}
           pins={this.pins}

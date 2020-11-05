@@ -261,11 +261,12 @@ export interface State {
   selectedColumns: Column[];
 }
 
+// export type Changes = Pick<State, keyof State>;
 export type Update = <K extends keyof State>(
-  changes: Pick<State, K> | null
+  changes: Pick<State, K>
 ) => Readonly<State>;
 export type UpdateBound = <K extends keyof State>(
-  changes: Pick<State, K> | null
+  changes: Pick<State, K>
 ) => void;
 
 export interface ChainData {

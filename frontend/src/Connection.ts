@@ -417,11 +417,7 @@ export class Connection {
     }
 
     if (nodes.hasChangedSince(nodesStateRef) && !this.isUpdating) {
-      this.isUpdating = true;
-      window.requestAnimationFrame(() => {
-        this.update({ nodes });
-        this.isUpdating = false;
-      });
+      this.update({ nodes });
     }
 
     this.autoSubscribe();

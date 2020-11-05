@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Types, Maybe } from '../../common';
 import { Filter } from '../';
-import { State as AppState, Node } from '../../state';
+import { State as AppState, Update as AppUpdate, Node } from '../../state';
 import { Row } from './';
 import { Persistent, PersistentSet } from '../../persist';
 import { viewport } from '../../utils';
@@ -16,6 +16,7 @@ import './List.css';
 export namespace List {
   export interface Props {
     appState: Readonly<AppState>;
+    appUpdate: AppUpdate;
     pins: PersistentSet<Types.NodeName>;
     sortBy: Persistent<Maybe<number>>;
   }
@@ -126,7 +127,9 @@ export class List extends React.Component<List.Props, {}> {
     const listEnd = listStart + ROW_MARGIN * 2 + Math.ceil(height / TR_HEIGHT);
 
     if (listStart !== this.state.listStart || listEnd !== this.state.listEnd) {
-      this.setState({ listStart, listEnd });
+      this.state.listStart = listStart;
+      this.state.listEnd = listEnd;
+      this.props.appUpdate({});
     }
   };
 

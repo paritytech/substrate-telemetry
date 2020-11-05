@@ -58,6 +58,8 @@ import totemIcon from '../../icons/totem.svg';
 import nodleIcon from '../../icons/nodle.svg';
 import zeroIcon from '../../icons/zero.svg';
 
+console.log('icon', parityPolkadotIcon);
+
 import unknownImplementationIcon from '../../icons/question-solid.svg';
 
 const ICONS = {
