@@ -16,8 +16,27 @@ export namespace Chains {
   }
 }
 
+const VISIBLE_CAP = 16;
+const RENDER_THROTTLE = 1000;
+
 export class Chains extends React.Component<Chains.Props, {}> {
+  private lastRender = performance.now();
+  private clicked: Maybe<Types.ChainLabel>;
+
+  public shouldComponentUpdate(nextProps: Chains.Props) {
+    if (nextProps.subscribed !== this.clicked) {
+      this.clicked = nextProps.subscribed;
+    }
+
+    return (
+      this.props.subscribed !== nextProps.subscribed ||
+      performance.now() - this.lastRender > RENDER_THROTTLE
+    );
+  }
+
   public render() {
+    this.lastRender = performance.now();
+
     const allChainsHref = this.props.subscribed
       ? `#all-chains/${this.props.subscribed}`
       : `#all-chains`;
@@ -25,7 +44,7 @@ export class Chains extends React.Component<Chains.Props, {}> {
 
     return (
       <div className="Chains">
-        {chains.map((chain) => this.renderChain(chain))}
+        {chains.slice(0, VISIBLE_CAP).map((chain) => this.renderChain(chain))}
         <a className="Chains-all-chains" href={allChainsHref}>
           <Icon src={listIcon} alt="All Chains" />
         </a>
@@ -43,10 +62,11 @@ export class Chains extends React.Component<Chains.Props, {}> {
   private renderChain(chain: ChainData): React.ReactNode {
     const { label, nodeCount } = chain;
 
-    const className =
-      label === this.props.subscribed
-        ? 'Chains-chain Chains-chain-selected'
-        : 'Chains-chain';
+    let className = 'Chains-chain';
+
+    if (label === this.props.subscribed) {
+      className += ' Chains-chain-selected';
+    }
 
     return (
       <a
@@ -54,7 +74,7 @@ export class Chains extends React.Component<Chains.Props, {}> {
         className={className}
         onClick={this.subscribe.bind(this, label)}
       >
-        {label}{' '}
+        {label}
         <span className="Chains-node-count" title="Node Count">
           {nodeCount}
         </span>
@@ -63,6 +83,11 @@ export class Chains extends React.Component<Chains.Props, {}> {
   }
 
   private async subscribe(chain: Types.ChainLabel) {
+    if (chain === this.clicked) {
+      return;
+    }
+    this.clicked = chain;
+
     const connection = await this.props.connection;
 
     connection.subscribe(chain);
