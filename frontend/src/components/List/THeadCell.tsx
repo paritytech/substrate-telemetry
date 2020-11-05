@@ -7,7 +7,7 @@ import { Persistent } from '../../persist';
 import sortAscIcon from '../../icons/triangle-up.svg';
 import sortDescIcon from '../../icons/triangle-down.svg';
 
-export namespace HeaderCell {
+export namespace THeadCell {
   export interface Props {
     column: Column;
     index: number;
@@ -16,7 +16,7 @@ export namespace HeaderCell {
   }
 }
 
-export class HeaderCell extends React.Component<HeaderCell.Props, {}> {
+export class THeadCell extends React.Component<THeadCell.Props, {}> {
   public render() {
     const { column, index, last } = this.props;
     const { icon, width, label } = column;
@@ -27,8 +27,8 @@ export class HeaderCell extends React.Component<HeaderCell.Props, {}> {
       column.sortBy == null
         ? ''
         : sortBy === index || sortBy === ~index
-        ? 'HeaderCell-sorted'
-        : 'HeaderCell-sortable';
+        ? 'THeadCell-sorted'
+        : 'THeadCell-sortable';
     const i =
       sortBy === index ? sortAscIcon : sortBy === ~index ? sortDescIcon : icon;
 

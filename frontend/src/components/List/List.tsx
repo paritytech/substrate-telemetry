@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Types, Maybe } from '../../common';
 import { Filter } from '../';
 import { State as AppState, Update as AppUpdate, Node } from '../../state';
-import { Row } from './';
+import { Row, THead } from './';
 import { Persistent, PersistentSet } from '../../persist';
 import { viewport } from '../../utils';
 
@@ -10,6 +10,7 @@ const HEADER = 148;
 const TH_HEIGHT = 35;
 const TR_HEIGHT = 31;
 const ROW_MARGIN = 5;
+const FIREFOX = /Firefox/i.test(navigator.userAgent);
 
 import './List.css';
 
@@ -24,8 +25,6 @@ export namespace List {
   export interface State {
     filter: Maybe<(node: Node) => boolean>;
     viewportHeight: number;
-    listStart: number;
-    listEnd: number;
   }
 }
 
@@ -35,10 +34,10 @@ export class List extends React.Component<List.Props, {}> {
   public state = {
     filter: null,
     viewportHeight: viewport().height,
-    listStart: 0,
-    listEnd: 0,
   };
 
+  private listStart = 0;
+  private listEnd = 0;
   private nextKey: Key = 0;
   private relativeTop = -1;
   private previousKeys = new Map<Types.NodeId, Key>();
@@ -58,7 +57,7 @@ export class List extends React.Component<List.Props, {}> {
   public render() {
     const { pins, sortBy, appState } = this.props;
     const { selectedColumns } = appState;
-    const { filter, listStart, listEnd } = this.state;
+    const { filter } = this.state;
 
     let nodes = appState.nodes.sorted();
 
@@ -81,13 +80,20 @@ export class List extends React.Component<List.Props, {}> {
       // to rendering view, so we put the whole list in focus
       appState.nodes.setFocus(0, nodes.length);
     } else {
-      appState.nodes.setFocus(listStart, listEnd);
+      appState.nodes.setFocus(this.listStart, this.listEnd);
     }
 
     const height = TH_HEIGHT + nodes.length * TR_HEIGHT;
-    const transform = `translateY(${listStart * TR_HEIGHT}px)`;
+    const top = this.listStart * TR_HEIGHT;
 
-    nodes = nodes.slice(listStart, listEnd);
+    // Firefox supports relative positions for table elements but suffers badly
+    // when doing translate.
+    // Chrome doesn't support relative positions, but renders translates without issues.
+    const tbodyStyle = FIREFOX
+      ? { top: `${top}px` }
+      : { transform: `translateY(${top}px)` };
+
+    nodes = nodes.slice(this.listStart, this.listEnd);
 
     const keys: Array<Maybe<Key>> = nodes.map((node) => {
       const key = this.previousKeys.get(node.id);
@@ -118,8 +124,8 @@ export class List extends React.Component<List.Props, {}> {
       <React.Fragment>
         <div className="List" style={{ height }}>
           <table>
-            <Row.HEADER columns={selectedColumns} sortBy={sortBy} />
-            <tbody style={{ transform }}>
+            <THead columns={selectedColumns} sortBy={sortBy} />
+            <tbody style={tbodyStyle}>
               {nodes.map((node, i) => {
                 const newKey = (keys[i] || nextUnusedKey()) as number;
 
@@ -161,9 +167,9 @@ export class List extends React.Component<List.Props, {}> {
     const listStart = Math.max(((top / TR_HEIGHT) | 0) - ROW_MARGIN, 0);
     const listEnd = listStart + ROW_MARGIN * 2 + Math.ceil(height / TR_HEIGHT);
 
-    if (listStart !== this.state.listStart || listEnd !== this.state.listEnd) {
-      this.state.listStart = listStart;
-      this.state.listEnd = listEnd;
+    if (listStart !== this.listStart || listEnd !== this.listEnd) {
+      this.listStart = listStart;
+      this.listEnd = listEnd;
       this.props.appUpdate({});
     }
   };

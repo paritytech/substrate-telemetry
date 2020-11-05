@@ -58,10 +58,6 @@ import totemIcon from '../../icons/totem.svg';
 import nodleIcon from '../../icons/nodle.svg';
 import zeroIcon from '../../icons/zero.svg';
 
-console.log('icon', parityPolkadotIcon);
-
-import unknownImplementationIcon from '../../icons/question-solid.svg';
-
 const ICONS = {
   'parity-polkadot': parityPolkadotIcon,
   'Parity Polkadot': parityPolkadotIcon,
@@ -130,9 +126,9 @@ export namespace Column {
     width: 90,
     setting: 'implementation',
     sortBy: ({ sortableVersion }) => sortableVersion,
-    render: ({ implementation, version }) => {
+    render: function implementationColumn({ implementation, version }: Node) {
       const [semver] = version.match(SEMVER_PATTERN) || ['?.?.?'];
-      const implIcon = ICONS[implementation] || unknownImplementationIcon;
+      const implIcon = ICONS[implementation] || paritySubstrateIcon;
 
       return (
         <Tooltip text={`${implementation} v${version}`}>

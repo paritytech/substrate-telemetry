@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Types, Maybe } from '../../common';
 import { Node } from '../../state';
 import { Persistent, PersistentSet } from '../../persist';
-import { HeaderCell, Column } from './';
+import { Column } from './';
 
 import './Row.css';
 
@@ -46,26 +46,26 @@ export class Row extends React.Component<Row.Props, Row.State> {
     Column.NETWORK_STATE,
   ];
 
-  public static HEADER = (props: HeaderProps) => {
-    const { columns, sortBy } = props;
-    const last = columns.length - 1;
+  // public static HEADER = (props: HeaderProps) => {
+  //   const { columns, sortBy } = props;
+  //   const last = columns.length - 1;
 
-    return (
-      <thead>
-        <tr className="Row-Header">
-          {columns.map((col, index) => (
-            <HeaderCell
-              key={index}
-              column={col}
-              index={index}
-              last={last}
-              sortBy={sortBy}
-            />
-          ))}
-        </tr>
-      </thead>
-    );
-  };
+  //   return (
+  //     <thead>
+  //       <tr className="Row-Header">
+  //         {columns.map((col, index) => (
+  //           <HeaderCell
+  //             key={index}
+  //             column={col}
+  //             index={index}
+  //             last={last}
+  //             sortBy={sortBy}
+  //           />
+  //         ))}
+  //       </tr>
+  //     </thead>
+  //   );
+  // };
 
   private renderedChangeRef = 0;
 

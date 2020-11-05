@@ -21,5 +21,6 @@
 }
 
 .List tbody {
+  position: relative;
   font-family: monospace, sans-serif;
 }
