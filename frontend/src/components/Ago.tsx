@@ -38,12 +38,26 @@ export class Ago extends React.Component<Ago.Props, Ago.State> {
 
   public state: Ago.State;
 
+  private agoStr: string;
+
   constructor(props: Ago.Props) {
     super(props);
 
     this.state = {
       now: (timestamp() - Ago.timeDiff) as Types.Timestamp,
     };
+    this.agoStr = this.stringify(props.when, this.state.now);
+  }
+
+  public shouldComponentUpdate(nextProps: Ago.Props, nextState: Ago.State) {
+    const nextAgoStr = this.stringify(nextProps.when, nextState.now);
+
+    if (this.agoStr !== nextAgoStr) {
+      this.agoStr = nextAgoStr;
+      return true;
+    }
+
+    return false;
   }
 
   public componentDidMount() {
@@ -63,7 +77,13 @@ export class Ago extends React.Component<Ago.Props, Ago.State> {
       return <span>-</span>;
     }
 
-    const ago = Math.max(this.state.now - this.props.when, 0) / 1000;
+    return (
+      <span title={new Date(this.props.when).toUTCString()}>{this.agoStr}</span>
+    );
+  }
+
+  private stringify(when: number, now: number): string {
+    const ago = Math.max(now - when, 0) / 1000;
 
     let agoStr: string;
 
@@ -83,8 +103,6 @@ export class Ago extends React.Component<Ago.Props, Ago.State> {
       agoStr += ' ago';
     }
 
-    return (
-      <span title={new Date(this.props.when).toUTCString()}>{agoStr}</span>
-    );
+    return agoStr;
   }
 }
