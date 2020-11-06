@@ -12,7 +12,7 @@
   text-decoration: underline;
 }
 
-.THead th,
+.THeadCell,
 .Column {
   text-align: left;
   padding: 6px 13px;

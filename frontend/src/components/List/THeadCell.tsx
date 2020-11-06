@@ -25,10 +25,10 @@ export class THeadCell extends React.Component<THeadCell.Props, {}> {
     const sortBy = this.props.sortBy.get();
     const className =
       column.sortBy == null
-        ? ''
+        ? 'THeadCell'
         : sortBy === index || sortBy === ~index
-        ? 'THeadCell-sorted'
-        : 'THeadCell-sortable';
+        ? 'THeadCell THeadCell-sorted'
+        : 'THeadCell THeadCell-sortable';
     const i =
       sortBy === index ? sortAscIcon : sortBy === ~index ? sortDescIcon : icon;
 
