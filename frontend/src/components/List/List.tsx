@@ -10,7 +10,6 @@ const HEADER = 148;
 const TH_HEIGHT = 35;
 const TR_HEIGHT = 31;
 const ROW_MARGIN = 5;
-const FIREFOX = /Firefox/i.test(navigator.userAgent);
 
 import './List.css';
 
@@ -86,13 +85,6 @@ export class List extends React.Component<List.Props, {}> {
     const height = TH_HEIGHT + nodes.length * TR_HEIGHT;
     const top = this.listStart * TR_HEIGHT;
 
-    // Firefox supports relative positions for table elements but suffers badly
-    // when doing translate.
-    // Chrome doesn't support relative positions, but renders translates without issues.
-    const tbodyStyle = FIREFOX
-      ? { top: `${top}px` }
-      : { transform: `translateY(${top}px)` };
-
     nodes = nodes.slice(this.listStart, this.listEnd);
 
     const keys: Array<Maybe<Key>> = nodes.map((node) => {
@@ -123,9 +115,16 @@ export class List extends React.Component<List.Props, {}> {
     return (
       <React.Fragment>
         <div className="List" style={{ height }}>
-          <table>
+          <table className="List--table">
             <THead columns={selectedColumns} sortBy={sortBy} />
-            <tbody style={tbodyStyle}>
+            <tbody className="List--tbody">
+              <tr>
+                <td
+                  className="List-padding"
+                  colSpan={selectedColumns.length}
+                  style={{ height: `${top}px` }}
+                />
+              </tr>
               {nodes.map((node, i) => {
                 const newKey = (keys[i] || nextUnusedKey()) as number;
 

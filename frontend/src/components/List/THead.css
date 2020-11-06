@@ -1,3 +1,7 @@
+.THead {
+  background: #393838;
+}
+
 .THead th {
   height: 23px;
 }

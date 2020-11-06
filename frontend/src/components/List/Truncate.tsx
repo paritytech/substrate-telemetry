@@ -22,9 +22,9 @@ export class Truncate extends React.Component<Truncate.Props, {}> {
         text={text}
         position={position}
         copy={copy}
-        className="Row-Tooltip"
+        className="Column-Tooltip"
       >
-        <div className="Row-truncate">{text}</div>
+        <div className="Column-truncate">{text}</div>
       </Tooltip>
     );
   }

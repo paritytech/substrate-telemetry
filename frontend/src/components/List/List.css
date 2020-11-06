@@ -11,16 +11,16 @@
   font-weight: 300;
 }
 
-.List table {
+.List-padding {
+  padding: 0;
+  margin: 0;
+}
+
+.List--table {
   width: 100%;
   border-spacing: 0;
 }
 
-.List thead {
-  background: #393838;
-}
-
-.List tbody {
-  position: relative;
+.List--tbody {
   font-family: monospace, sans-serif;
 }

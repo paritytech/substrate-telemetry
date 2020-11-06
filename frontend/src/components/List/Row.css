@@ -17,13 +17,10 @@
   text-align: left;
   padding: 6px 13px;
   height: 19px;
-}
-
-.Column {
   position: relative;
 }
 
-.Column .Row-truncate {
+.Column-truncate {
   position: absolute;
   left: 0;
   right: 0;
@@ -34,9 +31,9 @@
   text-overflow: ellipsis;
 }
 
-.Column .Row-Tooltip {
-  position: initial;
-  padding: inherit;
+.Column-Tooltip {
+  position: initial !important;
+  padding: inherit !important;
 }
 
 .Row-synced {
