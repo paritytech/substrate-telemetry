@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Types, Maybe, timestamp } from '../../../common';
-import { Column, formatBytes, BANDWIDTH_SCALE } from './';
+import { Column, BANDWIDTH_SCALE } from './';
 import { Node } from '../../../state';
 import { Sparkline } from '../../';
 import icon from '../../../icons/git-branch.svg';
@@ -35,7 +35,7 @@ export class StateCacheColumn extends React.Component<Column.Props, {}> {
           width={44}
           height={16}
           stroke={1}
-          format={formatBytes}
+          format={Column.formatBytes}
           values={stateCacheSize}
           stamps={chartstamps}
           minScale={BANDWIDTH_SCALE}

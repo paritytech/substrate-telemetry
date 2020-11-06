@@ -11,8 +11,18 @@ import { PersistentSet } from './persist';
 import { getHashData, setHashData } from './utils';
 import { AfgHandling } from './AfgHandling';
 import { VIS_AUTHORITIES_LIMIT } from './components/Consensus';
-import { Column } from './components/List';
 import { ACTIONS } from './common/feed';
+import {
+  Column,
+  LocationColumn,
+  PeersColumn,
+  TxsColumn,
+  FinalizedBlockColumn,
+  FinalizedHashColumn,
+  UploadColumn,
+  DownloadColumn,
+  StateCacheColumn,
+} from './components/List';
 
 const TIMEOUT_BASE = (1000 * 5) as Types.Milliseconds; // 5 seconds
 const TIMEOUT_MAX = (1000 * 60 * 5) as Types.Milliseconds; // 5 minutes
@@ -258,7 +268,7 @@ export class Connection {
           nodes.mutAndMaybeSort(
             id,
             (node) => node.updateLocation([lat, lon, city]),
-            sortByColumn === Column.LOCATION
+            sortByColumn === LocationColumn
           );
 
           break;
@@ -278,8 +288,8 @@ export class Connection {
           nodes.mutAndMaybeSort(
             id,
             (node) => node.updateFinalized(height, hash),
-            sortByColumn === Column.FINALIZED ||
-              sortByColumn === Column.FINALIZED_HASH
+            sortByColumn === FinalizedBlockColumn ||
+              sortByColumn === FinalizedHashColumn
           );
 
           break;
@@ -291,7 +301,7 @@ export class Connection {
           nodes.mutAndMaybeSort(
             id,
             (node) => node.updateStats(nodeStats),
-            sortByColumn === Column.PEERS || sortByColumn === Column.TXS
+            sortByColumn === PeersColumn || sortByColumn === TxsColumn
           );
 
           break;
@@ -303,7 +313,7 @@ export class Connection {
           nodes.mutAndMaybeSort(
             id,
             (node) => node.updateHardware(nodeHardware),
-            sortByColumn === Column.UPLOAD || sortByColumn === Column.DOWNLOAD
+            sortByColumn === UploadColumn || sortByColumn === DownloadColumn
           );
 
           break;
@@ -315,7 +325,7 @@ export class Connection {
           nodes.mutAndMaybeSort(
             id,
             (node) => node.updateIO(nodeIO),
-            sortByColumn === Column.STATE_CACHE
+            sortByColumn === StateCacheColumn
           );
 
           break;
@@ -476,8 +486,6 @@ export class Connection {
 
     const latency = timestamp() - this.pingSent;
     this.pingSent = null;
-
-    console.log('latency', latency);
   }
 
   private clean() {

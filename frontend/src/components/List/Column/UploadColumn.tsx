@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Types, Maybe, timestamp } from '../../../common';
-import { Column, formatBandwidth, BANDWIDTH_SCALE } from './';
+import { Column, BANDWIDTH_SCALE } from './';
 import { Node } from '../../../state';
 import { Sparkline } from '../../';
 import icon from '../../../icons/cloud-upload.svg';
@@ -35,7 +35,7 @@ export class UploadColumn extends React.Component<Column.Props, {}> {
           width={44}
           height={16}
           stroke={1}
-          format={formatBandwidth}
+          format={Column.formatBandwidth}
           values={upload}
           stamps={chartstamps}
           minScale={BANDWIDTH_SCALE}

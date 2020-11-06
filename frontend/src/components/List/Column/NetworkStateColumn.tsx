@@ -16,6 +16,7 @@ export class NetworkStateColumn extends React.Component<Column.Props, {}> {
   public static readonly icon = icon;
   public static readonly width = 16;
   public static readonly setting = 'networkstate';
+  public static readonly sortBy = null;
 
   public shouldComponentUpdate(nextProps: Column.Props) {
     // Network state link changes when the node does

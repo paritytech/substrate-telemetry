@@ -7,6 +7,8 @@ import icon from '../../../icons/server.svg';
 export class NameColumn extends React.Component<Column.Props, {}> {
   public static readonly label = 'Node';
   public static readonly icon = icon;
+  public static readonly setting = null;
+  public static readonly width = null;
   public static readonly sortBy = ({ sortableName }: Node) => sortableName;
 
   public shouldComponentUpdate(nextProps: Column.Props) {

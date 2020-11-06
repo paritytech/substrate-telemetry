@@ -2,7 +2,28 @@ import * as React from 'react';
 import { Types, Maybe } from '../../common';
 import { Node } from '../../state';
 import { Persistent, PersistentSet } from '../../persist';
-import { Column } from './';
+import {
+  Column,
+  NameColumn,
+  ValidatorColumn,
+  LocationColumn,
+  ImplementationColumn,
+  NetworkIdColumn,
+  PeersColumn,
+  TxsColumn,
+  UploadColumn,
+  DownloadColumn,
+  StateCacheColumn,
+  BlockNumberColumn,
+  BlockHashColumn,
+  FinalizedBlockColumn,
+  FinalizedHashColumn,
+  BlockTimeColumn,
+  BlockPropagationColumn,
+  LastBlockColumn,
+  UptimeColumn,
+  NetworkStateColumn,
+} from './';
 
 import './Row.css';
 
@@ -25,25 +46,25 @@ interface HeaderProps {
 
 export class Row extends React.Component<Row.Props, Row.State> {
   public static readonly columns: Column[] = [
-    Column.NAME,
-    Column.VALIDATOR,
-    Column.LOCATION,
-    Column.IMPLEMENTATION,
-    Column.NETWORK_ID,
-    Column.PEERS,
-    Column.TXS,
-    Column.UPLOAD,
-    Column.DOWNLOAD,
-    Column.STATE_CACHE,
-    Column.BLOCK_NUMBER,
-    Column.BLOCK_HASH,
-    Column.FINALIZED,
-    Column.FINALIZED_HASH,
-    Column.BLOCK_TIME,
-    Column.BLOCK_PROPAGATION,
-    Column.BLOCK_LAST_TIME,
-    Column.UPTIME,
-    Column.NETWORK_STATE,
+    NameColumn,
+    ValidatorColumn,
+    LocationColumn,
+    ImplementationColumn,
+    NetworkIdColumn,
+    PeersColumn,
+    TxsColumn,
+    UploadColumn,
+    DownloadColumn,
+    StateCacheColumn,
+    BlockNumberColumn,
+    BlockHashColumn,
+    FinalizedBlockColumn,
+    FinalizedHashColumn,
+    BlockTimeColumn,
+    BlockPropagationColumn,
+    LastBlockColumn,
+    UptimeColumn,
+    NetworkStateColumn,
   ];
 
   private renderedChangeRef = 0;
@@ -76,11 +97,9 @@ export class Row extends React.Component<Row.Props, Row.State> {
 
     return (
       <tr className={className} onClick={this.toggle}>
-        {columns.map(({ render }, index) => (
-          <td className="Row--td" key={index}>
-            {render(node)}
-          </td>
-        ))}
+        {columns.map((col, index) =>
+          React.createElement(col, { node, key: index })
+        )}
       </tr>
     );
   }
