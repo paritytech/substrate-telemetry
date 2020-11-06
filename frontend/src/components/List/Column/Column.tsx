@@ -1,62 +1,53 @@
 import * as React from 'react';
-import { Types, Maybe, timestamp } from '../../common';
-import { State, Node } from '../../state';
-import { Truncate } from './';
-import { Ago, Icon, Tooltip, Sparkline, PolkadotIcon } from '../';
+import { Types, Maybe, timestamp } from '../../../common';
+import { State, Node } from '../../../state';
+import { Truncate } from '../';
+import { Ago, Icon, Tooltip, Sparkline, PolkadotIcon } from '../../';
 import {
   formatNumber,
   getHashData,
   milliOrSecond,
   secondsWithPrecision,
-} from '../../utils';
+} from '../../../utils';
 
-export interface Column {
-  label: string;
-  icon: string;
-  width?: number;
-  setting?: keyof State.Settings;
-  sortBy?: (node: Node) => any;
-  render: (node: Node) => React.ReactElement<any> | string;
-}
+import nodeIcon from '../../../icons/server.svg';
+import nodeLocationIcon from '../../../icons/location.svg';
+import nodeValidatorIcon from '../../../icons/shield.svg';
+import nodeTypeIcon from '../../../icons/terminal.svg';
+import networkIdIcon from '../../../icons/fingerprint.svg';
+import peersIcon from '../../../icons/broadcast.svg';
+import transactionsIcon from '../../../icons/inbox.svg';
+import blockIcon from '../../../icons/cube.svg';
+import finalizedIcon from '../../../icons/cube-alt.svg';
+import blockHashIcon from '../../../icons/file-binary.svg';
+import blockTimeIcon from '../../../icons/history.svg';
+import propagationTimeIcon from '../../../icons/dashboard.svg';
+import lastTimeIcon from '../../../icons/watch.svg';
+import uploadIcon from '../../../icons/cloud-upload.svg';
+import downloadIcon from '../../../icons/cloud-download.svg';
+import stateIcon from '../../../icons/git-branch.svg';
+import networkIcon from '../../../icons/network.svg';
+import uptimeIcon from '../../../icons/pulse.svg';
+import externalLinkIcon from '../../../icons/link-external.svg';
 
-import nodeIcon from '../../icons/server.svg';
-import nodeLocationIcon from '../../icons/location.svg';
-import nodeValidatorIcon from '../../icons/shield.svg';
-import nodeTypeIcon from '../../icons/terminal.svg';
-import networkIdIcon from '../../icons/fingerprint.svg';
-import peersIcon from '../../icons/broadcast.svg';
-import transactionsIcon from '../../icons/inbox.svg';
-import blockIcon from '../../icons/cube.svg';
-import finalizedIcon from '../../icons/cube-alt.svg';
-import blockHashIcon from '../../icons/file-binary.svg';
-import blockTimeIcon from '../../icons/history.svg';
-import propagationTimeIcon from '../../icons/dashboard.svg';
-import lastTimeIcon from '../../icons/watch.svg';
-import uploadIcon from '../../icons/cloud-upload.svg';
-import downloadIcon from '../../icons/cloud-download.svg';
-import stateIcon from '../../icons/git-branch.svg';
-import networkIcon from '../../icons/network.svg';
-import uptimeIcon from '../../icons/pulse.svg';
-import externalLinkIcon from '../../icons/link-external.svg';
-
-import parityPolkadotIcon from '../../icons/dot.svg';
-import paritySubstrateIcon from '../../icons/substrate.svg';
-import polkadotJsIcon from '../../icons/polkadot-js.svg';
-import airalabRobonomicsIcon from '../../icons/robonomics.svg';
-import chainXIcon from '../../icons/chainx.svg';
-import edgewareIcon from '../../icons/edgeware.svg';
-import joystreamIcon from '../../icons/joystream.svg';
-import ladderIcon from '../../icons/laddernetwork.svg';
-import cennznetIcon from '../../icons/cennznet.svg';
-import crabIcon from '../../icons/crab.svg';
-import darwiniaIcon from '../../icons/darwinia.svg';
-import turingIcon from '../../icons/turingnetwork.svg';
-import dothereumIcon from '../../icons/dothereum.svg';
-import katalchainIcon from '../../icons/katalchain.svg';
-import bifrostIcon from '../../icons/bifrost.svg';
-import totemIcon from '../../icons/totem.svg';
-import nodleIcon from '../../icons/nodle.svg';
-import zeroIcon from '../../icons/zero.svg';
+import parityPolkadotIcon from '../../../icons/dot.svg';
+import paritySubstrateIcon from '../../../icons/substrate.svg';
+import polkadotJsIcon from '../../../icons/polkadot-js.svg';
+import airalabRobonomicsIcon from '../../../icons/robonomics.svg';
+import chainXIcon from '../../../icons/chainx.svg';
+import edgewareIcon from '../../../icons/edgeware.svg';
+import joystreamIcon from '../../../icons/joystream.svg';
+import ladderIcon from '../../../icons/laddernetwork.svg';
+import cennznetIcon from '../../../icons/cennznet.svg';
+import crabIcon from '../../../icons/crab.svg';
+import darwiniaIcon from '../../../icons/darwinia.svg';
+import turingIcon from '../../../icons/turingnetwork.svg';
+import dothereumIcon from '../../../icons/dothereum.svg';
+import katalchainIcon from '../../../icons/katalchain.svg';
+import bifrostIcon from '../../../icons/bifrost.svg';
+import totemIcon from '../../../icons/totem.svg';
+import nodleIcon from '../../../icons/nodle.svg';
+import zeroIcon from '../../../icons/zero.svg';
 
 const ICONS = {
   'parity-polkadot': parityPolkadotIcon,
@@ -83,7 +74,74 @@ const ICONS = {
   subzero: zeroIcon,
 };
 
+import {
+  NameColumn,
+  ValidatorColumn,
+  LocationColumn,
+  ImplementationColumn,
+  NetworkIdColumn,
+  PeersColumn,
+  TxsColumn,
+  UploadColumn,
+  DownloadColumn,
+  StateCacheColumn,
+  BlockNumberColumn,
+  BlockHashColumn,
+  FinalizedBlockColumn,
+  FinalizedHashColumn,
+  BlockTimeColumn,
+  BlockPropagationColumn,
+  LastBlockColumn,
+  UptimeColumn,
+  NetworkStateColumn,
+} from './';
+
+export type ColumnNew = Column.Static;
+
+export namespace ColumnNew {
+  export const NAME: ColumnNew = NameColumn;
+  export const VALIDATOR: ColumnNew = ValidatorColumn;
+  export const LOCATION: ColumnNew = LocationColumn;
+  export const IMPLEMENTATION: ColumnNew = ImplementationColumn;
+  export const NETWORK_ID: ColumnNew = NetworkIdColumn;
+  export const PEERS: ColumnNew = PeersColumn;
+  export const TXS: ColumnNew = TxsColumn;
+  export const UPLOAD: ColumnNew = UploadColumn;
+  export const DOWNLOAD: ColumnNew = DownloadColumn;
+  export const STATE_CACHE: ColumnNew = StateCacheColumn;
+  export const BLOCK_NUMBER: ColumnNew = BlockNumberColumn;
+  export const BLOCK_HASH: ColumnNew = BlockHashColumn;
+  export const FINALIZED: ColumnNew = FinalizedBlockColumn;
+  export const FINALIZED_HASH: ColumnNew = FinalizedHashColumn;
+  export const BLOCK_TIME: ColumnNew = BlockTimeColumn;
+  export const BLOCK_PROPAGATION: ColumnNew = BlockPropagationColumn;
+  export const BLOCK_LAST_TIME: ColumnNew = LastBlockColumn;
+  export const UPTIME: ColumnNew = UptimeColumn;
+  export const NETWORK_STATE: ColumnNew = NetworkStateColumn;
+}
+
+export interface Column {
+  label: string;
+  icon: string;
+  width?: number;
+  setting?: keyof State.Settings;
+  sortBy?: (node: Node) => any;
+  render: (node: Node) => React.ReactElement<any> | string;
+}
+
 export namespace Column {
+  export interface Props {
+    node: Node;
+  }
+
+  export interface Static {
+    label: string;
+    icon: string;
+    width?: number;
+    setting?: keyof State.Settings;
+    sortBy?: (node: Node) => any;
+  }
+
   export const NAME: Column = {
     label: 'Node',
     icon: nodeIcon,
@@ -342,8 +400,8 @@ export namespace Column {
 }
 
 const SEMVER_PATTERN = /^\d+\.\d+\.\d+/;
-const BANDWIDTH_SCALE = 1024 * 1024;
 const MEMORY_SCALE = 2 * 1024 * 1024;
+export const BANDWIDTH_SCALE = 1024 * 1024;
 const URI_BASE =
   window.location.protocol === 'https:'
     ? `/network_state/`
@@ -363,18 +421,10 @@ function formatStamp(stamp: Types.Timestamp): string {
     : `${seconds}s ago`;
 }
 
-function formatMemory(kbs: number, stamp: Maybe<Types.Timestamp>): string {
-  const ago = stamp ? ` (${formatStamp(stamp)})` : '';
-  const mbs = (kbs / 1024) | 0;
-
-  if (mbs >= 1000) {
-    return `${(mbs / 1024).toFixed(1)} GB${ago}`;
-  } else {
-    return `${mbs} MB${ago}`;
-  }
-}
-
-function formatBytes(bytes: number, stamp: Maybe<Types.Timestamp>): string {
+export function formatBytes(
+  bytes: number,
+  stamp: Maybe<Types.Timestamp>
+): string {
   const ago = stamp ? ` (${formatStamp(stamp)})` : '';
 
   if (bytes >= 1024 * 1024 * 1024) {
@@ -388,7 +438,10 @@ function formatBytes(bytes: number, stamp: Maybe<Types.Timestamp>): string {
   }
 }
 
-function formatBandwidth(bps: number, stamp: Maybe<Types.Timestamp>): string {
+export function formatBandwidth(
+  bps: number,
+  stamp: Maybe<Types.Timestamp>
+): string {
   const ago = stamp ? ` (${formatStamp(stamp)})` : '';
 
   if (bps >= 1024 * 1024) {
@@ -398,11 +451,4 @@ function formatBandwidth(bps: number, stamp: Maybe<Types.Timestamp>): string {
   } else {
     return `${bps | 0} B/s${ago}`;
   }
-}
-
-function formatCPU(cpu: number, stamp: Maybe<Types.Timestamp>): string {
-  const ago = stamp ? ` (${formatStamp(stamp)})` : '';
-  const fractionDigits = cpu > 100 ? 0 : cpu > 10 ? 1 : cpu > 1 ? 2 : 3;
-
-  return `${cpu.toFixed(fractionDigits)}%${ago}`;
 }
