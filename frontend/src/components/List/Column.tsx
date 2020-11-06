@@ -333,7 +333,7 @@ export namespace Column {
 
       const uri = `${URI_BASE}${encodeURIComponent(chainLabel)}/${id}/`;
       return (
-        <a href={uri} target="_blank">
+        <a className="Row--a" href={uri} target="_blank">
           <Icon src={externalLinkIcon} />
         </a>
       );

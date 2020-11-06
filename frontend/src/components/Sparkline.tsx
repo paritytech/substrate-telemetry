@@ -66,7 +66,7 @@ export class Sparkline extends React.Component<Sparkline.Props, {}> {
         >
           <path d={`M 0 ${height} L ${path} V ${height} Z`} stroke="none" />
           <path d={`M ${path}`} fill="none" />
-          <path strokeWidth="2" ref={this.onRef} />
+          <path className="Sparkline-cursor" strokeWidth="2" ref={this.onRef} />
         </svg>
       </Tooltip>
     );

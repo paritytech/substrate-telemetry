@@ -46,27 +46,6 @@ export class Row extends React.Component<Row.Props, Row.State> {
     Column.NETWORK_STATE,
   ];
 
-  // public static HEADER = (props: HeaderProps) => {
-  //   const { columns, sortBy } = props;
-  //   const last = columns.length - 1;
-
-  //   return (
-  //     <thead>
-  //       <tr className="Row-Header">
-  //         {columns.map((col, index) => (
-  //           <HeaderCell
-  //             key={index}
-  //             column={col}
-  //             index={index}
-  //             last={last}
-  //             sortBy={sortBy}
-  //           />
-  //         ))}
-  //       </tr>
-  //     </thead>
-  //   );
-  // };
-
   private renderedChangeRef = 0;
 
   public shouldComponentUpdate(nextProps: Row.Props): boolean {
@@ -98,7 +77,9 @@ export class Row extends React.Component<Row.Props, Row.State> {
     return (
       <tr className={className} onClick={this.toggle}>
         {columns.map(({ render }, index) => (
-          <td key={index}>{render(node)}</td>
+          <td className="Row--td" key={index}>
+            {render(node)}
+          </td>
         ))}
       </tr>
     );

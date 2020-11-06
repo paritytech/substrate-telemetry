@@ -3,27 +3,27 @@
   cursor: pointer;
 }
 
-.Row a {
+.Row--a {
   color: inherit;
   text-decoration: none;
 }
 
-.Row a:hover {
+.Row--a:hover {
   text-decoration: underline;
 }
 
 .THead th,
-.Row td {
+.Row--td {
   text-align: left;
   padding: 6px 13px;
   height: 19px;
 }
 
-.Row td {
+.Row--td {
   position: relative;
 }
 
-.Row .Row-truncate {
+.Row--td .Row-truncate {
   position: absolute;
   left: 0;
   right: 0;
@@ -34,7 +34,7 @@
   text-overflow: ellipsis;
 }
 
-.Row .Row-Tooltip {
+.Row--td .Row-Tooltip {
   position: initial;
   padding: inherit;
 }

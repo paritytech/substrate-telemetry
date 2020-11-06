@@ -5,7 +5,7 @@ import { Types, Maybe } from '../common';
 import { ChainData } from '../state';
 
 import githubIcon from '../icons/mark-github.svg';
-import listIcon from '../icons/three-bars.svg';
+import listIcon from '../icons/kebab-horizontal.svg';
 import './Chains.css';
 
 export namespace Chains {
