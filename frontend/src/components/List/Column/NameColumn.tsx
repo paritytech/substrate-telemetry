@@ -20,7 +20,7 @@ export class NameColumn extends React.Component<Column.Props, {}> {
     const { name } = this.props.node;
 
     return (
-      <td className="Row--td">
+      <td className="Column">
         <Truncate text={name} position="left" />
       </td>
     );

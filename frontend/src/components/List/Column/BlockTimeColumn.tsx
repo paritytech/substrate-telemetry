@@ -24,7 +24,7 @@ export class BlockTimeColumn extends React.Component<Column.Props, {}> {
     this.data = blockTime;
 
     return (
-      <td className="Row--td">{`${secondsWithPrecision(blockTime / 1000)}`}</td>
+      <td className="Column">{`${secondsWithPrecision(blockTime / 1000)}`}</td>
     );
   }
 }

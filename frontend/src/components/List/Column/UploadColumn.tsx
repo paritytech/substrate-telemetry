@@ -26,11 +26,11 @@ export class UploadColumn extends React.Component<Column.Props, {}> {
     this.data = upload;
 
     if (upload.length < 3) {
-      return <td className="Row--td">'-'</td>;
+      return <td className="Column">'-'</td>;
     }
 
     return (
-      <td className="Row--td">
+      <td className="Column">
         <Sparkline
           width={44}
           height={16}

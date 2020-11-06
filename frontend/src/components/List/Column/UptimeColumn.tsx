@@ -20,7 +20,7 @@ export class UptimeColumn extends React.Component<Column.Props, {}> {
     const { connectedAt } = this.props.node;
 
     return (
-      <td className="Row--td">
+      <td className="Column">
         <Ago when={connectedAt} justTime={true} />
       </td>
     );

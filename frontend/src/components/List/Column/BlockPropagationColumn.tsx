@@ -26,6 +26,6 @@ export class BlockPropagationColumn extends React.Component<Column.Props, {}> {
 
     this.data = propagationTime;
 
-    return <td className="Row--td">{print}</td>;
+    return <td className="Column">{print}</td>;
   }
 }

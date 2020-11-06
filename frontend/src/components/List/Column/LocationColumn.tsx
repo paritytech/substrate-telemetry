@@ -24,11 +24,11 @@ export class LocationColumn extends React.Component<Column.Props, {}> {
     this.data = city;
 
     if (!city) {
-      return <td className="Row--td">-</td>;
+      return <td className="Column">-</td>;
     }
 
     return (
-      <td className="Row--td">
+      <td className="Column">
         <Truncate text={city} position="left" />
       </td>
     );

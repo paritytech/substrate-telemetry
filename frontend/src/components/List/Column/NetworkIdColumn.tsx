@@ -24,11 +24,11 @@ export class NetworkIdColumn extends React.Component<Column.Props, {}> {
     this.data = networkId;
 
     if (!networkId) {
-      return <td className="Row--td">-</td>;
+      return <td className="Column">-</td>;
     }
 
     return (
-      <td className="Row--td">
+      <td className="Column">
         <Truncate position="left" text={networkId} />
       </td>
     );

@@ -24,11 +24,11 @@ export class ValidatorColumn extends React.Component<Column.Props, {}> {
     this.data = validator;
 
     if (!validator) {
-      return <td className="Row--td">-</td>;
+      return <td className="Column">-</td>;
     }
 
     return (
-      <td className="Row--td">
+      <td className="Column">
         <Tooltip text={validator} copy={true}>
           <span className="Row-validator">
             <PolkadotIcon account={validator} size={16} />

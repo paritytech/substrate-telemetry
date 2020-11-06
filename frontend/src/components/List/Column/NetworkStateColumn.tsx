@@ -28,13 +28,13 @@ export class NetworkStateColumn extends React.Component<Column.Props, {}> {
     const chainLabel = getHashData().chain;
 
     if (!chainLabel) {
-      return <td className="Row--td">-</td>;
+      return <td className="Column">-</td>;
     }
 
     const uri = `${URI_BASE}${encodeURIComponent(chainLabel)}/${id}/`;
 
     return (
-      <td className="Row--td">
+      <td className="Column">
         <a className="Row--a" href={uri} target="_blank">
           <Icon src={externalLinkIcon} />
         </a>

@@ -21,6 +21,6 @@ export class TxsColumn extends React.Component<Column.Props, {}> {
 
     this.data = txs;
 
-    return <td className="Row--td">{txs}</td>;
+    return <td className="Column">{txs}</td>;
   }
 }

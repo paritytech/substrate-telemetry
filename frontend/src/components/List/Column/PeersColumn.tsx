@@ -21,6 +21,6 @@ export class PeersColumn extends React.Component<Column.Props, {}> {
 
     this.data = peers;
 
-    return <td className="Row--td">{peers}</td>;
+    return <td className="Column">{peers}</td>;
   }
 }

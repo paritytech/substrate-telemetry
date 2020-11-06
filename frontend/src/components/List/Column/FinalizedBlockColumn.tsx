@@ -22,6 +22,6 @@ export class FinalizedBlockColumn extends React.Component<Column.Props, {}> {
 
     this.data = finalized;
 
-    return <td className="Row--td">{`#${formatNumber(finalized)}`}</td>;
+    return <td className="Column">{`#${formatNumber(finalized)}`}</td>;
   }
 }

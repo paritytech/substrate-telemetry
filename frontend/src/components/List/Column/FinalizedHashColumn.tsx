@@ -25,7 +25,7 @@ export class FinalizedHashColumn extends React.Component<Column.Props, {}> {
     this.data = finalizedHash;
 
     return (
-      <td className="Row--td">
+      <td className="Column">
         <Truncate text={finalizedHash} position="right" copy={true} />
       </td>
     );

@@ -24,7 +24,7 @@ export class LastBlockColumn extends React.Component<Column.Props, {}> {
     this.data = blockTimestamp;
 
     return (
-      <td className="Row--td">
+      <td className="Column">
         <Ago when={blockTimestamp} />
       </td>
     );

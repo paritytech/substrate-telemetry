@@ -22,6 +22,6 @@ export class BlockNumberColumn extends React.Component<Column.Props, {}> {
 
     this.data = height;
 
-    return <td className="Row--td">{`#${formatNumber(height)}`}</td>;
+    return <td className="Column">{`#${formatNumber(height)}`}</td>;
   }
 }

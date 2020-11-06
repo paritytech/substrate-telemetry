@@ -24,7 +24,7 @@ export class BlockHashColumn extends React.Component<Column.Props, {}> {
     this.data = hash;
 
     return (
-      <td className="Row--td">
+      <td className="Column">
         <Truncate text={hash} position="right" copy={true} />
       </td>
     );

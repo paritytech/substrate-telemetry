@@ -68,7 +68,7 @@ export class ImplementationColumn extends React.Component<Column.Props, {}> {
     const implIcon = ICONS[implementation] || paritySubstrateIcon;
 
     return (
-      <td className="Row--td">
+      <td className="Column">
         <Tooltip text={`${implementation} v${version}`}>
           <Icon src={implIcon} /> {semver}
         </Tooltip>

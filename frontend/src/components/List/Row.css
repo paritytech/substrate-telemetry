@@ -13,17 +13,17 @@
 }
 
 .THead th,
-.Row--td {
+.Column {
   text-align: left;
   padding: 6px 13px;
   height: 19px;
 }
 
-.Row--td {
+.Column {
   position: relative;
 }
 
-.Row--td .Row-truncate {
+.Column .Row-truncate {
   position: absolute;
   left: 0;
   right: 0;
@@ -34,7 +34,7 @@
   text-overflow: ellipsis;
 }
 
-.Row--td .Row-Tooltip {
+.Column .Row-Tooltip {
   position: initial;
   padding: inherit;
 }
