@@ -8,6 +8,7 @@
 // https://github.com/paritytech/oo7/blob/251ba2b7c45503b68eab4320c270b5afa9bccb60/packages/polkadot-identicon/src/index.jsx
 import * as React from 'react';
 import { blake2AsU8a, decodeAddress } from '@polkadot/util-crypto';
+import { getSVGShadowRoot, W3SVG } from '../utils';
 
 interface Circle {
   cx: number;
@@ -172,20 +173,19 @@ function getColors(address: string): string[] {
 /**
  * @description Generate a array of the circles that make up an indenticon
  */
-export default function generate(
-  address: string,
-  isSixPoint = false
-): Circle[] {
+function generate(address: string, isSixPoint = false): Circle[] {
   const colors = getColors(address);
 
   return [OUTER_CIRCLE].concat(
     getCircleXY(isSixPoint).map(
-      ([cx, cy], index): Circle => ({
-        cx,
-        cy,
-        r: Z,
-        fill: colors[index],
-      })
+      ([cx, cy], index): Circle => {
+        return {
+          cx,
+          cy,
+          r: Z,
+          fill: colors[index],
+        };
+      }
     )
   );
 }
@@ -197,21 +197,50 @@ export namespace PolkadotIcon {
   }
 }
 
-export class PolkadotIcon extends React.Component<PolkadotIcon.Props, {}> {
-  public render(): React.ReactNode {
-    const { account, size } = this.props;
+const rendered = new Set<string>();
 
+// Lazily render the icon in the DOM, so that we can referenced
+// it by id using shadow DOM.
+function renderShadowIcon(account: string) {
+  if (!rendered.has(account)) {
+    rendered.add(account);
+
+    const symEl = document.createElementNS(W3SVG, 'symbol');
+
+    symEl.setAttribute('id', account);
+    symEl.setAttribute('viewBox', '0 0 64 64');
+
+    generate(account, false).forEach(({ cx, cy, r, fill }) => {
+      const circle = document.createElementNS(W3SVG, 'circle');
+
+      circle.setAttribute('cx', String(cx));
+      circle.setAttribute('cy', String(cy));
+      circle.setAttribute('r', String(r));
+      circle.setAttribute('fill', fill);
+
+      symEl.appendChild(circle);
+    });
+
+    getSVGShadowRoot().appendChild(symEl);
+  }
+}
+
+export class PolkadotIcon extends React.Component<PolkadotIcon.Props, {}> {
+  public shouldComponentUpdate(nextProps: PolkadotIcon.Props) {
     return (
-      <svg width={size} height={size} viewBox="0 0 64 64">
-        {generate(account, false).map(this.renderCircle)}
-      </svg>
+      this.props.account !== nextProps.account ||
+      this.props.size !== nextProps.size
     );
   }
 
-  private renderCircle = (
-    { cx, cy, r, fill }: Circle,
-    key: number
-  ): React.ReactNode => {
-    return <circle key={key} cx={cx} cy={cy} r={r} fill={fill} />;
-  };
+  public render(): React.ReactNode {
+    const { account, size } = this.props;
+    renderShadowIcon(account);
+
+    return (
+      <svg width={size} height={size}>
+        <use xlinkHref={`#${account}`} />
+      </svg>
+    );
+  }
 }
