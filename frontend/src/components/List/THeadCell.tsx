@@ -38,9 +38,10 @@ export class THeadCell extends React.Component<THeadCell.Props, {}> {
         style={width ? { width } : undefined}
         onClick={this.toggleSort}
       >
-        <Tooltip text={label} inline={true} position={position}>
+        <span className="THeadCell-container">
+          <Tooltip text={label} position={position} />
           <Icon src={i} />
-        </Tooltip>
+        </span>
       </th>
     );
   }

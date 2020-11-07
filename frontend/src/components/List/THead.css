@@ -2,16 +2,23 @@
   background: #393838;
 }
 
-.THead th {
+.THeadCell {
+  text-align: left;
+  padding: 6px 13px;
   height: 23px;
 }
 
-.THead th.THeadCell-sortable {
+.THeadCell-sortable {
   cursor: pointer;
 }
 
-.THead th.THeadCell-sorted {
+.THeadCell-sorted {
   cursor: pointer;
   background: #e6007a;
   color: #fff;
+}
+
+.THeadCell-container {
+  position: relative;
+  display: inline-block;
 }

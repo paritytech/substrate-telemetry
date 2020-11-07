@@ -194,6 +194,7 @@ export namespace PolkadotIcon {
   export interface Props {
     account: string;
     size: number;
+    className?: string;
   }
 }
 
@@ -234,11 +235,11 @@ export class PolkadotIcon extends React.Component<PolkadotIcon.Props, {}> {
   }
 
   public render(): React.ReactNode {
-    const { account, size } = this.props;
+    const { account, size, className } = this.props;
     renderShadowIcon(account);
 
     return (
-      <svg width={size} height={size}>
+      <svg width={size} height={size} className={className}>
         <use xlinkHref={`#${account}`} />
       </svg>
     );

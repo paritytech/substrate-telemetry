@@ -2,6 +2,8 @@ import * as React from 'react';
 import { Types, Maybe, timestamp } from '../../../common';
 import { Node } from '../../../state';
 
+import './Column.css';
+
 import {
   NameColumn,
   ValidatorColumn,

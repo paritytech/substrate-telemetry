@@ -1,0 +1,43 @@
+.Column {
+  text-align: left;
+  padding: 6px 13px;
+  height: 19px;
+  position: relative;
+  white-space: nowrap;
+}
+
+.Column-truncate {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  padding: 6px 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.Column-Tooltip {
+  position: initial !important;
+  padding: inherit !important;
+}
+
+.Column-validator {
+  display: block;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.Column-validator:hover {
+  transform: scale(2);
+}
+
+.Column--a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.Column--a:hover {
+  text-decoration: underline;
+}
+

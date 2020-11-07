@@ -26,7 +26,12 @@ export class FinalizedHashColumn extends React.Component<Column.Props, {}> {
 
     return (
       <td className="Column">
-        <Truncate text={finalizedHash} position="right" copy={true} />
+        <Truncate
+          text={finalizedHash}
+          chars={16}
+          position="right"
+          copy={true}
+        />
       </td>
     );
   }

@@ -29,11 +29,12 @@ export class ValidatorColumn extends React.Component<Column.Props, {}> {
 
     return (
       <td className="Column">
-        <Tooltip text={validator} copy={true}>
-          <span className="Row-validator">
-            <PolkadotIcon account={validator} size={16} />
-          </span>
-        </Tooltip>
+        <Tooltip text={validator} copy={true} />
+        <PolkadotIcon
+          className="Column-validator"
+          account={validator}
+          size={16}
+        />
       </td>
     );
   }

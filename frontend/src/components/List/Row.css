@@ -3,39 +3,6 @@
   cursor: pointer;
 }
 
-.Row--a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.Row--a:hover {
-  text-decoration: underline;
-}
-
-.THeadCell,
-.Column {
-  text-align: left;
-  padding: 6px 13px;
-  height: 19px;
-  position: relative;
-}
-
-.Column-truncate {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  padding: inherit;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.Column-Tooltip {
-  position: initial !important;
-  padding: inherit !important;
-}
-
 .Row-synced {
   color: #fff;
 }
@@ -60,15 +27,4 @@
 
 .Row:hover {
   background-color: #1e1e1e;
-}
-
-.Row-validator {
-  display: block;
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
-
-.Row-validator:hover {
-  transform: scale(2);
 }

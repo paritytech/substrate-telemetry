@@ -35,7 +35,7 @@ export class NetworkStateColumn extends React.Component<Column.Props, {}> {
 
     return (
       <td className="Column">
-        <a className="Row--a" href={uri} target="_blank">
+        <a className="Column--a" href={uri} target="_blank">
           <Icon src={externalLinkIcon} />
         </a>
       </td>

@@ -6,7 +6,6 @@ export namespace Tooltip {
   export interface Props {
     text: string;
     copy?: boolean;
-    inline?: boolean;
     className?: string;
     position?: 'left' | 'right' | 'center';
     onInit?: (update: UpdateCallback) => void;
@@ -33,6 +32,7 @@ export class Tooltip extends React.Component<Tooltip.Props, Tooltip.State> {
 
   private el: HTMLDivElement;
   private timer: NodeJS.Timer | null = null;
+  private text: string;
 
   public componentDidMount() {
     if (this.props.onInit) {
@@ -46,20 +46,26 @@ export class Tooltip extends React.Component<Tooltip.Props, Tooltip.State> {
     }
   }
 
+  public shouldComponentUpdate(
+    nextProps: Tooltip.Props,
+    nextState: Tooltip.State
+  ) {
+    if (this.state.copied !== nextState.copied) {
+      return true;
+    }
+
+    this.update(nextProps.text);
+
+    return false;
+  }
+
   public render() {
-    const { text, inline, className, position } = this.props;
+    const { text, className, position } = this.props;
     const { copied } = this.state;
 
-    let containerClass = 'Tooltip-container';
+    this.text = text;
+
     let tooltipClass = 'Tooltip';
-
-    if (className) {
-      containerClass += ' ' + className;
-    }
-
-    if (inline) {
-      containerClass += ' Tooltip-container-inline';
-    }
 
     if (position && position !== 'center') {
       tooltipClass += ` Tooltip-${position}`;
@@ -70,11 +76,8 @@ export class Tooltip extends React.Component<Tooltip.Props, Tooltip.State> {
     }
 
     return (
-      <div className={containerClass} onClick={this.onClick}>
-        <div className={tooltipClass} ref={this.onRef}>
-          {copied ? 'Copied to clipboard!' : text}
-        </div>
-        {this.props.children}
+      <div className={tooltipClass} ref={this.onRef}>
+        {copied ? 'Copied to clipboard!' : text}
       </div>
     );
   }
@@ -84,7 +87,10 @@ export class Tooltip extends React.Component<Tooltip.Props, Tooltip.State> {
   };
 
   private update = (text: string) => {
-    this.el.textContent = text;
+    if (text !== this.text) {
+      this.text = text;
+      this.el.textContent = text;
+    }
   };
 
   private onClick = (event: React.MouseEvent<HTMLDivElement>) => {

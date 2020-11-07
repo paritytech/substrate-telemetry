@@ -29,7 +29,7 @@ export class LocationColumn extends React.Component<Column.Props, {}> {
 
     return (
       <td className="Column">
-        <Truncate text={city} position="left" />
+        <Truncate text={city} chars={13} position="left" />
       </td>
     );
   }

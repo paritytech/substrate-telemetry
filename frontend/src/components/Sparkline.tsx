@@ -55,7 +55,8 @@ export class Sparkline extends React.Component<Sparkline.Props, {}> {
     });
 
     return (
-      <Tooltip text="-" onInit={this.onTooltipInit}>
+      <>
+        <Tooltip text="-" onInit={this.onTooltipInit} />
         <svg
           className="Sparkline"
           width={width}
@@ -68,7 +69,7 @@ export class Sparkline extends React.Component<Sparkline.Props, {}> {
           <path d={`M ${path}`} fill="none" />
           <path className="Sparkline-cursor" strokeWidth="2" ref={this.onRef} />
         </svg>
-      </Tooltip>
+      </>
     );
   }
 
