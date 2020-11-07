@@ -27,6 +27,8 @@ export namespace List {
   }
 }
 
+// Helper for readability, used as `key` prop for each `Row`
+// of the `List`, so that we can maximize re-using DOM elements.
 type Key = number;
 
 export class List extends React.Component<List.Props, {}> {
@@ -37,8 +39,8 @@ export class List extends React.Component<List.Props, {}> {
 
   private listStart = 0;
   private listEnd = 0;
-  private nextKey: Key = 0;
   private relativeTop = -1;
+  private nextKey: Key = 0;
   private previousKeys = new Map<Types.NodeId, Key>();
 
   public componentDidMount() {
@@ -87,46 +89,23 @@ export class List extends React.Component<List.Props, {}> {
 
     nodes = nodes.slice(this.listStart, this.listEnd);
 
-    const keys: Array<Maybe<Key>> = nodes.map((node) => {
-      const key = this.previousKeys.get(node.id);
-
-      if (key) {
-        this.previousKeys.delete(node.id);
-        return key;
-      } else {
-        return null;
-      }
-    });
-
-    const unusedKeys = Array.from(this.previousKeys.values());
-
-    let search = 0;
-
-    const nextUnusedKey = () => {
-      if (search < unusedKeys.length) {
-        return unusedKeys[search++];
-      } else {
-        return this.nextKey++;
-      }
-    };
-
-    this.previousKeys.clear();
+    const keys = this.recalculateKeys(nodes);
 
     return (
-      <React.Fragment>
+      <>
         <div className="List" style={{ height }}>
           <table className="List--table">
             <THead columns={selectedColumns} sortBy={sortBy} />
-            <tbody className="List--tbody">
+            <tbody>
               <tr className="List-padding" style={{ height: `${top}px` }} />
               {nodes.map((node, i) => {
-                const newKey = (keys[i] || nextUnusedKey()) as number;
+                const key = keys[i];
 
-                this.previousKeys.set(node.id, newKey);
+                this.previousKeys.set(node.id, key);
 
                 return (
                   <Row
-                    key={newKey}
+                    key={key}
                     node={node}
                     pins={pins}
                     columns={selectedColumns}
@@ -137,8 +116,54 @@ export class List extends React.Component<List.Props, {}> {
           </table>
         </div>
         <Filter onChange={this.onFilterChange} />
-      </React.Fragment>
+      </>
     );
+  }
+
+  // Get an array of keys for each `Node` in viewport in order.
+  //
+  // * If a `Node` was previously rendered, it will keep its `Key`.
+  //
+  // * If a `Node` is new to the viewport, it will get a `Key` of
+  //   another `Node` that was removed from the viewport, or a new one.
+  private recalculateKeys(nodes: Array<Node>): Array<Key> {
+    // First we find all keys for `Node`s which didn't change from
+    // last render.
+    const keptKeys: Array<Maybe<Key>> = nodes.map(({ id }) => {
+      const key = this.previousKeys.get(id);
+
+      if (key != null) {
+        this.previousKeys.delete(id);
+      }
+
+      return key;
+    });
+
+    // Iterator of all unused keys
+    const unusedKeys = this.previousKeys.values();
+
+    // Filling in blanks
+    const keys = keptKeys.map((key: Maybe<Key>) => {
+      // `Node` was previously in viewport
+      if (key != null) {
+        return key;
+      }
+
+      const unused = unusedKeys.next().value;
+
+      // Recycle the next unused key
+      if (unused != null) {
+        return unused;
+      }
+
+      // No unused keys left, generate a new key
+      return this.nextKey++;
+    });
+
+    // Clear the map so the render can populate it a new
+    this.previousKeys.clear();
+
+    return keys;
   }
 
   private onScroll = () => {

@@ -57,13 +57,27 @@ export class ImplementationColumn extends React.Component<Column.Props, {}> {
   public static readonly sortBy = ({ sortableVersion }: Node) =>
     sortableVersion;
 
+  private implementation: string;
+  private version: string;
+
   public shouldComponentUpdate(nextProps: Column.Props) {
-    // Implementation only changes when the node does
-    return this.props.node !== nextProps.node;
+    if (this.props.node === nextProps.node) {
+      // Implementation can't change unless we got a new node
+      return false;
+    }
+
+    return (
+      this.implementation !== nextProps.node.implementation ||
+      this.version !== nextProps.node.version
+    );
   }
 
   render() {
     const { implementation, version } = this.props.node;
+
+    this.implementation = implementation;
+    this.version = version;
+
     const [semver] = version.match(SEMVER_PATTERN) || ['?.?.?'];
     const implIcon = ICONS[implementation] || paritySubstrateIcon;
 

@@ -19,8 +19,5 @@
 .List--table {
   width: 100%;
   border-spacing: 0;
-}
-
-.List--tbody {
   font-family: monospace, sans-serif;
 }
