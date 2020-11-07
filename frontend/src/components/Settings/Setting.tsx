@@ -23,7 +23,7 @@ export class Setting extends React.Component<Setting.Props, {}> {
 
     return (
       <div className={className} onClick={this.toggle}>
-        <Icon src={icon} alt={label} />
+        <Icon src={icon} />
         {label}
         <span className="Setting-switch">
           <span className="Setting-knob" />

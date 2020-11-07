@@ -45,15 +45,20 @@ export class Chains extends React.Component<Chains.Props, {}> {
     return (
       <div className="Chains">
         {chains.slice(0, VISIBLE_CAP).map((chain) => this.renderChain(chain))}
-        <a className="Chains-all-chains" href={allChainsHref}>
-          <Icon src={listIcon} alt="All Chains" />
+        <a
+          className="Chains-all-chains"
+          href={allChainsHref}
+          title="All Chains"
+        >
+          <Icon src={listIcon} />
         </a>
         <a
           className="Chains-fork-me"
           href="https://github.com/paritytech/substrate-telemetry"
           target="_blank"
+          title="Fork Me!"
         >
-          <Icon src={githubIcon} alt="Fork Me!" />
+          <Icon src={githubIcon} />
         </a>
       </div>
     );

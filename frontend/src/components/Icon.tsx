@@ -5,7 +5,6 @@ import { getSVGShadowRoot, W3SVG } from '../utils';
 export namespace Icon {
   export interface Props {
     src: string;
-    alt?: string;
     className?: string;
     onClick?: () => void;
   }
@@ -52,33 +51,25 @@ function renderShadowIcon(src: string): string {
   return symbol;
 }
 
-export class Icon extends React.Component<{}, Icon.Props> {
+export class Icon extends React.Component<Icon.Props, {}> {
   public props: Icon.Props;
 
   public shouldComponentUpdate(nextProps: Icon.Props) {
     return (
       this.props.src !== nextProps.src ||
-      this.props.alt !== nextProps.alt ||
       this.props.className !== nextProps.className
     );
   }
 
   public render() {
-    const { alt, className, onClick, src } = this.props;
+    const { className, onClick, src } = this.props;
     const symbol = renderShadowIcon(src);
 
     // Use xlink:href for a shadow DOM reference to the rendered icon
     return (
-      <div
-        key={src}
-        className={`Icon ${className || ''}`}
-        title={alt}
-        onClick={onClick}
-      >
-        <svg>
-          <use xlinkHref={`#${symbol}`} />
-        </svg>
-      </div>
+      <svg className={`Icon ${className || ''}`} onClick={onClick}>
+        <use href={`#${symbol}`} />
+      </svg>
     );
   }
 }

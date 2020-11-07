@@ -240,7 +240,7 @@ export class PolkadotIcon extends React.Component<PolkadotIcon.Props, {}> {
 
     return (
       <svg width={size} height={size} className={className}>
-        <use xlinkHref={`#${account}`} />
+        <use href={`#${account}`} />
       </svg>
     );
   }

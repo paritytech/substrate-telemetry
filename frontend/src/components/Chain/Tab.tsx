@@ -23,8 +23,8 @@ export class Tab extends React.Component<Tab.Props, {}> {
     const className = highlight ? 'Chain-Tab-on Chain-Tab' : 'Chain-Tab';
 
     return (
-      <div className={className} onClick={this.onClick}>
-        <Icon src={icon} alt={label} />
+      <div className={className} onClick={this.onClick} title={label}>
+        <Icon src={icon} />
       </div>
     );
   }
