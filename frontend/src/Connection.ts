@@ -186,13 +186,7 @@ export class Connection {
       switch (message.action) {
         case ACTIONS.FeedVersion: {
           if (message.payload !== VERSION) {
-            this.state = this.update({ status: 'upgrade-requested' });
-            this.clean();
-
-            // Force reload from the server
-            setTimeout(() => window.location.reload(true), 3000);
-
-            return;
+            return this.newVersion();
           }
 
           break;
@@ -487,6 +481,14 @@ export class Connection {
     this.pingSent = null;
   }
 
+  private newVersion() {
+    this.state = this.update({ status: 'upgrade-requested' });
+    this.clean();
+
+    // Force reload from the server
+    setTimeout(() => window.location.reload(true), 3000);
+  }
+
   private clean() {
     clearTimeout(this.pingTimeout);
     this.pingSent = null;
@@ -497,12 +499,22 @@ export class Connection {
   }
 
   private handleFeedData = (event: MessageEvent) => {
-    const data =
-      typeof event.data === 'string'
-        ? ((event.data as any) as FeedMessage.Data)
-        : ((Connection.utf8decoder.decode(
-            event.data
-          ) as any) as FeedMessage.Data);
+    let data: FeedMessage.Data;
+
+    if (typeof event.data === 'string') {
+      data = (event.data as any) as FeedMessage.Data;
+    } else {
+      const u8aData = new Uint8Array(event.data);
+
+      // Future-proofing for when we switch to binary feed
+      if (u8aData[0] === 0x00) {
+        return this.newVersion();
+      }
+
+      const str = Connection.utf8decoder.decode(event.data);
+
+      data = (str as any) as FeedMessage.Data;
+    }
 
     this.handleMessages(FeedMessage.deserialize(data));
   };
