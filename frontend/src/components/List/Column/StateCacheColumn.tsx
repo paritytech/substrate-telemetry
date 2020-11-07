@@ -26,7 +26,7 @@ export class StateCacheColumn extends React.Component<Column.Props, {}> {
     this.data = stateCacheSize;
 
     if (stateCacheSize.length < 3) {
-      return <td className="Column">'-'</td>;
+      return <td className="Column">-</td>;
     }
 
     return (

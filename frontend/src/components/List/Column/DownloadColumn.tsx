@@ -26,7 +26,7 @@ export class DownloadColumn extends React.Component<Column.Props, {}> {
     this.data = download;
 
     if (download.length < 3) {
-      return <td className="Column">'-'</td>;
+      return <td className="Column">-</td>;
     }
 
     return (
