@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Maybe } from '../../../common';
 import { Column } from './';
 import { Node } from '../../../state';
-import { Truncate } from '../';
+import { Truncate, Tooltip } from '../../';
 import icon from '../../../icons/file-binary.svg';
 
 export class FinalizedHashColumn extends React.Component<Column.Props, {}> {
@@ -14,6 +14,7 @@ export class FinalizedHashColumn extends React.Component<Column.Props, {}> {
     finalizedHash || '';
 
   private data: Maybe<string>;
+  private copy: Maybe<Tooltip.CopyCallback>;
 
   public shouldComponentUpdate(nextProps: Column.Props) {
     return this.data !== nextProps.node.finalizedHash;
@@ -25,14 +26,22 @@ export class FinalizedHashColumn extends React.Component<Column.Props, {}> {
     this.data = finalizedHash;
 
     return (
-      <td className="Column">
-        <Truncate
-          text={finalizedHash}
-          chars={16}
-          position="right"
-          copy={true}
-        />
+      <td className="Column" onClick={this.onClick}>
+        <Tooltip text={finalizedHash} position="right" copy={this.onCopy} />
+        <Truncate text={finalizedHash} chars={16} />
       </td>
     );
   }
+
+  private onCopy = (copy: Tooltip.CopyCallback) => {
+    this.copy = copy;
+  };
+
+  private onClick = (event: React.MouseEvent) => {
+    event.stopPropagation();
+
+    if (this.copy != null) {
+      this.copy();
+    }
+  };
 }

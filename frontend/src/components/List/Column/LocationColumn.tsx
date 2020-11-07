@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Maybe } from '../../../common';
 import { Column } from './';
 import { Node } from '../../../state';
-import { Truncate } from '../';
+import { Truncate, Tooltip } from '../../';
 import icon from '../../../icons/location.svg';
 
 export class LocationColumn extends React.Component<Column.Props, {}> {
@@ -29,7 +29,8 @@ export class LocationColumn extends React.Component<Column.Props, {}> {
 
     return (
       <td className="Column">
-        <Truncate text={city} chars={14} position="left" />
+        <Tooltip text={city} position="left" />
+        <Truncate text={city} chars={14} />
       </td>
     );
   }

@@ -1,11 +1,12 @@
 import * as React from 'react';
+import { Maybe } from '../common';
 
 import './Tooltip.css';
 
 export namespace Tooltip {
   export interface Props {
     text: string;
-    copy?: boolean;
+    copy?: (cb: CopyCallback) => void;
     className?: string;
     position?: 'left' | 'right' | 'center';
     onInit?: (update: UpdateCallback) => void;
@@ -16,6 +17,7 @@ export namespace Tooltip {
   }
 
   export type UpdateCallback = (text: string) => void;
+  export type CopyCallback = Maybe<() => void>;
 }
 
 function copyToClipboard(text: string) {
@@ -37,11 +39,17 @@ export class Tooltip extends React.Component<Tooltip.Props, Tooltip.State> {
     if (this.props.onInit) {
       this.props.onInit(this.update);
     }
+    if (this.props.copy) {
+      this.props.copy(this.onClick);
+    }
   }
 
   public componentWillUnmount() {
     if (this.timer) {
       clearTimeout(this.timer);
+    }
+    if (this.props.copy) {
+      this.props.copy(null);
     }
   }
 
@@ -84,14 +92,8 @@ export class Tooltip extends React.Component<Tooltip.Props, Tooltip.State> {
     this.el.textContent = text;
   };
 
-  private onClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (this.props.copy !== true) {
-      return;
-    }
-
+  private onClick = () => {
     copyToClipboard(this.props.text);
-
-    event.stopPropagation();
 
     if (this.timer) {
       clearTimeout(this.timer);

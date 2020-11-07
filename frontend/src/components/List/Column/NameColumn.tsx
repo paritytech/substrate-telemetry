@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Column } from './';
 import { Node } from '../../../state';
-import { Truncate } from '../';
+import { Truncate, Tooltip } from '../../';
 import icon from '../../../icons/server.svg';
 
 export class NameColumn extends React.Component<Column.Props, {}> {
@@ -21,7 +21,8 @@ export class NameColumn extends React.Component<Column.Props, {}> {
 
     return (
       <td className="Column">
-        <Truncate text={name} position="left" />
+        <Tooltip text={name} position="left" />
+        <Truncate text={name} />
       </td>
     );
   }

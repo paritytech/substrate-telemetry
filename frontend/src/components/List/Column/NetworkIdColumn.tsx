@@ -3,6 +3,7 @@ import { Maybe } from '../../../common';
 import { Column } from './';
 import { Node } from '../../../state';
 import { Truncate } from '../../';
+import { Tooltip } from '../../';
 import icon from '../../../icons/fingerprint.svg';
 
 export class NetworkIdColumn extends React.Component<Column.Props, {}> {
@@ -29,7 +30,8 @@ export class NetworkIdColumn extends React.Component<Column.Props, {}> {
 
     return (
       <td className="Column">
-        <Truncate position="left" text={networkId} />
+        <Tooltip text={networkId} position="left" />
+        <Truncate text={networkId} chars={10} />
       </td>
     );
   }

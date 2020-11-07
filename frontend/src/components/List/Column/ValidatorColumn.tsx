@@ -13,6 +13,7 @@ export class ValidatorColumn extends React.Component<Column.Props, {}> {
   public static readonly sortBy = ({ validator }: Node) => validator || '';
 
   private data: Maybe<string>;
+  private copy: Maybe<Tooltip.CopyCallback>;
 
   public shouldComponentUpdate(nextProps: Column.Props) {
     return this.data !== nextProps.node.validator;
@@ -28,8 +29,8 @@ export class ValidatorColumn extends React.Component<Column.Props, {}> {
     }
 
     return (
-      <td className="Column">
-        <Tooltip text={validator} copy={true} />
+      <td className="Column" onClick={this.onClick}>
+        <Tooltip text={validator} copy={this.onCopy} />
         <PolkadotIcon
           className="Column-validator"
           account={validator}
@@ -38,4 +39,16 @@ export class ValidatorColumn extends React.Component<Column.Props, {}> {
       </td>
     );
   }
+
+  private onCopy = (copy: Tooltip.CopyCallback) => {
+    this.copy = copy;
+  };
+
+  private onClick = (event: React.MouseEvent) => {
+    event.stopPropagation();
+
+    if (this.copy != null) {
+      this.copy();
+    }
+  };
 }
