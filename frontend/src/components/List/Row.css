@@ -22,7 +22,7 @@
 }
 
 .Row-stale {
-  font-style: italic;
+  color: #555;
 }
 
 .Row:hover {

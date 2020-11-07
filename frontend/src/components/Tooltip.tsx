@@ -32,7 +32,6 @@ export class Tooltip extends React.Component<Tooltip.Props, Tooltip.State> {
 
   private el: HTMLDivElement;
   private timer: NodeJS.Timer | null = null;
-  private text: string;
 
   public componentDidMount() {
     if (this.props.onInit) {
@@ -50,20 +49,15 @@ export class Tooltip extends React.Component<Tooltip.Props, Tooltip.State> {
     nextProps: Tooltip.Props,
     nextState: Tooltip.State
   ) {
-    if (this.state.copied !== nextState.copied) {
-      return true;
-    }
-
-    this.update(nextProps.text);
-
-    return false;
+    return (
+      this.props.text !== nextProps.text ||
+      this.state.copied !== nextState.copied
+    );
   }
 
   public render() {
     const { text, className, position } = this.props;
     const { copied } = this.state;
-
-    this.text = text;
 
     let tooltipClass = 'Tooltip';
 
@@ -87,10 +81,7 @@ export class Tooltip extends React.Component<Tooltip.Props, Tooltip.State> {
   };
 
   private update = (text: string) => {
-    if (text !== this.text) {
-      this.text = text;
-      this.el.textContent = text;
-    }
+    this.el.textContent = text;
   };
 
   private onClick = (event: React.MouseEvent<HTMLDivElement>) => {
