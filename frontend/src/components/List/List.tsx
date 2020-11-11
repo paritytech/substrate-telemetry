@@ -98,20 +98,14 @@ export class List extends React.Component<List.Props, {}> {
             <THead columns={selectedColumns} sortBy={sortBy} />
             <tbody>
               <tr className="List-padding" style={{ height: `${top}px` }} />
-              {nodes.map((node, i) => {
-                const key = keys[i];
-
-                this.previousKeys.set(node.id, key);
-
-                return (
-                  <Row
-                    key={key}
-                    node={node}
-                    pins={pins}
-                    columns={selectedColumns}
-                  />
-                );
-              })}
+              {nodes.map((node, i) => (
+                <Row
+                  key={keys[i]}
+                  node={node}
+                  pins={pins}
+                  columns={selectedColumns}
+                />
+              ))}
             </tbody>
           </table>
         </div>
@@ -139,31 +133,38 @@ export class List extends React.Component<List.Props, {}> {
       return key;
     });
 
-    // Iterator of all unused keys
-    const unusedKeys = this.previousKeys.values();
+    // Array of all unused keys
+    const unusedKeys = Array.from(this.previousKeys.values());
+    let search = 0;
 
-    // Filling in blanks
-    const keys = keptKeys.map((key: Maybe<Key>) => {
+    // Clear the map so we can set new values
+    this.previousKeys.clear();
+
+    // Filling in blanks and re-populate previousKeys
+    return keptKeys.map((key: Maybe<Key>, i) => {
+      const id = nodes[i].id;
+
       // `Node` was previously in viewport
       if (key != null) {
+        this.previousKeys.set(id, key);
+
         return key;
       }
 
-      const unused = unusedKeys.next().value;
-
       // Recycle the next unused key
-      if (unused != null) {
+      if (search < unusedKeys.length) {
+        const unused = unusedKeys[search++];
+        this.previousKeys.set(id, unused);
+
         return unused;
       }
 
       // No unused keys left, generate a new key
-      return this.nextKey++;
+      const newKey = this.nextKey++;
+      this.previousKeys.set(id, newKey);
+
+      return newKey;
     });
-
-    // Clear the map so the render can populate it a new
-    this.previousKeys.clear();
-
-    return keys;
   }
 
   private onScroll = () => {
