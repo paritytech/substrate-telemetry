@@ -3,56 +3,6 @@
   cursor: pointer;
 }
 
-.Row a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.Row a:hover {
-  text-decoration: underline;
-}
-
-.Row-Header th,
-.Row td {
-  text-align: left;
-  padding: 6px 13px;
-  height: 19px;
-}
-
-.Row td {
-  position: relative;
-}
-
-.Row-Header th {
-  height: 23px;
-}
-
-.Row-Header th.HeaderCell-sortable {
-  cursor: pointer;
-}
-
-.Row-Header th.HeaderCell-sorted {
-  cursor: pointer;
-  background: #e6007a;
-  color: #fff;
-}
-
-.Row .Row-truncate {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  padding: inherit;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.Row .Row-Tooltip {
-  position: initial;
-  padding: inherit;
-}
-
 .Row-synced {
   color: #fff;
 }
@@ -72,20 +22,9 @@
 }
 
 .Row-stale {
-  font-style: italic;
+  color: #555;
 }
 
 .Row:hover {
   background-color: #1e1e1e;
-}
-
-.Row-validator {
-  display: block;
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
-
-.Row-validator:hover {
-  transform: scale(2);
 }

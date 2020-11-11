@@ -4,3 +4,15 @@
   stroke: currentcolor;
   margin: 0 -1px -3px -1px;
 }
+
+.Sparkline path {
+  pointer-events: none;
+}
+
+.Sparkline .Sparkline-cursor {
+  display: none;
+}
+
+.Sparkline:hover .Sparkline-cursor {
+  display: initial;
+}

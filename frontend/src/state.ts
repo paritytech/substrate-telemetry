@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { Types, Maybe, SortedCollection } from './common';
 import { Column } from './components/List';
 
@@ -69,7 +70,7 @@ export class Node {
   public lon: Maybe<Types.Longitude>;
   public city: Maybe<Types.City>;
 
-  private readonly subscriptions = new Set<(node: Node) => void>();
+  private _changeRef = 0;
   private readonly subscriptionsConsensus = new Set<(node: Node) => void>();
 
   constructor(
@@ -188,27 +189,34 @@ export class Node {
     }
   }
 
-  public subscribe(handler: (node: Node) => void) {
-    this.subscriptions.add(handler);
-  }
-
-  public unsubscribe(handler: (node: Node) => void) {
-    this.subscriptions.delete(handler);
-  }
-
-  public subscribeConsensus(handler: (node: Node) => void) {
-    this.subscriptionsConsensus.add(handler);
-  }
-
-  public unsubscribeConsensus(handler: (node: Node) => void) {
-    this.subscriptionsConsensus.delete(handler);
+  public get changeRef(): number {
+    return this._changeRef;
   }
 
   private trigger() {
-    for (const handler of this.subscriptions.values()) {
-      handler(this);
-    }
+    this._changeRef += 1;
   }
+}
+
+export function bindState(bind: React.Component, state: State): Update {
+  let isUpdating = false;
+
+  return (changes) => {
+    // Apply new changes to the state immediately
+    Object.assign(state, changes);
+
+    // Trigger React update on next animation frame only once
+    if (!isUpdating) {
+      isUpdating = true;
+
+      window.requestAnimationFrame(() => {
+        bind.forceUpdate();
+        isUpdating = false;
+      });
+    }
+
+    return state;
+  };
 }
 
 export namespace State {
@@ -262,11 +270,8 @@ export interface State {
 }
 
 export type Update = <K extends keyof State>(
-  changes: Pick<State, K> | null
+  changes: Pick<State, K>
 ) => Readonly<State>;
-export type UpdateBound = <K extends keyof State>(
-  changes: Pick<State, K> | null
-) => void;
 
 export interface ChainData {
   label: Types.ChainLabel;

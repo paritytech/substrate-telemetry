@@ -97,7 +97,7 @@ export class Location extends React.Component<Location.Props, Location.State> {
       validatorRow = (
         <tr>
           <td>
-            <Icon src={nodeValidatorIcon} alt="Node" />
+            <Icon src={nodeValidatorIcon} />
           </td>
           <td colSpan={5}>
             {trimHash(validator, 30)}
@@ -113,53 +113,53 @@ export class Location extends React.Component<Location.Props, Location.State> {
       <table className="Location-details Location-details">
         <tbody>
           <tr>
-            <td>
-              <Icon src={nodeIcon} alt="Node" />
+            <td title="Node">
+              <Icon src={nodeIcon} />
             </td>
             <td colSpan={5}>{name}</td>
           </tr>
           {validatorRow}
           <tr>
-            <td>
-              <Icon src={nodeTypeIcon} alt="Implementation" />
+            <td title="Implementation">
+              <Icon src={nodeTypeIcon} />
             </td>
             <td colSpan={5}>
               {implementation} v{version}
             </td>
           </tr>
           <tr>
-            <td>
-              <Icon src={nodeLocationIcon} alt="Location" />
+            <td title="Location">
+              <Icon src={nodeLocationIcon} />
             </td>
             <td colSpan={5}>{city}</td>
           </tr>
           <tr>
-            <td>
-              <Icon src={blockIcon} alt="Block" />
+            <td title="Block">
+              <Icon src={blockIcon} />
             </td>
             <td colSpan={5}>#{formatNumber(height)}</td>
           </tr>
           <tr>
-            <td>
-              <Icon src={blockHashIcon} alt="Block Hash" />
+            <td title="Block Hash">
+              <Icon src={blockHashIcon} />
             </td>
             <td colSpan={5}>{trimHash(hash, 20)}</td>
           </tr>
           <tr>
-            <td>
-              <Icon src={blockTimeIcon} alt="Block Time" />
+            <td title="Block Time">
+              <Icon src={blockTimeIcon} />
             </td>
             <td style={{ width: 80 }}>
               {secondsWithPrecision(blockTime / 1000)}
             </td>
-            <td>
-              <Icon src={propagationTimeIcon} alt="Block Propagation Time" />
+            <td title="Block Propagation Time">
+              <Icon src={propagationTimeIcon} />
             </td>
             <td style={{ width: 58 }}>
               {propagationTime == null ? '∞' : milliOrSecond(propagationTime)}
             </td>
-            <td>
-              <Icon src={lastTimeIcon} alt="Last Block Time" />
+            <td title="Last Block Time">
+              <Icon src={lastTimeIcon} />
             </td>
             <td style={{ minWidth: 82 }}>
               <Ago when={blockTimestamp} />

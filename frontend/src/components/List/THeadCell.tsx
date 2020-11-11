@@ -7,7 +7,7 @@ import { Persistent } from '../../persist';
 import sortAscIcon from '../../icons/triangle-up.svg';
 import sortDescIcon from '../../icons/triangle-down.svg';
 
-export namespace HeaderCell {
+export namespace THeadCell {
   export interface Props {
     column: Column;
     index: number;
@@ -16,7 +16,7 @@ export namespace HeaderCell {
   }
 }
 
-export class HeaderCell extends React.Component<HeaderCell.Props, {}> {
+export class THeadCell extends React.Component<THeadCell.Props, {}> {
   public render() {
     const { column, index, last } = this.props;
     const { icon, width, label } = column;
@@ -25,10 +25,10 @@ export class HeaderCell extends React.Component<HeaderCell.Props, {}> {
     const sortBy = this.props.sortBy.get();
     const className =
       column.sortBy == null
-        ? ''
+        ? 'THeadCell'
         : sortBy === index || sortBy === ~index
-        ? 'HeaderCell-sorted'
-        : 'HeaderCell-sortable';
+        ? 'THeadCell THeadCell-sorted'
+        : 'THeadCell THeadCell-sortable';
     const i =
       sortBy === index ? sortAscIcon : sortBy === ~index ? sortDescIcon : icon;
 
@@ -38,9 +38,10 @@ export class HeaderCell extends React.Component<HeaderCell.Props, {}> {
         style={width ? { width } : undefined}
         onClick={this.toggleSort}
       >
-        <Tooltip text={label} inline={true} position={position}>
+        <span className="THeadCell-container">
+          <Tooltip text={label} position={position} />
           <Icon src={i} />
-        </Tooltip>
+        </span>
       </th>
     );
   }

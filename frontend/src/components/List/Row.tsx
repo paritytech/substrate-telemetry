@@ -2,7 +2,28 @@ import * as React from 'react';
 import { Types, Maybe } from '../../common';
 import { Node } from '../../state';
 import { Persistent, PersistentSet } from '../../persist';
-import { HeaderCell, Column } from './';
+import {
+  Column,
+  NameColumn,
+  ValidatorColumn,
+  LocationColumn,
+  ImplementationColumn,
+  NetworkIdColumn,
+  PeersColumn,
+  TxsColumn,
+  UploadColumn,
+  DownloadColumn,
+  StateCacheColumn,
+  BlockNumberColumn,
+  BlockHashColumn,
+  FinalizedBlockColumn,
+  FinalizedHashColumn,
+  BlockTimeColumn,
+  BlockPropagationColumn,
+  LastBlockColumn,
+  UptimeColumn,
+  NetworkStateColumn,
+} from './';
 
 import './Row.css';
 
@@ -25,74 +46,40 @@ interface HeaderProps {
 
 export class Row extends React.Component<Row.Props, Row.State> {
   public static readonly columns: Column[] = [
-    Column.NAME,
-    Column.VALIDATOR,
-    Column.LOCATION,
-    Column.IMPLEMENTATION,
-    Column.NETWORK_ID,
-    Column.PEERS,
-    Column.TXS,
-    Column.UPLOAD,
-    Column.DOWNLOAD,
-    Column.STATE_CACHE,
-    Column.BLOCK_NUMBER,
-    Column.BLOCK_HASH,
-    Column.FINALIZED,
-    Column.FINALIZED_HASH,
-    Column.BLOCK_TIME,
-    Column.BLOCK_PROPAGATION,
-    Column.BLOCK_LAST_TIME,
-    Column.UPTIME,
-    Column.NETWORK_STATE,
+    NameColumn,
+    ValidatorColumn,
+    LocationColumn,
+    ImplementationColumn,
+    NetworkIdColumn,
+    PeersColumn,
+    TxsColumn,
+    UploadColumn,
+    DownloadColumn,
+    StateCacheColumn,
+    BlockNumberColumn,
+    BlockHashColumn,
+    FinalizedBlockColumn,
+    FinalizedHashColumn,
+    BlockTimeColumn,
+    BlockPropagationColumn,
+    LastBlockColumn,
+    UptimeColumn,
+    NetworkStateColumn,
   ];
 
-  public static HEADER = (props: HeaderProps) => {
-    const { columns, sortBy } = props;
-    const last = columns.length - 1;
+  private renderedChangeRef = 0;
 
-    return (
-      <thead>
-        <tr className="Row-Header">
-          {columns.map((col, index) => (
-            <HeaderCell
-              key={index}
-              column={col}
-              index={index}
-              last={last}
-              sortBy={sortBy}
-            />
-          ))}
-        </tr>
-      </thead>
-    );
-  };
-
-  public state = { update: 0 };
-
-  public componentDidMount() {
-    const { node } = this.props;
-
-    node.subscribe(this.onUpdate);
-  }
-
-  public componentWillUnmount() {
-    const { node } = this.props;
-
-    node.unsubscribe(this.onUpdate);
-  }
-
-  public shouldComponentUpdate(
-    nextProps: Row.Props,
-    nextState: Row.State
-  ): boolean {
+  public shouldComponentUpdate(nextProps: Row.Props): boolean {
     return (
       this.props.node.id !== nextProps.node.id ||
-      this.state.update !== nextState.update
+      this.renderedChangeRef !== nextProps.node.changeRef
     );
   }
 
   public render() {
     const { node, columns } = this.props;
+
+    this.renderedChangeRef = node.changeRef;
 
     let className = 'Row';
 
@@ -110,9 +97,9 @@ export class Row extends React.Component<Row.Props, Row.State> {
 
     return (
       <tr className={className} onClick={this.toggle}>
-        {columns.map(({ render }, index) => (
-          <td key={index}>{render(node)}</td>
-        ))}
+        {columns.map((col, index) =>
+          React.createElement(col, { node, key: index })
+        )}
       </tr>
     );
   }
@@ -125,9 +112,5 @@ export class Row extends React.Component<Row.Props, Row.State> {
     } else {
       pins.add(node.name);
     }
-  };
-
-  private onUpdate = () => {
-    this.setState({ update: this.state.update + 1 });
   };
 }
