@@ -106,8 +106,6 @@ export class Connection {
   private resubscribeTo: Maybe<Types.ChainLabel> = getHashData().chain;
   // flag whether or not FE should subscribe to consensus updates on reconnect
   private resubscribeSendFinality: boolean = getHashData().tab === 'consensus';
-  // flag used to throttle DOM updates to window frame rate
-  private isUpdating = false;
 
   constructor(
     private socket: WebSocket,
@@ -407,7 +405,7 @@ export class Connection {
       }
     }
 
-    if (nodes.hasChangedSince(nodesStateRef) && !this.isUpdating) {
+    if (nodes.hasChangedSince(nodesStateRef)) {
       this.appUpdate({ nodes });
     }
 
