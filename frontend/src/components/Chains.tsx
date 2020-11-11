@@ -16,7 +16,9 @@ export namespace Chains {
   }
 }
 
+// How many chains should be rendered in the DOM
 const VISIBLE_CAP = 16;
+// Milliseconds, sets the minimum time between the renders
 const RENDER_THROTTLE = 1000;
 
 export class Chains extends React.Component<Chains.Props, {}> {

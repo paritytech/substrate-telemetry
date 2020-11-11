@@ -70,7 +70,6 @@ export class Node {
   public city: Maybe<Types.City>;
 
   private _changeRef = 0;
-  // private readonly subscriptions = new Set<(node: Node) => void>();
   private readonly subscriptionsConsensus = new Set<(node: Node) => void>();
 
   constructor(
@@ -248,7 +247,6 @@ export interface State {
   selectedColumns: Column[];
 }
 
-// export type Changes = Pick<State, keyof State>;
 export type Update = <K extends keyof State>(
   changes: Pick<State, K>
 ) => Readonly<State>;

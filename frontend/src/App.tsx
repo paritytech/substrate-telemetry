@@ -13,7 +13,7 @@ import './App.css';
 export default class App extends React.Component<{}, State> {
   public state: State;
   private chainsCache: ChainData[] = [];
-  private isUpading = false;
+  private isUpdating = false;
   private readonly settings: PersistentObject<State.Settings>;
   private readonly pins: PersistentSet<Types.NodeName>;
   private readonly sortBy: Persistent<Maybe<number>>;
@@ -108,12 +108,12 @@ export default class App extends React.Component<{}, State> {
     Object.assign(this.state, changes);
 
     // Trigger React update on next animation frame only once
-    if (!this.isUpading) {
-      this.isUpading = true;
+    if (!this.isUpdating) {
+      this.isUpdating = true;
 
       window.requestAnimationFrame(() => {
         this.setState({});
-        this.isUpading = false;
+        this.isUpdating = false;
       });
     }
 
