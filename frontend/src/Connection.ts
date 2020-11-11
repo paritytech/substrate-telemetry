@@ -1,12 +1,5 @@
 import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from './common';
-import {
-  State,
-  Update,
-  Node,
-  UpdateBound,
-  ChainData,
-  PINNED_CHAINS,
-} from './state';
+import { State, Update, Node, ChainData, PINNED_CHAINS } from './state';
 import { PersistentSet } from './persist';
 import { getHashData, setHashData } from './utils';
 import { AfgHandling } from './AfgHandling';
@@ -36,9 +29,10 @@ declare global {
 export class Connection {
   public static async create(
     pins: PersistentSet<Types.NodeName>,
-    update: Update
+    appState: Readonly<State>,
+    appUpdate: Update
   ): Promise<Connection> {
-    return new Connection(await Connection.socket(), update, pins);
+    return new Connection(await Connection.socket(), appState, appUpdate, pins);
   }
 
   private static readonly utf8decoder = new TextDecoder('utf-8');
@@ -114,25 +108,22 @@ export class Connection {
   private resubscribeSendFinality: boolean = getHashData().tab === 'consensus';
   // flag used to throttle DOM updates to window frame rate
   private isUpdating = false;
-  private socket: WebSocket;
-  private state: Readonly<State>;
-  private readonly update: Update;
-  private readonly pins: PersistentSet<Types.NodeName>;
 
   constructor(
-    socket: WebSocket,
-    update: Update,
-    pins: PersistentSet<Types.NodeName>
+    private socket: WebSocket,
+    private appState: Readonly<State>,
+    private readonly appUpdate: Update,
+    private readonly pins: PersistentSet<Types.NodeName>
   ) {
-    this.socket = socket;
-    this.update = update;
-    this.pins = pins;
     this.bindSocket();
   }
 
   public subscribe(chain: Types.ChainLabel) {
-    if (this.state.subscribed != null && this.state.subscribed !== chain) {
-      this.state = this.update({
+    if (
+      this.appState.subscribed != null &&
+      this.appState.subscribed !== chain
+    ) {
+      this.appUpdate({
         tab: 'list',
       });
       setHashData({ chain, tab: 'list' });
@@ -144,7 +135,7 @@ export class Connection {
   }
 
   public subscribeConsensus(chain: Types.ChainLabel) {
-    if (this.state.authorities.length <= VIS_AUTHORITIES_LIMIT) {
+    if (this.appState.authorities.length <= VIS_AUTHORITIES_LIMIT) {
       setHashData({ chain });
       this.resubscribeSendFinality = true;
       this.socket.send(`send-finality:${chain}`);
@@ -152,7 +143,7 @@ export class Connection {
   }
 
   public resetConsensus() {
-    this.state = this.update({
+    this.appUpdate({
       consensusInfo: new Array() as Types.ConsensusInfo,
       displayConsensusLoadingScreen: true,
       authorities: [] as Types.Address[],
@@ -166,14 +157,10 @@ export class Connection {
   }
 
   public handleMessages = (messages: FeedMessage.Message[]) => {
-    const { nodes, chains, sortBy, selectedColumns } = this.state;
+    const { nodes, chains, sortBy, selectedColumns } = this.appState;
     const nodesStateRef = nodes.ref;
 
-    const updateState: UpdateBound = (state) => {
-      this.state = this.update(state);
-    };
-    const getState = () => this.state;
-    const afg = new AfgHandling(updateState, getState);
+    const afg = new AfgHandling(this.appUpdate, this.appState);
 
     let sortByColumn: Maybe<Column> = null;
 
@@ -197,7 +184,7 @@ export class Connection {
 
           nodes.mutEach((node) => node.newBestBlock());
 
-          this.state = this.update({ best, blockTimestamp, blockAverage });
+          this.appUpdate({ best, blockTimestamp, blockAverage });
 
           break;
         }
@@ -205,7 +192,7 @@ export class Connection {
         case ACTIONS.BestFinalized: {
           const [finalized /*, hash */] = message.payload;
 
-          this.state = this.update({ finalized });
+          this.appUpdate({ finalized });
 
           break;
         }
@@ -325,7 +312,7 @@ export class Connection {
         }
 
         case ACTIONS.TimeSync: {
-          this.state = this.update({
+          this.appUpdate({
             timeDiff: (timestamp() - message.payload) as Types.Milliseconds,
           });
 
@@ -342,7 +329,7 @@ export class Connection {
             chains.set(label, { label, nodeCount });
           }
 
-          this.state = this.update({ chains });
+          this.appUpdate({ chains });
 
           break;
         }
@@ -350,9 +337,9 @@ export class Connection {
         case ACTIONS.RemovedChain: {
           chains.delete(message.payload);
 
-          if (this.state.subscribed === message.payload) {
+          if (this.appState.subscribed === message.payload) {
             nodes.clear();
-            this.state = this.update({ subscribed: null, nodes, chains });
+            this.appUpdate({ subscribed: null, nodes, chains });
             this.resetConsensus();
           }
 
@@ -362,16 +349,16 @@ export class Connection {
         case ACTIONS.SubscribedTo: {
           nodes.clear();
 
-          this.state = this.update({ subscribed: message.payload, nodes });
+          this.appUpdate({ subscribed: message.payload, nodes });
 
           break;
         }
 
         case ACTIONS.UnsubscribedFrom: {
-          if (this.state.subscribed === message.payload) {
+          if (this.appState.subscribed === message.payload) {
             nodes.clear();
 
-            this.state = this.update({ subscribed: null, nodes });
+            this.appUpdate({ subscribed: null, nodes });
           }
 
           break;
@@ -421,7 +408,7 @@ export class Connection {
     }
 
     if (nodes.hasChangedSince(nodesStateRef) && !this.isUpdating) {
-      this.update({ nodes });
+      this.appUpdate({ nodes });
     }
 
     this.autoSubscribe();
@@ -430,19 +417,19 @@ export class Connection {
   private bindSocket() {
     this.ping();
 
-    if (this.state) {
-      const { nodes } = this.state;
+    if (this.appState) {
+      const { nodes } = this.appState;
       nodes.clear();
     }
 
-    this.state = this.update({
+    this.appUpdate({
       status: 'online',
     });
 
-    if (this.state.subscribed) {
-      this.resubscribeTo = this.state.subscribed;
-      this.resubscribeSendFinality = this.state.sendFinality;
-      this.state = this.update({ subscribed: null, sendFinality: false });
+    if (this.appState.subscribed) {
+      this.resubscribeTo = this.appState.subscribed;
+      this.resubscribeSendFinality = this.appState.sendFinality;
+      this.appUpdate({ subscribed: null, sendFinality: false });
     }
 
     this.socket.addEventListener('message', this.handleFeedData);
@@ -482,7 +469,7 @@ export class Connection {
   }
 
   private newVersion() {
-    this.state = this.update({ status: 'upgrade-requested' });
+    this.appUpdate({ status: 'upgrade-requested' });
     this.clean();
 
     // Force reload from the server
@@ -520,7 +507,7 @@ export class Connection {
   };
 
   private autoSubscribe() {
-    const { subscribed, chains } = this.state;
+    const { subscribed, chains } = this.appState;
     const { resubscribeTo, resubscribeSendFinality } = this;
 
     if (subscribed) {
@@ -556,7 +543,7 @@ export class Connection {
   }
 
   private handleDisconnect = async () => {
-    this.state = this.update({ status: 'offline' });
+    this.appUpdate({ status: 'offline' });
     this.resetConsensus();
     this.clean();
     this.socket.close();

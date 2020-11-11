@@ -1,17 +1,17 @@
 import { Types } from './common';
-import { State, UpdateBound } from './state';
+import { State, Update } from './state';
 import { ConsensusDetail } from './common/types';
 
 // Number of blocks which are kept in memory
 const BLOCKS_LIMIT = 50;
 
 export class AfgHandling {
-  private updateState: UpdateBound;
-  private getState: () => Readonly<State>;
+  private appUpdate: Update;
+  private appState: Readonly<State>;
 
-  constructor(updateState: UpdateBound, getState: () => Readonly<State>) {
-    this.updateState = updateState;
-    this.getState = getState;
+  constructor(appUpdate: Update, appState: Readonly<State>) {
+    this.appUpdate = appUpdate;
+    this.appState = appState;
   }
 
   public receivedAuthoritySet(
@@ -19,19 +19,19 @@ export class AfgHandling {
     authorities: Types.Authorities
   ) {
     if (
-      this.getState().authoritySetId != null &&
-      authoritySetId !== this.getState().authoritySetId
+      this.appState.authoritySetId != null &&
+      authoritySetId !== this.appState.authoritySetId
     ) {
       // the visualization is restarted when we receive a new authority set
-      this.updateState({
+      this.appUpdate({
         authoritySetId,
         authorities,
         consensusInfo: [],
         displayConsensusLoadingScreen: false,
       });
-    } else if (this.getState().authoritySetId == null) {
+    } else if (this.appState.authoritySetId == null) {
       // initial display
-      this.updateState({
+      this.appUpdate({
         authoritySetId,
         authorities,
         consensusInfo: [],
@@ -46,7 +46,7 @@ export class AfgHandling {
     finalizedNumber: Types.BlockNumber,
     finalizedHash: Types.BlockHash
   ) {
-    const state = this.getState();
+    const state = this.appState;
     if (finalizedNumber < state.best - BLOCKS_LIMIT) {
       return;
     }
@@ -108,7 +108,7 @@ export class AfgHandling {
     this.backfill(state.consensusInfo, finalizedNumber, op, addr, addr);
 
     this.pruneBlocks(state.consensusInfo);
-    this.updateState({ consensusInfo: state.consensusInfo });
+    this.appUpdate({ consensusInfo: state.consensusInfo });
   }
 
   public receivedPre(
@@ -117,7 +117,7 @@ export class AfgHandling {
     voter: Types.Address,
     what: string
   ) {
-    const state = this.getState();
+    const state = this.appState;
     if (height < state.best - BLOCKS_LIMIT) {
       return;
     }
@@ -165,11 +165,11 @@ export class AfgHandling {
       consensusInfo[index][1][addr][voter].ImplicitPointer = height;
       return true;
     };
-    const consensusInfo = this.getState().consensusInfo;
+    const consensusInfo = this.appState.consensusInfo;
     this.backfill(consensusInfo, height, op, addr, voter);
 
     this.pruneBlocks(consensusInfo);
-    this.updateState({ consensusInfo });
+    this.appUpdate({ consensusInfo });
   }
 
   // Initializes the `ConsensusView` with empty objects.
@@ -239,7 +239,7 @@ export class AfgHandling {
     }
 
     let firstBlockNumber = consensusInfo[consensusInfo.length - 1][0];
-    const limit = this.getState().best - BLOCKS_LIMIT;
+    const limit = this.appState.best - BLOCKS_LIMIT;
     if (firstBlockNumber < limit) {
       firstBlockNumber = limit as Types.BlockNumber;
     }

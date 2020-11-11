@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { Types, Maybe, SortedCollection } from './common';
 import { Column } from './components/List';
 
@@ -197,6 +198,27 @@ export class Node {
   }
 }
 
+export function bindState(bind: React.Component, state: State): Update {
+  let isUpdating = false;
+
+  return (changes) => {
+    // Apply new changes to the state immediately
+    Object.assign(state, changes);
+
+    // Trigger React update on next animation frame only once
+    if (!isUpdating) {
+      isUpdating = true;
+
+      window.requestAnimationFrame(() => {
+        bind.forceUpdate();
+        isUpdating = false;
+      });
+    }
+
+    return state;
+  };
+}
+
 export namespace State {
   export interface Settings {
     location: boolean;
@@ -250,9 +272,6 @@ export interface State {
 export type Update = <K extends keyof State>(
   changes: Pick<State, K>
 ) => Readonly<State>;
-export type UpdateBound = <K extends keyof State>(
-  changes: Pick<State, K>
-) => void;
 
 export interface ChainData {
   label: Types.ChainLabel;

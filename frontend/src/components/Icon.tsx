@@ -65,7 +65,7 @@ export class Icon extends React.Component<Icon.Props, {}> {
     const { className, onClick, src } = this.props;
     const symbol = renderShadowIcon(src);
 
-    // Use xlink:href for a shadow DOM reference to the rendered icon
+    // Use `href` for a shadow DOM reference to the rendered icon
     return (
       <svg className={`Icon ${className || ''}`} onClick={onClick}>
         <use href={`#${symbol}`} />
