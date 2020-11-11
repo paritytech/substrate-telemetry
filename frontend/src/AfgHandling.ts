@@ -6,10 +6,10 @@ import { ConsensusDetail } from './common/types';
 const BLOCKS_LIMIT = 50;
 
 export class AfgHandling {
-  private appUpdate: Update;
-  private appState: Readonly<State>;
-
-  constructor(appUpdate: Update, appState: Readonly<State>) {
+  constructor(
+    private readonly appUpdate: Update,
+    private readonly appState: Readonly<State>
+  ) {
     this.appUpdate = appUpdate;
     this.appState = appState;
   }

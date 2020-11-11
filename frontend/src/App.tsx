@@ -18,10 +18,10 @@ import stable from 'stable';
 import './App.css';
 
 export default class App extends React.Component<{}, {}> {
-  // Custom state for finer control over updates
-  private appState: Readonly<State>;
-  private appUpdate: Update;
   private chainsCache: ChainData[] = [];
+  // Custom state for finer control over updates
+  private readonly appState: Readonly<State>;
+  private readonly appUpdate: Update;
   private readonly settings: PersistentObject<State.Settings>;
   private readonly pins: PersistentSet<Types.NodeName>;
   private readonly sortBy: Persistent<Maybe<number>>;

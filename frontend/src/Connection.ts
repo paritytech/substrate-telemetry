@@ -111,7 +111,7 @@ export class Connection {
 
   constructor(
     private socket: WebSocket,
-    private appState: Readonly<State>,
+    private readonly appState: Readonly<State>,
     private readonly appUpdate: Update,
     private readonly pins: PersistentSet<Types.NodeName>
   ) {
