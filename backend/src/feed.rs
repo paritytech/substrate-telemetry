@@ -172,7 +172,7 @@ impl Serialize for AddedNode<'_> {
         tup.serialize_element(node.hardware())?;
         tup.serialize_element(node.block_details())?;
         tup.serialize_element(&node.location())?;
-        tup.serialize_element(&node.connected_at())?;
+        tup.serialize_element(&node.startup_time())?;
         tup.end()
     }
 }

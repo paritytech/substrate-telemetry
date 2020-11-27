@@ -33,16 +33,20 @@ pub struct Node {
     location: Option<Arc<NodeLocation>>,
     /// Flag marking if the node is stale (not syncing or producing blocks)
     stale: bool,
-    /// Connected at timestamp
-    connected_at: Timestamp,
+    /// Unix timestamp for when node started up (falls back to connection time)
+    startup_time: Timestamp,
     /// Network state
     network_state: Option<Bytes>,
 }
 
 impl Node {
-    pub fn new(details: NodeDetails) -> Self {
-        Node {
+    pub fn new(mut details: NodeDetails) -> Self {
+        let startup_time = details.startup_time
+            .take()
+            .and_then(|time| time.parse().ok())
+            .unwrap_or_else(|| now());
 
+        Node {
             details,
             stats: NodeStats::default(),
             io: NodeIO::default(),
@@ -52,7 +56,7 @@ impl Node {
             hardware: NodeHardware::default(),
             location: None,
             stale: false,
-            connected_at: now(),
+            startup_time,
             network_state: None,
         }
     }
@@ -230,7 +234,7 @@ impl Node {
         }
     }
 
-    pub fn connected_at(&self) -> Timestamp {
-        self.connected_at
+    pub fn startup_time(&self) -> Timestamp {
+        self.startup_time
     }
 }
