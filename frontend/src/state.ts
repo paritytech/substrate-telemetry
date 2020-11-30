@@ -43,7 +43,7 @@ export class Node {
   public readonly version: Types.NodeVersion;
   public readonly validator: Maybe<Types.Address>;
   public readonly networkId: Maybe<Types.NetworkId>;
-  public readonly connectedAt: Types.Timestamp;
+  public readonly startupTime: Maybe<Types.Timestamp>;
 
   public readonly sortableName: string;
   public readonly sortableVersion: number;
@@ -82,7 +82,7 @@ export class Node {
     nodeHardware: Types.NodeHardware,
     blockDetails: Types.BlockDetails,
     location: Maybe<Types.NodeLocation>,
-    connectedAt: Types.Timestamp
+    startupTime: Maybe<Types.Timestamp>
   ) {
     const [name, implementation, version, validator, networkId] = nodeDetails;
 
@@ -94,7 +94,7 @@ export class Node {
     this.version = version;
     this.validator = validator;
     this.networkId = networkId;
-    this.connectedAt = connectedAt;
+    this.startupTime = startupTime;
 
     const [major = 0, minor = 0, patch = 0] = (version || '0.0.0')
       .split('.')

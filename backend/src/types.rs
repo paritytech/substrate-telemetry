@@ -17,6 +17,7 @@ pub struct NodeDetails {
     pub version: Box<str>,
     pub validator: Option<Box<str>>,
     pub network_id: Option<Box<str>>,
+    pub startup_time: Option<Box<str>>,
 }
 
 #[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default)]

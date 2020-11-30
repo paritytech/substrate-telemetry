@@ -204,7 +204,7 @@ export class Connection {
             nodeHardware,
             blockDetails,
             location,
-            connectedAt,
+            startupTime,
           ] = message.payload;
           const pinned = this.pins.has(nodeDetails[0]);
           const node = new Node(
@@ -216,7 +216,7 @@ export class Connection {
             nodeHardware,
             blockDetails,
             location,
-            connectedAt
+            startupTime
           );
 
           nodes.add(node);

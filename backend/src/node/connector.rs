@@ -161,7 +161,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for NodeConnector {
 
         match serde_json::from_slice(&data) {
             Ok(msg) => {
-                // info!("New node message: {}", std::str::from_utf8(&data).unwrap_or_else(|_| "INVALID UTF8"));
                 self.handle_message(msg, data, ctx)
             },
             #[cfg(debug)]
