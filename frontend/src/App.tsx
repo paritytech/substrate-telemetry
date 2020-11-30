@@ -202,7 +202,7 @@ export default class App extends React.Component<{}, {}> {
   private onHashChange = () => {
     const { tab = '' } = getHashData();
 
-    this.setState({ tab });
+    this.appUpdate({ tab });
   };
 
   private chains(): ChainData[] {
