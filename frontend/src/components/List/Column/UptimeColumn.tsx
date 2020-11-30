@@ -9,7 +9,7 @@ export class UptimeColumn extends React.Component<Column.Props, {}> {
   public static readonly icon = icon;
   public static readonly width = 58;
   public static readonly setting = 'uptime';
-  public static readonly sortBy = ({ connectedAt }: Node) => connectedAt || 0;
+  public static readonly sortBy = ({ startupTime }: Node) => startupTime || 0;
 
   public shouldComponentUpdate(nextProps: Column.Props) {
     // Uptime only changes when the node does
@@ -17,11 +17,15 @@ export class UptimeColumn extends React.Component<Column.Props, {}> {
   }
 
   render() {
-    const { connectedAt } = this.props.node;
+    const { startupTime } = this.props.node;
+
+    if (!startupTime) {
+      return <td className="Column">-</td>;
+    }
 
     return (
       <td className="Column">
-        <Ago when={connectedAt} justTime={true} />
+        <Ago when={startupTime} justTime={true} />
       </td>
     );
   }

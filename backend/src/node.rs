@@ -34,7 +34,7 @@ pub struct Node {
     /// Flag marking if the node is stale (not syncing or producing blocks)
     stale: bool,
     /// Unix timestamp for when node started up (falls back to connection time)
-    startup_time: Timestamp,
+    startup_time: Option<Timestamp>,
     /// Network state
     network_state: Option<Bytes>,
 }
@@ -43,8 +43,7 @@ impl Node {
     pub fn new(mut details: NodeDetails) -> Self {
         let startup_time = details.startup_time
             .take()
-            .and_then(|time| time.parse().ok())
-            .unwrap_or_else(|| now());
+            .and_then(|time| time.parse().ok());
 
         Node {
             details,
@@ -234,7 +233,7 @@ impl Node {
         }
     }
 
-    pub fn startup_time(&self) -> Timestamp {
+    pub fn startup_time(&self) -> Option<Timestamp> {
         self.startup_time
     }
 }
