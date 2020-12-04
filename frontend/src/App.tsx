@@ -4,15 +4,24 @@ import { AllChains, Chains, Chain, Ago, OfflineIndicator } from './components';
 import { Row, Column } from './components/List';
 import { Connection } from './Connection';
 import { Persistent, PersistentObject, PersistentSet } from './persist';
-import { State, Node, ChainData, comparePinnedChains } from './state';
+import {
+  bindState,
+  State,
+  Update,
+  Node,
+  ChainData,
+  comparePinnedChains,
+} from './state';
 import { getHashData } from './utils';
 import stable from 'stable';
 
 import './App.css';
 
-export default class App extends React.Component<{}, State> {
-  public state: State;
+export default class App extends React.Component<{}, {}> {
   private chainsCache: ChainData[] = [];
+  // Custom state for finer control over updates
+  private readonly appState: Readonly<State>;
+  private readonly appUpdate: Update;
   private readonly settings: PersistentObject<State.Settings>;
   private readonly pins: PersistentSet<Types.NodeName>;
   private readonly sortBy: Persistent<Maybe<number>>;
@@ -52,28 +61,28 @@ export default class App extends React.Component<{}, State> {
         const selectedColumns = this.selectedColumns(settings);
 
         this.sortBy.set(null);
-        this.setState({ settings, selectedColumns, sortBy: null });
+        this.appUpdate({ settings, selectedColumns, sortBy: null });
       }
     );
 
     this.pins = new PersistentSet<Types.NodeName>('pinned_names', (pins) => {
-      const { nodes } = this.state;
+      const { nodes } = this.appState;
 
       nodes.mutEachAndSort((node) => node.setPinned(pins.has(node.name)));
 
-      this.setState({ nodes, pins });
+      this.appUpdate({ nodes, pins });
     });
 
     this.sortBy = new Persistent<Maybe<number>>('sortBy', null, (sortBy) => {
       const compare = this.getComparator(sortBy);
 
-      this.state.nodes.setComparator(compare);
-      this.setState({ sortBy });
+      this.appState.nodes.setComparator(compare);
+      this.appUpdate({ sortBy });
     });
 
     const { tab = '' } = getHashData();
 
-    this.state = {
+    this.appUpdate = bindState(this, {
       status: 'offline',
       best: 0 as Types.BlockNumber,
       finalized: 0 as Types.BlockNumber,
@@ -93,23 +102,23 @@ export default class App extends React.Component<{}, State> {
       sortBy: this.sortBy.get(),
       selectedColumns: this.selectedColumns(this.settings.raw()),
       tab,
-    };
-
-    this.state.nodes.setComparator(this.getComparator(this.sortBy.get()));
-
-    this.connection = Connection.create(this.pins, (changes) => {
-      if (changes) {
-        this.setState(changes);
-      }
-
-      return this.state;
     });
+    this.appState = this.appUpdate({});
+
+    const comparator = this.getComparator(this.sortBy.get());
+
+    this.appState.nodes.setComparator(comparator);
+    this.connection = Connection.create(
+      this.pins,
+      this.appState,
+      this.appUpdate
+    );
 
     setInterval(() => (this.chainsCache = []), 10000); // Wipe sorted chains cache every 10 seconds
   }
 
   public render() {
-    const { timeDiff, subscribed, status, tab } = this.state;
+    const { timeDiff, subscribed, status, tab } = this.appState;
     const chains = this.chains();
 
     Ago.timeDiff = timeDiff;
@@ -141,7 +150,8 @@ export default class App extends React.Component<{}, State> {
           connection={this.connection}
         />
         <Chain
-          appState={this.state}
+          appState={this.appState}
+          appUpdate={this.appUpdate}
           connection={this.connection}
           settings={this.settings}
           pins={this.pins}
@@ -152,7 +162,7 @@ export default class App extends React.Component<{}, State> {
     );
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     window.addEventListener('keydown', this.onKeyPress);
     window.addEventListener('hashchange', this.onHashChange);
   }
@@ -170,8 +180,8 @@ export default class App extends React.Component<{}, State> {
 
     event.preventDefault();
 
-    const { subscribed } = this.state;
-    const chains = Array.from(this.state.chains.keys());
+    const { subscribed } = this.appState;
+    const chains = Array.from(this.appState.chains.keys());
 
     let index = 0;
 
@@ -192,16 +202,16 @@ export default class App extends React.Component<{}, State> {
   private onHashChange = () => {
     const { tab = '' } = getHashData();
 
-    this.setState({ tab });
+    this.appUpdate({ tab });
   };
 
   private chains(): ChainData[] {
-    if (this.chainsCache.length === this.state.chains.size) {
+    if (this.chainsCache.length === this.appState.chains.size) {
       return this.chainsCache;
     }
 
     this.chainsCache = stable.inplace(
-      Array.from(this.state.chains.values()),
+      Array.from(this.appState.chains.values()),
       (a, b) => {
         const pinned = comparePinnedChains(a.label, b.label);
 
@@ -223,7 +233,7 @@ export default class App extends React.Component<{}, State> {
   }
 
   private getComparator(sortBy: Maybe<number>): Compare<Node> {
-    const columns = this.state.selectedColumns;
+    const columns = this.appState.selectedColumns;
 
     if (sortBy != null) {
       const [index, rev] = sortBy < 0 ? [~sortBy, -1] : [sortBy, 1];

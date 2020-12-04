@@ -1,0 +1,24 @@
+.THead {
+  background: #393838;
+}
+
+.THeadCell {
+  text-align: left;
+  padding: 6px 13px;
+  height: 23px;
+}
+
+.THeadCell-sortable {
+  cursor: pointer;
+}
+
+.THeadCell-sorted {
+  cursor: pointer;
+  background: #e6007a;
+  color: #fff;
+}
+
+.THeadCell-container {
+  position: relative;
+  display: inline-block;
+}

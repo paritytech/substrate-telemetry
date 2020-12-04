@@ -74,17 +74,7 @@
   right: 0;
 }
 
-.Tooltip-container:hover .Tooltip {
+:hover > .Tooltip {
   display: block;
-  animation: show 0.15s forwards;
 }
 
-@keyframes show {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}

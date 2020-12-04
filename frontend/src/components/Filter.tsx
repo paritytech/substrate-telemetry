@@ -26,7 +26,7 @@ export class Filter extends React.Component<Filter.Props, {}> {
 
   private filterInput: HTMLInputElement;
 
-  public componentWillMount() {
+  public componentDidMount() {
     window.addEventListener('keyup', this.onWindowKeyUp);
   }
 

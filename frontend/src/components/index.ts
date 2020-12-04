@@ -10,6 +10,7 @@ export * from './Tile';
 export * from './Ago';
 export * from './OfflineIndicator';
 export * from './Sparkline';
+export * from './Truncate';
 export * from './Tooltip';
 export * from './Filter';
 export * from './PolkadotIcon';

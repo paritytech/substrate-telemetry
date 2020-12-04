@@ -19,14 +19,17 @@ export function OfflineIndicator(
       return null;
     case 'offline':
       return (
-        <div className="OfflineIndicator">
-          <Icon src={offlineIcon} alt="Offline" />
+        <div className="OfflineIndicator" title="Offline">
+          <Icon src={offlineIcon} />
         </div>
       );
     case 'upgrade-requested':
       return (
-        <div className="OfflineIndicator OfflineIndicator-upgrade">
-          <Icon src={upgradeIcon} alt="New Version Available" />
+        <div
+          className="OfflineIndicator OfflineIndicator-upgrade"
+          title="New Version Available"
+        >
+          <Icon src={upgradeIcon} />
         </div>
       );
   }

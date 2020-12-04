@@ -19,12 +19,12 @@ export class AllChains extends React.Component<AllChains.Props, {}> {
     const close = subscribed ? `#list/${subscribed}` : '#list';
 
     return (
-      <React.Fragment>
+      <>
         <a className="AllChains-overlay" href={close} />
         <div className="AllChains">
           {chains.map((chain) => this.renderChain(chain))}
         </div>
-      </React.Fragment>
+      </>
     );
   }
 

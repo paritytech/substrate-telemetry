@@ -8,17 +8,10 @@ use crate::types::{Block, BlockNumber, BlockHash, ConnId};
 #[derive(Deserialize, Debug, Message)]
 #[rtype(result = "()")]
 pub struct NodeMessage {
-    pub level: Level,
     pub ts: DateTime<Utc>,
     pub id: Option<ConnId>,
     #[serde(flatten)]
     pub details: Details,
-}
-
-#[derive(Deserialize, Debug)]
-pub enum Level {
-    #[serde(rename = "INFO")]
-    Info,
 }
 
 #[derive(Deserialize, Debug)]
