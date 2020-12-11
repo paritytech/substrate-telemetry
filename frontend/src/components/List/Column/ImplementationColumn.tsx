@@ -47,7 +47,7 @@ const ICONS = {
   Totem: totemIcon,
   'Nodle Chain Node': nodleIcon,
   subzero: zeroIcon,
-  'Crust Network CC2': crustIcon,
+  'Crust': crustIcon,
 };
 const SEMVER_PATTERN = /^\d+\.\d+\.\d+/;
 
