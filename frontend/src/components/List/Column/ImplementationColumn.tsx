@@ -22,7 +22,7 @@ import bifrostIcon from '../../../icons/bifrost.svg';
 import totemIcon from '../../../icons/totem.svg';
 import nodleIcon from '../../../icons/nodle.svg';
 import zeroIcon from '../../../icons/zero.svg';
-import crustIcon from '../../../icons/crust.svg'
+import crustIcon from '../../../icons/crust.svg';
 
 const ICONS = {
   'parity-polkadot': parityPolkadotIcon,
