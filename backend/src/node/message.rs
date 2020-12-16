@@ -3,12 +3,13 @@ use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use serde::de::IgnoredAny;
 use crate::node::NodeDetails;
-use crate::types::{Block, BlockNumber, BlockHash};
+use crate::types::{Block, BlockNumber, BlockHash, ConnId};
 
 #[derive(Deserialize, Debug, Message)]
 #[rtype(result = "()")]
 pub struct NodeMessage {
     pub ts: DateTime<Utc>,
+    pub id: Option<ConnId>,
     #[serde(flatten)]
     pub details: Details,
 }

@@ -9,7 +9,7 @@ use crate::node::{Node, connector::Initialize, message::{NodeMessage, Details}};
 use crate::feed::connector::{FeedId, FeedConnector, Subscribed, Unsubscribed};
 use crate::feed::{self, FeedMessageSerializer};
 use crate::util::{DenseMap, NumStats, now};
-use crate::types::{NodeId, NodeDetails, NodeLocation, Block, Timestamp, BlockNumber};
+use crate::types::{ConnId, NodeId, NodeDetails, NodeLocation, Block, Timestamp, BlockNumber};
 
 const STALE_TIMEOUT: u64 = 2 * 60 * 1000; // 2 minutes
 
@@ -194,7 +194,11 @@ impl Actor for Chain {
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct AddNode {
+    /// Details of the node being added to the aggregator
     pub node: NodeDetails,
+    /// Connection id used by the node connector for multiplexing parachains
+    pub conn_id: ConnId,
+    /// Recipient for the initialization message
     pub rec: Recipient<Initialize>,
 }
 
@@ -248,11 +252,13 @@ impl Handler<AddNode> for Chain {
     type Result = ();
 
     fn handle(&mut self, msg: AddNode, ctx: &mut Self::Context) {
-        self.increment_label_count(&msg.node.chain);
+        let AddNode { node, conn_id, rec } = msg;
+        self.increment_label_count(&node.chain);
 
-        let nid = self.nodes.add(Node::new(msg.node));
+        let nid = self.nodes.add(Node::new(node));
+        let chain = ctx.address();
 
-        if let Err(_) = msg.rec.do_send(Initialize(nid, ctx.address())) {
+        if let Err(_) = rec.do_send(Initialize { nid, conn_id, chain }) {
             self.nodes.remove(nid);
         } else if let Some(node) = self.nodes.get(nid) {
             self.serializer.push(feed::AddedNode(nid, node));

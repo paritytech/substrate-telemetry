@@ -4,6 +4,7 @@ use serde::Deserialize;
 use crate::util::{MeanList, now};
 
 pub type NodeId = usize;
+pub type ConnId = u64;
 pub type BlockNumber = u64;
 pub type Timestamp = u64;
 pub type Address = Box<str>;
