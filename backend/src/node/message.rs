@@ -1,5 +1,4 @@
 use actix::prelude::*;
-use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use serde::de::IgnoredAny;
 use crate::node::NodeDetails;
@@ -9,13 +8,11 @@ use crate::types::{Block, BlockNumber, BlockHash, ConnId};
 #[rtype(result = "()")]
 pub enum NodeMessage {
     V1 {
-        ts: DateTime<Utc>,
         #[serde(flatten)]
         details: Details,
     },
     V2 {
         id: ConnId,
-        ts: DateTime<Utc>,
         #[serde(rename = "payload")]
         details: Details,
     },
@@ -34,13 +31,6 @@ impl NodeMessage {
         match self {
             NodeMessage::V1 { .. } => 0,
             NodeMessage::V2 { id, .. } => *id,
-        }
-    }
-
-    /// Returns the timestamp of the message.
-    pub fn ts(&self) -> &DateTime<Utc> {
-        match self {
-            NodeMessage::V1 { ts, .. } | NodeMessage::V2 { ts, .. } => ts,
         }
     }
 }
