@@ -7,9 +7,32 @@ use crate::types::{Block, BlockNumber, BlockHash, ConnId};
 
 #[derive(Deserialize, Debug, Message)]
 #[rtype(result = "()")]
-pub struct NodeMessage {
-    pub id: Option<ConnId>,
-    pub payload: NodeMessagePayload,
+pub enum NodeMessage {
+    V1 {
+      #[serde(flatten)]
+      payload: NodeMessagePayload,
+    },
+    V2 {
+      id: ConnId,
+      payload: NodeMessagePayload,
+    },
+}
+
+impl NodeMessage {
+    /// Returns a reference to the payload.
+    pub fn payload(&self) -> &NodeMessagePayload {
+        match self {
+            NodeMessage::V1 { payload } | NodeMessage::V2 { payload, .. } => payload,
+        }
+    }
+
+    /// Returns the connection ID or 0 if there is no ID.
+    pub fn id(&self) -> ConnId {
+        match self {
+            NodeMessage::V1 { .. } => 0,
+            NodeMessage::V2 { id, .. } => *id,
+        }
+    }
 }
 
 #[derive(Deserialize, Debug)]
