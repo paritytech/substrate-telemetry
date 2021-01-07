@@ -9,20 +9,23 @@ use crate::types::{Block, BlockNumber, BlockHash, ConnId};
 #[rtype(result = "()")]
 pub enum NodeMessage {
     V1 {
-      #[serde(flatten)]
-      payload: NodeMessagePayload,
+        ts: DateTime<Utc>,
+        #[serde(flatten)]
+        details: Details,
     },
     V2 {
-      id: ConnId,
-      payload: NodeMessagePayload,
+        id: ConnId,
+        ts: DateTime<Utc>,
+        #[serde(rename = "payload")]
+        details: Details,
     },
 }
 
 impl NodeMessage {
-    /// Returns a reference to the payload.
-    pub fn payload(&self) -> &NodeMessagePayload {
+    /// Returns a reference to the details.
+    pub fn details(&self) -> &Details {
         match self {
-            NodeMessage::V1 { payload } | NodeMessage::V2 { payload, .. } => payload,
+            NodeMessage::V1 { details, .. } | NodeMessage::V2 { details, .. } => details,
         }
     }
 
@@ -33,13 +36,13 @@ impl NodeMessage {
             NodeMessage::V2 { id, .. } => *id,
         }
     }
-}
 
-#[derive(Deserialize, Debug)]
-pub struct NodeMessagePayload {
-    pub ts: DateTime<Utc>,
-    #[serde(flatten)]
-    pub details: Details,
+    /// Returns the timestamp of the message.
+    pub fn ts(&self) -> &DateTime<Utc> {
+        match self {
+            NodeMessage::V1 { ts, .. } | NodeMessage::V2 { ts, .. } => ts,
+        }
+    }
 }
 
 #[derive(Deserialize, Debug)]
