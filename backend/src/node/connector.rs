@@ -10,7 +10,7 @@ use actix_http::ws::Item;
 use crate::aggregator::{Aggregator, AddNode};
 use crate::chain::{Chain, UpdateNode, RemoveNode};
 use crate::node::NodeId;
-use crate::node::message::{NodeMessage, Details};
+use crate::node::message::{NodeMessage, Payload};
 use crate::util::LocateRequest;
 use crate::types::ConnId;
 
@@ -107,7 +107,7 @@ impl NodeConnector {
                 });
             }
             ConnMultiplex::Waiting { backlog } => {
-                if let Details::SystemConnected(connected) = msg.details() {
+                if let Payload::SystemConnected(connected) = msg.payload() {
                     let mut node = connected.node.clone();
                     let rec = ctx.address().recipient();
 

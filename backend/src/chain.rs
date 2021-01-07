@@ -5,7 +5,7 @@ use bytes::Bytes;
 use rustc_hash::FxHashMap;
 
 use crate::aggregator::{Aggregator, DropChain, RenameChain, NodeCount};
-use crate::node::{Node, connector::Initialize, message::{NodeMessage, Details}};
+use crate::node::{Node, connector::Initialize, message::{NodeMessage, Payload}};
 use crate::feed::connector::{FeedId, FeedConnector, Subscribed, Unsubscribed};
 use crate::feed::{self, FeedMessageSerializer};
 use crate::util::{DenseMap, NumStats, now};
@@ -319,13 +319,13 @@ impl Handler<UpdateNode> for Chain {
     fn handle(&mut self, msg: UpdateNode, _: &mut Self::Context) {
         let UpdateNode { nid, msg, raw } = msg;
 
-        if let Some(block) = msg.details().best_block() {
+        if let Some(block) = msg.payload().best_block() {
             self.handle_block(block, nid);
         }
 
         if let Some(node) = self.nodes.get_mut(nid) {
-            match msg.details() {
-                Details::SystemInterval(ref interval) => {
+            match msg.payload() {
+                Payload::SystemInterval(ref interval) => {
                     if interval.network_state.is_some() {
                         if let Some(raw) = raw {
                             node.set_network_state(raw);
@@ -344,17 +344,17 @@ impl Handler<UpdateNode> for Chain {
                         self.serializer.push(feed::NodeIOUpdate(nid, io));
                     }
                 }
-                Details::SystemNetworkState(_) => {
+                Payload::SystemNetworkState(_) => {
                     if let Some(raw) = raw {
                         node.set_network_state(raw);
                     }
                 }
-                Details::AfgAuthoritySet(authority) => {
+                Payload::AfgAuthoritySet(authority) => {
                     node.set_validator_address(authority.authority_id.clone());
                     self.broadcast();
                     return;
                 }
-                Details::AfgFinalized(finalized) => {
+                Payload::AfgFinalized(finalized) => {
                     if let Ok(finalized_number) = finalized.finalized_number.parse::<BlockNumber>() {
                         if let Some(addr) = node.details().validator.clone() {
                             self.serializer.push(feed::AfgFinalized(addr, finalized_number,
@@ -364,7 +364,7 @@ impl Handler<UpdateNode> for Chain {
                     }
                     return;
                 }
-                Details::AfgReceivedPrecommit(precommit) => {
+                Payload::AfgReceivedPrecommit(precommit) => {
                     if let Ok(finalized_number) = precommit.received.target_number.parse::<BlockNumber>() {
                         if let Some(addr) = node.details().validator.clone() {
                             let voter = precommit.received.voter.clone();
@@ -375,7 +375,7 @@ impl Handler<UpdateNode> for Chain {
                     }
                     return;
                 }
-                Details::AfgReceivedPrevote(prevote) => {
+                Payload::AfgReceivedPrevote(prevote) => {
                     if let Ok(finalized_number) = prevote.received.target_number.parse::<BlockNumber>() {
                         if let Some(addr) = node.details().validator.clone() {
                             let voter = prevote.received.voter.clone();
@@ -386,12 +386,12 @@ impl Handler<UpdateNode> for Chain {
                     }
                     return;
                 }
-                Details::AfgReceivedCommit(_) => {
+                Payload::AfgReceivedCommit(_) => {
                 }
                 _ => (),
             }
 
-            if let Some(block) = msg.details().finalized_block() {
+            if let Some(block) = msg.payload().finalized_block() {
                 if let Some(finalized) = node.update_finalized(block) {
                     self.serializer.push(feed::FinalizedBlock(nid, finalized.height, finalized.hash));
 

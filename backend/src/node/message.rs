@@ -9,20 +9,20 @@ use crate::types::{Block, BlockNumber, BlockHash, ConnId};
 pub enum NodeMessage {
     V1 {
         #[serde(flatten)]
-        details: Details,
+        payload: Payload,
     },
     V2 {
         id: ConnId,
         #[serde(rename = "payload")]
-        details: Details,
+        payload: Payload,
     },
 }
 
 impl NodeMessage {
-    /// Returns a reference to the details.
-    pub fn details(&self) -> &Details {
+    /// Returns a reference to the payload.
+    pub fn payload(&self) -> &Payload {
         match self {
-            NodeMessage::V1 { details, .. } | NodeMessage::V2 { details, .. } => details,
+            NodeMessage::V1 { payload, .. } | NodeMessage::V2 { payload, .. } => payload,
         }
     }
 
@@ -37,7 +37,7 @@ impl NodeMessage {
 
 #[derive(Deserialize, Debug)]
 #[serde(tag = "msg")]
-pub enum Details {
+pub enum Payload {
     #[serde(rename = "node.start")]
     NodeStart(Block),
     #[serde(rename = "system.connected")]
@@ -145,24 +145,24 @@ impl Block {
     }
 }
 
-impl Details {
+impl Payload {
     pub fn best_block(&self) -> Option<&Block> {
         match self {
-            Details::BlockImport(block) => Some(block),
-            Details::SystemInterval(SystemInterval { block, .. }) => block.as_ref(),
+            Payload::BlockImport(block) => Some(block),
+            Payload::SystemInterval(SystemInterval { block, .. }) => block.as_ref(),
             _ => None,
         }
     }
 
     pub fn finalized_block(&self) -> Option<Block> {
         match self {
-            Details::SystemInterval(ref interval) => {
+            Payload::SystemInterval(ref interval) => {
                 Some(Block {
                     hash: interval.finalized_hash?,
                     height: interval.finalized_height?,
                 })
             },
-            Details::NotifyFinalized(ref finalized) => {
+            Payload::NotifyFinalized(ref finalized) => {
                 Some(Block {
                     hash: finalized.hash,
                     height: finalized.height.parse().ok()?
