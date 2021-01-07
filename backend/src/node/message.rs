@@ -6,6 +6,7 @@ use crate::types::{Block, BlockNumber, BlockHash, ConnId};
 
 #[derive(Deserialize, Debug, Message)]
 #[rtype(result = "()")]
+#[serde(untagged)]
 pub enum NodeMessage {
     V1 {
         #[serde(flatten)]
@@ -13,7 +14,6 @@ pub enum NodeMessage {
     },
     V2 {
         id: ConnId,
-        #[serde(rename = "payload")]
         payload: Payload,
     },
 }

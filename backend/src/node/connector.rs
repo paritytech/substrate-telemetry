@@ -231,7 +231,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for NodeConnector {
             #[cfg(debug)]
             Err(err) => {
                 let data: &[u8] = data.get(..512).unwrap_or_else(|| &data);
-                warn!("Failed to parse node message: {} {}", err, std::str::from_utf8(data).unwrap_or_else(|_| "INVALID UTF8"))
+                log::warn!("Failed to parse node message: {} {}", err, std::str::from_utf8(data).unwrap_or_else(|_| "INVALID UTF8"))
             },
             #[cfg(not(debug))]
             Err(_) => (),
