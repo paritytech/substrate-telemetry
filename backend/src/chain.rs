@@ -319,12 +319,12 @@ impl Handler<UpdateNode> for Chain {
     fn handle(&mut self, msg: UpdateNode, _: &mut Self::Context) {
         let UpdateNode { nid, msg, raw } = msg;
 
-        if let Some(block) = msg.details.best_block() {
+        if let Some(block) = msg.payload.details.best_block() {
             self.handle_block(block, nid);
         }
 
         if let Some(node) = self.nodes.get_mut(nid) {
-            match msg.details {
+            match msg.payload.details {
                 Details::SystemInterval(ref interval) => {
                     if interval.network_state.is_some() {
                         if let Some(raw) = raw {
@@ -391,7 +391,7 @@ impl Handler<UpdateNode> for Chain {
                 _ => (),
             }
 
-            if let Some(block) = msg.details.finalized_block() {
+            if let Some(block) = msg.payload.details.finalized_block() {
                 if let Some(finalized) = node.update_finalized(block) {
                     self.serializer.push(feed::FinalizedBlock(nid, finalized.height, finalized.hash));
 

@@ -8,8 +8,13 @@ use crate::types::{Block, BlockNumber, BlockHash, ConnId};
 #[derive(Deserialize, Debug, Message)]
 #[rtype(result = "()")]
 pub struct NodeMessage {
-    pub ts: DateTime<Utc>,
     pub id: Option<ConnId>,
+    pub payload: NodeMessagePayload,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct NodeMessagePayload {
+    pub ts: DateTime<Utc>,
     #[serde(flatten)]
     pub details: Details,
 }

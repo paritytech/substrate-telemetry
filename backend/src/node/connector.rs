@@ -107,7 +107,7 @@ impl NodeConnector {
                 });
             }
             ConnMultiplex::Waiting { backlog } => {
-                if let Details::SystemConnected(connected) = msg.details {
+                if let Details::SystemConnected(connected) = msg.payload.details {
                     let SystemConnected { network_id: _, mut node } = connected;
                     let rec = ctx.address().recipient();
 
