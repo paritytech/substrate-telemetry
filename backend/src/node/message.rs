@@ -172,3 +172,32 @@ impl Payload {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn message_v1() {
+        let json = r#"{"msg":"notify.finalized","level":"INFO","ts":"2021-01-13T12:38:25.410794650+01:00","best":"0x031c3521ca2f9c673812d692fc330b9a18e18a2781e3f9976992f861fd3ea0cb","height":"50"}"#;
+        assert!(
+            matches!(
+                serde_json::from_str::<NodeMessage>(json).unwrap(),
+                NodeMessage::V1 { .. },
+            ),
+            "message did not match variant V1",
+        );
+    }
+
+    #[test]
+    fn message_v2() {
+        let json = r#"{"id":1,"ts":"2021-01-13T12:22:20.053527101+01:00","payload":{"best":"0xcc41708573f2acaded9dd75e07dac2d4163d136ca35b3061c558d7a35a09dd8d","height":"209","msg":"notify.finalized"}}"#;
+        assert!(
+            matches!(
+                serde_json::from_str::<NodeMessage>(json).unwrap(),
+                NodeMessage::V2 { .. },
+            ),
+            "message did not match variant V2",
+        );
+    }
+}
