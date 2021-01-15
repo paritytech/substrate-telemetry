@@ -38,8 +38,6 @@ impl NodeMessage {
 #[derive(Deserialize, Debug)]
 #[serde(tag = "msg")]
 pub enum Payload {
-    #[serde(rename = "node.start")]
-    NodeStart(Block),
     #[serde(rename = "system.connected")]
     SystemConnected(SystemConnected),
     #[serde(rename = "system.interval")]
