@@ -10,7 +10,7 @@ pub type Timestamp = u64;
 pub type Address = Box<str>;
 pub use primitive_types::H256 as BlockHash;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct NodeDetails {
     pub chain: Box<str>,
     pub name: Box<str>,

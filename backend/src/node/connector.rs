@@ -10,7 +10,7 @@ use actix_http::ws::Item;
 use crate::aggregator::{Aggregator, AddNode};
 use crate::chain::{Chain, UpdateNode, RemoveNode};
 use crate::node::NodeId;
-use crate::node::message::{NodeMessage, Details, SystemConnected};
+use crate::node::message::{NodeMessage, Payload};
 use crate::util::LocateRequest;
 use crate::types::ConnId;
 
@@ -96,7 +96,7 @@ impl NodeConnector {
     }
 
     fn handle_message(&mut self, msg: NodeMessage, data: Bytes, ctx: &mut <Self as Actor>::Context) {
-        let conn_id = msg.id.unwrap_or(0);
+        let conn_id = msg.id();
 
         match self.multiplex.entry(conn_id).or_default() {
             ConnMultiplex::Connected { nid, chain } => {
@@ -107,8 +107,8 @@ impl NodeConnector {
                 });
             }
             ConnMultiplex::Waiting { backlog } => {
-                if let Details::SystemConnected(connected) = msg.details {
-                    let SystemConnected { network_id: _, mut node } = connected;
+                if let Payload::SystemConnected(connected) = msg.payload() {
+                    let mut node = connected.node.clone();
                     let rec = ctx.address().recipient();
 
                     // FIXME: Use genesis hash instead of names to avoid this mess
@@ -231,7 +231,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for NodeConnector {
             #[cfg(debug)]
             Err(err) => {
                 let data: &[u8] = data.get(..512).unwrap_or_else(|| &data);
-                warn!("Failed to parse node message: {} {}", err, std::str::from_utf8(data).unwrap_or_else(|_| "INVALID UTF8"))
+                log::warn!("Failed to parse node message: {} {}", err, std::str::from_utf8(data).unwrap_or_else(|_| "INVALID UTF8"))
             },
             #[cfg(not(debug))]
             Err(_) => (),
