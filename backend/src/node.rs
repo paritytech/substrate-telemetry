@@ -33,16 +33,19 @@ pub struct Node {
     location: Option<Arc<NodeLocation>>,
     /// Flag marking if the node is stale (not syncing or producing blocks)
     stale: bool,
-    /// Connected at timestamp
-    connected_at: Timestamp,
+    /// Unix timestamp for when node started up (falls back to connection time)
+    startup_time: Option<Timestamp>,
     /// Network state
     network_state: Option<Bytes>,
 }
 
 impl Node {
-    pub fn new(details: NodeDetails) -> Self {
-        Node {
+    pub fn new(mut details: NodeDetails) -> Self {
+        let startup_time = details.startup_time
+            .take()
+            .and_then(|time| time.parse().ok());
 
+        Node {
             details,
             stats: NodeStats::default(),
             io: NodeIO::default(),
@@ -52,7 +55,7 @@ impl Node {
             hardware: NodeHardware::default(),
             location: None,
             stale: false,
-            connected_at: now(),
+            startup_time,
             network_state: None,
         }
     }
@@ -130,12 +133,6 @@ impl Node {
     pub fn update_hardware(&mut self, interval: &SystemInterval) -> bool {
         let mut changed = false;
 
-        if let Some(cpu) = interval.cpu {
-            changed |= self.hardware.cpu.push(cpu);
-        }
-        if let Some(memory) = interval.memory {
-            changed |= self.hardware.memory.push(memory);
-        }
         if let Some(upload) = interval.bandwidth_upload {
             changed |= self.hardware.upload.push(upload);
         }
@@ -148,12 +145,26 @@ impl Node {
     }
 
     pub fn update_stats(&mut self, interval: &SystemInterval) -> Option<&NodeStats> {
-        if self.stats != interval.stats {
-            self.stats = interval.stats;
-            Some(&self.stats)
-        } else {
-            None
-        }
+      let mut changed = false;
+
+      if let Some(peers) = interval.peers {
+          if peers != self.stats.peers {
+              self.stats.peers = peers;
+              changed = true;
+          }
+      }
+      if let Some(txcount) = interval.txcount {
+          if txcount != self.stats.txcount {
+              self.stats.txcount = txcount;
+              changed = true;
+          }
+      }
+
+      if changed {
+          Some(&self.stats)
+      } else {
+          None
+      }
     }
 
     pub fn update_io(&mut self, interval: &SystemInterval) -> Option<&NodeIO> {
@@ -161,15 +172,6 @@ impl Node {
 
         if let Some(size) = interval.used_state_cache_size {
             changed |= self.io.used_state_cache_size.push(size);
-        }
-        if let Some(size) = interval.used_db_cache_size {
-            changed |= self.io.used_db_cache_size.push(size);
-        }
-        if let Some(bps) = interval.disk_read_per_sec {
-            changed |= self.io.disk_read_per_sec.push(bps);
-        }
-        if let Some(bps) = interval.disk_write_per_sec {
-            changed |= self.io.disk_write_per_sec.push(bps);
         }
 
         if changed {
@@ -227,11 +229,11 @@ impl Node {
         if let Ok(stringified) = serde_json::from_str::<String>(json) {
             Some(stringified.into())
         } else {
-            Some(json.into())
+            Some(json.to_owned().into())
         }
     }
 
-    pub fn connected_at(&self) -> Timestamp {
-        self.connected_at
+    pub fn startup_time(&self) -> Option<Timestamp> {
+        self.startup_time
     }
 }

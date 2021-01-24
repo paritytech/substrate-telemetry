@@ -80,7 +80,7 @@ export namespace Variants {
       NodeHardware,
       BlockDetails,
       Maybe<NodeLocation>,
-      Timestamp
+      Maybe<Timestamp>
     ];
   }
 

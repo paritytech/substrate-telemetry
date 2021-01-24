@@ -9,4 +9,4 @@ import * as FeedMessage from './feed';
 export { Types, FeedMessage };
 
 // Increment this if breaking changes were made to types in `feed.ts`
-export const VERSION: Types.FeedVersion = 29 as Types.FeedVersion;
+export const VERSION: Types.FeedVersion = 31 as Types.FeedVersion;

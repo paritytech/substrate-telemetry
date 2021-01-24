@@ -1,29 +1,43 @@
 use actix::prelude::*;
-use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use serde::de::IgnoredAny;
-use crate::node::{NodeDetails, NodeStats};
-use crate::types::{Block, BlockNumber, BlockHash};
+use crate::node::NodeDetails;
+use crate::types::{Block, BlockNumber, BlockHash, ConnId};
 
 #[derive(Deserialize, Debug, Message)]
-pub struct NodeMessage {
-    pub level: Level,
-    pub ts: DateTime<Utc>,
-    #[serde(flatten)]
-    pub details: Details,
+#[rtype(result = "()")]
+#[serde(untagged)]
+pub enum NodeMessage {
+    V1 {
+        #[serde(flatten)]
+        payload: Payload,
+    },
+    V2 {
+        id: ConnId,
+        payload: Payload,
+    },
 }
 
-#[derive(Deserialize, Debug)]
-pub enum Level {
-    #[serde(rename = "INFO")]
-    Info,
+impl NodeMessage {
+    /// Returns a reference to the payload.
+    pub fn payload(&self) -> &Payload {
+        match self {
+            NodeMessage::V1 { payload, .. } | NodeMessage::V2 { payload, .. } => payload,
+        }
+    }
+
+    /// Returns the connection ID or 0 if there is no ID.
+    pub fn id(&self) -> ConnId {
+        match self {
+            NodeMessage::V1 { .. } => 0,
+            NodeMessage::V2 { id, .. } => *id,
+        }
+    }
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(tag = "msg")]
-pub enum Details {
-    #[serde(rename = "node.start")]
-    NodeStart(Block),
+pub enum Payload {
     #[serde(rename = "system.connected")]
     SystemConnected(SystemConnected),
     #[serde(rename = "system.interval")]
@@ -63,21 +77,16 @@ pub struct SystemConnected {
 
 #[derive(Deserialize, Debug)]
 pub struct SystemInterval {
-    #[serde(flatten)]
-    pub stats: NodeStats,
-    pub memory: Option<f32>,
-    pub cpu: Option<f32>,
+    pub peers: Option<u64>,
+    pub txcount: Option<u64>,
     pub bandwidth_upload: Option<f64>,
     pub bandwidth_download: Option<f64>,
     pub finalized_height: Option<BlockNumber>,
     pub finalized_hash: Option<BlockHash>,
     #[serde(flatten)]
-    pub block: Block,
+    pub block: Option<Block>,
     pub network_state: Option<IgnoredAny>,
     pub used_state_cache_size: Option<f32>,
-    pub used_db_cache_size: Option<f32>,
-    pub disk_read_per_sec: Option<f32>,
-    pub disk_write_per_sec: Option<f32>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -134,25 +143,24 @@ impl Block {
     }
 }
 
-impl Details {
+impl Payload {
     pub fn best_block(&self) -> Option<&Block> {
         match self {
-            Details::BlockImport(block) | Details::SystemInterval(SystemInterval { block, .. }) => {
-                Some(block)
-            }
+            Payload::BlockImport(block) => Some(block),
+            Payload::SystemInterval(SystemInterval { block, .. }) => block.as_ref(),
             _ => None,
         }
     }
 
     pub fn finalized_block(&self) -> Option<Block> {
         match self {
-            Details::SystemInterval(ref interval) => {
+            Payload::SystemInterval(ref interval) => {
                 Some(Block {
                     hash: interval.finalized_hash?,
                     height: interval.finalized_height?,
                 })
             },
-            Details::NotifyFinalized(ref finalized) => {
+            Payload::NotifyFinalized(ref finalized) => {
                 Some(Block {
                     hash: finalized.hash,
                     height: finalized.height.parse().ok()?
@@ -160,5 +168,34 @@ impl Details {
             },
             _ => None
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn message_v1() {
+        let json = r#"{"msg":"notify.finalized","level":"INFO","ts":"2021-01-13T12:38:25.410794650+01:00","best":"0x031c3521ca2f9c673812d692fc330b9a18e18a2781e3f9976992f861fd3ea0cb","height":"50"}"#;
+        assert!(
+            matches!(
+                serde_json::from_str::<NodeMessage>(json).unwrap(),
+                NodeMessage::V1 { .. },
+            ),
+            "message did not match variant V1",
+        );
+    }
+
+    #[test]
+    fn message_v2() {
+        let json = r#"{"id":1,"ts":"2021-01-13T12:22:20.053527101+01:00","payload":{"best":"0xcc41708573f2acaded9dd75e07dac2d4163d136ca35b3061c558d7a35a09dd8d","height":"209","msg":"notify.finalized"}}"#;
+        assert!(
+            matches!(
+                serde_json::from_str::<NodeMessage>(json).unwrap(),
+                NodeMessage::V2 { .. },
+            ),
+            "message did not match variant V2",
+        );
     }
 }

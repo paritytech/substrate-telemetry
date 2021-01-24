@@ -5,11 +5,11 @@ use bytes::Bytes;
 use rustc_hash::FxHashMap;
 
 use crate::aggregator::{Aggregator, DropChain, RenameChain, NodeCount};
-use crate::node::{Node, connector::Initialize, message::{NodeMessage, Details}};
+use crate::node::{Node, connector::Initialize, message::{NodeMessage, Payload}};
 use crate::feed::connector::{FeedId, FeedConnector, Subscribed, Unsubscribed};
 use crate::feed::{self, FeedMessageSerializer};
 use crate::util::{DenseMap, NumStats, now};
-use crate::types::{NodeId, NodeDetails, NodeLocation, Block, Timestamp, BlockNumber};
+use crate::types::{ConnId, NodeId, NodeDetails, NodeLocation, Block, Timestamp, BlockNumber};
 
 const STALE_TIMEOUT: u64 = 2 * 60 * 1000; // 2 minutes
 
@@ -46,7 +46,7 @@ pub struct Chain {
 
 impl Chain {
     pub fn new(cid: ChainId, aggregator: Addr<Aggregator>, label: Label) -> Self {
-        info!("[{}] Created", label);
+        log::info!("[{}] Created", label);
 
         Chain {
             cid,
@@ -192,13 +192,19 @@ impl Actor for Chain {
 
 /// Message sent from the Aggregator to the Chain when new Node is connected
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct AddNode {
+    /// Details of the node being added to the aggregator
     pub node: NodeDetails,
+    /// Connection id used by the node connector for multiplexing parachains
+    pub conn_id: ConnId,
+    /// Recipient for the initialization message
     pub rec: Recipient<Initialize>,
 }
 
 /// Message sent from the NodeConnector to the Chain when it receives new telemetry data
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct UpdateNode {
     pub nid: NodeId,
     pub msg: NodeMessage,
@@ -207,24 +213,30 @@ pub struct UpdateNode {
 
 /// Message sent from the NodeConnector to the Chain when the connector disconnects
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct RemoveNode(pub NodeId);
 
 /// Message sent from the Aggregator to the Chain when the connector wants to subscribe to that chain
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct Subscribe(pub Addr<FeedConnector>);
 
 /// Message sent from the FeedConnector before it subscribes to a new chain, or if it disconnects
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct Unsubscribe(pub FeedId);
 
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct SendFinality(pub FeedId);
 
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct NoMoreFinality(pub FeedId);
 
 /// Message sent from the NodeConnector to the Chain when it receives location data
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct LocateNode {
     pub nid: NodeId,
     pub location: Arc<NodeLocation>,
@@ -240,11 +252,13 @@ impl Handler<AddNode> for Chain {
     type Result = ();
 
     fn handle(&mut self, msg: AddNode, ctx: &mut Self::Context) {
-        self.increment_label_count(&msg.node.chain);
+        let AddNode { node, conn_id, rec } = msg;
+        self.increment_label_count(&node.chain);
 
-        let nid = self.nodes.add(Node::new(msg.node));
+        let nid = self.nodes.add(Node::new(node));
+        let chain = ctx.address();
 
-        if let Err(_) = msg.rec.do_send(Initialize(nid, ctx.address())) {
+        if let Err(_) = rec.do_send(Initialize { nid, conn_id, chain }) {
             self.nodes.remove(nid);
         } else if let Some(node) = self.nodes.get(nid) {
             self.serializer.push(feed::AddedNode(nid, node));
@@ -271,7 +285,7 @@ impl Chain {
         if node.update_block(*block) {
             if block.height > self.best.height {
                 self.best = *block;
-                info!(
+                log::info!(
                     "[{}] [{}/{}] new best block ({}) {:?}",
                     self.label.0,
                     nodes_len,
@@ -305,13 +319,13 @@ impl Handler<UpdateNode> for Chain {
     fn handle(&mut self, msg: UpdateNode, _: &mut Self::Context) {
         let UpdateNode { nid, msg, raw } = msg;
 
-        if let Some(block) = msg.details.best_block() {
+        if let Some(block) = msg.payload().best_block() {
             self.handle_block(block, nid);
         }
 
         if let Some(node) = self.nodes.get_mut(nid) {
-            match msg.details {
-                Details::SystemInterval(ref interval) => {
+            match msg.payload() {
+                Payload::SystemInterval(ref interval) => {
                     if interval.network_state.is_some() {
                         if let Some(raw) = raw {
                             node.set_network_state(raw);
@@ -330,17 +344,17 @@ impl Handler<UpdateNode> for Chain {
                         self.serializer.push(feed::NodeIOUpdate(nid, io));
                     }
                 }
-                Details::SystemNetworkState(_) => {
+                Payload::SystemNetworkState(_) => {
                     if let Some(raw) = raw {
                         node.set_network_state(raw);
                     }
                 }
-                Details::AfgAuthoritySet(authority) => {
-                    node.set_validator_address(authority.authority_id);
+                Payload::AfgAuthoritySet(authority) => {
+                    node.set_validator_address(authority.authority_id.clone());
                     self.broadcast();
                     return;
                 }
-                Details::AfgFinalized(finalized) => {
+                Payload::AfgFinalized(finalized) => {
                     if let Ok(finalized_number) = finalized.finalized_number.parse::<BlockNumber>() {
                         if let Some(addr) = node.details().validator.clone() {
                             self.serializer.push(feed::AfgFinalized(addr, finalized_number,
@@ -350,7 +364,7 @@ impl Handler<UpdateNode> for Chain {
                     }
                     return;
                 }
-                Details::AfgReceivedPrecommit(precommit) => {
+                Payload::AfgReceivedPrecommit(precommit) => {
                     if let Ok(finalized_number) = precommit.received.target_number.parse::<BlockNumber>() {
                         if let Some(addr) = node.details().validator.clone() {
                             let voter = precommit.received.voter.clone();
@@ -361,7 +375,7 @@ impl Handler<UpdateNode> for Chain {
                     }
                     return;
                 }
-                Details::AfgReceivedPrevote(prevote) => {
+                Payload::AfgReceivedPrevote(prevote) => {
                     if let Ok(finalized_number) = prevote.received.target_number.parse::<BlockNumber>() {
                         if let Some(addr) = node.details().validator.clone() {
                             let voter = prevote.received.voter.clone();
@@ -372,12 +386,12 @@ impl Handler<UpdateNode> for Chain {
                     }
                     return;
                 }
-                Details::AfgReceivedCommit(_) => {
+                Payload::AfgReceivedCommit(_) => {
                 }
                 _ => (),
             }
 
-            if let Some(block) = msg.details.finalized_block() {
+            if let Some(block) = msg.payload().finalized_block() {
                 if let Some(finalized) = node.update_finalized(block) {
                     self.serializer.push(feed::FinalizedBlock(nid, finalized.height, finalized.hash));
 
@@ -418,7 +432,7 @@ impl Handler<RemoveNode> for Chain {
         }
 
         if self.nodes.is_empty() {
-            info!("[{}] Lost all nodes, dropping...", self.label.0);
+            log::info!("[{}] Lost all nodes, dropping...", self.label.0);
             ctx.stop();
         }
 

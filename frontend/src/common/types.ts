@@ -43,15 +43,8 @@ export type NodeDetails = [
   Maybe<NetworkId>
 ];
 export type NodeStats = [PeerCount, TransactionCount];
-export type NodeIO = [
-  Array<Bytes>,
-  Array<Bytes>,
-  Array<BytesPerSecond>,
-  Array<BytesPerSecond>
-];
+export type NodeIO = [Array<Bytes>];
 export type NodeHardware = [
-  Array<MemoryUse>,
-  Array<CPUUse>,
   Array<BytesPerSecond>,
   Array<BytesPerSecond>,
   Array<Timestamp>

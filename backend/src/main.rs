@@ -1,13 +1,11 @@
-#[macro_use]
-extern crate log;
-
 use std::net::Ipv4Addr;
 
 use actix::prelude::*;
 use actix_http::ws::Codec;
-use actix_web::{web, App, Error, HttpRequest, HttpResponse, HttpServer};
+use actix_web::{web, get, middleware, App, Error, HttpRequest, HttpResponse, HttpServer};
 use actix_web_actors::ws;
 use clap::Clap;
+use simple_logger::SimpleLogger;
 
 mod aggregator;
 mod chain;
@@ -31,22 +29,23 @@ const ABOUT: &'static str = "This is the Telemetry Backend that injects and prov
 #[clap(name = NAME, version = VERSION, author = AUTHORS, about = ABOUT)]
 struct Opts {
     #[clap(
-        short = "l",
+        short = 'l',
         long = "listen",
         default_value = "127.0.0.1:8000",
-        help = "This is the socket address Telemetry is listening to. This is restricted localhost (127.0.0.1) by default and should be fine for most use cases. If you are using Telemetry in a container, you likely want to set this to '0.0.0.0:8000'"
+        about = "This is the socket address Telemetry is listening to. This is restricted localhost (127.0.0.1) by default and should be fine for most use cases. If you are using Telemetry in a container, you likely want to set this to '0.0.0.0:8000'"
     )]
     socket: std::net::SocketAddr,
 }
 
 /// Entry point for connecting nodes
-fn node_route(
+#[get("/submit/")]
+async fn node_route(
     req: HttpRequest,
     stream: web::Payload,
     aggregator: web::Data<Addr<Aggregator>>,
     locator: web::Data<Addr<Locator>>,
 ) -> Result<HttpResponse, Error> {
-    let ip = req.connection_info().remote().and_then(|mut addr| {
+    let ip = req.connection_info().realip_remote_addr().and_then(|mut addr| {
         if let Some(port_idx) = addr.find(":") {
             addr = &addr[..port_idx];
         }
@@ -65,7 +64,8 @@ fn node_route(
 }
 
 /// Entry point for connecting feeds
-fn feed_route(
+#[get("/feed/")]
+async fn feed_route(
     req: HttpRequest,
     stream: web::Payload,
     aggregator: web::Data<Addr<Aggregator>>,
@@ -77,63 +77,74 @@ fn feed_route(
     )
 }
 
-fn state_route(
+/// Entry point for network state dump
+#[get("/network_state/{chain}/{nid}/")]
+async fn state_route(
     path: web::Path<(Box<str>, NodeId)>,
     aggregator: web::Data<Addr<Aggregator>>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> Result<HttpResponse, Error> {
     let (chain, nid) = path.into_inner();
 
-    aggregator
-        .send(GetNetworkState(chain, nid))
-        .flatten()
-        .from_err()
-        .and_then(|data| match data.and_then(|nested| nested) {
-            Some(body) => HttpResponse::Ok()
-                .content_type("application/json")
-                .body(body),
-            None => HttpResponse::Ok()
-                .body("Node has disconnected or has not submitted its network state yet"),
-        })
+    let res = match aggregator.send(GetNetworkState(chain, nid)).await {
+        Ok(Some(res)) => res.await,
+        Ok(None) => Ok(None),
+        Err(error) => Err(error)
+    };
+
+    match res {
+        Ok(Some(body)) => {
+            HttpResponse::Ok().content_type("application/json").body(body).await
+        },
+        Ok(None) => {
+            HttpResponse::Ok().body("Node has disconnected or has not submitted its network state yet").await
+        },
+        Err(error) => {
+            log::error!("Network state mailbox error: {:?}", error);
+
+            HttpResponse::InternalServerError().await
+        }
+    }
 }
 
-fn health(
-    aggregator: web::Data<Addr<Aggregator>>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
-    aggregator.send(GetHealth).from_err().and_then(|count| {
-        let body = format!("Connected chains: {}", count);
+/// Entry point for health check monitoring bots
+#[get("/health/")]
+async fn health(aggregator: web::Data<Addr<Aggregator>>) -> Result<HttpResponse, Error> {
+    match aggregator.send(GetHealth).await {
+        Ok(count) => {
+            let body = format!("Connected chains: {}", count);
 
-        HttpResponse::Ok().body(body)
-    })
+            HttpResponse::Ok().body(body).await
+        },
+        Err(error) => {
+            log::error!("Health check mailbox error: {:?}", error);
+
+            HttpResponse::InternalServerError().await
+        }
+    }
 }
 
 /// Telemetry entry point. Listening by default on 127.0.0.1:8000.
 /// This can be changed using the `PORT` and `BIND` ENV variables.
-fn main() -> std::io::Result<()> {
-    use web::{get, resource};
-
-    simple_logger::init_with_level(log::Level::Info).expect("Must be able to start a logger");
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    SimpleLogger::new().with_level(log::LevelFilter::Info).init().expect("Must be able to start a logger");
 
     let opts: Opts = Opts::parse();
-    let sys = System::new("substrate-telemetry");
     let aggregator = Aggregator::new().start();
     let factory = LocatorFactory::new();
     let locator = SyncArbiter::start(4, move || factory.create());
 
     HttpServer::new(move || {
         App::new()
+            .wrap(middleware::NormalizePath::default())
             .data(aggregator.clone())
             .data(locator.clone())
-            .service(resource("/submit").route(get().to(node_route)))
-            .service(resource("/submit/").route(get().to(node_route)))
-            .service(resource("/feed").route(get().to(feed_route)))
-            .service(resource("/feed/").route(get().to(feed_route)))
-            .service(resource("/network_state/{chain}/{nid}").route(get().to_async(state_route)))
-            .service(resource("/network_state/{chain}/{nid}/").route(get().to_async(state_route)))
-            .service(resource("/health").route(get().to_async(health)))
-            .service(resource("/health/").route(get().to_async(health)))
+            .service(node_route)
+            .service(feed_route)
+            .service(state_route)
+            .service(health)
     })
     .bind(format!("{}", opts.socket))?
-    .start();
-
-    sys.run()
+    .run()
+    .await
 }

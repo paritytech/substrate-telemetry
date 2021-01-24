@@ -2,6 +2,7 @@
   text-align: left;
   font-family: Roboto, Helvetica, Arial, sans-serif;
   font-size: 16px;
+  min-width: 1318px;
 }
 
 .App-no-telemetry {

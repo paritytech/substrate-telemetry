@@ -1,18 +1,21 @@
 import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from './common';
-import {
-  State,
-  Update,
-  Node,
-  UpdateBound,
-  ChainData,
-  PINNED_CHAINS,
-} from './state';
+import { State, Update, Node, ChainData, PINNED_CHAINS } from './state';
 import { PersistentSet } from './persist';
 import { getHashData, setHashData } from './utils';
 import { AfgHandling } from './AfgHandling';
 import { VIS_AUTHORITIES_LIMIT } from './components/Consensus';
-import { Column } from './components/List';
 import { ACTIONS } from './common/feed';
+import {
+  Column,
+  LocationColumn,
+  PeersColumn,
+  TxsColumn,
+  FinalizedBlockColumn,
+  FinalizedHashColumn,
+  UploadColumn,
+  DownloadColumn,
+  StateCacheColumn,
+} from './components/List';
 
 const TIMEOUT_BASE = (1000 * 5) as Types.Milliseconds; // 5 seconds
 const TIMEOUT_MAX = (1000 * 60 * 5) as Types.Milliseconds; // 5 minutes
@@ -26,9 +29,10 @@ declare global {
 export class Connection {
   public static async create(
     pins: PersistentSet<Types.NodeName>,
-    update: Update
+    appState: Readonly<State>,
+    appUpdate: Update
   ): Promise<Connection> {
-    return new Connection(await Connection.socket(), update, pins);
+    return new Connection(await Connection.socket(), appState, appUpdate, pins);
   }
 
   private static readonly utf8decoder = new TextDecoder('utf-8');
@@ -93,29 +97,32 @@ export class Connection {
     });
   }
 
+  // id sent to the backend used to pair responses
   private pingId = 0;
+  // timeout handler for ping messages
   private pingTimeout: NodeJS.Timer;
+  // timestamp at which the last ping has been sent
   private pingSent: Maybe<Types.Timestamp> = null;
+  // chain label to resubsribe to on reconnect
   private resubscribeTo: Maybe<Types.ChainLabel> = getHashData().chain;
+  // flag whether or not FE should subscribe to consensus updates on reconnect
   private resubscribeSendFinality: boolean = getHashData().tab === 'consensus';
-  private socket: WebSocket;
-  private state: Readonly<State>;
-  private readonly update: Update;
-  private readonly pins: PersistentSet<Types.NodeName>;
+
   constructor(
-    socket: WebSocket,
-    update: Update,
-    pins: PersistentSet<Types.NodeName>
+    private socket: WebSocket,
+    private readonly appState: Readonly<State>,
+    private readonly appUpdate: Update,
+    private readonly pins: PersistentSet<Types.NodeName>
   ) {
-    this.socket = socket;
-    this.update = update;
-    this.pins = pins;
     this.bindSocket();
   }
 
   public subscribe(chain: Types.ChainLabel) {
-    if (this.state.subscribed != null && this.state.subscribed !== chain) {
-      this.state = this.update({
+    if (
+      this.appState.subscribed != null &&
+      this.appState.subscribed !== chain
+    ) {
+      this.appUpdate({
         tab: 'list',
       });
       setHashData({ chain, tab: 'list' });
@@ -127,7 +134,7 @@ export class Connection {
   }
 
   public subscribeConsensus(chain: Types.ChainLabel) {
-    if (this.state.authorities.length <= VIS_AUTHORITIES_LIMIT) {
+    if (this.appState.authorities.length <= VIS_AUTHORITIES_LIMIT) {
       setHashData({ chain });
       this.resubscribeSendFinality = true;
       this.socket.send(`send-finality:${chain}`);
@@ -135,7 +142,7 @@ export class Connection {
   }
 
   public resetConsensus() {
-    this.state = this.update({
+    this.appUpdate({
       consensusInfo: new Array() as Types.ConsensusInfo,
       displayConsensusLoadingScreen: true,
       authorities: [] as Types.Address[],
@@ -149,16 +156,18 @@ export class Connection {
   }
 
   public handleMessages = (messages: FeedMessage.Message[]) => {
-    const { nodes, nodeVersions, chains, sortBy, selectedColumns } = this.state;
+    const {
+      nodes,
+      nodeVersions,
+      chains,
+      sortBy,
+      selectedColumns,
+    } = this.appState;
 
-    const nodesRef = nodes.ref();
-    const versionsRef = nodeVersions.ref();
+    const nodesRef = nodes.ref;
+    const versionsRef = nodeVersions.ref;
 
-    const updateState: UpdateBound = (state) => {
-      this.state = this.update(state);
-    };
-    const getState = () => this.state;
-    const afg = new AfgHandling(updateState, getState);
+    const afg = new AfgHandling(this.appUpdate, this.appState);
 
     let sortByColumn: Maybe<Column> = null;
 
@@ -171,13 +180,7 @@ export class Connection {
       switch (message.action) {
         case ACTIONS.FeedVersion: {
           if (message.payload !== VERSION) {
-            this.state = this.update({ status: 'upgrade-requested' });
-            this.clean();
-
-            // Force reload from the server
-            setTimeout(() => window.location.reload(true), 3000);
-
-            return;
+            return this.newVersion();
           }
 
           break;
@@ -188,7 +191,7 @@ export class Connection {
 
           nodes.mutEach((node) => node.newBestBlock());
 
-          this.state = this.update({ best, blockTimestamp, blockAverage });
+          this.appUpdate({ best, blockTimestamp, blockAverage });
 
           break;
         }
@@ -196,7 +199,7 @@ export class Connection {
         case ACTIONS.BestFinalized: {
           const [finalized /*, hash */] = message.payload;
 
-          this.state = this.update({ finalized });
+          this.appUpdate({ finalized });
 
           break;
         }
@@ -210,7 +213,7 @@ export class Connection {
             nodeHardware,
             blockDetails,
             location,
-            connectedAt,
+            startupTime,
           ] = message.payload;
           const pinned = this.pins.has(nodeDetails[0]);
           const node = new Node(
@@ -222,7 +225,7 @@ export class Connection {
             nodeHardware,
             blockDetails,
             location,
-            connectedAt
+            startupTime
           );
 
           nodes.add(node);
@@ -257,7 +260,7 @@ export class Connection {
           nodes.mutAndMaybeSort(
             id,
             (node) => node.updateLocation([lat, lon, city]),
-            sortByColumn === Column.LOCATION
+            sortByColumn === LocationColumn
           );
 
           break;
@@ -277,8 +280,8 @@ export class Connection {
           nodes.mutAndMaybeSort(
             id,
             (node) => node.updateFinalized(height, hash),
-            sortByColumn === Column.FINALIZED ||
-              sortByColumn === Column.FINALIZED_HASH
+            sortByColumn === FinalizedBlockColumn ||
+              sortByColumn === FinalizedHashColumn
           );
 
           break;
@@ -290,7 +293,7 @@ export class Connection {
           nodes.mutAndMaybeSort(
             id,
             (node) => node.updateStats(nodeStats),
-            sortByColumn === Column.PEERS || sortByColumn === Column.TXS
+            sortByColumn === PeersColumn || sortByColumn === TxsColumn
           );
 
           break;
@@ -302,10 +305,7 @@ export class Connection {
           nodes.mutAndMaybeSort(
             id,
             (node) => node.updateHardware(nodeHardware),
-            sortByColumn === Column.CPU ||
-              sortByColumn === Column.MEM ||
-              sortByColumn === Column.UPLOAD ||
-              sortByColumn === Column.DOWNLOAD
+            sortByColumn === UploadColumn || sortByColumn === DownloadColumn
           );
 
           break;
@@ -317,17 +317,14 @@ export class Connection {
           nodes.mutAndMaybeSort(
             id,
             (node) => node.updateIO(nodeIO),
-            sortByColumn === Column.STATE_CACHE ||
-              sortByColumn === Column.DB_CACHE ||
-              sortByColumn === Column.DISK_READ ||
-              sortByColumn === Column.DISK_WRITE
+            sortByColumn === StateCacheColumn
           );
 
           break;
         }
 
         case ACTIONS.TimeSync: {
-          this.state = this.update({
+          this.appUpdate({
             timeDiff: (timestamp() - message.payload) as Types.Milliseconds,
           });
 
@@ -344,7 +341,7 @@ export class Connection {
             chains.set(label, { label, nodeCount });
           }
 
-          this.state = this.update({ chains });
+          this.appUpdate({ chains });
 
           break;
         }
@@ -352,10 +349,10 @@ export class Connection {
         case ACTIONS.RemovedChain: {
           chains.delete(message.payload);
 
-          if (this.state.subscribed === message.payload) {
+          if (this.appState.subscribed === message.payload) {
             nodes.clear();
             nodeVersions.clear();
-            this.state = this.update({ subscribed: null, nodes, chains });
+            this.appUpdate({ subscribed: null, nodes, chains });
             this.resetConsensus();
           }
 
@@ -366,17 +363,17 @@ export class Connection {
           nodes.clear();
           nodeVersions.clear();
 
-          this.state = this.update({ subscribed: message.payload, nodes });
+          this.appUpdate({ subscribed: message.payload, nodes });
 
           break;
         }
 
         case ACTIONS.UnsubscribedFrom: {
-          if (this.state.subscribed === message.payload) {
+          if (this.appState.subscribed === message.payload) {
             nodes.clear();
             nodeVersions.clear();
 
-            this.state = this.update({ subscribed: null, nodes });
+            this.appUpdate({ subscribed: null, nodes });
           }
 
           break;
@@ -429,7 +426,7 @@ export class Connection {
       nodes.hasChangedSince(nodesRef) ||
       nodeVersions.hasChangedSince(versionsRef)
     ) {
-      this.state = this.update({ nodes });
+      this.appUpdate({ nodes });
     }
 
     this.autoSubscribe();
@@ -438,19 +435,19 @@ export class Connection {
   private bindSocket() {
     this.ping();
 
-    if (this.state) {
-      const { nodes } = this.state;
+    if (this.appState) {
+      const { nodes } = this.appState;
       nodes.clear();
     }
 
-    this.state = this.update({
+    this.appUpdate({
       status: 'online',
     });
 
-    if (this.state.subscribed) {
-      this.resubscribeTo = this.state.subscribed;
-      this.resubscribeSendFinality = this.state.sendFinality;
-      this.state = this.update({ subscribed: null, sendFinality: false });
+    if (this.appState.subscribed) {
+      this.resubscribeTo = this.appState.subscribed;
+      this.resubscribeSendFinality = this.appState.sendFinality;
+      this.appUpdate({ subscribed: null, sendFinality: false });
     }
 
     this.socket.addEventListener('message', this.handleFeedData);
@@ -487,8 +484,14 @@ export class Connection {
 
     const latency = timestamp() - this.pingSent;
     this.pingSent = null;
+  }
 
-    console.log('latency', latency);
+  private newVersion() {
+    this.appUpdate({ status: 'upgrade-requested' });
+    this.clean();
+
+    // Force reload from the server
+    setTimeout(() => window.location.reload(true), 3000);
   }
 
   private clean() {
@@ -501,18 +504,28 @@ export class Connection {
   }
 
   private handleFeedData = (event: MessageEvent) => {
-    const data =
-      typeof event.data === 'string'
-        ? ((event.data as any) as FeedMessage.Data)
-        : ((Connection.utf8decoder.decode(
-            event.data
-          ) as any) as FeedMessage.Data);
+    let data: FeedMessage.Data;
+
+    if (typeof event.data === 'string') {
+      data = (event.data as any) as FeedMessage.Data;
+    } else {
+      const u8aData = new Uint8Array(event.data);
+
+      // Future-proofing for when we switch to binary feed
+      if (u8aData[0] === 0x00) {
+        return this.newVersion();
+      }
+
+      const str = Connection.utf8decoder.decode(event.data);
+
+      data = (str as any) as FeedMessage.Data;
+    }
 
     this.handleMessages(FeedMessage.deserialize(data));
   };
 
   private autoSubscribe() {
-    const { subscribed, chains } = this.state;
+    const { subscribed, chains } = this.appState;
     const { resubscribeTo, resubscribeSendFinality } = this;
 
     if (subscribed) {
@@ -548,7 +561,7 @@ export class Connection {
   }
 
   private handleDisconnect = async () => {
-    this.state = this.update({ status: 'offline' });
+    this.appUpdate({ status: 'offline' });
     this.resetConsensus();
     this.clean();
     this.socket.close();

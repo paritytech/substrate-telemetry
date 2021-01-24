@@ -195,9 +195,9 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
       ];
 
       finalizedInfo = matrice.ImplicitFinalized ? (
-        <Icon className="implicit" src={finalizedIcon} alt="" />
+        <Icon className="implicit" src={finalizedIcon} />
       ) : (
-        <Icon className="explicit" src={finalizedIcon} alt="" />
+        <Icon className="explicit" src={finalizedIcon} />
       );
 
       finalizedHash = matrice.FinalizedHash ? (
@@ -301,25 +301,17 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
       let statPrecommit;
 
       if (implicitPrevote) {
-        statPrevote = (
-          <Icon src={checkIcon} className="implicit" alt="Implicit Prevote" />
-        );
+        statPrevote = <Icon src={checkIcon} className="implicit" />;
       }
       if (implicitPrecommit) {
-        statPrecommit = (
-          <Icon src={checkIcon} className="implicit" alt="Implicit Precommit" />
-        );
+        statPrecommit = <Icon src={checkIcon} className="implicit" />;
       }
 
       if (prevote) {
-        statPrevote = (
-          <Icon src={checkIcon} className="explicit" alt="Prevote" />
-        );
+        statPrevote = <Icon src={checkIcon} className="explicit" />;
       }
       if (precommit) {
-        statPrecommit = (
-          <Icon src={checkIcon} className="explicit" alt="Precommit" />
-        );
+        statPrecommit = <Icon src={checkIcon} className="explicit" />;
       }
 
       return (
@@ -329,7 +321,7 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
         </span>
       );
     } else {
-      return <Icon src={hatchingIcon} className="hatching" alt="" />;
+      return <Icon src={hatchingIcon} className="hatching" />;
     }
   }
 }

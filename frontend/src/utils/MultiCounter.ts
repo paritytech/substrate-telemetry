@@ -41,7 +41,7 @@ export class MultiCounter<K> {
     this.changeRef += 1;
   }
 
-  public ref(): MultiCounter.StateRef {
+  public get ref(): MultiCounter.StateRef {
     return this.changeRef as MultiCounter.StateRef;
   }
 

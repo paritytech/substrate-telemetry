@@ -70,7 +70,7 @@ impl FeedConnector {
                 // stop actor
                 ctx.stop();
             } else {
-                ctx.ping("")
+                ctx.ping(b"")
             }
         });
     }
@@ -94,8 +94,7 @@ impl FeedConnector {
                         // Chain not found, reset hash
                         _ => actor.chain_hash = 0,
                     }
-
-                    fut::ok(())
+                    async {}.into_actor(actor)
                 })
                 .wait(ctx);
             }
@@ -124,13 +123,16 @@ impl FeedConnector {
 
 /// Message sent form Chain to the FeedConnector upon successful subscription
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct Subscribed(pub FeedId, pub Recipient<Unsubscribe>);
 
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct Unsubscribed;
 
 /// Message sent from Aggregator to FeedConnector upon successful connection
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct Connected(pub FeedId);
 
 /// Message sent from either Aggregator or Chain to FeedConnector containing
@@ -138,28 +140,33 @@ pub struct Connected(pub FeedId);
 ///
 /// Since Bytes is ARC'ed, this is cheap to clone
 #[derive(Message, Clone)]
+#[rtype(result = "()")]
 pub struct Serialized(pub Bytes);
 
-impl StreamHandler<ws::Message, ws::ProtocolError> for FeedConnector {
-    fn handle(&mut self, msg: ws::Message, ctx: &mut Self::Context) {
+impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for FeedConnector {
+    fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
         match msg {
-            ws::Message::Ping(msg) => {
+            Ok(ws::Message::Ping(msg)) => {
                 self.hb = Instant::now();
                 ctx.pong(&msg);
             }
-            ws::Message::Pong(_) => self.hb = Instant::now(),
-            ws::Message::Text(text) => {
+            Ok(ws::Message::Pong(_)) => self.hb = Instant::now(),
+            Ok(ws::Message::Text(text)) => {
                 if let Some(idx) = text.find(':') {
                     let cmd = &text[..idx];
                     let payload = &text[idx+1..];
 
-                    info!("New FEED message: {}", cmd);
+                    log::info!("New FEED message: {}", cmd);
 
                     self.handle_cmd(cmd, payload, ctx);
                 }
             }
-            ws::Message::Close(_) => ctx.stop(),
-            _ => (),
+            Ok(ws::Message::Close(_)) => ctx.stop(),
+            Ok(_) => (),
+            Err(error) => {
+                log::error!("{:?}", error);
+                ctx.stop();
+            }
         }
     }
 }

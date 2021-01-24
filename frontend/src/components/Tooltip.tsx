@@ -1,12 +1,12 @@
 import * as React from 'react';
+import { Maybe } from '../common';
 
 import './Tooltip.css';
 
 export namespace Tooltip {
   export interface Props {
     text: string;
-    copy?: boolean;
-    inline?: boolean;
+    copy?: (cb: CopyCallback) => void;
     className?: string;
     position?: 'left' | 'right' | 'center';
     onInit?: (update: UpdateCallback) => void;
@@ -17,6 +17,7 @@ export namespace Tooltip {
   }
 
   export type UpdateCallback = (text: string) => void;
+  export type CopyCallback = Maybe<() => void>;
 }
 
 function copyToClipboard(text: string) {
@@ -32,32 +33,41 @@ export class Tooltip extends React.Component<Tooltip.Props, Tooltip.State> {
   public state = { copied: false };
 
   private el: HTMLDivElement;
-  private timer: NodeJS.Timer;
+  private timer: NodeJS.Timer | null = null;
 
   public componentDidMount() {
     if (this.props.onInit) {
       this.props.onInit(this.update);
     }
+    if (this.props.copy) {
+      this.props.copy(this.onClick);
+    }
   }
 
   public componentWillUnmount() {
-    clearTimeout(this.timer);
+    if (this.timer) {
+      clearTimeout(this.timer);
+    }
+    if (this.props.copy) {
+      this.props.copy(null);
+    }
+  }
+
+  public shouldComponentUpdate(
+    nextProps: Tooltip.Props,
+    nextState: Tooltip.State
+  ) {
+    return (
+      this.props.text !== nextProps.text ||
+      this.state.copied !== nextState.copied
+    );
   }
 
   public render() {
-    const { text, inline, className, position } = this.props;
+    const { text, className, position } = this.props;
     const { copied } = this.state;
 
-    let containerClass = 'Tooltip-container';
     let tooltipClass = 'Tooltip';
-
-    if (className) {
-      containerClass += ' ' + className;
-    }
-
-    if (inline) {
-      containerClass += ' Tooltip-container-inline';
-    }
 
     if (position && position !== 'center') {
       tooltipClass += ` Tooltip-${position}`;
@@ -68,11 +78,8 @@ export class Tooltip extends React.Component<Tooltip.Props, Tooltip.State> {
     }
 
     return (
-      <div className={containerClass} onClick={this.onClick}>
-        <div className={tooltipClass} ref={this.onRef}>
-          {copied ? 'Copied to clipboard!' : text}
-        </div>
-        {this.props.children}
+      <div className={tooltipClass} ref={this.onRef}>
+        {copied ? 'Copied to clipboard!' : text}
       </div>
     );
   }
@@ -85,16 +92,12 @@ export class Tooltip extends React.Component<Tooltip.Props, Tooltip.State> {
     this.el.textContent = text;
   };
 
-  private onClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (this.props.copy !== true) {
-      return;
-    }
-
+  private onClick = () => {
     copyToClipboard(this.props.text);
 
-    event.stopPropagation();
-
-    clearTimeout(this.timer);
+    if (this.timer) {
+      clearTimeout(this.timer);
+    }
 
     this.setState({ copied: true });
     this.timer = setTimeout(this.restore, 2000);
@@ -102,5 +105,6 @@ export class Tooltip extends React.Component<Tooltip.Props, Tooltip.State> {
 
   private restore = () => {
     this.setState({ copied: false });
+    this.timer = null;
   };
 }

@@ -4,12 +4,13 @@ use serde::Deserialize;
 use crate::util::{MeanList, now};
 
 pub type NodeId = usize;
+pub type ConnId = u64;
 pub type BlockNumber = u64;
 pub type Timestamp = u64;
 pub type Address = Box<str>;
 pub use primitive_types::H256 as BlockHash;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct NodeDetails {
     pub chain: Box<str>,
     pub name: Box<str>,
@@ -17,6 +18,7 @@ pub struct NodeDetails {
     pub version: Box<str>,
     pub validator: Option<Box<str>>,
     pub network_id: Option<Box<str>>,
+    pub startup_time: Option<Box<str>>,
 }
 
 #[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -28,9 +30,6 @@ pub struct NodeStats {
 #[derive(Default)]
 pub struct NodeIO {
     pub used_state_cache_size: MeanList<f32>,
-    pub used_db_cache_size: MeanList<f32>,
-    pub disk_read_per_sec: MeanList<f32>,
-    pub disk_write_per_sec: MeanList<f32>,
 }
 
 #[derive(Deserialize, Debug, Clone, Copy)]
@@ -61,10 +60,6 @@ impl Default for BlockDetails {
 
 #[derive(Default)]
 pub struct NodeHardware {
-    /// CPU use means
-    pub cpu: MeanList<f32>,
-    /// Memory use means
-    pub memory: MeanList<f32>,
     /// Upload uses means
     pub upload: MeanList<f64>,
     /// Download uses means
@@ -112,11 +107,8 @@ impl Serialize for NodeIO {
     where
         S: Serializer,
     {
-        let mut tup = serializer.serialize_tuple(4)?;
+        let mut tup = serializer.serialize_tuple(1)?;
         tup.serialize_element(self.used_state_cache_size.slice())?;
-        tup.serialize_element(self.used_db_cache_size.slice())?;
-        tup.serialize_element(self.disk_read_per_sec.slice())?;
-        tup.serialize_element(self.disk_write_per_sec.slice())?;
         tup.end()
     }
 }
@@ -154,9 +146,7 @@ impl Serialize for NodeHardware {
     where
         S: Serializer,
     {
-        let mut tup = serializer.serialize_tuple(5)?;
-        tup.serialize_element(self.memory.slice())?;
-        tup.serialize_element(self.cpu.slice())?;
+        let mut tup = serializer.serialize_tuple(3)?;
         tup.serialize_element(self.upload.slice())?;
         tup.serialize_element(self.download.slice())?;
         tup.serialize_element(self.chart_stamps.slice())?;

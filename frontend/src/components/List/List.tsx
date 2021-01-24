@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { Types, Maybe } from '../../common';
 import { Filter } from '../';
-import { State as AppState, Node } from '../../state';
-import { Row } from './';
+import { State as AppState, Update as AppUpdate, Node } from '../../state';
+import { Row, THead } from './';
 import { Persistent, PersistentSet } from '../../persist';
 import { viewport } from '../../utils';
 
@@ -16,6 +16,7 @@ import './List.css';
 export namespace List {
   export interface Props {
     appState: Readonly<AppState>;
+    appUpdate: AppUpdate;
     pins: PersistentSet<Types.NodeName>;
     sortBy: Persistent<Maybe<number>>;
   }
@@ -23,21 +24,24 @@ export namespace List {
   export interface State {
     filter: Maybe<(node: Node) => boolean>;
     viewportHeight: number;
-    listStart: number;
-    listEnd: number;
   }
 }
+
+// Helper for readability, used as `key` prop for each `Row`
+// of the `List`, so that we can maximize re-using DOM elements.
+type Key = number;
 
 export class List extends React.Component<List.Props, {}> {
   public state = {
     filter: null,
     viewportHeight: viewport().height,
-    listStart: 0,
-    listEnd: 0,
   };
 
+  private listStart = 0;
+  private listEnd = 0;
   private relativeTop = -1;
-  private scrolling = false;
+  private nextKey: Key = 0;
+  private previousKeys = new Map<Types.NodeId, Key>();
 
   public componentDidMount() {
     this.onScroll();
@@ -52,11 +56,11 @@ export class List extends React.Component<List.Props, {}> {
   }
 
   public render() {
-    const { selectedColumns } = this.props.appState;
-    const { pins, sortBy } = this.props;
+    const { pins, sortBy, appState } = this.props;
+    const { selectedColumns } = appState;
     const { filter } = this.state;
 
-    let nodes = this.props.appState.nodes.sorted();
+    let nodes = appState.nodes.sorted();
 
     if (filter != null) {
       nodes = nodes.filter(filter);
@@ -73,24 +77,30 @@ export class List extends React.Component<List.Props, {}> {
           </React.Fragment>
         );
       }
+      // With filter present, we can no longer guarantee that focus corresponds
+      // to rendering view, so we put the whole list in focus
+      appState.nodes.setFocus(0, nodes.length);
+    } else {
+      appState.nodes.setFocus(this.listStart, this.listEnd);
     }
 
-    const { listStart, listEnd } = this.state;
-
     const height = TH_HEIGHT + nodes.length * TR_HEIGHT;
-    const transform = `translateY(${listStart * TR_HEIGHT}px)`;
+    const top = this.listStart * TR_HEIGHT;
 
-    nodes = nodes.slice(listStart, listEnd);
+    nodes = nodes.slice(this.listStart, this.listEnd);
+
+    const keys = this.recalculateKeys(nodes);
 
     return (
-      <React.Fragment>
+      <>
         <div className="List" style={{ height }}>
-          <table>
-            <Row.HEADER columns={selectedColumns} sortBy={sortBy} />
-            <tbody style={{ transform }}>
-              {nodes.map((node) => (
+          <table className="List--table">
+            <THead columns={selectedColumns} sortBy={sortBy} />
+            <tbody>
+              <tr className="List-padding" style={{ height: `${top}px` }} />
+              {nodes.map((node, i) => (
                 <Row
-                  key={node.id}
+                  key={keys[i]}
                   node={node}
                   pins={pins}
                   columns={selectedColumns}
@@ -100,15 +110,64 @@ export class List extends React.Component<List.Props, {}> {
           </table>
         </div>
         <Filter onChange={this.onFilterChange} />
-      </React.Fragment>
+      </>
     );
   }
 
-  private onScroll = () => {
-    if (this.scrolling) {
-      return;
-    }
+  // Get an array of keys for each `Node` in viewport in order.
+  //
+  // * If a `Node` was previously rendered, it will keep its `Key`.
+  //
+  // * If a `Node` is new to the viewport, it will get a `Key` of
+  //   another `Node` that was removed from the viewport, or a new one.
+  private recalculateKeys(nodes: Array<Node>): Array<Key> {
+    // First we find all keys for `Node`s which didn't change from
+    // last render.
+    const keptKeys: Array<Maybe<Key>> = nodes.map(({ id }) => {
+      const key = this.previousKeys.get(id);
 
+      if (key != null) {
+        this.previousKeys.delete(id);
+      }
+
+      return key;
+    });
+
+    // Array of all unused keys
+    const unusedKeys = Array.from(this.previousKeys.values());
+    let search = 0;
+
+    // Clear the map so we can set new values
+    this.previousKeys.clear();
+
+    // Filling in blanks and re-populate previousKeys
+    return keptKeys.map((key: Maybe<Key>, i) => {
+      const id = nodes[i].id;
+
+      // `Node` was previously in viewport
+      if (key != null) {
+        this.previousKeys.set(id, key);
+
+        return key;
+      }
+
+      // Recycle the next unused key
+      if (search < unusedKeys.length) {
+        const unused = unusedKeys[search++];
+        this.previousKeys.set(id, unused);
+
+        return unused;
+      }
+
+      // No unused keys left, generate a new key
+      const newKey = this.nextKey++;
+      this.previousKeys.set(id, newKey);
+
+      return newKey;
+    });
+  }
+
+  private onScroll = () => {
     const relativeTop = divisibleBy(
       window.scrollY - (HEADER + TR_HEIGHT),
       TR_HEIGHT * ROW_MARGIN
@@ -119,13 +178,7 @@ export class List extends React.Component<List.Props, {}> {
     }
 
     this.relativeTop = relativeTop;
-    this.scrolling = true;
 
-    window.requestAnimationFrame(this.onScrollRAF);
-  };
-
-  private onScrollRAF = () => {
-    const { relativeTop } = this;
     const { viewportHeight } = this.state;
     const top = Math.max(relativeTop, 0);
     const height =
@@ -133,11 +186,11 @@ export class List extends React.Component<List.Props, {}> {
     const listStart = Math.max(((top / TR_HEIGHT) | 0) - ROW_MARGIN, 0);
     const listEnd = listStart + ROW_MARGIN * 2 + Math.ceil(height / TR_HEIGHT);
 
-    if (listStart !== this.state.listStart || listEnd !== this.state.listEnd) {
-      this.setState({ listStart, listEnd });
+    if (listStart !== this.listStart || listEnd !== this.listEnd) {
+      this.listStart = listStart;
+      this.listEnd = listEnd;
+      this.props.appUpdate({});
     }
-
-    this.scrolling = false;
   };
 
   private onResize = () => {

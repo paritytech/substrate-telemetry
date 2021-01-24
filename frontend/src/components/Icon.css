@@ -8,7 +8,8 @@
   display: inline-block;
 }
 
-.Icon svg {
-  width: auto;
+.Icon svg,
+.Icon-symbol-root symbol {
+  width: 1em;
   height: 1em;
 }

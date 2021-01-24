@@ -6,7 +6,7 @@ use crate::feed::connector::{FeedConnector, Connected, FeedId};
 use crate::util::DenseMap;
 use crate::feed::{self, FeedMessageSerializer};
 use crate::chain::{self, Chain, ChainId, Label, GetNodeNetworkState};
-use crate::types::{NodeDetails, NodeId};
+use crate::types::{ConnId, NodeDetails, NodeId};
 
 pub struct Aggregator {
     labels: HashMap<Label, ChainId>,
@@ -104,31 +104,36 @@ impl Actor for Aggregator {
 
 /// Message sent from the NodeConnector to the Aggregator upon getting all node details
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct AddNode {
+    /// Details of the node being added to the aggregator
     pub node: NodeDetails,
-    pub network_id: Option<Label>,
+    /// Connection id used by the node connector for multiplexing parachains
+    pub conn_id: ConnId,
+    /// Recipient for the initialization message
     pub rec: Recipient<Initialize>,
 }
 
 /// Message sent from the Chain to the Aggregator when the Chain loses all nodes
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct DropChain(pub ChainId);
 
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct RenameChain(pub ChainId, pub Label);
 
 /// Message sent from the FeedConnector to the Aggregator when subscribing to a new chain
+#[derive(Message)]
+#[rtype(result = "bool")]
 pub struct Subscribe {
     pub chain: Label,
     pub feed: Addr<FeedConnector>,
 }
 
-impl Message for Subscribe {
-    type Result = bool;
-}
-
 /// Message sent from the FeedConnector to the Aggregator consensus requested
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct SendFinality {
     pub chain: Label,
     pub fid: FeedId,
@@ -136,6 +141,7 @@ pub struct SendFinality {
 
 /// Message sent from the FeedConnector to the Aggregator no more consensus required
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct NoMoreFinality {
     pub chain: Label,
     pub fid: FeedId,
@@ -143,49 +149,41 @@ pub struct NoMoreFinality {
 
 /// Message sent from the FeedConnector to the Aggregator when first connected
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct Connect(pub Addr<FeedConnector>);
 
 /// Message sent from the FeedConnector to the Aggregator when disconnecting
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct Disconnect(pub FeedId);
 
 /// Message sent from the Chain to the Aggergator when the node count on the chain changes
 #[derive(Message)]
+#[rtype(result = "()")]
 pub struct NodeCount(pub ChainId, pub usize);
 
 /// Message sent to the Aggregator to get the network state of a particular node
+#[derive(Message)]
+#[rtype(result = "Option<Request<Chain, GetNodeNetworkState>>")]
 pub struct GetNetworkState(pub Box<str>, pub NodeId);
 
 /// Message sent to the Aggregator to get a health check
+#[derive(Message)]
+#[rtype(result = "usize")]
 pub struct GetHealth;
-
-impl Message for GetNetworkState {
-    type Result = Option<Request<Chain, GetNodeNetworkState>>;
-}
-
-impl Message for GetHealth {
-    type Result = usize;
-}
 
 impl Handler<AddNode> for Aggregator {
     type Result = ();
 
     fn handle(&mut self, msg: AddNode, ctx: &mut Self::Context) {
-        let AddNode { node, network_id, rec } = msg;
+        let AddNode { node, conn_id, rec } = msg;
 
-        let cid = self.lazy_chain(&node.chain, &network_id, ctx);
+        let cid = self.lazy_chain(&node.chain, &None, ctx);
         let chain = self.chains.get_mut(cid).expect("Entry just created above; qed");
-
-        if let Some(network_id) = network_id {
-            // Attach network id to the chain if it was not done yet
-            if chain.network_id.is_none() {
-                chain.network_id = Some(network_id.clone());
-                self.networks.insert(network_id, cid);
-            }
-        }
 
         chain.addr.do_send(chain::AddNode {
             node,
+            conn_id,
             rec,
         });
     }
@@ -205,7 +203,7 @@ impl Handler<DropChain> for Aggregator {
             }
 
             self.serializer.push(feed::RemovedChain(label));
-            info!("Dropped chain [{}] from the aggregator", label);
+            log::info!("Dropped chain [{}] from the aggregator", label);
             self.broadcast();
         }
 
@@ -284,11 +282,11 @@ impl Handler<Connect> for Aggregator {
 
         let fid = self.feeds.add(connector.clone());
 
-        info!("Feed #{} connected", fid);
+        log::info!("Feed #{} connected", fid);
 
         connector.do_send(Connected(fid));
 
-        self.serializer.push(feed::Version(29));
+        self.serializer.push(feed::Version(31));
 
         // TODO: keep track on number of nodes connected to each chain
         for (_, entry) in self.chains.iter() {
@@ -307,7 +305,7 @@ impl Handler<Disconnect> for Aggregator {
     fn handle(&mut self, msg: Disconnect, _: &mut Self::Context) {
         let Disconnect(fid) = msg;
 
-        info!("Feed #{} disconnected", fid);
+        log::info!("Feed #{} disconnected", fid);
 
         self.feeds.remove(fid);
     }

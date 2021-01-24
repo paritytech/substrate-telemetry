@@ -97,3 +97,19 @@ export function setHashData(val: HashData) {
 
   window.location.hash = `#${tab}/${encodeURIComponent(chain)}`;
 }
+
+let root: null | SVGSVGElement = null;
+export const W3SVG = 'http://www.w3.org/2000/svg';
+
+// Get a root node where we all SVG symbols can be stored
+// see: Icon.tsx
+export function getSVGShadowRoot(): SVGSVGElement {
+  if (!root) {
+    root = document.createElementNS(W3SVG, 'svg');
+    root.setAttribute('style', 'display: none;');
+
+    document.body.appendChild(root);
+  }
+
+  return root;
+}

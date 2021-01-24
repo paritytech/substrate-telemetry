@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { Types, Maybe, SortedCollection } from './common';
 import { Column } from './components/List';
 import { MultiCounter } from './utils';
@@ -7,7 +8,7 @@ type SemverPattern = [Types.NodeSemver];
 
 export const PINNED_CHAINS = {
   Kusama: 2,
-  'Polkadot CC1': 1,
+  Polkadot: 1,
 };
 
 export function comparePinnedChains(a: string, b: string) {
@@ -47,7 +48,7 @@ export class Node {
   public readonly semver: Types.NodeSemver;
   public readonly validator: Maybe<Types.Address>;
   public readonly networkId: Maybe<Types.NetworkId>;
-  public readonly connectedAt: Types.Timestamp;
+  public readonly startupTime: Maybe<Types.Timestamp>;
 
   public readonly sortableName: string;
   public readonly sortableVersion: number;
@@ -56,14 +57,9 @@ export class Node {
   public pinned: boolean;
   public peers: Types.PeerCount;
   public txs: Types.TransactionCount;
-  public mem: Types.MemoryUse[];
-  public cpu: Types.CPUUse[];
   public upload: Types.BytesPerSecond[];
   public download: Types.BytesPerSecond[];
   public stateCacheSize: Types.Bytes[];
-  public dbCacheSize: Types.Bytes[];
-  public diskRead: Types.BytesPerSecond[];
-  public diskWrite: Types.BytesPerSecond[];
   public chartstamps: Types.Timestamp[];
 
   public height: Types.BlockNumber;
@@ -79,7 +75,7 @@ export class Node {
   public lon: Maybe<Types.Longitude>;
   public city: Maybe<Types.City>;
 
-  private readonly subscriptions = new Set<(node: Node) => void>();
+  private _changeRef = 0;
   private readonly subscriptionsConsensus = new Set<(node: Node) => void>();
 
   constructor(
@@ -91,7 +87,7 @@ export class Node {
     nodeHardware: Types.NodeHardware,
     blockDetails: Types.BlockDetails,
     location: Maybe<Types.NodeLocation>,
-    connectedAt: Types.Timestamp
+    startupTime: Maybe<Types.Timestamp>
   ) {
     const NO_SEMVER = ['?.?.?'];
     const [name, implementation, version, validator, networkId] = nodeDetails;
@@ -107,7 +103,7 @@ export class Node {
     this.semver = semver;
     this.validator = validator;
     this.networkId = networkId;
-    this.connectedAt = connectedAt;
+    this.startupTime = startupTime;
 
     const [major = 0, minor = 0, patch = 0] = (version || '0.0.0')
       .split('.')
@@ -136,21 +132,16 @@ export class Node {
   }
 
   public updateIO(io: Types.NodeIO) {
-    const [stateCacheSize, dbCacheSize, diskRead, diskWrite] = io;
+    const [stateCacheSize] = io;
 
     this.stateCacheSize = stateCacheSize;
-    this.dbCacheSize = dbCacheSize;
-    this.diskRead = diskRead;
-    this.diskWrite = diskWrite;
 
     this.trigger();
   }
 
   public updateHardware(hardware: Types.NodeHardware) {
-    const [mem, cpu, upload, download, chartstamps] = hardware;
+    const [upload, download, chartstamps] = hardware;
 
-    this.mem = mem;
-    this.cpu = cpu;
     this.upload = upload;
     this.download = download;
     this.chartstamps = chartstamps;
@@ -207,27 +198,34 @@ export class Node {
     }
   }
 
-  public subscribe(handler: (node: Node) => void) {
-    this.subscriptions.add(handler);
-  }
-
-  public unsubscribe(handler: (node: Node) => void) {
-    this.subscriptions.delete(handler);
-  }
-
-  public subscribeConsensus(handler: (node: Node) => void) {
-    this.subscriptionsConsensus.add(handler);
-  }
-
-  public unsubscribeConsensus(handler: (node: Node) => void) {
-    this.subscriptionsConsensus.delete(handler);
+  public get changeRef(): number {
+    return this._changeRef;
   }
 
   private trigger() {
-    for (const handler of this.subscriptions.values()) {
-      handler(this);
-    }
+    this._changeRef += 1;
   }
+}
+
+export function bindState(bind: React.Component, state: State): Update {
+  let isUpdating = false;
+
+  return (changes) => {
+    // Apply new changes to the state immediately
+    Object.assign(state, changes);
+
+    // Trigger React update on next animation frame only once
+    if (!isUpdating) {
+      isUpdating = true;
+
+      window.requestAnimationFrame(() => {
+        bind.forceUpdate();
+        isUpdating = false;
+      });
+    }
+
+    return state;
+  };
 }
 
 export namespace State {
@@ -238,14 +236,9 @@ export namespace State {
     networkId: boolean;
     peers: boolean;
     txs: boolean;
-    cpu: boolean;
-    mem: boolean;
     upload: boolean;
     download: boolean;
     stateCacheSize: boolean;
-    dbCacheSize: boolean;
-    diskRead: boolean;
-    diskWrite: boolean;
     blocknumber: boolean;
     blockhash: boolean;
     finalized: boolean;
@@ -287,11 +280,8 @@ export interface State {
 }
 
 export type Update = <K extends keyof State>(
-  changes: Pick<State, K> | null
+  changes: Pick<State, K>
 ) => Readonly<State>;
-export type UpdateBound = <K extends keyof State>(
-  changes: Pick<State, K> | null
-) => void;
 
 export interface ChainData {
   label: Types.ChainLabel;
