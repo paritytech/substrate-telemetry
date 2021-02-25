@@ -110,9 +110,9 @@ dependencies = [
 
 [[package]]
 name = "actix-rt"
-version = "2.1.0"
+version = "2.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b4e57bc1a3915e71526d128baf4323700bd1580bc676239e2298a4c5b001f18"
+checksum = "c88cf46527e27f66efcd5831f60b3d9c2dac795b6d255ed17791752d6c36a8ea"
 dependencies = [
  "actix-macros",
  "futures-core",
@@ -149,9 +149,9 @@ dependencies = [
 
 [[package]]
 name = "actix-tls"
-version = "3.0.0-beta.4"
+version = "3.0.0-beta.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2b1455e3f7a26d40cfc1080b571f41e8165e5a88e937ed579f7a4b3d55b0370"
+checksum = "322b22e9238d065f331af0585089de8c36978fcc56f888054add4e4365b9916b"
 dependencies = [
  "actix-codec",
  "actix-rt",
@@ -1719,29 +1719,6 @@ dependencies = [
 [[package]]
 name = "telemetry"
 version = "0.2.1"
-dependencies = [
- "actix",
- "actix-http",
- "actix-web",
- "actix-web-actors",
- "bytes",
- "clap",
- "fnv",
- "log",
- "num-traits",
- "parking_lot",
- "primitive-types",
- "reqwest",
- "rustc-hash",
- "serde",
- "serde_json",
- "simple_logger",
- "tokio",
-]
-
-[[package]]
-name = "telemetry-funnel"
-version = "0.1.0"
 dependencies = [
  "actix",
  "actix-http",
