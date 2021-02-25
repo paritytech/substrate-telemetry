@@ -18,7 +18,7 @@ use aggregator::{Aggregator, GetHealth, GetNetworkState};
 use feed::connector::FeedConnector;
 use node::connector::NodeConnector;
 use types::NodeId;
-use util::Locator;
+use util::{Locator, LocatorFactory};
 
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 const AUTHORS: &'static str = env!("CARGO_PKG_AUTHORS");
@@ -131,7 +131,8 @@ async fn main() -> std::io::Result<()> {
 
     let opts: Opts = Opts::parse();
     let aggregator = Aggregator::new().start();
-    let locator = Locator::new().start();
+    let factory = LocatorFactory::new();
+    let locator = SyncArbiter::start(4, move || factory.create());
 
     HttpServer::new(move || {
         App::new()

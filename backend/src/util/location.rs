@@ -15,8 +15,35 @@ pub struct Locator {
     cache: Arc<RwLock<FxHashMap<Ipv4Addr, Option<NodeLocation>>>>,
 }
 
+pub struct LocatorFactory {
+    cache: Arc<RwLock<FxHashMap<Ipv4Addr, Option<NodeLocation>>>>,
+}
+
+impl LocatorFactory {
+    pub fn new() -> Self {
+        let mut cache = FxHashMap::default();
+
+        // Default entry for localhost
+        cache.insert(
+            Ipv4Addr::new(127, 0, 0, 1),
+            Some(NodeLocation { latitude: 52.5166667, longitude: 13.4, city: "Berlin".into() }),
+        );
+
+        LocatorFactory {
+            cache: Arc::new(RwLock::new(cache)),
+        }
+    }
+
+    pub fn create(&self) -> Locator {
+        Locator {
+            client: reqwest::Client::new(),
+            cache: self.cache.clone(),
+        }
+    }
+}
+
 impl Actor for Locator {
-    type Context = Context<Self>;
+    type Context = SyncContext<Self>;
 }
 
 #[derive(Message)]
@@ -87,13 +114,6 @@ impl Handler<LocateRequest> for Locator {
 }
 
 impl Locator {
-    pub fn new() -> Self {
-        Locator {
-            client: reqwest::Client::new(),
-            cache: Arc::new(RwLock::new(FxHashMap::default())),
-        }
-    }
-
     async fn iplocate(&self, ip: Ipv4Addr) -> Result<Option<NodeLocation>, reqwest::Error> {
         let location = self.iplocate_ipapi_co(ip).await?;
 
