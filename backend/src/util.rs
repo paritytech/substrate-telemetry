@@ -4,7 +4,7 @@ mod num_stats;
 mod location;
 
 pub use mean_list::MeanList;
-pub use location::{Locator, LocatorFactory, LocateRequest};
+pub use location::{Locator, LocateRequest};
 pub use dense_map::DenseMap;
 pub use num_stats::NumStats;
 

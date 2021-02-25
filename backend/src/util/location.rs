@@ -12,38 +12,11 @@ use crate::types::{NodeId, NodeLocation};
 #[derive(Clone)]
 pub struct Locator {
     client: reqwest::Client,
-    cache: Arc<RwLock<FxHashMap<Ipv4Addr, Option<Arc<NodeLocation>>>>>,
-}
-
-pub struct LocatorFactory {
-    cache: Arc<RwLock<FxHashMap<Ipv4Addr, Option<Arc<NodeLocation>>>>>,
-}
-
-impl LocatorFactory {
-    pub fn new() -> Self {
-        let mut cache = FxHashMap::default();
-
-        // Default entry for localhost
-        cache.insert(
-            Ipv4Addr::new(127, 0, 0, 1),
-            Some(Arc::new(NodeLocation { latitude: 52.5166667, longitude: 13.4, city: "Berlin".into() })),
-        );
-
-        LocatorFactory {
-            cache: Arc::new(RwLock::new(cache)),
-        }
-    }
-
-    pub fn create(&self) -> Locator {
-        Locator {
-            client: reqwest::Client::new(),
-            cache: self.cache.clone(),
-        }
-    }
+    cache: Arc<RwLock<FxHashMap<Ipv4Addr, Option<NodeLocation>>>>,
 }
 
 impl Actor for Locator {
-    type Context = SyncContext<Self>;
+    type Context = Context<Self>;
 }
 
 #[derive(Message)]
@@ -56,7 +29,7 @@ pub struct LocateRequest {
 
 #[derive(Deserialize)]
 pub struct IPApiLocate {
-    city: Box<str>,
+    city: Arc<str>,
     loc: Box<str>,
 }
 
@@ -85,7 +58,7 @@ impl IPApiLocate {
 impl Handler<LocateRequest> for Locator {
     type Result = ();
 
-    fn handle(&mut self, msg: LocateRequest, _: &mut Self::Context) {
+    fn handle(&mut self, msg: LocateRequest, _: &mut <Self as Actor>::Context) {
         let LocateRequest { ip, nid, chain } = msg;
 
         if let Some(item) = self.cache.read().get(&ip) {
@@ -96,48 +69,57 @@ impl Handler<LocateRequest> for Locator {
             return
         }
 
-        let location = match self.iplocate(ip) {
-            Ok(location) => location,
-            Err(err) => return log::debug!("GET error for ip location: {:?}", err),
-        };
+        let locator = self.clone();
 
-        self.cache.write().insert(ip, location.clone());
+        tokio::task::spawn(async move {
+            let location = match locator.iplocate(ip).await {
+                Ok(location) => location,
+                Err(err) => return log::debug!("GET error for ip location: {:?}", err),
+            };
 
-        if let Some(location) = location {
-            chain.do_send(LocateNode { nid, location });
-        }
+            locator.cache.write().insert(ip, location.clone());
+
+            if let Some(location) = location {
+                chain.do_send(LocateNode { nid, location });
+            }
+        });
     }
 }
 
 impl Locator {
-    fn iplocate(&self, ip: Ipv4Addr) -> Result<Option<Arc<NodeLocation>>, reqwest::Error> {
-        let location = self.iplocate_ipapi_co(ip)?;
-
-        match location {
-            Some(location) => Ok(Some(location)),
-            None => self.iplocate_ipinfo_io(ip),
+    pub fn new() -> Self {
+        Locator {
+            client: reqwest::Client::new(),
+            cache: Arc::new(RwLock::new(FxHashMap::default())),
         }
     }
 
-    fn iplocate_ipapi_co(&self, ip: Ipv4Addr) -> Result<Option<Arc<NodeLocation>>, reqwest::Error> {
-        let location = self.query(&format!("https://ipapi.co/{}/json", ip))?.map(Arc::new);
+    async fn iplocate(&self, ip: Ipv4Addr) -> Result<Option<NodeLocation>, reqwest::Error> {
+        let location = self.iplocate_ipapi_co(ip).await?;
 
-        Ok(location)
+        match location {
+            Some(location) => Ok(Some(location)),
+            None => self.iplocate_ipinfo_io(ip).await,
+        }
     }
 
-    fn iplocate_ipinfo_io(&self, ip: Ipv4Addr) -> Result<Option<Arc<NodeLocation>>, reqwest::Error> {
-        let location = self.query(&format!("https://ipinfo.io/{}/json", ip))?.and_then(|loc: IPApiLocate| {
-            loc.into_node_location().map(Arc::new)
+    async fn iplocate_ipapi_co(&self, ip: Ipv4Addr) -> Result<Option<NodeLocation>, reqwest::Error> {
+        self.query(&format!("https://ipapi.co/{}/json", ip)).await
+    }
+
+    async fn iplocate_ipinfo_io(&self, ip: Ipv4Addr) -> Result<Option<NodeLocation>, reqwest::Error> {
+        let location = self.query(&format!("https://ipinfo.io/{}/json", ip)).await?.and_then(|loc: IPApiLocate| {
+            loc.into_node_location()
         });
 
         Ok(location)
     }
 
-    fn query<T>(&self, url: &str) -> Result<Option<T>, reqwest::Error>
+    async fn query<T>(&self, url: &str) -> Result<Option<T>, reqwest::Error>
     where
         for<'de> T: Deserialize<'de>,
     {
-        match self.client.get(url).send()?.json::<T>() {
+        match self.client.get(url).send().await?.json::<T>().await {
             Ok(result) => Ok(Some(result)),
             Err(err) => {
                 log::debug!("JSON error for ip location: {:?}", err);

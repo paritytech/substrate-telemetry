@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use serde::ser::{Serialize, Serializer, SerializeTuple};
 use serde::Deserialize;
 
@@ -72,7 +74,7 @@ pub struct NodeHardware {
 pub struct NodeLocation {
     pub latitude: f32,
     pub longitude: f32,
-    pub city: Box<str>,
+    pub city: Arc<str>,
 }
 
 impl Serialize for NodeDetails {

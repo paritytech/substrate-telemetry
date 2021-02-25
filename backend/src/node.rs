@@ -1,5 +1,4 @@
 use bytes::Bytes;
-use std::sync::Arc;
 
 use crate::types::{NodeId, NodeDetails, NodeStats, NodeIO, NodeHardware, NodeLocation, BlockDetails, Block, Timestamp};
 use crate::util::now;
@@ -30,7 +29,7 @@ pub struct Node {
     /// Hardware stats over time
     hardware: NodeHardware,
     /// Physical location details
-    location: Option<Arc<NodeLocation>>,
+    location: Option<NodeLocation>,
     /// Flag marking if the node is stale (not syncing or producing blocks)
     stale: bool,
     /// Unix timestamp for when node started up (falls back to connection time)
@@ -89,13 +88,10 @@ impl Node {
     }
 
     pub fn location(&self) -> Option<&NodeLocation> {
-        match self.location {
-            Some(ref location) => Some(&**location),
-            None => None
-        }
+        self.location.as_ref()
     }
 
-    pub fn update_location(&mut self, location: Arc<NodeLocation>) {
+    pub fn update_location(&mut self, location: NodeLocation) {
         self.location = Some(location);
     }
 

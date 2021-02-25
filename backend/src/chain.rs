@@ -239,7 +239,7 @@ pub struct NoMoreFinality(pub FeedId);
 #[rtype(result = "()")]
 pub struct LocateNode {
     pub nid: NodeId,
-    pub location: Arc<NodeLocation>,
+    pub location: NodeLocation,
 }
 
 pub struct GetNodeNetworkState(pub NodeId);
