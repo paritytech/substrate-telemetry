@@ -1,4 +1,6 @@
 use std::net::Ipv4Addr;
+use std::collections::HashSet;
+use std::iter::FromIterator;
 
 use actix::prelude::*;
 use actix_http::ws::Codec;
@@ -25,16 +27,52 @@ const AUTHORS: &'static str = env!("CARGO_PKG_AUTHORS");
 const NAME: &'static str = "Substrate Telemetry Backend";
 const ABOUT: &'static str = "This is the Telemetry Backend that injects and provide the data sent by Substrate/Polkadot nodes";
 
-#[derive(Clap)]
+#[derive(Clap, Debug)]
 #[clap(name = NAME, version = VERSION, author = AUTHORS, about = ABOUT)]
 struct Opts {
     #[clap(
         short = 'l',
         long = "listen",
         default_value = "127.0.0.1:8000",
-        about = "This is the socket address Telemetry is listening to. This is restricted localhost (127.0.0.1) by default and should be fine for most use cases. If you are using Telemetry in a container, you likely want to set this to '0.0.0.0:8000'"
+        about = "This is the socket address Telemetry is listening to. This is restricted to localhost (127.0.0.1) by default and should be fine for most use cases. If you are using Telemetry in a container, you likely want to set this to '0.0.0.0:8000'"
     )]
     socket: std::net::SocketAddr,
+    #[clap(
+        required = false,
+        long = "denylist",
+        default_value = "Earth",
+        about = "Space delimited list of chains that are not allowed to connect to telemetry. Case sensitive."
+    )]
+    denylist: Vec<String>,
+    #[clap(
+        arg_enum,
+        required = false,
+        long = "log",
+        default_value = "info",
+        about = "Log level. Defaults to 'info'. Valid values are: error, warn, info, debug and trace"
+    )]
+    log_level: LogLevel,
+}
+
+#[derive(Clap, Debug, PartialEq)]
+enum LogLevel {
+    Error,
+    Warn,
+    Info,
+    Debug,
+    Trace,
+}
+
+impl Into<log::LevelFilter> for &LogLevel {
+    fn into(self) -> log::LevelFilter {
+        match self {
+            LogLevel::Error => log::LevelFilter::Error,
+            LogLevel::Warn => log::LevelFilter::Warn,
+            LogLevel::Info => log::LevelFilter::Info,
+            LogLevel::Debug => log::LevelFilter::Debug,
+            LogLevel::Trace => log::LevelFilter::Trace,
+        }
+    }
 }
 
 /// Entry point for connecting nodes
@@ -127,10 +165,12 @@ async fn health(aggregator: web::Data<Addr<Aggregator>>) -> Result<HttpResponse,
 /// This can be changed using the `PORT` and `BIND` ENV variables.
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    SimpleLogger::new().with_level(log::LevelFilter::Info).init().expect("Must be able to start a logger");
-
     let opts: Opts = Opts::parse();
-    let aggregator = Aggregator::new().start();
+    let log_level = &opts.log_level;
+    SimpleLogger::new().with_level(log_level.into()).init().expect("Must be able to start a logger");
+
+    let denylist = HashSet::from_iter(opts.denylist);
+    let aggregator = Aggregator::new(denylist).start();
     let factory = LocatorFactory::new();
     let locator = SyncArbiter::start(4, move || factory.create());
 

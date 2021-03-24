@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use actix::prelude::*;
 
 use crate::node::connector::Initialize;
@@ -14,6 +14,8 @@ pub struct Aggregator {
     chains: DenseMap<ChainEntry>,
     feeds: DenseMap<Addr<FeedConnector>>,
     serializer: FeedMessageSerializer,
+    /// Denylist for networks we do not want to allow connecting.
+    denylist: HashSet<String>
 }
 
 pub struct ChainEntry {
@@ -24,13 +26,14 @@ pub struct ChainEntry {
 }
 
 impl Aggregator {
-    pub fn new() -> Self {
+    pub fn new(denylist: HashSet<String>) -> Self {
         Aggregator {
             labels: HashMap::new(),
             networks: HashMap::new(),
             chains: DenseMap::new(),
             feeds: DenseMap::new(),
             serializer: FeedMessageSerializer::new(),
+            denylist,
         }
     }
 
@@ -176,6 +179,10 @@ impl Handler<AddNode> for Aggregator {
     type Result = ();
 
     fn handle(&mut self, msg: AddNode, ctx: &mut Self::Context) {
+        if self.denylist.contains(&*msg.node.chain) {
+            log::debug!(target: "Aggregator::AddNode", "'{}' is on the denylist.", msg.node.chain);
+            return;
+        }
         let AddNode { node, conn_id, rec } = msg;
 
         let cid = self.lazy_chain(&node.chain, &None, ctx);

@@ -18,7 +18,7 @@ pub type Label = Arc<str>;
 
 pub struct Chain {
     cid: ChainId,
-    /// Who to inform if we Chain drops itself
+    /// Who to inform if the Chain drops itself
     aggregator: Addr<Aggregator>,
     /// Label of this chain, along with count of nodes that use this label
     label: (Label, usize),
