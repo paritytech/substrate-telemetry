@@ -253,6 +253,7 @@ impl Handler<AddNode> for Chain {
 
     fn handle(&mut self, msg: AddNode, ctx: &mut Self::Context) {
         let AddNode { node, conn_id, rec } = msg;
+        log::trace!(target: "Chain::AddNode", "New node connected. Chain '{}', node count goes from {} to {}", node.chain, self.nodes.len(), self.nodes.len() + 1);
         self.increment_label_count(&node.chain);
 
         let nid = self.nodes.add(Node::new(node));
@@ -286,7 +287,7 @@ impl Chain {
             if block.height > self.best.height {
                 self.best = *block;
                 log::info!(
-                    "[{}] [{}/{}] new best block ({}) {:?}",
+                    "[{}] [nodes={}/feeds={}] new best block={}/{:?}",
                     self.label.0,
                     nodes_len,
                     self.feeds.len(),

@@ -127,7 +127,8 @@ async fn health(aggregator: web::Data<Addr<Aggregator>>) -> Result<HttpResponse,
 /// This can be changed using the `PORT` and `BIND` ENV variables.
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    SimpleLogger::new().with_level(log::LevelFilter::Info).init().expect("Must be able to start a logger");
+    // SimpleLogger::new().with_level(log::LevelFilter::Info).init().expect("Must be able to start a logger");
+    SimpleLogger::new().with_level(log::LevelFilter::Debug).init().expect("Must be able to start a logger");
 
     let opts: Opts = Opts::parse();
     let aggregator = Aggregator::new().start();

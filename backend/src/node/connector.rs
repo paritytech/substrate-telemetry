@@ -165,7 +165,7 @@ impl Handler<Initialize> for NodeConnector {
 
     fn handle(&mut self, msg: Initialize, _: &mut Self::Context) {
         let Initialize { nid, conn_id, chain } = msg;
-
+        log::trace!(target: "NodeConnector::Initialize", "Initializing a node, nid={}, on conn_id={}", nid, conn_id);
         let mx = self.multiplex.entry(conn_id).or_default();
 
         if let ConnMultiplex::Waiting { backlog } = mx {
