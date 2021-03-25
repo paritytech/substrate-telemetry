@@ -89,10 +89,7 @@ impl Node {
     }
 
     pub fn location(&self) -> Option<&NodeLocation> {
-        match self.location {
-            Some(ref location) => Some(&**location),
-            None => None
-        }
+        self.location.as_deref()
     }
 
     pub fn update_location(&mut self, location: Arc<NodeLocation>) {

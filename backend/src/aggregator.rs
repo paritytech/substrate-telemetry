@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use actix::prelude::*;
+use lazy_static::lazy_static;
 
 use crate::node::connector::Initialize;
 use crate::feed::connector::{FeedConnector, Connected, FeedId};
@@ -22,8 +23,26 @@ pub struct ChainEntry {
     addr: Addr<Chain>,
     label: Label,
     network_id: Option<Label>,
+    /// Node count
     nodes: usize,
+    /// Maximum allowed nodes
+    max_nodes: usize,
 }
+
+lazy_static! {
+    /// Labels of chains we consider "first party". These chains are allowed any
+    /// number of nodes to connect.
+    static ref FIRST_PARTY_NETWORKS: HashSet<&'static str> = {
+        let mut set = HashSet::new();
+        set.insert("Polkadot");
+        set.insert("Kusama");
+        set.insert("Westend");
+        set.insert("Rococo");
+        set
+    };
+}
+/// Max number of nodes allowed to connect to the telemetry server.
+const THIRD_PARTY_NETWORKS_MAX_NODES: usize = 500;
 
 impl Aggregator {
     pub fn new(denylist: HashSet<String>) -> Self {
@@ -42,30 +61,27 @@ impl Aggregator {
     pub fn lazy_chain(
         &mut self,
         label: &str,
-        network: &Option<Label>,
         ctx: &mut <Self as Actor>::Context,
     ) -> ChainId {
-        let cid = match self.get_chain_id(label, network.as_ref()) {
+        let cid = match self.get_chain_id(label, None.as_ref()) {
             Some(cid) => cid,
             None => {
                 self.serializer.push(feed::AddedChain(&label, 1));
 
                 let addr = ctx.address();
+                let max_nodes = max_nodes(label);
                 let label: Label = label.into();
                 let cid = self.chains.add_with(|cid| {
                     ChainEntry {
                         addr: Chain::new(cid, addr, label.clone()).start(),
                         label: label.clone(),
-                        network_id: network.clone(),
+                        network_id: None, // TODO: this doesn't seem to be used anywhere. Can it be removed?
                         nodes: 1,
+                        max_nodes,
                     }
                 });
 
                 self.labels.insert(label, cid);
-
-                if let Some(network) = network {
-                    self.networks.insert(network.clone(), cid);
-                }
 
                 self.broadcast();
 
@@ -184,15 +200,19 @@ impl Handler<AddNode> for Aggregator {
             return;
         }
         let AddNode { node, conn_id, rec } = msg;
+        log::trace!(target: "Aggregator::AddNode", "New node connected. Chain '{}'", node.chain);
 
-        let cid = self.lazy_chain(&node.chain, &None, ctx);
+        let cid = self.lazy_chain(&node.chain, ctx);
         let chain = self.chains.get_mut(cid).expect("Entry just created above; qed");
-
-        chain.addr.do_send(chain::AddNode {
-            node,
-            conn_id,
-            rec,
-        });
+        if chain.nodes < chain.max_nodes {
+            chain.addr.do_send(chain::AddNode {
+                node,
+                conn_id,
+                rec,
+            });
+        } else {
+            log::warn!(target: "Aggregator::AddNode", "Chain {} is over quota ({})", chain.label, chain.max_nodes);
+        }
     }
 }
 
@@ -350,5 +370,16 @@ impl Handler<GetHealth> for Aggregator {
 
     fn handle(&mut self, _: GetHealth, _: &mut Self::Context) -> Self::Result {
         self.chains.len()
+    }
+}
+
+/// First party networks (Polkadot, Kusama etc) are allowed any number of nodes.
+/// Third party networks are allowed `THIRD_PARTY_NETWORKS_MAX_NODES` nodes and
+/// no more.
+fn max_nodes(label: &str) -> usize {
+    if FIRST_PARTY_NETWORKS.contains(label) {
+        usize::MAX
+    } else {
+        THIRD_PARTY_NETWORKS_MAX_NODES
     }
 }

@@ -22,10 +22,10 @@ use node::connector::NodeConnector;
 use types::NodeId;
 use util::{Locator, LocatorFactory};
 
-const VERSION: &'static str = env!("CARGO_PKG_VERSION");
-const AUTHORS: &'static str = env!("CARGO_PKG_AUTHORS");
-const NAME: &'static str = "Substrate Telemetry Backend";
-const ABOUT: &'static str = "This is the Telemetry Backend that injects and provide the data sent by Substrate/Polkadot nodes";
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
+const NAME: &str = "Substrate Telemetry Backend";
+const ABOUT: &str = "This is the Telemetry Backend that injects and provide the data sent by Substrate/Polkadot nodes";
 
 #[derive(Clap, Debug)]
 #[clap(name = NAME, version = VERSION, author = AUTHORS, about = ABOUT)]
@@ -49,7 +49,7 @@ struct Opts {
         required = false,
         long = "log",
         default_value = "info",
-        about = "Log level. Defaults to 'info'. Valid values are: error, warn, info, debug and trace"
+        about = "Log level."
     )]
     log_level: LogLevel,
 }
@@ -63,9 +63,9 @@ enum LogLevel {
     Trace,
 }
 
-impl Into<log::LevelFilter> for &LogLevel {
-    fn into(self) -> log::LevelFilter {
-        match self {
+impl From<&LogLevel> for log::LevelFilter {
+    fn from(log_level: &LogLevel) -> Self {
+        match log_level {
             LogLevel::Error => log::LevelFilter::Error,
             LogLevel::Warn => log::LevelFilter::Warn,
             LogLevel::Info => log::LevelFilter::Info,
@@ -84,7 +84,7 @@ async fn node_route(
     locator: web::Data<Addr<Locator>>,
 ) -> Result<HttpResponse, Error> {
     let ip = req.connection_info().realip_remote_addr().and_then(|mut addr| {
-        if let Some(port_idx) = addr.find(":") {
+        if let Some(port_idx) = addr.find(':') {
             addr = &addr[..port_idx];
         }
         addr.parse::<Ipv4Addr>().ok()
