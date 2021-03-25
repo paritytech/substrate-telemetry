@@ -46,7 +46,7 @@ impl FeedMessageSerializer {
     }
 
     pub fn finalize(&mut self) -> Option<Serialized> {
-        if self.buffer.len() == 0 {
+        if self.buffer.is_empty() {
             return None;
         }
 

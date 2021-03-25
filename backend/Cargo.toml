@@ -23,6 +23,7 @@ parking_lot = "0.11"
 reqwest = "0.9.18"
 rustc-hash = "1.1.0"
 clap = "3.0.0-beta.2"
+lazy_static = "1"
 
 [profile.release]
 lto = true

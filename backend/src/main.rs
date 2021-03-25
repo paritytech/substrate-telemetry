@@ -20,10 +20,10 @@ use node::connector::NodeConnector;
 use types::NodeId;
 use util::{Locator, LocatorFactory};
 
-const VERSION: &'static str = env!("CARGO_PKG_VERSION");
-const AUTHORS: &'static str = env!("CARGO_PKG_AUTHORS");
-const NAME: &'static str = "Substrate Telemetry Backend";
-const ABOUT: &'static str = "This is the Telemetry Backend that injects and provide the data sent by Substrate/Polkadot nodes";
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
+const NAME: &str = "Substrate Telemetry Backend";
+const ABOUT: &str = "This is the Telemetry Backend that injects and provide the data sent by Substrate/Polkadot nodes";
 
 #[derive(Clap)]
 #[clap(name = NAME, version = VERSION, author = AUTHORS, about = ABOUT)]
@@ -35,6 +35,35 @@ struct Opts {
         about = "This is the socket address Telemetry is listening to. This is restricted localhost (127.0.0.1) by default and should be fine for most use cases. If you are using Telemetry in a container, you likely want to set this to '0.0.0.0:8000'"
     )]
     socket: std::net::SocketAddr,
+    #[clap(
+        arg_enum,
+        required = false,
+        long = "log",
+        default_value = "info",
+        about = "Log level."
+    )]
+    log_level: LogLevel,
+}
+
+#[derive(Clap, Debug, PartialEq)]
+enum LogLevel {
+    Error,
+    Warn,
+    Info,
+    Debug,
+    Trace,
+}
+
+impl From<&LogLevel> for log::LevelFilter {
+    fn from(log_level: &LogLevel) -> Self {
+        match log_level {
+            LogLevel::Error => log::LevelFilter::Error,
+            LogLevel::Warn => log::LevelFilter::Warn,
+            LogLevel::Info => log::LevelFilter::Info,
+            LogLevel::Debug => log::LevelFilter::Debug,
+            LogLevel::Trace => log::LevelFilter::Trace,
+        }
+    }
 }
 
 /// Entry point for connecting nodes
@@ -46,7 +75,7 @@ async fn node_route(
     locator: web::Data<Addr<Locator>>,
 ) -> Result<HttpResponse, Error> {
     let ip = req.connection_info().realip_remote_addr().and_then(|mut addr| {
-        if let Some(port_idx) = addr.find(":") {
+        if let Some(port_idx) = addr.find(':') {
             addr = &addr[..port_idx];
         }
         addr.parse::<Ipv4Addr>().ok()
@@ -127,9 +156,10 @@ async fn health(aggregator: web::Data<Addr<Aggregator>>) -> Result<HttpResponse,
 /// This can be changed using the `PORT` and `BIND` ENV variables.
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    SimpleLogger::new().with_level(log::LevelFilter::Info).init().expect("Must be able to start a logger");
-
     let opts: Opts = Opts::parse();
+    let log_level = &opts.log_level;
+    SimpleLogger::new().with_level(log_level.into()).init().expect("Must be able to start a logger");
+
     let aggregator = Aggregator::new().start();
     let factory = LocatorFactory::new();
     let locator = SyncArbiter::start(4, move || factory.create());
