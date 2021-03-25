@@ -39,19 +39,19 @@ export class Connection {
   private static readonly address = Connection.getAddress();
 
   private static getAddress(): string {
-    const ENV_URL = 'SUBSTRATE_TELEMETRY_URL';
+    // const ENV_URL = 'SUBSTRATE_TELEMETRY_URL';
 
-    if (process.env && process.env[ENV_URL]) {
-      return process.env[ENV_URL] as string;
-    }
+    // if (process.env && process.env[ENV_URL]) {
+    //   return process.env[ENV_URL] as string;
+    // }
 
-    if (window.process_env && window.process_env[ENV_URL]) {
-      return window.process_env[ENV_URL];
-    }
+    // if (window.process_env && window.process_env[ENV_URL]) {
+    //   return window.process_env[ENV_URL];
+    // }
 
-    if (window.location.protocol === 'https:') {
-      return `wss://${window.location.hostname}/feed/`;
-    }
+    // if (window.location.protocol === 'https:') {
+    //   return `wss://${window.location.hostname}/feed/`;
+    // }
 
     return `ws://127.0.0.1:8000/feed`;
   }
