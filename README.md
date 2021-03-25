@@ -63,14 +63,14 @@ For the sake of brevity below, I will name the containers `backend` and `fronten
 
 Let's start the backend first. We will be using the published [chevdor](https://hub.docker.com/u/chevdor) images here, feel free to replace with your own image.
 
-```
+```sh
 docker run --rm -i --name backend -p 8000:8000 \
   chevdor/substrate-telemetry-backend -l 0.0.0.0:8000
 ```
 
 Let's now start the frontend:
 
-```
+```sh
 docker run --rm -i --name frontend --link backend -p 80:80 \
   -e SUBSTRATE_TELEMETRY_URL=ws://localhost:8000/feed \
   chevdor/substrate-telemetry-frontend
@@ -84,7 +84,7 @@ At that point, you can already open your browser at [http://localhost](http://lo
 
 Let's bring some data in with  a node:
 
-```
+```sh
 docker run --rm -i --name substrate --link backend -p 9944:9944 \
   chevdor/substrate substrate --dev --telemetry-url 'ws://backend:8000/submit 0'
 ```
@@ -111,6 +111,6 @@ Now navigate to [http://localhost:3000](http://localhost:3000/) in your browser 
 
 The building process is standard. You just need to notice that the Dockerfile is in ./packages/frontend/ and tell docker about it. The context must remain the repository's root though.
 
-```
+```sh
 DOCKER_USER=chevdor ./scripts/build-docker-frontend.sh
 ```
