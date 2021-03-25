@@ -26,7 +26,7 @@ impl LocatorFactory {
         // Default entry for localhost
         cache.insert(
             Ipv4Addr::new(127, 0, 0, 1),
-            Some(Arc::new(NodeLocation { latitude: 52.5166667, longitude: 13.4, city: "Berlin".into() })),
+            Some(Arc::new(NodeLocation { latitude: 52.516_6667, longitude: 13.4, city: "Berlin".into() })),
         );
 
         LocatorFactory {
@@ -64,7 +64,7 @@ impl IPApiLocate {
     fn into_node_location(self) -> Option<NodeLocation> {
         let IPApiLocate { city, loc } = self;
 
-        let mut loc = loc.split(",").map(|n| n.parse());
+        let mut loc = loc.split(',').map(|n| n.parse());
 
         let latitude = loc.next()?.ok()?;
         let longitude = loc.next()?.ok()?;

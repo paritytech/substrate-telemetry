@@ -79,10 +79,8 @@ impl Chain {
 
         if &*self.label.0 == label {
             self.label.1 += 1;
-        } else {
-            if count > self.label.1 {
-                self.rename(label.into(), count);
-            }
+        } else if count > self.label.1 {
+            self.rename(label.into(), count);
         }
     }
 
@@ -172,7 +170,7 @@ impl Chain {
             self.block_times.reset();
             self.timestamp = timestamp;
 
-            self.serializer.push(feed::BestBlock(self.best.height, timestamp.unwrap_or_else(|| now), None));
+            self.serializer.push(feed::BestBlock(self.best.height, timestamp.unwrap_or(now), None));
             self.serializer.push(feed::BestFinalized(finalized.height, finalized.hash));
         }
     }
@@ -259,7 +257,7 @@ impl Handler<AddNode> for Chain {
         let nid = self.nodes.add(Node::new(node));
         let chain = ctx.address();
 
-        if let Err(_) = rec.do_send(Initialize { nid, conn_id, chain }) {
+        if rec.do_send(Initialize { nid, conn_id, chain }).is_err() {
             self.nodes.remove(nid);
         } else if let Some(node) = self.nodes.get(nid) {
             self.serializer.push(feed::AddedNode(nid, node));
@@ -456,7 +454,7 @@ impl Handler<Subscribe> for Chain {
         self.serializer.push(feed::TimeSync(now()));
         self.serializer.push(feed::BestBlock(
             self.best.height,
-            self.timestamp.unwrap_or_else(|| 0),
+            self.timestamp.unwrap_or(0),
             self.average_block_time,
         ));
         self.serializer.push(feed::BestFinalized(self.finalized.height, self.finalized.hash));

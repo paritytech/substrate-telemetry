@@ -118,7 +118,7 @@ impl NodeConnector {
                         _ => (),
                     }
 
-                    self.aggregator.do_send(AddNode { rec, conn_id, node });
+                    self.aggregator.do_send(AddNode { node, conn_id, rec });
                 } else {
                     if backlog.len() >= 10 {
                         backlog.remove(0);
