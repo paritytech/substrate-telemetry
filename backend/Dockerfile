@@ -8,7 +8,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN cargo build --${PROFILE} --bins
+RUN cargo build --${PROFILE} --bins --target x86_64-unknown-linux-musl
 
 
 # MAIN IMAGE FOR PEOPLE TO PULL --- small one#
