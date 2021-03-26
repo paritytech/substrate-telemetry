@@ -1,11 +1,6 @@
 #### BUILDER IMAGE -- quite big one ####
-<<<<<<< HEAD
-FROM paritytech/musl-ci-linux as builder
-LABEL maintainer="Parity Technologies"
-=======
 FROM paritytech/ci-linux:production as builder
-LABEL maintainer="Daniel Maricic daniel@woss.io"
->>>>>>> origin/master
+LABEL maintainer="Parity Technologies"
 LABEL description="Polkadot Telemetry backend builder image"
 
 ARG PROFILE=release
