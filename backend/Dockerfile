@@ -1,5 +1,5 @@
 #### BUILDER IMAGE -- quite big one ####
-FROM paritytech/musl-ci-linux as builder
+FROM paritytech/musl-ci-linux:latest as builder
 LABEL maintainer="Parity Technologies"
 LABEL description="Polkadot Telemetry backend builder image"
 
