@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use actix::prelude::*;
 use lazy_static::lazy_static;
 
-use crate::node::connector::Initialize;
+use crate::node::connector::{Initialize, Mute};
 use crate::feed::connector::{FeedConnector, Connected, FeedId};
 use crate::util::DenseMap;
 use crate::feed::{self, FeedMessageSerializer};
@@ -30,7 +30,7 @@ pub struct ChainEntry {
 }
 
 lazy_static! {
-    /// Labels of chains we consider "first party". These chains are allowed any
+    /// Labels of chains we consider "first party". These chains allow any
     /// number of nodes to connect.
     static ref FIRST_PARTY_NETWORKS: HashSet<&'static str> = {
         let mut set = HashSet::new();
@@ -131,6 +131,8 @@ pub struct AddNode {
     pub conn_id: ConnId,
     /// Recipient for the initialization message
     pub rec: Recipient<Initialize>,
+    /// Recipient for the mute message
+    pub mute: Recipient<Mute>,
 }
 
 /// Message sent from the Chain to the Aggregator when the Chain loses all nodes
@@ -196,10 +198,12 @@ impl Handler<AddNode> for Aggregator {
 
     fn handle(&mut self, msg: AddNode, ctx: &mut Self::Context) {
         if self.denylist.contains(&*msg.node.chain) {
-            log::debug!(target: "Aggregator::AddNode", "'{}' is on the denylist.", msg.node.chain);
+            log::warn!(target: "Aggregator::AddNode", "'{}' is on the denylist.", msg.node.chain);
+            let AddNode { mute, .. } = msg;
+            let _ = mute.do_send(Mute {});
             return;
         }
-        let AddNode { node, conn_id, rec } = msg;
+        let AddNode { node, conn_id, rec, mute } = msg;
         log::trace!(target: "Aggregator::AddNode", "New node connected. Chain '{}'", node.chain);
 
         let cid = self.lazy_chain(&node.chain, ctx);
@@ -212,6 +216,7 @@ impl Handler<AddNode> for Aggregator {
             });
         } else {
             log::warn!(target: "Aggregator::AddNode", "Chain {} is over quota ({})", chain.label, chain.max_nodes);
+            let _ = mute.do_send(Mute {});
         }
     }
 }

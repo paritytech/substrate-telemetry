@@ -109,8 +109,6 @@ impl NodeConnector {
             ConnMultiplex::Waiting { backlog } => {
                 if let Payload::SystemConnected(connected) = msg.payload() {
                     let mut node = connected.node.clone();
-                    let rec = ctx.address().recipient();
-
                     // FIXME: Use genesis hash instead of names to avoid this mess
                     match &*node.chain {
                         "Kusama CC3" => node.chain = "Kusama".into(),
@@ -123,7 +121,10 @@ impl NodeConnector {
                         _ => ()
                     }
 
-                    self.aggregator.do_send(AddNode { node, conn_id, rec });
+                    let rec = ctx.address().recipient();
+                    let mute = ctx.address().recipient();
+
+                    self.aggregator.do_send(AddNode { node, conn_id, rec, mute });
                 } else {
                     if backlog.len() >= 10 {
                         backlog.remove(0);
@@ -154,6 +155,18 @@ impl NodeConnector {
 
     fn finish_frame(&mut self) -> Bytes {
         mem::replace(&mut self.contbuf, BytesMut::new()).freeze()
+    }
+}
+
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct Mute;
+
+impl Handler<Mute> for NodeConnector {
+    type Result = ();
+    fn handle(&mut self, _msg: Mute, ctx: &mut Self::Context) {
+        log::trace!(target: "NodeConnector::Mute", "Muting a node");
+        ctx.stop();
     }
 }
 

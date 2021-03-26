@@ -284,7 +284,7 @@ impl Chain {
         if node.update_block(*block) {
             if block.height > self.best.height {
                 self.best = *block;
-                log::info!(
+                log::debug!(
                     "[{}] [nodes={}/feeds={}] new best block={}/{:?}",
                     self.label.0,
                     nodes_len,
