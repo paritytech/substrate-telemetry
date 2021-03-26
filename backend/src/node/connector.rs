@@ -5,7 +5,7 @@ use std::mem;
 
 use bytes::{Bytes, BytesMut};
 use actix::prelude::*;
-use actix_web_actors::ws;
+use actix_web_actors::ws::{self, CloseReason};
 use actix_http::ws::Item;
 use crate::aggregator::{Aggregator, AddNode};
 use crate::chain::{Chain, UpdateNode, RemoveNode};
@@ -160,12 +160,17 @@ impl NodeConnector {
 
 #[derive(Message)]
 #[rtype(result = "()")]
-pub struct Mute;
+pub struct Mute {
+    pub reason: CloseReason,
+}
 
 impl Handler<Mute> for NodeConnector {
     type Result = ();
-    fn handle(&mut self, _msg: Mute, ctx: &mut Self::Context) {
-        log::trace!(target: "NodeConnector::Mute", "Muting a node");
+    fn handle(&mut self, msg: Mute, ctx: &mut Self::Context) {
+        let Mute { reason } = msg;
+        log::debug!(target: "NodeConnector::Mute", "Muting a node. Reason: {:?}", reason.description);
+
+        ctx.close(Some(reason));
         ctx.stop();
     }
 }
@@ -216,7 +221,8 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for NodeConnector {
             Ok(ws::Message::Pong(_)) => return,
             Ok(ws::Message::Text(text)) => text.into_bytes(),
             Ok(ws::Message::Binary(data)) => data,
-            Ok(ws::Message::Close(_)) => {
+            Ok(ws::Message::Close(reason)) => {
+                ctx.close(reason);
                 ctx.stop();
                 return;
             }

@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use actix::prelude::*;
+use actix_web_actors::ws::{CloseReason, CloseCode};
 use lazy_static::lazy_static;
 
 use crate::node::connector::{Initialize, Mute};
@@ -42,7 +43,7 @@ lazy_static! {
     };
 }
 /// Max number of nodes allowed to connect to the telemetry server.
-const THIRD_PARTY_NETWORKS_MAX_NODES: usize = 500;
+const THIRD_PARTY_NETWORKS_MAX_NODES: usize = 2;
 
 impl Aggregator {
     pub fn new(denylist: HashSet<String>) -> Self {
@@ -200,7 +201,8 @@ impl Handler<AddNode> for Aggregator {
         if self.denylist.contains(&*msg.node.chain) {
             log::warn!(target: "Aggregator::AddNode", "'{}' is on the denylist.", msg.node.chain);
             let AddNode { mute, .. } = msg;
-            let _ = mute.do_send(Mute {});
+            let reason = CloseReason{ code: CloseCode::Abnormal, description: Some("Denied".into()) };
+            let _ = mute.do_send(Mute { reason });
             return;
         }
         let AddNode { node, conn_id, rec, mute } = msg;
@@ -216,7 +218,8 @@ impl Handler<AddNode> for Aggregator {
             });
         } else {
             log::warn!(target: "Aggregator::AddNode", "Chain {} is over quota ({})", chain.label, chain.max_nodes);
-            let _ = mute.do_send(Mute {});
+            let reason = CloseReason{ code: CloseCode::Again, description: Some("Overquota".into()) };
+            let _ = mute.do_send(Mute { reason });
         }
     }
 }
