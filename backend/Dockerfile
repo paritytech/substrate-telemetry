@@ -1,14 +1,14 @@
-FROM rust:alpine as builder
+FROM paritytech/ci-linux:production as builder
 
 ARG PROFILE=release
 WORKDIR /app
 
 COPY . .
 
-RUN apk add musl-dev openssl-dev; cargo build --${PROFILE} --bins
+RUN cargo build --${PROFILE} --bins
 
 # MAIN IMAGE FOR PEOPLE TO PULL --- small one#
-FROM scratch
+FROM debian:buster-slim
 LABEL maintainer="Parity Technologies"
 LABEL description="Polkadot Telemetry backend, static build"
 
@@ -17,6 +17,7 @@ WORKDIR /usr/local/bin
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /app/target/$PROFILE/telemetry /usr/local/bin
+RUN apt-get -y update && apt-get -y install openssl && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/
 
 EXPOSE 8000
 
