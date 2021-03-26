@@ -67,7 +67,7 @@ impl From<&LogLevel> for log::LevelFilter {
 }
 
 /// Entry point for connecting nodes
-#[get("/submit/")]
+#[get("/submit")]
 async fn node_route(
     req: HttpRequest,
     stream: web::Payload,
@@ -93,7 +93,7 @@ async fn node_route(
 }
 
 /// Entry point for connecting feeds
-#[get("/feed/")]
+#[get("/feed")]
 async fn feed_route(
     req: HttpRequest,
     stream: web::Payload,
@@ -107,7 +107,7 @@ async fn feed_route(
 }
 
 /// Entry point for network state dump
-#[get("/network_state/{chain}/{nid}/")]
+#[get("/network_state/{chain}/{nid}")]
 async fn state_route(
     path: web::Path<(Box<str>, NodeId)>,
     aggregator: web::Data<Addr<Aggregator>>,
@@ -136,7 +136,7 @@ async fn state_route(
 }
 
 /// Entry point for health check monitoring bots
-#[get("/health/")]
+#[get("/health")]
 async fn health(aggregator: web::Data<Addr<Aggregator>>) -> Result<HttpResponse, Error> {
     match aggregator.send(GetHealth).await {
         Ok(count) => {
@@ -174,7 +174,7 @@ async fn main() -> std::io::Result<()> {
             .service(state_route)
             .service(health)
     })
-    .bind(format!("{}", opts.socket))?
+    .bind(opts.socket)?
     .run()
     .await
 }

@@ -11,7 +11,7 @@ use crate::types::{NodeId, NodeLocation};
 
 #[derive(Clone)]
 pub struct Locator {
-    client: reqwest::Client,
+    client: reqwest::blocking::Client,
     cache: Arc<RwLock<FxHashMap<Ipv4Addr, Option<Arc<NodeLocation>>>>>,
 }
 
@@ -36,7 +36,7 @@ impl LocatorFactory {
 
     pub fn create(&self) -> Locator {
         Locator {
-            client: reqwest::Client::new(),
+            client: reqwest::blocking::Client::new(),
             cache: self.cache.clone(),
         }
     }
