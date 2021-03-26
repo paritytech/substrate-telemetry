@@ -6,6 +6,7 @@ name: Frontend CI
 on:
   push:
     paths:
+      - '.github/workflows/**'
       - 'frontend/**'
       - '!backend/**'
 

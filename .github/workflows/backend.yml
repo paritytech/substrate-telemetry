@@ -3,6 +3,7 @@ name: Backend CI
 on:
   push:
     paths:
+      - '.github/workflows/**'
       - 'backend/**'
       - '!frontend/**'
 
