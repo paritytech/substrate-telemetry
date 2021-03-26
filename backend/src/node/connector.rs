@@ -115,7 +115,12 @@ impl NodeConnector {
                     match &*node.chain {
                         "Kusama CC3" => node.chain = "Kusama".into(),
                         "Polkadot CC1" => node.chain = "Polkadot".into(),
-                        _ => (),
+                        "Earth" => {
+                            // Temp, there is too many of them
+                            ctx.stop();
+                            return;
+                        },
+                        _ => ()
                     }
 
                     self.aggregator.do_send(AddNode { node, conn_id, rec });
