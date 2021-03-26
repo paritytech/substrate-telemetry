@@ -40,7 +40,6 @@ struct Opts {
     #[clap(
         required = false,
         long = "denylist",
-        default_value = "Earth",
         about = "Space delimited list of chains that are not allowed to connect to telemetry. Case sensitive."
     )]
     denylist: Vec<String>,
