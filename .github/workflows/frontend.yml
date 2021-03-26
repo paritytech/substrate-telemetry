@@ -46,7 +46,6 @@ jobs:
       if: matrix.node-version == '12.x'
       with:
         context: './frontend'
-        repository: parity/substrate-telemetry-frontend
         push: ${{ startsWith(github.ref, 'refs/tags/') }}
-        tags: latest
+        tags: parity/substrate-telemetry-frontend:latest
         # add_git_labels: true
