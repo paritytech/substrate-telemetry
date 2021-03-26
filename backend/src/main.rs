@@ -1,4 +1,6 @@
 use std::net::Ipv4Addr;
+use std::collections::HashSet;
+use std::iter::FromIterator;
 
 use actix::prelude::*;
 use actix_http::ws::Codec;
@@ -25,16 +27,23 @@ const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
 const NAME: &str = "Substrate Telemetry Backend";
 const ABOUT: &str = "This is the Telemetry Backend that injects and provide the data sent by Substrate/Polkadot nodes";
 
-#[derive(Clap)]
+#[derive(Clap, Debug)]
 #[clap(name = NAME, version = VERSION, author = AUTHORS, about = ABOUT)]
 struct Opts {
     #[clap(
         short = 'l',
         long = "listen",
         default_value = "127.0.0.1:8000",
-        about = "This is the socket address Telemetry is listening to. This is restricted localhost (127.0.0.1) by default and should be fine for most use cases. If you are using Telemetry in a container, you likely want to set this to '0.0.0.0:8000'"
+        about = "This is the socket address Telemetry is listening to. This is restricted to localhost (127.0.0.1) by default and should be fine for most use cases. If you are using Telemetry in a container, you likely want to set this to '0.0.0.0:8000'"
     )]
     socket: std::net::SocketAddr,
+    #[clap(
+        required = false,
+        long = "denylist",
+        default_value = "Earth",
+        about = "Space delimited list of chains that are not allowed to connect to telemetry. Case sensitive."
+    )]
+    denylist: Vec<String>,
     #[clap(
         arg_enum,
         required = false,
@@ -67,7 +76,7 @@ impl From<&LogLevel> for log::LevelFilter {
 }
 
 /// Entry point for connecting nodes
-#[get("/submit/")]
+#[get("/submit")]
 async fn node_route(
     req: HttpRequest,
     stream: web::Payload,
@@ -93,7 +102,7 @@ async fn node_route(
 }
 
 /// Entry point for connecting feeds
-#[get("/feed/")]
+#[get("/feed")]
 async fn feed_route(
     req: HttpRequest,
     stream: web::Payload,
@@ -107,7 +116,7 @@ async fn feed_route(
 }
 
 /// Entry point for network state dump
-#[get("/network_state/{chain}/{nid}/")]
+#[get("/network_state/{chain}/{nid}")]
 async fn state_route(
     path: web::Path<(Box<str>, NodeId)>,
     aggregator: web::Data<Addr<Aggregator>>,
@@ -136,7 +145,7 @@ async fn state_route(
 }
 
 /// Entry point for health check monitoring bots
-#[get("/health/")]
+#[get("/health")]
 async fn health(aggregator: web::Data<Addr<Aggregator>>) -> Result<HttpResponse, Error> {
     match aggregator.send(GetHealth).await {
         Ok(count) => {
@@ -160,7 +169,8 @@ async fn main() -> std::io::Result<()> {
     let log_level = &opts.log_level;
     SimpleLogger::new().with_level(log_level.into()).init().expect("Must be able to start a logger");
 
-    let aggregator = Aggregator::new().start();
+    let denylist = HashSet::from_iter(opts.denylist);
+    let aggregator = Aggregator::new(denylist).start();
     let factory = LocatorFactory::new();
     let locator = SyncArbiter::start(4, move || factory.create());
 
@@ -174,7 +184,7 @@ async fn main() -> std::io::Result<()> {
             .service(state_route)
             .service(health)
     })
-    .bind(format!("{}", opts.socket))?
+    .bind(opts.socket)?
     .run()
     .await
 }

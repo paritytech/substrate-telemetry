@@ -196,7 +196,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for NodeConnector {
                 return;
             }
             Ok(ws::Message::Pong(_)) => return,
-            Ok(ws::Message::Text(text)) => text.into(),
+            Ok(ws::Message::Text(text)) => text.into_bytes(),
             Ok(ws::Message::Binary(data)) => data,
             Ok(ws::Message::Close(_)) => {
                 ctx.stop();
