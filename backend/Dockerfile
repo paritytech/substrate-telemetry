@@ -1,5 +1,5 @@
 #### BUILDER IMAGE -- quite big one ####
-FROM paritytech/ci-linux:production as builder
+FROM paritytech/musl-ci-linux:latest as builder
 LABEL maintainer="Parity Technologies"
 LABEL description="Polkadot Telemetry backend builder image"
 
@@ -8,7 +8,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN cargo build --${PROFILE} --bins
+RUN cargo build --${PROFILE} --bins --target x86_64-unknown-linux-musl
 
 
 # MAIN IMAGE FOR PEOPLE TO PULL --- small one#
@@ -20,7 +20,7 @@ ARG PROFILE=release
 WORKDIR /usr/local/bin
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=builder /app/target/$PROFILE/telemetry /usr/local/bin
+COPY --from=builder /app/target/x86_64-unknown-linux-musl/$PROFILE/telemetry /usr/local/bin
 
 EXPOSE 8000
 
