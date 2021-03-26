@@ -24,7 +24,7 @@ const CONT_BUF_LIMIT: usize = 10 * 1024 * 1024;
 pub struct NodeConnector {
     /// Multiplexing connections by id
     multiplex: BTreeMap<ConnId, ConnMultiplex>,
-    /// Client must send ping at least once per 10 seconds (CLIENT_TIMEOUT),
+    /// Client must send ping at least once every 60 seconds (CLIENT_TIMEOUT),
     hb: Instant,
     /// Aggregator actor address
     aggregator: Addr<Aggregator>,
