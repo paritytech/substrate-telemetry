@@ -121,10 +121,8 @@ impl NodeConnector {
                         _ => ()
                     }
 
-                    let rec = ctx.address().recipient();
-                    let mute = ctx.address().recipient();
-
-                    self.aggregator.do_send(AddNode { node, conn_id, rec, mute });
+                    let rec = ctx.address();
+                    self.aggregator.do_send(AddNode { node, conn_id, rec });
                 } else {
                     if backlog.len() >= 10 {
                         backlog.remove(0);
