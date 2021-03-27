@@ -131,7 +131,7 @@ pub struct AddNode {
     /// Connection id used by the node connector for multiplexing parachains
     pub conn_id: ConnId,
     /// Recipient for the initialization message
-    pub rec: Recipient<Initialize>,
+    pub rec: Addr<NodeConnector>,
     /// Recipient for the mute message
     pub mute: Recipient<Mute>,
 }
