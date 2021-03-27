@@ -5,7 +5,7 @@ use bytes::Bytes;
 use rustc_hash::FxHashMap;
 
 use crate::aggregator::{Aggregator, DropChain, RenameChain, NodeCount};
-use crate::node::{Node, connector::Initialize, message::{NodeMessage, Payload}};
+use crate::node::{Node, connector::{Initialize, NodeConnector}, message::{NodeMessage, Payload}};
 use crate::feed::connector::{FeedId, FeedConnector, Subscribed, Unsubscribed};
 use crate::feed::{self, FeedMessageSerializer};
 use crate::util::{DenseMap, NumStats, now};
@@ -196,8 +196,8 @@ pub struct AddNode {
     pub node: NodeDetails,
     /// Connection id used by the node connector for multiplexing parachains
     pub conn_id: ConnId,
-    /// Recipient for the initialization message
-    pub rec: Recipient<Initialize>,
+    /// Address of the NodeConnector actor to which we send [`Initialize`] or [`Mute`] messages.
+    pub node_connector: Addr<NodeConnector>,
 }
 
 /// Message sent from the NodeConnector to the Chain when it receives new telemetry data
@@ -250,14 +250,14 @@ impl Handler<AddNode> for Chain {
     type Result = ();
 
     fn handle(&mut self, msg: AddNode, ctx: &mut Self::Context) {
-        let AddNode { node, conn_id, rec } = msg;
+        let AddNode { node, conn_id, node_connector } = msg;
         log::trace!(target: "Chain::AddNode", "New node connected. Chain '{}', node count goes from {} to {}", node.chain, self.nodes.len(), self.nodes.len() + 1);
         self.increment_label_count(&node.chain);
 
         let nid = self.nodes.add(Node::new(node));
         let chain = ctx.address();
 
-        if rec.do_send(Initialize { nid, conn_id, chain }).is_err() {
+        if node_connector.try_send(Initialize { nid, conn_id, chain }).is_err() {
             self.nodes.remove(nid);
         } else if let Some(node) = self.nodes.get(nid) {
             self.serializer.push(feed::AddedNode(nid, node));

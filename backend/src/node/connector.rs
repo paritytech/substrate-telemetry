@@ -121,8 +121,7 @@ impl NodeConnector {
                         _ => ()
                     }
 
-                    let rec = ctx.address();
-                    self.aggregator.do_send(AddNode { node, conn_id, rec });
+                    self.aggregator.do_send(AddNode { node, conn_id, node_connector: ctx.address() });
                 } else {
                     if backlog.len() >= 10 {
                         backlog.remove(0);

@@ -3,7 +3,7 @@ use actix::prelude::*;
 use actix_web_actors::ws::{CloseReason, CloseCode};
 use lazy_static::lazy_static;
 
-use crate::node::connector::{Initialize, Mute};
+use crate::node::connector::{Mute, NodeConnector};
 use crate::feed::connector::{FeedConnector, Connected, FeedId};
 use crate::util::DenseMap;
 use crate::feed::{self, FeedMessageSerializer};
@@ -130,10 +130,8 @@ pub struct AddNode {
     pub node: NodeDetails,
     /// Connection id used by the node connector for multiplexing parachains
     pub conn_id: ConnId,
-    /// Recipient for the initialization message
-    pub rec: Addr<NodeConnector>,
-    /// Recipient for the mute message
-    pub mute: Recipient<Mute>,
+    /// Address of the NodeConnector actor
+    pub node_connector: Addr<NodeConnector>,
 }
 
 /// Message sent from the Chain to the Aggregator when the Chain loses all nodes
@@ -200,12 +198,12 @@ impl Handler<AddNode> for Aggregator {
     fn handle(&mut self, msg: AddNode, ctx: &mut Self::Context) {
         if self.denylist.contains(&*msg.node.chain) {
             log::warn!(target: "Aggregator::AddNode", "'{}' is on the denylist.", msg.node.chain);
-            let AddNode { mute, .. } = msg;
+            let AddNode { node_connector, .. } = msg;
             let reason = CloseReason{ code: CloseCode::Abnormal, description: Some("Denied".into()) };
-            let _ = mute.do_send(Mute { reason });
+            node_connector.do_send(Mute { reason });
             return;
         }
-        let AddNode { node, conn_id, rec } = msg;
+        let AddNode { node, conn_id, node_connector } = msg;
         log::trace!(target: "Aggregator::AddNode", "New node connected. Chain '{}'", node.chain);
 
         let cid = self.lazy_chain(&node.chain, ctx);
@@ -214,12 +212,12 @@ impl Handler<AddNode> for Aggregator {
             chain.addr.do_send(chain::AddNode {
                 node,
                 conn_id,
-                rec,
+                node_connector,
             });
         } else {
             log::warn!(target: "Aggregator::AddNode", "Chain {} is over quota ({})", chain.label, chain.max_nodes);
             let reason = CloseReason{ code: CloseCode::Again, description: Some("Overquota".into()) };
-            let _ = rec.do_send(Mute { reason });
+            node_connector.do_send(Mute { reason });
         }
     }
 }
