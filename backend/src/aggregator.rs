@@ -205,7 +205,7 @@ impl Handler<AddNode> for Aggregator {
             let _ = mute.do_send(Mute { reason });
             return;
         }
-        let AddNode { node, conn_id, rec, mute } = msg;
+        let AddNode { node, conn_id, rec } = msg;
         log::trace!(target: "Aggregator::AddNode", "New node connected. Chain '{}'", node.chain);
 
         let cid = self.lazy_chain(&node.chain, ctx);
