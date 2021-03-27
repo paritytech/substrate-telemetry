@@ -219,7 +219,7 @@ impl Handler<AddNode> for Aggregator {
         } else {
             log::warn!(target: "Aggregator::AddNode", "Chain {} is over quota ({})", chain.label, chain.max_nodes);
             let reason = CloseReason{ code: CloseCode::Again, description: Some("Overquota".into()) };
-            let _ = mute.do_send(Mute { reason });
+            let _ = rec.do_send(Mute { reason });
         }
     }
 }
