@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use actix::prelude::*;
 use actix_web_actors::ws::{CloseReason, CloseCode};
-use lazy_static::lazy_static;
+use ctor::ctor;
 
 use crate::node::connector::{Mute, NodeConnector};
 use crate::feed::connector::{FeedConnector, Connected, FeedId};
@@ -30,20 +30,20 @@ pub struct ChainEntry {
     max_nodes: usize,
 }
 
-lazy_static! {
-    /// Labels of chains we consider "first party". These chains allow any
-    /// number of nodes to connect.
-    static ref FIRST_PARTY_NETWORKS: HashSet<&'static str> = {
-        let mut set = HashSet::new();
-        set.insert("Polkadot");
-        set.insert("Kusama");
-        set.insert("Westend");
-        set.insert("Rococo");
-        set
-    };
-}
+#[ctor]
+/// Labels of chains we consider "first party". These chains allow any
+/// number of nodes to connect.
+static FIRST_PARTY_NETWORKS: HashSet<&'static str> = {
+    let mut set = HashSet::new();
+    set.insert("Polkadot");
+    set.insert("Kusama");
+    set.insert("Westend");
+    set.insert("Rococo");
+    set
+};
+
 /// Max number of nodes allowed to connect to the telemetry server.
-const THIRD_PARTY_NETWORKS_MAX_NODES: usize = 2;
+const THIRD_PARTY_NETWORKS_MAX_NODES: usize = 500;
 
 impl Aggregator {
     pub fn new(denylist: HashSet<String>) -> Self {
