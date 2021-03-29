@@ -1,8 +1,9 @@
 use std::collections::{HashMap, HashSet};
 use actix::prelude::*;
-use lazy_static::lazy_static;
+use actix_web_actors::ws::{CloseReason, CloseCode};
+use ctor::ctor;
 
-use crate::node::connector::Initialize;
+use crate::node::connector::{Mute, NodeConnector};
 use crate::feed::connector::{FeedConnector, Connected, FeedId};
 use crate::util::DenseMap;
 use crate::feed::{self, FeedMessageSerializer};
@@ -29,18 +30,18 @@ pub struct ChainEntry {
     max_nodes: usize,
 }
 
-lazy_static! {
-    /// Labels of chains we consider "first party". These chains are allowed any
-    /// number of nodes to connect.
-    static ref FIRST_PARTY_NETWORKS: HashSet<&'static str> = {
-        let mut set = HashSet::new();
-        set.insert("Polkadot");
-        set.insert("Kusama");
-        set.insert("Westend");
-        set.insert("Rococo");
-        set
-    };
-}
+#[ctor]
+/// Labels of chains we consider "first party". These chains allow any
+/// number of nodes to connect.
+static FIRST_PARTY_NETWORKS: HashSet<&'static str> = {
+    let mut set = HashSet::new();
+    set.insert("Polkadot");
+    set.insert("Kusama");
+    set.insert("Westend");
+    set.insert("Rococo");
+    set
+};
+
 /// Max number of nodes allowed to connect to the telemetry server.
 const THIRD_PARTY_NETWORKS_MAX_NODES: usize = 500;
 
@@ -129,8 +130,8 @@ pub struct AddNode {
     pub node: NodeDetails,
     /// Connection id used by the node connector for multiplexing parachains
     pub conn_id: ConnId,
-    /// Recipient for the initialization message
-    pub rec: Recipient<Initialize>,
+    /// Address of the NodeConnector actor
+    pub node_connector: Addr<NodeConnector>,
 }
 
 /// Message sent from the Chain to the Aggregator when the Chain loses all nodes
@@ -196,10 +197,13 @@ impl Handler<AddNode> for Aggregator {
 
     fn handle(&mut self, msg: AddNode, ctx: &mut Self::Context) {
         if self.denylist.contains(&*msg.node.chain) {
-            log::debug!(target: "Aggregator::AddNode", "'{}' is on the denylist.", msg.node.chain);
+            log::warn!(target: "Aggregator::AddNode", "'{}' is on the denylist.", msg.node.chain);
+            let AddNode { node_connector, .. } = msg;
+            let reason = CloseReason{ code: CloseCode::Abnormal, description: Some("Denied".into()) };
+            node_connector.do_send(Mute { reason });
             return;
         }
-        let AddNode { node, conn_id, rec } = msg;
+        let AddNode { node, conn_id, node_connector } = msg;
         log::trace!(target: "Aggregator::AddNode", "New node connected. Chain '{}'", node.chain);
 
         let cid = self.lazy_chain(&node.chain, ctx);
@@ -208,10 +212,12 @@ impl Handler<AddNode> for Aggregator {
             chain.addr.do_send(chain::AddNode {
                 node,
                 conn_id,
-                rec,
+                node_connector,
             });
         } else {
             log::warn!(target: "Aggregator::AddNode", "Chain {} is over quota ({})", chain.label, chain.max_nodes);
+            let reason = CloseReason{ code: CloseCode::Again, description: Some("Overquota".into()) };
+            node_connector.do_send(Mute { reason });
         }
     }
 }

@@ -5,7 +5,7 @@ use std::mem;
 
 use bytes::{Bytes, BytesMut};
 use actix::prelude::*;
-use actix_web_actors::ws;
+use actix_web_actors::ws::{self, CloseReason};
 use actix_http::ws::Item;
 use crate::aggregator::{Aggregator, AddNode};
 use crate::chain::{Chain, UpdateNode, RemoveNode};
@@ -24,7 +24,7 @@ const CONT_BUF_LIMIT: usize = 10 * 1024 * 1024;
 pub struct NodeConnector {
     /// Multiplexing connections by id
     multiplex: BTreeMap<ConnId, ConnMultiplex>,
-    /// Client must send ping at least once per 10 seconds (CLIENT_TIMEOUT),
+    /// Client must send ping at least once every 60 seconds (CLIENT_TIMEOUT),
     hb: Instant,
     /// Aggregator actor address
     aggregator: Addr<Aggregator>,
@@ -90,6 +90,7 @@ impl NodeConnector {
             // check client heartbeats
             if Instant::now().duration_since(act.hb) > CLIENT_TIMEOUT {
                 // stop actor
+                ctx.close(Some(CloseReason { code: ws::CloseCode::Abnormal, description: Some("Missed heartbeat".into())}));
                 ctx.stop();
             }
         });
@@ -109,21 +110,14 @@ impl NodeConnector {
             ConnMultiplex::Waiting { backlog } => {
                 if let Payload::SystemConnected(connected) = msg.payload() {
                     let mut node = connected.node.clone();
-                    let rec = ctx.address().recipient();
-
                     // FIXME: Use genesis hash instead of names to avoid this mess
                     match &*node.chain {
                         "Kusama CC3" => node.chain = "Kusama".into(),
                         "Polkadot CC1" => node.chain = "Polkadot".into(),
-                        "Earth" => {
-                            // Temp, there is too many of them
-                            ctx.stop();
-                            return;
-                        },
                         _ => ()
                     }
 
-                    self.aggregator.do_send(AddNode { node, conn_id, rec });
+                    self.aggregator.do_send(AddNode { node, conn_id, node_connector: ctx.address() });
                 } else {
                     if backlog.len() >= 10 {
                         backlog.remove(0);
@@ -154,6 +148,23 @@ impl NodeConnector {
 
     fn finish_frame(&mut self) -> Bytes {
         mem::replace(&mut self.contbuf, BytesMut::new()).freeze()
+    }
+}
+
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct Mute {
+    pub reason: CloseReason,
+}
+
+impl Handler<Mute> for NodeConnector {
+    type Result = ();
+    fn handle(&mut self, msg: Mute, ctx: &mut Self::Context) {
+        let Mute { reason } = msg;
+        log::debug!(target: "NodeConnector::Mute", "Muting a node. Reason: {:?}", reason.description);
+
+        ctx.close(Some(reason));
+        ctx.stop();
     }
 }
 
@@ -203,7 +214,8 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for NodeConnector {
             Ok(ws::Message::Pong(_)) => return,
             Ok(ws::Message::Text(text)) => text.into_bytes(),
             Ok(ws::Message::Binary(data)) => data,
-            Ok(ws::Message::Close(_)) => {
+            Ok(ws::Message::Close(reason)) => {
+                ctx.close(reason);
                 ctx.stop();
                 return;
             }
