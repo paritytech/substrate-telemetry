@@ -1,26 +1,23 @@
-#### BUILDER IMAGE -- quite big one ####
-FROM paritytech/musl-ci-linux as builder
-LABEL maintainer="Daniel Maricic daniel@woss.io"
-LABEL description="Polkadot Telemetry backend builder image"
+FROM paritytech/ci-linux:production as builder
 
 ARG PROFILE=release
 WORKDIR /app
 
 COPY . .
 
-RUN cargo build --${PROFILE} --bins --target x86_64-unknown-linux-musl
-
+RUN cargo build --${PROFILE} --bins
 
 # MAIN IMAGE FOR PEOPLE TO PULL --- small one#
-FROM scratch
-LABEL maintainer="Daniel Maricic daniel@woss.io"
+FROM debian:buster-slim
+LABEL maintainer="Parity Technologies"
 LABEL description="Polkadot Telemetry backend, static build"
 
 ARG PROFILE=release
 WORKDIR /usr/local/bin
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=builder /app/target/x86_64-unknown-linux-musl/$PROFILE/telemetry /usr/local/bin
+COPY --from=builder /app/target/$PROFILE/telemetry /usr/local/bin
+RUN apt-get -y update && apt-get -y install openssl && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/
 
 EXPOSE 8000
 
