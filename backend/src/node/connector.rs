@@ -90,6 +90,7 @@ impl NodeConnector {
             // check client heartbeats
             if Instant::now().duration_since(act.hb) > CLIENT_TIMEOUT {
                 // stop actor
+                ctx.close(Some(CloseReason { code: ws::CloseCode::Abnormal, description: Some("Missed heartbeat".into())}));
                 ctx.stop();
             }
         });
@@ -113,11 +114,6 @@ impl NodeConnector {
                     match &*node.chain {
                         "Kusama CC3" => node.chain = "Kusama".into(),
                         "Polkadot CC1" => node.chain = "Polkadot".into(),
-                        "Earth" => {
-                            // Temp, there is too many of them
-                            ctx.stop();
-                            return;
-                        },
                         _ => ()
                     }
 
