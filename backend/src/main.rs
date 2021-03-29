@@ -40,7 +40,6 @@ struct Opts {
     #[clap(
         required = false,
         long = "denylist",
-        default_value = "Earth",
         about = "Space delimited list of chains that are not allowed to connect to telemetry. Case sensitive."
     )]
     denylist: Vec<String>,
@@ -165,7 +164,7 @@ async fn health(aggregator: web::Data<Addr<Aggregator>>) -> Result<HttpResponse,
 /// This can be changed using the `PORT` and `BIND` ENV variables.
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let opts: Opts = Opts::parse();
+    let opts = Opts::parse();
     let log_level = &opts.log_level;
     SimpleLogger::new().with_level(log_level.into()).init().expect("Must be able to start a logger");
 
@@ -173,7 +172,7 @@ async fn main() -> std::io::Result<()> {
     let aggregator = Aggregator::new(denylist).start();
     let factory = LocatorFactory::new();
     let locator = SyncArbiter::start(4, move || factory.create());
-
+    log::info!("Starting telemetry version: {}", env!("CARGO_PKG_VERSION"));
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::NormalizePath::default())
