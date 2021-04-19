@@ -1,6 +1,6 @@
-use num_traits::{Zero, NumOps, Bounded};
-use std::iter::Sum;
+use num_traits::{Bounded, NumOps, Zero};
 use std::convert::TryFrom;
+use std::iter::Sum;
 
 /// Keep track of last N numbers pushed onto internal stack.
 /// Provides means to get an average of said numbers.

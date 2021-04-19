@@ -1,11 +1,14 @@
 use bytes::Bytes;
 use std::sync::Arc;
 
-use crate::types::{NodeId, NodeDetails, NodeStats, NodeIO, NodeHardware, NodeLocation, BlockDetails, Block, Timestamp};
+use crate::types::{
+    Block, BlockDetails, NodeDetails, NodeHardware, NodeIO, NodeId, NodeLocation, NodeStats,
+    Timestamp,
+};
 use crate::util::now;
 
-pub mod message;
 pub mod connector;
+pub mod message;
 
 use message::SystemInterval;
 
@@ -41,7 +44,8 @@ pub struct Node {
 
 impl Node {
     pub fn new(mut details: NodeDetails) -> Self {
-        let startup_time = details.startup_time
+        let startup_time = details
+            .startup_time
             .take()
             .and_then(|time| time.parse().ok());
 
@@ -111,7 +115,11 @@ impl Node {
         }
     }
 
-    pub fn update_details(&mut self, timestamp: u64, propagation_time: Option<u64>) -> Option<&BlockDetails> {
+    pub fn update_details(
+        &mut self,
+        timestamp: u64,
+        propagation_time: Option<u64>,
+    ) -> Option<&BlockDetails> {
         self.best.block_time = timestamp - self.best.block_timestamp;
         self.best.block_timestamp = timestamp;
         self.best.propagation_time = propagation_time;
@@ -142,26 +150,26 @@ impl Node {
     }
 
     pub fn update_stats(&mut self, interval: &SystemInterval) -> Option<&NodeStats> {
-      let mut changed = false;
+        let mut changed = false;
 
-      if let Some(peers) = interval.peers {
-          if peers != self.stats.peers {
-              self.stats.peers = peers;
-              changed = true;
-          }
-      }
-      if let Some(txcount) = interval.txcount {
-          if txcount != self.stats.txcount {
-              self.stats.txcount = txcount;
-              changed = true;
-          }
-      }
+        if let Some(peers) = interval.peers {
+            if peers != self.stats.peers {
+                self.stats.peers = peers;
+                changed = true;
+            }
+        }
+        if let Some(txcount) = interval.txcount {
+            if txcount != self.stats.txcount {
+                self.stats.txcount = txcount;
+                changed = true;
+            }
+        }
 
-      if changed {
-          Some(&self.stats)
-      } else {
-          None
-      }
+        if changed {
+            Some(&self.stats)
+        } else {
+            None
+        }
     }
 
     pub fn update_io(&mut self, interval: &SystemInterval) -> Option<&NodeIO> {

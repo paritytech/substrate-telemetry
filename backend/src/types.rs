@@ -1,7 +1,7 @@
-use serde::ser::{Serialize, Serializer, SerializeTuple};
+use serde::ser::{Serialize, SerializeTuple, Serializer};
 use serde::Deserialize;
 
-use crate::util::{MeanList, now};
+use crate::util::{now, MeanList};
 
 pub type NodeId = usize;
 pub type ConnId = u64;

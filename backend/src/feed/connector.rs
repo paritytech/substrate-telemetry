@@ -1,11 +1,11 @@
-use std::time::{Duration, Instant};
-use bytes::Bytes;
-use actix::prelude::*;
-use actix_web_actors::ws;
-use crate::aggregator::{Aggregator, Connect, Disconnect, Subscribe, SendFinality, NoMoreFinality};
+use crate::aggregator::{Aggregator, Connect, Disconnect, NoMoreFinality, SendFinality, Subscribe};
 use crate::chain::Unsubscribe;
 use crate::feed::{FeedMessageSerializer, Pong};
 use crate::util::fnv;
+use actix::prelude::*;
+use actix_web_actors::ws;
+use bytes::Bytes;
+use std::time::{Duration, Instant};
 
 pub type FeedId = usize;
 
@@ -83,20 +83,21 @@ impl FeedConnector {
                     hash => self.chain_hash = hash,
                 }
 
-                self.aggregator.send(Subscribe {
-                    chain: payload.into(),
-                    feed: ctx.address(),
-                })
-                .into_actor(self)
-                .then(|res, actor, _| {
-                    match res {
-                        Ok(true) => (),
-                        // Chain not found, reset hash
-                        _ => actor.chain_hash = 0,
-                    }
-                    async {}.into_actor(actor)
-                })
-                .wait(ctx);
+                self.aggregator
+                    .send(Subscribe {
+                        chain: payload.into(),
+                        feed: ctx.address(),
+                    })
+                    .into_actor(self)
+                    .then(|res, actor, _| {
+                        match res {
+                            Ok(true) => (),
+                            // Chain not found, reset hash
+                            _ => actor.chain_hash = 0,
+                        }
+                        async {}.into_actor(actor)
+                    })
+                    .wait(ctx);
             }
             "send-finality" => {
                 self.aggregator.do_send(SendFinality {
@@ -154,7 +155,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for FeedConnector {
             Ok(ws::Message::Text(text)) => {
                 if let Some(idx) = text.find(':') {
                     let cmd = &text[..idx];
-                    let payload = &text[idx+1..];
+                    let payload = &text[idx + 1..];
 
                     log::info!("New FEED message: {}", cmd);
 

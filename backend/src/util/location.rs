@@ -2,8 +2,8 @@ use std::net::Ipv4Addr;
 use std::sync::Arc;
 
 use actix::prelude::*;
-use rustc_hash::FxHashMap;
 use parking_lot::RwLock;
+use rustc_hash::FxHashMap;
 use serde::Deserialize;
 
 use crate::chain::{Chain, LocateNode};
@@ -26,7 +26,11 @@ impl LocatorFactory {
         // Default entry for localhost
         cache.insert(
             Ipv4Addr::new(127, 0, 0, 1),
-            Some(Arc::new(NodeLocation { latitude: 52.516_6667, longitude: 13.4, city: "Berlin".into() })),
+            Some(Arc::new(NodeLocation {
+                latitude: 52.516_6667,
+                longitude: 13.4,
+                city: "Berlin".into(),
+            })),
         );
 
         LocatorFactory {
@@ -90,10 +94,13 @@ impl Handler<LocateRequest> for Locator {
 
         if let Some(item) = self.cache.read().get(&ip) {
             if let Some(location) = item {
-                return chain.do_send(LocateNode { nid, location: location.clone() });
+                return chain.do_send(LocateNode {
+                    nid,
+                    location: location.clone(),
+                });
             }
 
-            return
+            return;
         }
 
         let location = match self.iplocate(ip) {
@@ -120,15 +127,20 @@ impl Locator {
     }
 
     fn iplocate_ipapi_co(&self, ip: Ipv4Addr) -> Result<Option<Arc<NodeLocation>>, reqwest::Error> {
-        let location = self.query(&format!("https://ipapi.co/{}/json", ip))?.map(Arc::new);
+        let location = self
+            .query(&format!("https://ipapi.co/{}/json", ip))?
+            .map(Arc::new);
 
         Ok(location)
     }
 
-    fn iplocate_ipinfo_io(&self, ip: Ipv4Addr) -> Result<Option<Arc<NodeLocation>>, reqwest::Error> {
-        let location = self.query(&format!("https://ipinfo.io/{}/json", ip))?.and_then(|loc: IPApiLocate| {
-            loc.into_node_location().map(Arc::new)
-        });
+    fn iplocate_ipinfo_io(
+        &self,
+        ip: Ipv4Addr,
+    ) -> Result<Option<Arc<NodeLocation>>, reqwest::Error> {
+        let location = self
+            .query(&format!("https://ipinfo.io/{}/json", ip))?
+            .and_then(|loc: IPApiLocate| loc.into_node_location().map(Arc::new));
 
         Ok(location)
     }

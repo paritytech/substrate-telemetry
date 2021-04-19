@@ -1,15 +1,19 @@
-use std::collections::HashMap;
 use actix::prelude::*;
-use std::sync::Arc;
 use bytes::Bytes;
 use rustc_hash::FxHashMap;
+use std::collections::HashMap;
+use std::sync::Arc;
 
-use crate::aggregator::{Aggregator, DropChain, RenameChain, NodeCount};
-use crate::node::{Node, connector::{Initialize, NodeConnector}, message::{NodeMessage, Payload}};
-use crate::feed::connector::{FeedId, FeedConnector, Subscribed, Unsubscribed};
+use crate::aggregator::{Aggregator, DropChain, NodeCount, RenameChain};
+use crate::feed::connector::{FeedConnector, FeedId, Subscribed, Unsubscribed};
 use crate::feed::{self, FeedMessageSerializer};
-use crate::util::{DenseMap, NumStats, now};
-use crate::types::{ConnId, NodeId, NodeDetails, NodeLocation, Block, Timestamp, BlockNumber};
+use crate::node::{
+    connector::{Initialize, NodeConnector},
+    message::Payload,
+    Node,
+};
+use crate::types::{Block, BlockNumber, ConnId, NodeDetails, NodeId, NodeLocation, Timestamp};
+use crate::util::{now, DenseMap, NumStats};
 
 const STALE_TIMEOUT: u64 = 2 * 60 * 1000; // 2 minutes
 
@@ -70,11 +74,11 @@ impl Chain {
             Some(count) => {
                 *count += 1;
                 *count
-            },
+            }
             None => {
                 self.labels.insert(label.into(), 1);
                 1
-            },
+            }
         };
 
         if &*self.label.0 == label {
@@ -106,7 +110,8 @@ impl Chain {
     fn rename(&mut self, label: Label, count: usize) {
         self.label = (label, count);
 
-        self.aggregator.do_send(RenameChain(self.cid, self.label.0.clone()));
+        self.aggregator
+            .do_send(RenameChain(self.cid, self.label.0.clone()));
     }
 
     fn broadcast(&mut self) {
@@ -128,7 +133,8 @@ impl Chain {
     /// Triggered when the number of nodes in this chain has changed, Aggregator will
     /// propagate new counts to all connected feeds
     fn update_count(&self) {
-        self.aggregator.do_send(NodeCount(self.cid, self.nodes.len()));
+        self.aggregator
+            .do_send(NodeCount(self.cid, self.nodes.len()));
     }
 
     /// Check if the chain is stale (has not received a new best block in a while).
@@ -170,8 +176,13 @@ impl Chain {
             self.block_times.reset();
             self.timestamp = timestamp;
 
-            self.serializer.push(feed::BestBlock(self.best.height, timestamp.unwrap_or(now), None));
-            self.serializer.push(feed::BestFinalized(finalized.height, finalized.hash));
+            self.serializer.push(feed::BestBlock(
+                self.best.height,
+                timestamp.unwrap_or(now),
+                None,
+            ));
+            self.serializer
+                .push(feed::BestFinalized(finalized.height, finalized.hash));
         }
     }
 }
@@ -205,8 +216,8 @@ pub struct AddNode {
 #[rtype(result = "()")]
 pub struct UpdateNode {
     pub nid: NodeId,
-    pub msg: NodeMessage,
     pub raw: Option<Bytes>,
+    pub payload: Payload,
 }
 
 /// Message sent from the NodeConnector to the Chain when the connector disconnects
@@ -250,14 +261,25 @@ impl Handler<AddNode> for Chain {
     type Result = ();
 
     fn handle(&mut self, msg: AddNode, ctx: &mut Self::Context) {
-        let AddNode { node, conn_id, node_connector } = msg;
+        let AddNode {
+            node,
+            conn_id,
+            node_connector,
+        } = msg;
         log::trace!(target: "Chain::AddNode", "New node connected. Chain '{}', node count goes from {} to {}", node.chain, self.nodes.len(), self.nodes.len() + 1);
         self.increment_label_count(&node.chain);
 
         let nid = self.nodes.add(Node::new(node));
         let chain = ctx.address();
 
-        if node_connector.try_send(Initialize { nid, conn_id, chain }).is_err() {
+        if node_connector
+            .try_send(Initialize {
+                nid,
+                conn_id,
+                chain,
+            })
+            .is_err()
+        {
             self.nodes.remove(nid);
         } else if let Some(node) = self.nodes.get(nid) {
             self.serializer.push(feed::AddedNode(nid, node));
@@ -297,7 +319,11 @@ impl Chain {
                     self.average_block_time = Some(self.block_times.average());
                 }
                 self.timestamp = Some(now);
-                self.serializer.push(feed::BestBlock(self.best.height, now, self.average_block_time));
+                self.serializer.push(feed::BestBlock(
+                    self.best.height,
+                    now,
+                    self.average_block_time,
+                ));
                 propagation_time = Some(0);
             } else if block.height == self.best.height {
                 if let Some(timestamp) = self.timestamp {
@@ -316,14 +342,14 @@ impl Handler<UpdateNode> for Chain {
     type Result = ();
 
     fn handle(&mut self, msg: UpdateNode, _: &mut Self::Context) {
-        let UpdateNode { nid, msg, raw } = msg;
+        let UpdateNode { nid, payload, raw } = msg;
 
-        if let Some(block) = msg.payload().best_block() {
+        if let Some(block) = payload.best_block() {
             self.handle_block(block, nid);
         }
 
         if let Some(node) = self.nodes.get_mut(nid) {
-            match msg.payload() {
+            match payload {
                 Payload::SystemInterval(ref interval) => {
                     if interval.network_state.is_some() {
                         if let Some(raw) = raw {
@@ -354,49 +380,69 @@ impl Handler<UpdateNode> for Chain {
                     return;
                 }
                 Payload::AfgFinalized(finalized) => {
-                    if let Ok(finalized_number) = finalized.finalized_number.parse::<BlockNumber>() {
+                    if let Ok(finalized_number) = finalized.finalized_number.parse::<BlockNumber>()
+                    {
                         if let Some(addr) = node.details().validator.clone() {
-                            self.serializer.push(feed::AfgFinalized(addr, finalized_number,
-                                finalized.finalized_hash));
+                            self.serializer.push(feed::AfgFinalized(
+                                addr,
+                                finalized_number,
+                                finalized.finalized_hash,
+                            ));
                             self.broadcast_finality();
                         }
                     }
                     return;
                 }
                 Payload::AfgReceivedPrecommit(precommit) => {
-                    if let Ok(finalized_number) = precommit.received.target_number.parse::<BlockNumber>() {
+                    if let Ok(finalized_number) =
+                        precommit.received.target_number.parse::<BlockNumber>()
+                    {
                         if let Some(addr) = node.details().validator.clone() {
                             let voter = precommit.received.voter.clone();
-                            self.serializer.push(feed::AfgReceivedPrecommit(addr, finalized_number,
-                                precommit.received.target_hash, voter));
+                            self.serializer.push(feed::AfgReceivedPrecommit(
+                                addr,
+                                finalized_number,
+                                precommit.received.target_hash,
+                                voter,
+                            ));
                             self.broadcast_finality();
                         }
                     }
                     return;
                 }
                 Payload::AfgReceivedPrevote(prevote) => {
-                    if let Ok(finalized_number) = prevote.received.target_number.parse::<BlockNumber>() {
+                    if let Ok(finalized_number) =
+                        prevote.received.target_number.parse::<BlockNumber>()
+                    {
                         if let Some(addr) = node.details().validator.clone() {
                             let voter = prevote.received.voter.clone();
-                            self.serializer.push(feed::AfgReceivedPrevote(addr, finalized_number,
-                                prevote.received.target_hash, voter));
+                            self.serializer.push(feed::AfgReceivedPrevote(
+                                addr,
+                                finalized_number,
+                                prevote.received.target_hash,
+                                voter,
+                            ));
                             self.broadcast_finality();
                         }
                     }
                     return;
                 }
-                Payload::AfgReceivedCommit(_) => {
-                }
+                Payload::AfgReceivedCommit(_) => {}
                 _ => (),
             }
 
-            if let Some(block) = msg.payload().finalized_block() {
+            if let Some(block) = payload.finalized_block() {
                 if let Some(finalized) = node.update_finalized(block) {
-                    self.serializer.push(feed::FinalizedBlock(nid, finalized.height, finalized.hash));
+                    self.serializer.push(feed::FinalizedBlock(
+                        nid,
+                        finalized.height,
+                        finalized.hash,
+                    ));
 
                     if finalized.height > self.finalized.height {
                         self.finalized = *finalized;
-                        self.serializer.push(feed::BestFinalized(finalized.height, finalized.hash));
+                        self.serializer
+                            .push(feed::BestFinalized(finalized.height, finalized.hash));
                     }
                 }
             }
@@ -413,7 +459,12 @@ impl Handler<LocateNode> for Chain {
         let LocateNode { nid, location } = msg;
 
         if let Some(node) = self.nodes.get_mut(nid) {
-            self.serializer.push(feed::LocatedNode(nid, location.latitude, location.longitude, &location.city));
+            self.serializer.push(feed::LocatedNode(
+                nid,
+                location.latitude,
+                location.longitude,
+                &location.city,
+            ));
 
             node.update_location(location);
         }
@@ -457,7 +508,10 @@ impl Handler<Subscribe> for Chain {
             self.timestamp.unwrap_or(0),
             self.average_block_time,
         ));
-        self.serializer.push(feed::BestFinalized(self.finalized.height, self.finalized.hash));
+        self.serializer.push(feed::BestFinalized(
+            self.finalized.height,
+            self.finalized.hash,
+        ));
 
         for (idx, (nid, node)) in self.nodes.iter().enumerate() {
             // Send subscribtion confirmation and chain head before doing all the nodes,
@@ -469,7 +523,11 @@ impl Handler<Subscribe> for Chain {
             }
 
             self.serializer.push(feed::AddedNode(nid, node));
-            self.serializer.push(feed::FinalizedBlock(nid, node.finalized().height, node.finalized().hash));
+            self.serializer.push(feed::FinalizedBlock(
+                nid,
+                node.finalized().height,
+                node.finalized().hash,
+            ));
             if node.stale() {
                 self.serializer.push(feed::StaleNode(nid));
             }

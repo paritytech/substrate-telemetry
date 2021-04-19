@@ -1,7 +1,10 @@
 use num_traits::{Float, Zero};
 use std::ops::AddAssign;
 
-pub struct MeanList<T> where T: Float + AddAssign + Zero + From<u8> {
+pub struct MeanList<T>
+where
+    T: Float + AddAssign + Zero + From<u8>,
+{
     period_sum: T,
     period_count: u8,
     mean_index: u8,
@@ -24,7 +27,10 @@ where
     }
 }
 
-impl<T> MeanList<T> where T: Float + AddAssign + Zero + From<u8> {
+impl<T> MeanList<T>
+where
+    T: Float + AddAssign + Zero + From<u8>,
+{
     pub fn slice(&self) -> &[T] {
         &self.means[..usize::from(self.mean_index)]
     }

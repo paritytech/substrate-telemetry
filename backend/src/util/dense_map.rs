@@ -27,12 +27,12 @@ impl<T> DenseMap<T> {
             Some(id) => {
                 self.items[id] = Some(f(id));
                 id
-            },
+            }
             None => {
                 let id = self.items.len();
                 self.items.push(Some(f(id)));
                 id
-            },
+            }
         }
     }
 
@@ -57,15 +57,17 @@ impl<T> DenseMap<T> {
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (Id, &T)> + '_ {
-        self.items.iter().enumerate().filter_map(|(id, item)| {
-            Some((id, item.as_ref()?))
-        })
+        self.items
+            .iter()
+            .enumerate()
+            .filter_map(|(id, item)| Some((id, item.as_ref()?)))
     }
 
     pub fn iter_mut(&mut self) -> impl Iterator<Item = (Id, &mut T)> + '_ {
-        self.items.iter_mut().enumerate().filter_map(|(id, item)| {
-            Some((id, item.as_mut()?))
-        })
+        self.items
+            .iter_mut()
+            .enumerate()
+            .filter_map(|(id, item)| Some((id, item.as_mut()?)))
     }
 
     pub fn len(&self) -> usize {

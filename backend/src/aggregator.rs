@@ -1,14 +1,14 @@
-use std::collections::{HashMap, HashSet};
 use actix::prelude::*;
-use actix_web_actors::ws::{CloseReason, CloseCode};
+use actix_web_actors::ws::{CloseCode, CloseReason};
 use ctor::ctor;
+use std::collections::{HashMap, HashSet};
 
-use crate::node::connector::{Mute, NodeConnector};
-use crate::feed::connector::{FeedConnector, Connected, FeedId};
-use crate::util::DenseMap;
+use crate::chain::{self, Chain, ChainId, GetNodeNetworkState, Label};
+use crate::feed::connector::{Connected, FeedConnector, FeedId};
 use crate::feed::{self, FeedMessageSerializer};
-use crate::chain::{self, Chain, ChainId, Label, GetNodeNetworkState};
+use crate::node::connector::{Mute, NodeConnector};
 use crate::types::{ConnId, NodeDetails, NodeId};
+use crate::util::DenseMap;
 
 pub struct Aggregator {
     labels: HashMap<Label, ChainId>,
@@ -17,7 +17,7 @@ pub struct Aggregator {
     feeds: DenseMap<Addr<FeedConnector>>,
     serializer: FeedMessageSerializer,
     /// Denylist for networks we do not want to allow connecting.
-    denylist: HashSet<String>
+    denylist: HashSet<String>,
 }
 
 pub struct ChainEntry {
@@ -59,11 +59,7 @@ impl Aggregator {
 
     /// Get an address to the chain actor by name. If the address is not found,
     /// or the address is disconnected (actor dropped), create a new one.
-    pub fn lazy_chain(
-        &mut self,
-        label: &str,
-        ctx: &mut <Self as Actor>::Context,
-    ) -> ChainId {
+    pub fn lazy_chain(&mut self, label: &str, ctx: &mut <Self as Actor>::Context) -> ChainId {
         let cid = match self.get_chain_id(label, None.as_ref()) {
             Some(cid) => cid,
             None => {
@@ -98,7 +94,10 @@ impl Aggregator {
         let networks = &self.networks;
 
         if let Some(network) = network {
-            networks.get(&**network).or_else(|| labels.get(label)).copied()
+            networks
+                .get(&**network)
+                .or_else(|| labels.get(label))
+                .copied()
         } else {
             labels.get(label).copied()
         }
@@ -106,7 +105,9 @@ impl Aggregator {
 
     fn get_chain(&mut self, label: &str) -> Option<&mut ChainEntry> {
         let chains = &mut self.chains;
-        self.labels.get(label).and_then(move |&cid| chains.get_mut(cid))
+        self.labels
+            .get(label)
+            .and_then(move |&cid| chains.get_mut(cid))
     }
 
     fn broadcast(&mut self) {
@@ -199,15 +200,25 @@ impl Handler<AddNode> for Aggregator {
         if self.denylist.contains(&*msg.node.chain) {
             log::warn!(target: "Aggregator::AddNode", "'{}' is on the denylist.", msg.node.chain);
             let AddNode { node_connector, .. } = msg;
-            let reason = CloseReason{ code: CloseCode::Abnormal, description: Some("Denied".into()) };
+            let reason = CloseReason {
+                code: CloseCode::Abnormal,
+                description: Some("Denied".into()),
+            };
             node_connector.do_send(Mute { reason });
             return;
         }
-        let AddNode { node, conn_id, node_connector } = msg;
+        let AddNode {
+            node,
+            conn_id,
+            node_connector,
+        } = msg;
         log::trace!(target: "Aggregator::AddNode", "New node connected. Chain '{}'", node.chain);
 
         let cid = self.lazy_chain(&node.chain, ctx);
-        let chain = self.chains.get_mut(cid).expect("Entry just created above; qed");
+        let chain = self
+            .chains
+            .get_mut(cid)
+            .expect("Entry just created above; qed");
         if chain.nodes < chain.max_nodes {
             chain.addr.do_send(chain::AddNode {
                 node,
@@ -216,7 +227,10 @@ impl Handler<AddNode> for Aggregator {
             });
         } else {
             log::warn!(target: "Aggregator::AddNode", "Chain {} is over quota ({})", chain.label, chain.max_nodes);
-            let reason = CloseReason{ code: CloseCode::Again, description: Some("Overquota".into()) };
+            let reason = CloseReason {
+                code: CloseCode::Again,
+                description: Some("Overquota".into()),
+            };
             node_connector.do_send(Mute { reason });
         }
     }
@@ -239,7 +253,6 @@ impl Handler<DropChain> for Aggregator {
             log::info!("Dropped chain [{}] from the aggregator", label);
             self.broadcast();
         }
-
     }
 }
 
@@ -323,7 +336,8 @@ impl Handler<Connect> for Aggregator {
 
         // TODO: keep track on number of nodes connected to each chain
         for (_, entry) in self.chains.iter() {
-            self.serializer.push(feed::AddedChain(&entry.label, entry.nodes));
+            self.serializer
+                .push(feed::AddedChain(&entry.label, entry.nodes));
         }
 
         if let Some(msg) = self.serializer.finalize() {

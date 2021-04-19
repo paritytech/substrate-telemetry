@@ -1,8 +1,8 @@
-use actix::prelude::*;
-use serde::Deserialize;
-use serde::de::IgnoredAny;
 use crate::node::NodeDetails;
-use crate::types::{Block, BlockNumber, BlockHash, ConnId};
+use crate::types::{Block, BlockHash, BlockNumber, ConnId};
+use actix::prelude::*;
+use serde::de::IgnoredAny;
+use serde::Deserialize;
 
 #[derive(Deserialize, Debug, Message)]
 #[rtype(result = "()")]
@@ -19,8 +19,8 @@ pub enum NodeMessage {
 }
 
 impl NodeMessage {
-    /// Returns a reference to the payload.
-    pub fn payload(&self) -> &Payload {
+    /// Returns the message payload.
+    pub fn into_payload(self) -> Payload {
         match self {
             NodeMessage::V1 { payload, .. } | NodeMessage::V2 { payload, .. } => payload,
         }
@@ -154,19 +154,15 @@ impl Payload {
 
     pub fn finalized_block(&self) -> Option<Block> {
         match self {
-            Payload::SystemInterval(ref interval) => {
-                Some(Block {
-                    hash: interval.finalized_hash?,
-                    height: interval.finalized_height?,
-                })
-            },
-            Payload::NotifyFinalized(ref finalized) => {
-                Some(Block {
-                    hash: finalized.hash,
-                    height: finalized.height.parse().ok()?
-                })
-            },
-            _ => None
+            Payload::SystemInterval(ref interval) => Some(Block {
+                hash: interval.finalized_hash?,
+                height: interval.finalized_height?,
+            }),
+            Payload::NotifyFinalized(ref finalized) => Some(Block {
+                hash: finalized.hash,
+                height: finalized.height.parse().ok()?,
+            }),
+            _ => None,
         }
     }
 }
