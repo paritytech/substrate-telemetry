@@ -122,16 +122,10 @@ impl NodeConnector {
             }
             ConnMultiplex::Waiting { backlog } => {
                 if let Payload::SystemConnected(connected) = payload {
-                    let mut node = connected.node.clone();
-                    // FIXME: Use genesis hash instead of names to avoid this mess
-                    match &*node.chain {
-                        "Kusama CC3" => node.chain = "Kusama".into(),
-                        "Polkadot CC1" => node.chain = "Polkadot".into(),
-                        _ => (),
-                    }
+                    println!("WTF {:?} {:?}", connected, std::str::from_utf8(&data));
 
                     self.aggregator.do_send(AddNode {
-                        node,
+                        node: connected.node,
                         conn_id,
                         node_connector: ctx.address(),
                     });
