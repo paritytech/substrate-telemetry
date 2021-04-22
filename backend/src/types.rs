@@ -1,7 +1,7 @@
 use serde::ser::{Serialize, SerializeTuple, Serializer};
 use serde::Deserialize;
 
-use crate::util::{now, Hash, MeanList};
+use crate::util::{now, MeanList};
 
 pub type NodeId = usize;
 pub type ConnId = u64;
@@ -16,7 +16,6 @@ pub struct NodeDetails {
     pub name: Box<str>,
     pub implementation: Box<str>,
     pub version: Box<str>,
-    pub genesis_hash: Hash,
     pub validator: Option<Box<str>>,
     pub network_id: Option<Box<str>>,
     pub startup_time: Option<Box<str>>,

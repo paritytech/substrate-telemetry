@@ -122,10 +122,9 @@ impl NodeConnector {
             }
             ConnMultiplex::Waiting { backlog } => {
                 if let Payload::SystemConnected(connected) = payload {
-                    println!("WTF {:?} {:?}", connected, std::str::from_utf8(&data));
-
                     self.aggregator.do_send(AddNode {
                         node: connected.node,
+                        genesis_hash: connected.genesis_hash,
                         conn_id,
                         node_connector: ctx.address(),
                     });

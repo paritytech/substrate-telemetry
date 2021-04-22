@@ -8,11 +8,11 @@ use crate::feed::connector::{Connected, FeedConnector, FeedId};
 use crate::feed::{self, FeedMessageSerializer};
 use crate::node::connector::{Mute, NodeConnector};
 use crate::types::{ConnId, NodeDetails, NodeId};
-use crate::util::DenseMap;
+use crate::util::{DenseMap, Hash};
 
 pub struct Aggregator {
+    hashes: HashMap<Hash, ChainId>,
     labels: HashMap<Label, ChainId>,
-    networks: HashMap<Label, ChainId>,
     chains: DenseMap<ChainEntry>,
     feeds: DenseMap<Addr<FeedConnector>>,
     serializer: FeedMessageSerializer,
@@ -22,8 +22,8 @@ pub struct Aggregator {
 
 pub struct ChainEntry {
     addr: Addr<Chain>,
+    hash: Hash,
     label: Label,
-    network_id: Option<Label>,
     /// Node count
     nodes: usize,
     /// Maximum allowed nodes
@@ -48,8 +48,8 @@ const THIRD_PARTY_NETWORKS_MAX_NODES: usize = 500;
 impl Aggregator {
     pub fn new(denylist: HashSet<String>) -> Self {
         Aggregator {
+            hashes: HashMap::new(),
             labels: HashMap::new(),
-            networks: HashMap::new(),
             chains: DenseMap::new(),
             feeds: DenseMap::new(),
             serializer: FeedMessageSerializer::new(),
@@ -59,8 +59,8 @@ impl Aggregator {
 
     /// Get an address to the chain actor by name. If the address is not found,
     /// or the address is disconnected (actor dropped), create a new one.
-    pub fn lazy_chain(&mut self, label: &str, ctx: &mut <Self as Actor>::Context) -> ChainId {
-        let cid = match self.get_chain_id(label, None.as_ref()) {
+    pub fn lazy_chain(&mut self, hash: Hash, label: &str, ctx: &mut <Self as Actor>::Context) -> ChainId {
+        let cid = match self.hashes.get(&hash).copied() {
             Some(cid) => cid,
             None => {
                 self.serializer.push(feed::AddedChain(&label, 1));
@@ -71,14 +71,15 @@ impl Aggregator {
                 let cid = self.chains.add_with(|cid| {
                     ChainEntry {
                         addr: Chain::new(cid, addr, label.clone()).start(),
+                        hash,
                         label: label.clone(),
-                        network_id: None, // TODO: this doesn't seem to be used anywhere. Can it be removed?
                         nodes: 1,
                         max_nodes,
                     }
                 });
 
                 self.labels.insert(label, cid);
+                self.hashes.insert(hash, cid);
 
                 self.broadcast();
 
@@ -87,20 +88,6 @@ impl Aggregator {
         };
 
         cid
-    }
-
-    fn get_chain_id(&self, label: &str, network: Option<&Label>) -> Option<ChainId> {
-        let labels = &self.labels;
-        let networks = &self.networks;
-
-        if let Some(network) = network {
-            networks
-                .get(&**network)
-                .or_else(|| labels.get(label))
-                .copied()
-        } else {
-            labels.get(label).copied()
-        }
     }
 
     fn get_chain(&mut self, label: &str) -> Option<&mut ChainEntry> {
@@ -129,6 +116,8 @@ impl Actor for Aggregator {
 pub struct AddNode {
     /// Details of the node being added to the aggregator
     pub node: NodeDetails,
+    /// Genesis `Hash` of the chain the node is being added to.
+    pub genesis_hash: Hash,
     /// Connection id used by the node connector for multiplexing parachains
     pub conn_id: ConnId,
     /// Address of the NodeConnector actor
@@ -209,12 +198,13 @@ impl Handler<AddNode> for Aggregator {
         }
         let AddNode {
             node,
+            genesis_hash,
             conn_id,
             node_connector,
         } = msg;
         log::trace!(target: "Aggregator::AddNode", "New node connected. Chain '{}'", node.chain);
 
-        let cid = self.lazy_chain(&node.chain, ctx);
+        let cid = self.lazy_chain(genesis_hash, &node.chain, ctx);
         let chain = self
             .chains
             .get_mut(cid)
@@ -244,11 +234,8 @@ impl Handler<DropChain> for Aggregator {
 
         if let Some(entry) = self.chains.remove(cid) {
             let label = &entry.label;
+            self.hashes.remove(&entry.hash);
             self.labels.remove(label);
-            if let Some(network) = entry.network_id {
-                self.networks.remove(&network);
-            }
-
             self.serializer.push(feed::RemovedChain(label));
             log::info!("Dropped chain [{}] from the aggregator", label);
             self.broadcast();

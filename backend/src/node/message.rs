@@ -1,5 +1,6 @@
 use crate::node::NodeDetails;
 use crate::types::{Block, BlockHash, BlockNumber, ConnId};
+use crate::util::Hash;
 use actix::prelude::*;
 use serde::de::IgnoredAny;
 use serde::Deserialize;
@@ -70,7 +71,7 @@ pub enum Payload {
 
 #[derive(Deserialize, Debug)]
 pub struct SystemConnected {
-    pub network_id: Option<Box<str>>,
+    pub genesis_hash: Hash,
     #[serde(flatten)]
     pub node: NodeDetails,
 }
