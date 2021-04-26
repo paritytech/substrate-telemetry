@@ -23,7 +23,7 @@ pub struct Aggregator {
 pub struct ChainEntry {
     /// Address to the `Chain` agent
     addr: Addr<Chain>,
-    /// Genesis hash of the chain
+    /// Genesis [`Hash`] of the chain
     genesis_hash: Hash,
     /// String name of the chain
     label: Label,
