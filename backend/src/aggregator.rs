@@ -11,7 +11,7 @@ use crate::types::{ConnId, NodeDetails, NodeId};
 use crate::util::{DenseMap, Hash};
 
 pub struct Aggregator {
-    hashes: HashMap<Hash, ChainId>,
+    genesis_hashes: HashMap<Hash, ChainId>,
     labels: HashMap<Label, ChainId>,
     chains: DenseMap<ChainEntry>,
     feeds: DenseMap<Addr<FeedConnector>>,
@@ -51,7 +51,7 @@ const THIRD_PARTY_NETWORKS_MAX_NODES: usize = 500;
 impl Aggregator {
     pub fn new(denylist: HashSet<String>) -> Self {
         Aggregator {
-            hashes: HashMap::new(),
+            genesis_hashes: HashMap::new(),
             labels: HashMap::new(),
             chains: DenseMap::new(),
             feeds: DenseMap::new(),
@@ -68,7 +68,7 @@ impl Aggregator {
         label: &str,
         ctx: &mut <Self as Actor>::Context,
     ) -> ChainId {
-        let cid = match self.hashes.get(&genesis_hash).copied() {
+        let cid = match self.genesis_hashes.get(&genesis_hash).copied() {
             Some(cid) => cid,
             None => {
                 self.serializer.push(feed::AddedChain(&label, 1));
@@ -85,7 +85,7 @@ impl Aggregator {
                 });
 
                 self.labels.insert(label, cid);
-                self.hashes.insert(genesis_hash, cid);
+                self.genesis_hashes.insert(genesis_hash, cid);
 
                 self.broadcast();
 
@@ -240,7 +240,7 @@ impl Handler<DropChain> for Aggregator {
 
         if let Some(entry) = self.chains.remove(cid) {
             let label = &entry.label;
-            self.hashes.remove(&entry.genesis_hash);
+            self.genesis_hashes.remove(&entry.genesis_hash);
             self.labels.remove(label);
             self.serializer.push(feed::RemovedChain(label));
             log::info!("Dropped chain [{}] from the aggregator", label);
