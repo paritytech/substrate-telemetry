@@ -110,7 +110,7 @@ impl NodeConnector {
         ctx: &mut <Self as Actor>::Context,
     ) {
         let conn_id = msg.id();
-        let payload = msg.into_payload();
+        let payload = msg.into();
 
         match self.multiplex.entry(conn_id).or_default() {
             ConnMultiplex::Connected { nid, chain } => {

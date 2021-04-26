@@ -20,18 +20,19 @@ pub enum NodeMessage {
 }
 
 impl NodeMessage {
-    /// Returns the message payload.
-    pub fn into_payload(self) -> Payload {
-        match self {
-            NodeMessage::V1 { payload, .. } | NodeMessage::V2 { payload, .. } => payload,
-        }
-    }
-
     /// Returns the connection ID or 0 if there is no ID.
     pub fn id(&self) -> ConnId {
         match self {
             NodeMessage::V1 { .. } => 0,
             NodeMessage::V2 { id, .. } => *id,
+        }
+    }
+}
+
+impl From<NodeMessage> for Payload {
+    fn from(msg: NodeMessage) -> Payload {
+        match msg {
+            NodeMessage::V1 { payload, .. } | NodeMessage::V2 { payload, .. } => payload,
         }
     }
 }

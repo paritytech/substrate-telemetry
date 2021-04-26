@@ -21,8 +21,11 @@ pub struct Aggregator {
 }
 
 pub struct ChainEntry {
+    /// Address to the `Chain` agent
     addr: Addr<Chain>,
-    hash: Hash,
+    /// Genesis hash of the chain
+    genesis_hash: Hash,
+    /// String name of the chain
     label: Label,
     /// Node count
     nodes: usize,
@@ -59,8 +62,13 @@ impl Aggregator {
 
     /// Get an address to the chain actor by name. If the address is not found,
     /// or the address is disconnected (actor dropped), create a new one.
-    pub fn lazy_chain(&mut self, hash: Hash, label: &str, ctx: &mut <Self as Actor>::Context) -> ChainId {
-        let cid = match self.hashes.get(&hash).copied() {
+    pub fn lazy_chain(
+        &mut self,
+        genesis_hash: Hash,
+        label: &str,
+        ctx: &mut <Self as Actor>::Context,
+    ) -> ChainId {
+        let cid = match self.hashes.get(&genesis_hash).copied() {
             Some(cid) => cid,
             None => {
                 self.serializer.push(feed::AddedChain(&label, 1));
@@ -68,18 +76,16 @@ impl Aggregator {
                 let addr = ctx.address();
                 let max_nodes = max_nodes(label);
                 let label: Label = label.into();
-                let cid = self.chains.add_with(|cid| {
-                    ChainEntry {
-                        addr: Chain::new(cid, addr, label.clone()).start(),
-                        hash,
-                        label: label.clone(),
-                        nodes: 1,
-                        max_nodes,
-                    }
+                let cid = self.chains.add_with(|cid| ChainEntry {
+                    addr: Chain::new(cid, addr, label.clone()).start(),
+                    genesis_hash,
+                    label: label.clone(),
+                    nodes: 1,
+                    max_nodes,
                 });
 
                 self.labels.insert(label, cid);
-                self.hashes.insert(hash, cid);
+                self.hashes.insert(genesis_hash, cid);
 
                 self.broadcast();
 
@@ -234,7 +240,7 @@ impl Handler<DropChain> for Aggregator {
 
         if let Some(entry) = self.chains.remove(cid) {
             let label = &entry.label;
-            self.hashes.remove(&entry.hash);
+            self.hashes.remove(&entry.genesis_hash);
             self.labels.remove(label);
             self.serializer.push(feed::RemovedChain(label));
             log::info!("Dropped chain [{}] from the aggregator", label);

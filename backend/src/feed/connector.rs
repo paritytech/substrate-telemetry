@@ -26,7 +26,7 @@ pub struct FeedConnector {
     /// Chain actor address
     chain: Option<Recipient<Unsubscribe>>,
     /// FNV hash of the chain label, optimization to avoid double-subscribing
-    chain_hash: u64,
+    chain_label_hash: u64,
     /// Message serializer
     serializer: FeedMessageSerializer,
 }
@@ -58,7 +58,7 @@ impl FeedConnector {
             hb: Instant::now(),
             aggregator,
             chain: None,
-            chain_hash: 0,
+            chain_label_hash: 0,
             serializer: FeedMessageSerializer::new(),
         }
     }
@@ -79,8 +79,8 @@ impl FeedConnector {
         match cmd {
             "subscribe" => {
                 match fnv(payload) {
-                    hash if hash == self.chain_hash => return,
-                    hash => self.chain_hash = hash,
+                    hash if hash == self.chain_label_hash => return,
+                    hash => self.chain_label_hash = hash,
                 }
 
                 self.aggregator
@@ -93,7 +93,7 @@ impl FeedConnector {
                         match res {
                             Ok(true) => (),
                             // Chain not found, reset hash
-                            _ => actor.chain_hash = 0,
+                            _ => actor.chain_label_hash = 0,
                         }
                         async {}.into_actor(actor)
                     })
@@ -192,7 +192,7 @@ impl Handler<Unsubscribed> for FeedConnector {
 
     fn handle(&mut self, _: Unsubscribed, _: &mut Self::Context) {
         self.chain = None;
-        self.chain_hash = 0;
+        self.chain_label_hash = 0;
     }
 }
 
