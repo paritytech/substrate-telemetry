@@ -4,7 +4,7 @@ use serde::de::{self, Deserialize, Deserializer, Unexpected, Visitor};
 
 const HASH_BYTES: usize = 32;
 
-/// Newtype warpper for 32-byte hash values, implementing readable `Debug` and `serde::Deserialize`.
+/// Newtype wrapper for 32-byte hash values, implementing readable `Debug` and `serde::Deserialize`.
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
 pub struct Hash([u8; HASH_BYTES]);
 
