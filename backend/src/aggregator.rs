@@ -122,7 +122,7 @@ impl Actor for Aggregator {
 pub struct AddNode {
     /// Details of the node being added to the aggregator
     pub node: NodeDetails,
-    /// Genesis `Hash` of the chain the node is being added to.
+    /// Genesis [`Hash`] of the chain the node is being added to.
     pub genesis_hash: Hash,
     /// Connection id used by the node connector for multiplexing parachains
     pub conn_id: ConnId,
