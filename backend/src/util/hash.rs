@@ -5,6 +5,7 @@ use serde::de::{self, Deserialize, Deserializer, Unexpected, Visitor};
 const HASH_BYTES: usize = 32;
 
 /// Newtype wrapper for 32-byte hash values, implementing readable `Debug` and `serde::Deserialize`.
+// We could use primitive_types::H256 here, but opted for a custom type to aboid more dependencies.
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
 pub struct Hash([u8; HASH_BYTES]);
 
