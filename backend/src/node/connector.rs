@@ -1,18 +1,18 @@
 use std::collections::BTreeMap;
-use std::time::{Duration, Instant};
-use std::net::Ipv4Addr;
 use std::mem;
+use std::net::Ipv4Addr;
+use std::time::{Duration, Instant};
 
-use bytes::{Bytes, BytesMut};
-use actix::prelude::*;
-use actix_web_actors::ws::{self, CloseReason};
-use actix_http::ws::Item;
-use crate::aggregator::{Aggregator, AddNode};
-use crate::chain::{Chain, UpdateNode, RemoveNode};
-use crate::node::NodeId;
+use crate::aggregator::{AddNode, Aggregator};
+use crate::chain::{Chain, RemoveNode, UpdateNode};
 use crate::node::message::{NodeMessage, Payload};
-use crate::util::LocateRequest;
+use crate::node::NodeId;
 use crate::types::ConnId;
+use crate::util::LocateRequest;
+use actix::prelude::*;
+use actix_http::ws::Item;
+use actix_web_actors::ws::{self, CloseReason};
+use bytes::{Bytes, BytesMut};
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(20);
@@ -45,8 +45,8 @@ enum ConnMultiplex {
     },
     Waiting {
         /// Backlog of messages to be sent once we get a recipient handle to the chain
-        backlog: Vec<NodeMessage>,
-    }
+        backlog: Vec<Payload>,
+    },
 }
 
 impl Default for ConnMultiplex {
@@ -74,7 +74,11 @@ impl Actor for NodeConnector {
 }
 
 impl NodeConnector {
-    pub fn new(aggregator: Addr<Aggregator>, locator: Recipient<LocateRequest>, ip: Option<Ipv4Addr>) -> Self {
+    pub fn new(
+        aggregator: Addr<Aggregator>,
+        locator: Recipient<LocateRequest>,
+        ip: Option<Ipv4Addr>,
+    ) -> Self {
         Self {
             multiplex: BTreeMap::new(),
             hb: Instant::now(),
@@ -90,40 +94,46 @@ impl NodeConnector {
             // check client heartbeats
             if Instant::now().duration_since(act.hb) > CLIENT_TIMEOUT {
                 // stop actor
-                ctx.close(Some(CloseReason { code: ws::CloseCode::Abnormal, description: Some("Missed heartbeat".into())}));
+                ctx.close(Some(CloseReason {
+                    code: ws::CloseCode::Abnormal,
+                    description: Some("Missed heartbeat".into()),
+                }));
                 ctx.stop();
             }
         });
     }
 
-    fn handle_message(&mut self, msg: NodeMessage, data: Bytes, ctx: &mut <Self as Actor>::Context) {
+    fn handle_message(
+        &mut self,
+        msg: NodeMessage,
+        data: Bytes,
+        ctx: &mut <Self as Actor>::Context,
+    ) {
         let conn_id = msg.id();
+        let payload = msg.into();
 
         match self.multiplex.entry(conn_id).or_default() {
             ConnMultiplex::Connected { nid, chain } => {
                 chain.do_send(UpdateNode {
                     nid: *nid,
-                    msg,
                     raw: Some(data),
+                    payload,
                 });
             }
             ConnMultiplex::Waiting { backlog } => {
-                if let Payload::SystemConnected(connected) = msg.payload() {
-                    let mut node = connected.node.clone();
-                    // FIXME: Use genesis hash instead of names to avoid this mess
-                    match &*node.chain {
-                        "Kusama CC3" => node.chain = "Kusama".into(),
-                        "Polkadot CC1" => node.chain = "Polkadot".into(),
-                        _ => ()
-                    }
-
-                    self.aggregator.do_send(AddNode { node, conn_id, node_connector: ctx.address() });
+                if let Payload::SystemConnected(connected) = payload {
+                    self.aggregator.do_send(AddNode {
+                        node: connected.node,
+                        genesis_hash: connected.genesis_hash,
+                        conn_id,
+                        node_connector: ctx.address(),
+                    });
                 } else {
                     if backlog.len() >= 10 {
                         backlog.remove(0);
                     }
 
-                    backlog.push(msg);
+                    backlog.push(payload);
                 }
             }
         }
@@ -180,13 +190,21 @@ impl Handler<Initialize> for NodeConnector {
     type Result = ();
 
     fn handle(&mut self, msg: Initialize, _: &mut Self::Context) {
-        let Initialize { nid, conn_id, chain } = msg;
+        let Initialize {
+            nid,
+            conn_id,
+            chain,
+        } = msg;
         log::trace!(target: "NodeConnector::Initialize", "Initializing a node, nid={}, on conn_id={}", nid, conn_id);
         let mx = self.multiplex.entry(conn_id).or_default();
 
         if let ConnMultiplex::Waiting { backlog } = mx {
-            for msg in backlog.drain(..) {
-                chain.do_send(UpdateNode { nid, msg, raw: None });
+            for payload in backlog.drain(..) {
+                chain.do_send(UpdateNode {
+                    nid,
+                    raw: None,
+                    payload,
+                });
             }
 
             *mx = ConnMultiplex::Connected {
@@ -233,7 +251,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for NodeConnector {
                     self.continue_frame(&bytes);
                     self.finish_frame()
                 }
-            }
+            },
             Err(error) => {
                 log::error!("{:?}", error);
                 ctx.stop();
@@ -242,14 +260,16 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for NodeConnector {
         };
 
         match serde_json::from_slice(&data) {
-            Ok(msg) => {
-                self.handle_message(msg, data, ctx)
-            },
+            Ok(msg) => self.handle_message(msg, data, ctx),
             #[cfg(debug)]
             Err(err) => {
                 let data: &[u8] = data.get(..512).unwrap_or_else(|| &data);
-                log::warn!("Failed to parse node message: {} {}", err, std::str::from_utf8(data).unwrap_or_else(|_| "INVALID UTF8"))
-            },
+                log::warn!(
+                    "Failed to parse node message: {} {}",
+                    err,
+                    std::str::from_utf8(data).unwrap_or_else(|_| "INVALID UTF8")
+                )
+            }
             #[cfg(not(debug))]
             Err(_) => (),
         }

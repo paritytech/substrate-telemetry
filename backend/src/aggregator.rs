@@ -1,29 +1,32 @@
-use std::collections::{HashMap, HashSet};
 use actix::prelude::*;
-use actix_web_actors::ws::{CloseReason, CloseCode};
+use actix_web_actors::ws::{CloseCode, CloseReason};
 use ctor::ctor;
+use std::collections::{HashMap, HashSet};
 
-use crate::node::connector::{Mute, NodeConnector};
-use crate::feed::connector::{FeedConnector, Connected, FeedId};
-use crate::util::DenseMap;
+use crate::chain::{self, Chain, ChainId, GetNodeNetworkState, Label};
+use crate::feed::connector::{Connected, FeedConnector, FeedId};
 use crate::feed::{self, FeedMessageSerializer};
-use crate::chain::{self, Chain, ChainId, Label, GetNodeNetworkState};
+use crate::node::connector::{Mute, NodeConnector};
 use crate::types::{ConnId, NodeDetails, NodeId};
+use crate::util::{DenseMap, Hash};
 
 pub struct Aggregator {
+    genesis_hashes: HashMap<Hash, ChainId>,
     labels: HashMap<Label, ChainId>,
-    networks: HashMap<Label, ChainId>,
     chains: DenseMap<ChainEntry>,
     feeds: DenseMap<Addr<FeedConnector>>,
     serializer: FeedMessageSerializer,
     /// Denylist for networks we do not want to allow connecting.
-    denylist: HashSet<String>
+    denylist: HashSet<String>,
 }
 
 pub struct ChainEntry {
+    /// Address to the `Chain` agent
     addr: Addr<Chain>,
+    /// Genesis [`Hash`] of the chain
+    genesis_hash: Hash,
+    /// String name of the chain
     label: Label,
-    network_id: Option<Label>,
     /// Node count
     nodes: usize,
     /// Maximum allowed nodes
@@ -48,8 +51,8 @@ const THIRD_PARTY_NETWORKS_MAX_NODES: usize = 500;
 impl Aggregator {
     pub fn new(denylist: HashSet<String>) -> Self {
         Aggregator {
+            genesis_hashes: HashMap::new(),
             labels: HashMap::new(),
-            networks: HashMap::new(),
             chains: DenseMap::new(),
             feeds: DenseMap::new(),
             serializer: FeedMessageSerializer::new(),
@@ -61,10 +64,11 @@ impl Aggregator {
     /// or the address is disconnected (actor dropped), create a new one.
     pub fn lazy_chain(
         &mut self,
+        genesis_hash: Hash,
         label: &str,
         ctx: &mut <Self as Actor>::Context,
     ) -> ChainId {
-        let cid = match self.get_chain_id(label, None.as_ref()) {
+        let cid = match self.genesis_hashes.get(&genesis_hash).copied() {
             Some(cid) => cid,
             None => {
                 self.serializer.push(feed::AddedChain(&label, 1));
@@ -72,17 +76,16 @@ impl Aggregator {
                 let addr = ctx.address();
                 let max_nodes = max_nodes(label);
                 let label: Label = label.into();
-                let cid = self.chains.add_with(|cid| {
-                    ChainEntry {
-                        addr: Chain::new(cid, addr, label.clone()).start(),
-                        label: label.clone(),
-                        network_id: None, // TODO: this doesn't seem to be used anywhere. Can it be removed?
-                        nodes: 1,
-                        max_nodes,
-                    }
+                let cid = self.chains.add_with(|cid| ChainEntry {
+                    addr: Chain::new(cid, addr, label.clone()).start(),
+                    genesis_hash,
+                    label: label.clone(),
+                    nodes: 1,
+                    max_nodes,
                 });
 
                 self.labels.insert(label, cid);
+                self.genesis_hashes.insert(genesis_hash, cid);
 
                 self.broadcast();
 
@@ -93,20 +96,11 @@ impl Aggregator {
         cid
     }
 
-    fn get_chain_id(&self, label: &str, network: Option<&Label>) -> Option<ChainId> {
-        let labels = &self.labels;
-        let networks = &self.networks;
-
-        if let Some(network) = network {
-            networks.get(&**network).or_else(|| labels.get(label)).copied()
-        } else {
-            labels.get(label).copied()
-        }
-    }
-
     fn get_chain(&mut self, label: &str) -> Option<&mut ChainEntry> {
         let chains = &mut self.chains;
-        self.labels.get(label).and_then(move |&cid| chains.get_mut(cid))
+        self.labels
+            .get(label)
+            .and_then(move |&cid| chains.get_mut(cid))
     }
 
     fn broadcast(&mut self) {
@@ -128,6 +122,8 @@ impl Actor for Aggregator {
 pub struct AddNode {
     /// Details of the node being added to the aggregator
     pub node: NodeDetails,
+    /// Genesis [`Hash`] of the chain the node is being added to.
+    pub genesis_hash: Hash,
     /// Connection id used by the node connector for multiplexing parachains
     pub conn_id: ConnId,
     /// Address of the NodeConnector actor
@@ -199,15 +195,26 @@ impl Handler<AddNode> for Aggregator {
         if self.denylist.contains(&*msg.node.chain) {
             log::warn!(target: "Aggregator::AddNode", "'{}' is on the denylist.", msg.node.chain);
             let AddNode { node_connector, .. } = msg;
-            let reason = CloseReason{ code: CloseCode::Abnormal, description: Some("Denied".into()) };
+            let reason = CloseReason {
+                code: CloseCode::Abnormal,
+                description: Some("Denied".into()),
+            };
             node_connector.do_send(Mute { reason });
             return;
         }
-        let AddNode { node, conn_id, node_connector } = msg;
+        let AddNode {
+            node,
+            genesis_hash,
+            conn_id,
+            node_connector,
+        } = msg;
         log::trace!(target: "Aggregator::AddNode", "New node connected. Chain '{}'", node.chain);
 
-        let cid = self.lazy_chain(&node.chain, ctx);
-        let chain = self.chains.get_mut(cid).expect("Entry just created above; qed");
+        let cid = self.lazy_chain(genesis_hash, &node.chain, ctx);
+        let chain = self
+            .chains
+            .get_mut(cid)
+            .expect("Entry just created above; qed");
         if chain.nodes < chain.max_nodes {
             chain.addr.do_send(chain::AddNode {
                 node,
@@ -216,7 +223,10 @@ impl Handler<AddNode> for Aggregator {
             });
         } else {
             log::warn!(target: "Aggregator::AddNode", "Chain {} is over quota ({})", chain.label, chain.max_nodes);
-            let reason = CloseReason{ code: CloseCode::Again, description: Some("Overquota".into()) };
+            let reason = CloseReason {
+                code: CloseCode::Again,
+                description: Some("Overquota".into()),
+            };
             node_connector.do_send(Mute { reason });
         }
     }
@@ -230,16 +240,12 @@ impl Handler<DropChain> for Aggregator {
 
         if let Some(entry) = self.chains.remove(cid) {
             let label = &entry.label;
+            self.genesis_hashes.remove(&entry.genesis_hash);
             self.labels.remove(label);
-            if let Some(network) = entry.network_id {
-                self.networks.remove(&network);
-            }
-
             self.serializer.push(feed::RemovedChain(label));
             log::info!("Dropped chain [{}] from the aggregator", label);
             self.broadcast();
         }
-
     }
 }
 
@@ -323,7 +329,8 @@ impl Handler<Connect> for Aggregator {
 
         // TODO: keep track on number of nodes connected to each chain
         for (_, entry) in self.chains.iter() {
-            self.serializer.push(feed::AddedChain(&entry.label, entry.nodes));
+            self.serializer
+                .push(feed::AddedChain(&entry.label, entry.nodes));
         }
 
         if let Some(msg) = self.serializer.finalize() {

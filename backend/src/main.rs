@@ -1,10 +1,10 @@
-use std::net::Ipv4Addr;
 use std::collections::HashSet;
 use std::iter::FromIterator;
+use std::net::Ipv4Addr;
 
 use actix::prelude::*;
 use actix_http::ws::Codec;
-use actix_web::{web, get, middleware, App, Error, HttpRequest, HttpResponse, HttpServer};
+use actix_web::{get, middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
 use actix_web_actors::ws;
 use clap::Clap;
 use simple_logger::SimpleLogger;
@@ -82,12 +82,15 @@ async fn node_route(
     aggregator: web::Data<Addr<Aggregator>>,
     locator: web::Data<Addr<Locator>>,
 ) -> Result<HttpResponse, Error> {
-    let ip = req.connection_info().realip_remote_addr().and_then(|mut addr| {
-        if let Some(port_idx) = addr.find(':') {
-            addr = &addr[..port_idx];
-        }
-        addr.parse::<Ipv4Addr>().ok()
-    });
+    let ip = req
+        .connection_info()
+        .realip_remote_addr()
+        .and_then(|mut addr| {
+            if let Some(port_idx) = addr.find(':') {
+                addr = &addr[..port_idx];
+            }
+            addr.parse::<Ipv4Addr>().ok()
+        });
 
     let mut res = ws::handshake(&req)?;
     let aggregator = aggregator.get_ref().clone();
@@ -125,16 +128,21 @@ async fn state_route(
     let res = match aggregator.send(GetNetworkState(chain, nid)).await {
         Ok(Some(res)) => res.await,
         Ok(None) => Ok(None),
-        Err(error) => Err(error)
+        Err(error) => Err(error),
     };
 
     match res {
         Ok(Some(body)) => {
-            HttpResponse::Ok().content_type("application/json").body(body).await
-        },
+            HttpResponse::Ok()
+                .content_type("application/json")
+                .body(body)
+                .await
+        }
         Ok(None) => {
-            HttpResponse::Ok().body("Node has disconnected or has not submitted its network state yet").await
-        },
+            HttpResponse::Ok()
+                .body("Node has disconnected or has not submitted its network state yet")
+                .await
+        }
         Err(error) => {
             log::error!("Network state mailbox error: {:?}", error);
 
@@ -151,7 +159,7 @@ async fn health(aggregator: web::Data<Addr<Aggregator>>) -> Result<HttpResponse,
             let body = format!("Connected chains: {}", count);
 
             HttpResponse::Ok().body(body).await
-        },
+        }
         Err(error) => {
             log::error!("Health check mailbox error: {:?}", error);
 
@@ -166,7 +174,10 @@ async fn health(aggregator: web::Data<Addr<Aggregator>>) -> Result<HttpResponse,
 async fn main() -> std::io::Result<()> {
     let opts = Opts::parse();
     let log_level = &opts.log_level;
-    SimpleLogger::new().with_level(log_level.into()).init().expect("Must be able to start a logger");
+    SimpleLogger::new()
+        .with_level(log_level.into())
+        .init()
+        .expect("Must be able to start a logger");
 
     let denylist = HashSet::from_iter(opts.denylist);
     let aggregator = Aggregator::new(denylist).start();

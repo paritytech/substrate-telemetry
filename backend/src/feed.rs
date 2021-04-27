@@ -1,12 +1,13 @@
-use std::mem;
+use serde::ser::{SerializeTuple, Serializer};
 use serde::Serialize;
-use serde::ser::{Serializer, SerializeTuple};
+use std::mem;
 
-use serde_json::to_writer;
 use crate::node::Node;
 use crate::types::{
-    NodeId, NodeStats, NodeHardware, NodeIO, BlockNumber, BlockHash, BlockDetails, Timestamp, Address,
+    Address, BlockDetails, BlockHash, BlockNumber, NodeHardware, NodeIO, NodeId, NodeStats,
+    Timestamp,
 };
+use serde_json::to_writer;
 
 pub mod connector;
 
@@ -147,13 +148,29 @@ pub struct Pong<'a>(pub &'a str);
 pub struct AfgFinalized(pub Address, pub BlockNumber, pub BlockHash);
 
 #[derive(Serialize)]
-pub struct AfgReceivedPrevote(pub Address, pub BlockNumber, pub BlockHash, pub Option<Address>);
+pub struct AfgReceivedPrevote(
+    pub Address,
+    pub BlockNumber,
+    pub BlockHash,
+    pub Option<Address>,
+);
 
 #[derive(Serialize)]
-pub struct AfgReceivedPrecommit(pub Address, pub BlockNumber, pub BlockHash, pub Option<Address>);
+pub struct AfgReceivedPrecommit(
+    pub Address,
+    pub BlockNumber,
+    pub BlockHash,
+    pub Option<Address>,
+);
 
 #[derive(Serialize)]
-pub struct AfgAuthoritySet(pub Address, pub Address, pub Address, pub BlockNumber, pub BlockHash);
+pub struct AfgAuthoritySet(
+    pub Address,
+    pub Address,
+    pub Address,
+    pub BlockNumber,
+    pub BlockHash,
+);
 
 #[derive(Serialize)]
 pub struct StaleNode(pub NodeId);
