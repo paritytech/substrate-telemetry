@@ -79,31 +79,7 @@ impl ShardConnector {
     fn handle_message(&mut self, msg: ShardMessage, ctx: &mut <Self as Actor>::Context) {
         let ShardMessage { conn_id, payload } = msg;
 
-        // match self.multiplex.entry(conn_id).or_default() {
-        //     ConnMultiplex::Connected { nid, chain } => {
-        //         chain.do_send(UpdateNode {
-        //             nid: *nid,
-        //             raw: Some(data),
-        //             payload,
-        //         });
-        //     }
-        //     ConnMultiplex::Waiting { backlog } => {
-        //         if let Payload::SystemConnected(connected) = payload {
-        //             self.aggregator.do_send(AddNode {
-        //                 node: connected.node,
-        //                 genesis_hash: connected.genesis_hash,
-        //                 conn_id,
-        //                 node_connector: ctx.address(),
-        //             });
-        //         } else {
-        //             if backlog.len() >= 10 {
-        //                 backlog.remove(0);
-        //             }
-
-        //             backlog.push(payload);
-        //         }
-        //     }
-        // }
+        // TODO: get `NodeId` for `ShardConnId` and proxy payload to `self.chain`.
     }
 
     fn start_frame(&mut self, bytes: &[u8]) {
