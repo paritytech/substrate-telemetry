@@ -2,6 +2,8 @@ use actix_http::ws::Item;
 use actix_web_actors::ws::{self, CloseReason};
 use bytes::{Bytes, BytesMut};
 
+/// Helper that will buffer continuation messages from actix
+/// until completion, capping at 10mb.
 #[derive(Default)]
 pub struct MultipartHandler {
     buf: BytesMut,

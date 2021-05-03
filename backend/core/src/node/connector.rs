@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use std::mem;
 use std::net::Ipv4Addr;
 use std::time::{Duration, Instant};
 
@@ -18,8 +17,6 @@ use shared::ws::{MultipartHandler, WsMessage};
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(20);
 /// How long before lack of client response causes a timeout
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(60);
-/// Continuation buffer limit, 10mb
-const CONT_BUF_LIMIT: usize = 10 * 1024 * 1024;
 
 pub struct NodeConnector {
     /// Multiplexing connections by id

@@ -14,8 +14,6 @@ use shared::ws::{MultipartHandler, WsMessage};
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(20);
 /// How long before lack of client response causes a timeout
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(60);
-/// Continuation buffer limit, 10mb
-const CONT_BUF_LIMIT: usize = 10 * 1024 * 1024;
 
 pub struct ShardConnector {
     /// Client must send ping at least once every 60 seconds (CLIENT_TIMEOUT),
