@@ -5,14 +5,14 @@ use std::time::{Duration, Instant};
 
 use crate::aggregator::{AddNode, Aggregator};
 use crate::chain::{Chain, RemoveNode, UpdateNode};
+use crate::location::LocateRequest;
 use crate::node::message::{NodeMessage, Payload};
 use crate::node::NodeId;
-use crate::types::ConnId;
-use crate::util::LocateRequest;
 use actix::prelude::*;
-use actix_http::ws::Item;
 use actix_web_actors::ws::{self, CloseReason};
-use bytes::{Bytes, BytesMut};
+use bytes::Bytes;
+use shared::types::ConnId;
+use shared::ws::{MultipartHandler, WsMessage};
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(20);
@@ -32,8 +32,8 @@ pub struct NodeConnector {
     ip: Option<Ipv4Addr>,
     /// Actix address of location services
     locator: Recipient<LocateRequest>,
-    /// Buffer for constructing continuation messages
-    contbuf: BytesMut,
+    /// Helper for handling continuation messages
+    multipart: MultipartHandler,
 }
 
 enum ConnMultiplex {
@@ -85,7 +85,7 @@ impl NodeConnector {
             aggregator,
             ip,
             locator,
-            contbuf: BytesMut::new(),
+            multipart: MultipartHandler::default(),
         }
     }
 
@@ -137,27 +137,6 @@ impl NodeConnector {
                 }
             }
         }
-    }
-
-    fn start_frame(&mut self, bytes: &[u8]) {
-        if !self.contbuf.is_empty() {
-            log::error!("Unused continuation buffer");
-            self.contbuf.clear();
-        }
-        self.continue_frame(bytes);
-    }
-
-    fn continue_frame(&mut self, bytes: &[u8]) {
-        if self.contbuf.len() + bytes.len() <= CONT_BUF_LIMIT {
-            self.contbuf.extend_from_slice(&bytes);
-        } else {
-            log::error!("Continuation buffer overflow");
-            self.contbuf = BytesMut::new();
-        }
-    }
-
-    fn finish_frame(&mut self) -> Bytes {
-        mem::replace(&mut self.contbuf, BytesMut::new()).freeze()
     }
 }
 
@@ -224,34 +203,18 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for NodeConnector {
     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
         self.hb = Instant::now();
 
-        let data = match msg {
-            Ok(ws::Message::Ping(msg)) => {
+        let data = match msg.map(|msg| self.multipart.handle(msg)) {
+            Ok(WsMessage::Nop) => return,
+            Ok(WsMessage::Ping(msg)) => {
                 ctx.pong(&msg);
                 return;
             }
-            Ok(ws::Message::Pong(_)) => return,
-            Ok(ws::Message::Text(text)) => text.into_bytes(),
-            Ok(ws::Message::Binary(data)) => data,
-            Ok(ws::Message::Close(reason)) => {
+            Ok(WsMessage::Data(data)) => data,
+            Ok(WsMessage::Close(reason)) => {
                 ctx.close(reason);
                 ctx.stop();
                 return;
             }
-            Ok(ws::Message::Nop) => return,
-            Ok(ws::Message::Continuation(cont)) => match cont {
-                Item::FirstText(bytes) | Item::FirstBinary(bytes) => {
-                    self.start_frame(&bytes);
-                    return;
-                }
-                Item::Continue(bytes) => {
-                    self.continue_frame(&bytes);
-                    return;
-                }
-                Item::Last(bytes) => {
-                    self.continue_frame(&bytes);
-                    self.finish_frame()
-                }
-            },
             Err(error) => {
                 log::error!("{:?}", error);
                 ctx.stop();

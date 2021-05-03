@@ -1,10 +1,10 @@
 use crate::aggregator::{Aggregator, Connect, Disconnect, NoMoreFinality, SendFinality, Subscribe};
 use crate::chain::Unsubscribe;
 use crate::feed::{FeedMessageSerializer, Pong};
-use crate::util::fnv;
 use actix::prelude::*;
 use actix_web_actors::ws;
 use bytes::Bytes;
+use shared::util::fnv;
 use std::time::{Duration, Instant};
 
 pub type FeedId = usize;

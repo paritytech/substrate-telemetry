@@ -1,9 +1,9 @@
 use crate::node::NodeDetails;
-use crate::types::{Block, BlockHash, BlockNumber, ConnId};
-use crate::util::Hash;
 use actix::prelude::*;
 use serde::de::IgnoredAny;
 use serde::Deserialize;
+use shared::types::{Block, BlockHash, BlockNumber, ConnId};
+use shared::util::Hash;
 
 #[derive(Deserialize, Debug, Message)]
 #[rtype(result = "()")]
@@ -134,15 +134,6 @@ pub struct AfgReceivedPrevote {
 pub struct AfgReceivedCommit {
     #[serde(flatten)]
     pub received: AfgReceived,
-}
-
-impl Block {
-    pub fn zero() -> Self {
-        Block {
-            hash: BlockHash::from([0; 32]),
-            height: 0,
-        }
-    }
 }
 
 impl Payload {

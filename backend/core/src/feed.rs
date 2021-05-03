@@ -3,11 +3,11 @@ use serde::Serialize;
 use std::mem;
 
 use crate::node::Node;
-use crate::types::{
+use serde_json::to_writer;
+use shared::types::{
     Address, BlockDetails, BlockHash, BlockNumber, NodeHardware, NodeIO, NodeId, NodeStats,
     Timestamp,
 };
-use serde_json::to_writer;
 
 pub mod connector;
 

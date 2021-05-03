@@ -1,16 +1,14 @@
-use std::mem;
 use std::time::{Duration, Instant};
 
 use crate::aggregator::{AddNode, Aggregator};
 use crate::chain::{Chain, RemoveNode, UpdateNode};
 use crate::shard::ShardMessage;
-use crate::types::NodeId;
-use crate::util::{DenseMap, Hash};
 use actix::prelude::*;
-use actix_http::ws::Item;
 use actix_web_actors::ws::{self, CloseReason};
 use bincode::Options;
-use bytes::{Bytes, BytesMut};
+use shared::types::NodeId;
+use shared::util::{DenseMap, Hash};
+use shared::ws::{MultipartHandler, WsMessage};
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(20);
@@ -30,8 +28,8 @@ pub struct ShardConnector {
     chain: Option<Addr<Chain>>,
     /// Mapping `ShardConnId` to `NodeId`
     nodes: DenseMap<NodeId>,
-    /// Buffer for constructing continuation messages
-    contbuf: BytesMut,
+    /// Container for handling continuation messages
+    multipart: MultipartHandler,
 }
 
 impl Actor for ShardConnector {
@@ -58,7 +56,7 @@ impl ShardConnector {
             genesis_hash,
             chain: None,
             nodes: DenseMap::new(),
-            contbuf: BytesMut::new(),
+            multipart: MultipartHandler::default(),
         }
     }
 
@@ -81,61 +79,24 @@ impl ShardConnector {
 
         // TODO: get `NodeId` for `ShardConnId` and proxy payload to `self.chain`.
     }
-
-    fn start_frame(&mut self, bytes: &[u8]) {
-        if !self.contbuf.is_empty() {
-            log::error!("Unused continuation buffer");
-            self.contbuf.clear();
-        }
-        self.continue_frame(bytes);
-    }
-
-    fn continue_frame(&mut self, bytes: &[u8]) {
-        if self.contbuf.len() + bytes.len() <= CONT_BUF_LIMIT {
-            self.contbuf.extend_from_slice(&bytes);
-        } else {
-            log::error!("Continuation buffer overflow");
-            self.contbuf = BytesMut::new();
-        }
-    }
-
-    fn finish_frame(&mut self) -> Bytes {
-        mem::replace(&mut self.contbuf, BytesMut::new()).freeze()
-    }
 }
 
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ShardConnector {
     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
         self.hb = Instant::now();
 
-        let data = match msg {
-            Ok(ws::Message::Ping(msg)) => {
+        let data = match msg.map(|msg| self.multipart.handle(msg)) {
+            Ok(WsMessage::Nop) => return,
+            Ok(WsMessage::Ping(msg)) => {
                 ctx.pong(&msg);
                 return;
             }
-            Ok(ws::Message::Pong(_)) => return,
-            Ok(ws::Message::Text(text)) => text.into_bytes(),
-            Ok(ws::Message::Binary(data)) => data,
-            Ok(ws::Message::Close(reason)) => {
+            Ok(WsMessage::Data(data)) => data,
+            Ok(WsMessage::Close(reason)) => {
                 ctx.close(reason);
                 ctx.stop();
                 return;
             }
-            Ok(ws::Message::Nop) => return,
-            Ok(ws::Message::Continuation(cont)) => match cont {
-                Item::FirstText(bytes) | Item::FirstBinary(bytes) => {
-                    self.start_frame(&bytes);
-                    return;
-                }
-                Item::Continue(bytes) => {
-                    self.continue_frame(&bytes);
-                    return;
-                }
-                Item::Last(bytes) => {
-                    self.continue_frame(&bytes);
-                    self.finish_frame()
-                }
-            },
             Err(error) => {
                 log::error!("{:?}", error);
                 ctx.stop();

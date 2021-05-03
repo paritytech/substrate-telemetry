@@ -12,8 +12,8 @@ use crate::node::{
     message::Payload,
     Node,
 };
-use crate::types::{Block, BlockNumber, ConnId, NodeDetails, NodeId, NodeLocation, Timestamp};
-use crate::util::{now, DenseMap, NumStats};
+use shared::types::{Block, BlockNumber, ConnId, NodeDetails, NodeId, NodeLocation, Timestamp};
+use shared::util::{now, DenseMap, NumStats};
 
 const STALE_TIMEOUT: u64 = 2 * 60 * 1000; // 2 minutes
 

@@ -7,8 +7,8 @@ use crate::chain::{self, Chain, ChainId, GetNodeNetworkState, Label};
 use crate::feed::connector::{Connected, FeedConnector, FeedId};
 use crate::feed::{self, FeedMessageSerializer};
 use crate::node::connector::{Mute, NodeConnector};
-use crate::types::{ConnId, NodeDetails, NodeId};
-use crate::util::{DenseMap, Hash};
+use shared::types::{ConnId, NodeDetails, NodeId};
+use shared::util::{DenseMap, Hash};
 
 pub struct Aggregator {
     genesis_hashes: HashMap<Hash, ChainId>,

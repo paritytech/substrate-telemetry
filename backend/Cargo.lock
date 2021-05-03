@@ -1557,6 +1557,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2579985fda508104f7587689507983eadd6a6e84dd35d6d115361f530916fa0d"
 
 [[package]]
+name = "shared"
+version = "0.1.0"
+dependencies = [
+ "actix",
+ "actix-http",
+ "actix-web",
+ "actix-web-actors",
+ "bytes",
+ "fnv",
+ "hex",
+ "log",
+ "num-traits",
+ "parking_lot",
+ "primitive-types",
+ "rustc-hash",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "signal-hook-registry"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1703,7 +1723,6 @@ dependencies = [
  "clap",
  "ctor",
  "fnv",
- "hex",
  "log",
  "num-traits",
  "parking_lot",
@@ -1712,8 +1731,8 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serde_json",
+ "shared",
  "simple_logger",
- "thiserror",
 ]
 
 [[package]]

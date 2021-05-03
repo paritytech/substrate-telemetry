@@ -39,6 +39,15 @@ pub struct Block {
     pub height: BlockNumber,
 }
 
+impl Block {
+    pub fn zero() -> Self {
+        Block {
+            hash: BlockHash::from([0; 32]),
+            height: 0,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct BlockDetails {
     pub block: Block,

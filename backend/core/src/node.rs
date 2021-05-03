@@ -1,11 +1,11 @@
 use bytes::Bytes;
 use std::sync::Arc;
 
-use crate::types::{
+use shared::types::{
     Block, BlockDetails, NodeDetails, NodeHardware, NodeIO, NodeId, NodeLocation, NodeStats,
     Timestamp,
 };
-use crate::util::now;
+use shared::util::now;
 
 pub mod connector;
 pub mod message;

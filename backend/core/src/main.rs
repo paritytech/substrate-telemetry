@@ -12,17 +12,16 @@ use simple_logger::SimpleLogger;
 mod aggregator;
 mod chain;
 mod feed;
+mod location;
 mod node;
 mod shard;
-mod types;
-mod util;
 
 use aggregator::{Aggregator, GetHealth, GetNetworkState};
 use feed::connector::FeedConnector;
+use location::{Locator, LocatorFactory};
 use node::connector::NodeConnector;
 use shard::connector::ShardConnector;
-use types::NodeId;
-use util::{Locator, LocatorFactory};
+use shared::types::NodeId;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
