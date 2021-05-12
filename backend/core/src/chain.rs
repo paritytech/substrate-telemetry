@@ -9,11 +9,11 @@ use crate::feed::connector::{FeedConnector, FeedId, Subscribed, Unsubscribed};
 use crate::feed::{self, FeedMessageSerializer};
 use crate::node::{
     connector::{Initialize, NodeConnector},
-    message::Payload,
     Node,
 };
 use shared::types::{Block, BlockNumber, ConnId, NodeDetails, NodeId, NodeLocation, Timestamp};
 use shared::util::{now, DenseMap, NumStats};
+use shared::node::Payload;
 
 const STALE_TIMEOUT: u64 = 2 * 60 * 1000; // 2 minutes
 

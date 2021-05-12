@@ -25,8 +25,8 @@ use shared::types::NodeId;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
-const NAME: &str = "Substrate Telemetry Backend";
-const ABOUT: &str = "This is the Telemetry Backend that injects and provide the data sent by Substrate/Polkadot nodes";
+const NAME: &str = "Substrate Telemetry Backend Core";
+const ABOUT: &str = "This is the Telemetry Backend Core that injects and provide the data sent by Substrate/Polkadot nodes";
 
 #[derive(Clap, Debug)]
 #[clap(name = NAME, version = VERSION, author = AUTHORS, about = ABOUT)]
@@ -205,7 +205,7 @@ async fn main() -> std::io::Result<()> {
     let aggregator = Aggregator::new(denylist).start();
     let factory = LocatorFactory::new();
     let locator = SyncArbiter::start(4, move || factory.create());
-    log::info!("Starting telemetry version: {}", env!("CARGO_PKG_VERSION"));
+    log::info!("Starting Telemetry Core version: {}", env!("CARGO_PKG_VERSION"));
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::NormalizePath::default())

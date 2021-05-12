@@ -1,9 +1,7 @@
-use crate::node::NodeDetails;
+use crate::types::{Block, BlockHash, BlockNumber, ConnId, NodeDetails};
+use crate::util::{Hash, NullAny};
 use actix::prelude::*;
-use serde::de::IgnoredAny;
-use serde::Deserialize;
-use shared::types::{Block, BlockHash, BlockNumber, ConnId};
-use shared::util::Hash;
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Debug, Message)]
 #[rtype(result = "()")]
@@ -37,7 +35,7 @@ impl From<NodeMessage> for Payload {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 #[serde(tag = "msg")]
 pub enum Payload {
     #[serde(rename = "system.connected")]
@@ -45,13 +43,13 @@ pub enum Payload {
     #[serde(rename = "system.interval")]
     SystemInterval(SystemInterval),
     #[serde(rename = "system.network_state")]
-    SystemNetworkState(IgnoredAny),
+    SystemNetworkState(NullAny),
     #[serde(rename = "block.import")]
     BlockImport(Block),
     #[serde(rename = "notify.finalized")]
     NotifyFinalized(Finalized),
     #[serde(rename = "txpool.import")]
-    TxPoolImport(IgnoredAny),
+    TxPoolImport(NullAny),
     #[serde(rename = "afg.finalized")]
     AfgFinalized(AfgFinalized),
     #[serde(rename = "afg.received_precommit")]
@@ -63,21 +61,21 @@ pub enum Payload {
     #[serde(rename = "afg.authority_set")]
     AfgAuthoritySet(AfgAuthoritySet),
     #[serde(rename = "afg.finalized_blocks_up_to")]
-    AfgFinalizedBlocksUpTo(IgnoredAny),
+    AfgFinalizedBlocksUpTo(NullAny),
     #[serde(rename = "aura.pre_sealed_block")]
-    AuraPreSealedBlock(IgnoredAny),
+    AuraPreSealedBlock(NullAny),
     #[serde(rename = "prepared_block_for_proposing")]
-    PreparedBlockForProposing(IgnoredAny),
+    PreparedBlockForProposing(NullAny),
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct SystemConnected {
     pub genesis_hash: Hash,
     #[serde(flatten)]
     pub node: NodeDetails,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct SystemInterval {
     pub peers: Option<u64>,
     pub txcount: Option<u64>,
@@ -87,50 +85,50 @@ pub struct SystemInterval {
     pub finalized_hash: Option<BlockHash>,
     #[serde(flatten)]
     pub block: Option<Block>,
-    pub network_state: Option<IgnoredAny>,
+    pub network_state: Option<NullAny>,
     pub used_state_cache_size: Option<f32>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct Finalized {
     #[serde(rename = "best")]
     pub hash: BlockHash,
     pub height: Box<str>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct AfgAuthoritySet {
     pub authority_id: Box<str>,
     pub authorities: Box<str>,
     pub authority_set_id: Box<str>,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct AfgFinalized {
     pub finalized_hash: BlockHash,
     pub finalized_number: Box<str>,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct AfgReceived {
     pub target_hash: BlockHash,
     pub target_number: Box<str>,
     pub voter: Option<Box<str>>,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct AfgReceivedPrecommit {
     #[serde(flatten)]
     pub received: AfgReceived,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct AfgReceivedPrevote {
     #[serde(flatten)]
     pub received: AfgReceived,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct AfgReceivedCommit {
     #[serde(flatten)]
     pub received: AfgReceived,

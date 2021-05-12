@@ -1,11 +1,13 @@
 mod dense_map;
 mod hash;
 mod mean_list;
+mod null;
 mod num_stats;
 
 pub use dense_map::DenseMap;
 pub use hash::Hash;
 pub use mean_list::MeanList;
+pub use null::NullAny;
 pub use num_stats::NumStats;
 
 pub fn fnv<D: AsRef<[u8]>>(data: D) -> u64 {
