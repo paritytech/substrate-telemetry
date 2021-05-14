@@ -1,5 +1,5 @@
-use serde::ser::{Serialize, SerializeTuple, Serializer};
-use serde::Deserialize;
+use serde::ser::{SerializeTuple, Serializer};
+use serde::{Deserialize, Serialize};
 
 use crate::util::{now, MeanList};
 
@@ -32,7 +32,7 @@ pub struct NodeIO {
     pub used_state_cache_size: MeanList<f32>,
 }
 
-#[derive(Deserialize, Debug, Clone, Copy)]
+#[derive(Deserialize, Serialize, Debug, Clone, Copy)]
 pub struct Block {
     #[serde(rename = "best")]
     pub hash: BlockHash,

@@ -281,9 +281,9 @@ checksum = "4d25d88fd6b8041580a654f9d0c581a047baee2b3efee13275f2fc392fc75034"
 
 [[package]]
 name = "arrayvec"
-version = "0.5.2"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23b62fc65de8e4e7f52534fb52b0f3ed04746ae267519eef2a83941e8085068b"
+checksum = "5a2f58b0bb10c380af2b26e57212856b8c9a59e0925b4c20f4a174a49734eaf7"
 
 [[package]]
 name = "atty"
@@ -1106,9 +1106,9 @@ checksum = "2ac6fe3538f701e339953a3ebbe4f39941aababa8a3f6964635b24ab526daeac"
 
 [[package]]
 name = "parity-scale-codec"
-version = "2.0.1"
+version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0cd3dab59b5cf4bc81069ade0fc470341a1ef3ad5fa73e5a8943bed2ec12b2e8"
+checksum = "e0f518afaa5a47d0d6386229b0a6e01e86427291d643aa4cabb4992219f504f8"
 dependencies = [
  "arrayvec",
  "bitvec",
@@ -1564,6 +1564,7 @@ dependencies = [
  "actix-http",
  "actix-web",
  "actix-web-actors",
+ "bincode",
  "bytes",
  "fnv",
  "hex",
@@ -1572,6 +1573,7 @@ dependencies = [
  "primitive-types",
  "rustc-hash",
  "serde",
+ "serde_json",
  "thiserror",
 ]
 

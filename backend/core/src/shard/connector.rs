@@ -2,13 +2,13 @@ use std::time::{Duration, Instant};
 
 use crate::aggregator::{AddNode, Aggregator};
 use crate::chain::{Chain, RemoveNode, UpdateNode};
-use crate::shard::ShardMessage;
 use actix::prelude::*;
 use actix_web_actors::ws::{self, CloseReason};
 use bincode::Options;
 use shared::types::NodeId;
 use shared::util::{DenseMap, Hash};
 use shared::ws::{MultipartHandler, WsMessage};
+use shared::shard::ShardMessage;
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(20);
@@ -73,7 +73,10 @@ impl ShardConnector {
     }
 
     fn handle_message(&mut self, msg: ShardMessage, ctx: &mut <Self as Actor>::Context) {
-        let ShardMessage { conn_id, payload } = msg;
+        match msg {
+            ShardMessage::New(ip) => (),
+            ShardMessage::Payload { conn_id, payload } => (),
+        }
 
         // TODO: get `NodeId` for `ShardConnId` and proxy payload to `self.chain`.
     }

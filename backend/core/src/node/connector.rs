@@ -5,13 +5,13 @@ use std::time::{Duration, Instant};
 use crate::aggregator::{AddNode, Aggregator};
 use crate::chain::{Chain, RemoveNode, UpdateNode};
 use crate::location::LocateRequest;
-use crate::node::message::{NodeMessage, Payload};
 use crate::node::NodeId;
 use actix::prelude::*;
 use actix_web_actors::ws::{self, CloseReason};
 use bytes::Bytes;
 use shared::types::ConnId;
 use shared::ws::{MultipartHandler, WsMessage};
+use shared::node::{NodeMessage, Payload};
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(20);

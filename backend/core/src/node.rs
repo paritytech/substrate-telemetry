@@ -6,11 +6,9 @@ use shared::types::{
     Timestamp,
 };
 use shared::util::now;
+use shared::node::SystemInterval;
 
 pub mod connector;
-pub mod message;
-
-use message::SystemInterval;
 
 /// Minimum time between block below broadcasting updates to the browser gets throttled, in ms.
 const THROTTLE_THRESHOLD: u64 = 100;
