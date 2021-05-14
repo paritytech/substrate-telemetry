@@ -7,9 +7,11 @@ use actix_web_actors::ws;
 use clap::Clap;
 use simple_logger::SimpleLogger;
 
+mod aggregator;
 mod node;
 
-use node::connector::NodeConnector;
+use aggregator::Aggregator;
+use node::NodeConnector;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
@@ -62,6 +64,7 @@ impl From<&LogLevel> for log::LevelFilter {
 async fn node_route(
     req: HttpRequest,
     stream: web::Payload,
+    aggregator: web::Data<Addr<Aggregator>>,
 ) -> Result<HttpResponse, Error> {
     let ip = req
         .connection_info()
@@ -74,9 +77,10 @@ async fn node_route(
         });
 
     let mut res = ws::handshake(&req)?;
+    let aggregator = aggregator.get_ref().clone();
 
     Ok(res.streaming(ws::WebsocketContext::with_codec(
-        NodeConnector::new(ip),
+        NodeConnector::new(aggregator, ip),
         stream,
         Codec::new().max_size(10 * 1024 * 1024), // 10mb frame limit
     )))
@@ -93,10 +97,16 @@ async fn main() -> std::io::Result<()> {
         .init()
         .expect("Must be able to start a logger");
 
-    log::info!("Starting Telemetry Shard version: {}", env!("CARGO_PKG_VERSION"));
+    let aggregator = Aggregator::default().start();
+
+    log::info!(
+        "Starting Telemetry Shard version: {}",
+        env!("CARGO_PKG_VERSION")
+    );
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::NormalizePath::default())
+            .data(aggregator.clone())
             .service(node_route)
     })
     .bind(opts.socket)?

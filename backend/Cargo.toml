@@ -2,6 +2,7 @@
 members = [
     "core",
     "shared",
+    "shard",
 ]
 
 [profile.dev]
