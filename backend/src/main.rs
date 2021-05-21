@@ -13,14 +13,12 @@ mod aggregator;
 mod chain;
 mod feed;
 mod node;
-mod shard;
 mod types;
 mod util;
 
 use aggregator::{Aggregator, GetHealth, GetNetworkState};
 use feed::connector::FeedConnector;
 use node::connector::NodeConnector;
-use shard::connector::ShardConnector;
 use types::NodeId;
 use util::{Locator, LocatorFactory};
 
@@ -100,27 +98,6 @@ async fn node_route(
 
     Ok(res.streaming(ws::WebsocketContext::with_codec(
         NodeConnector::new(aggregator, locator, ip),
-        stream,
-        Codec::new().max_size(10 * 1024 * 1024), // 10mb frame limit
-    )))
-}
-
-#[get("/shard_submit/{chain_hash}")]
-async fn shard_route(
-    req: HttpRequest,
-    stream: web::Payload,
-    aggregator: web::Data<Addr<Aggregator>>,
-    path: web::Path<Box<str>>,
-) -> Result<HttpResponse, Error> {
-    let hash_str = path.into_inner();
-    let genesis_hash = hash_str.parse()?;
-
-    let mut res = ws::handshake(&req)?;
-
-    let aggregator = aggregator.get_ref().clone();
-
-    Ok(res.streaming(ws::WebsocketContext::with_codec(
-        ShardConnector::new(aggregator, genesis_hash),
         stream,
         Codec::new().max_size(10 * 1024 * 1024), // 10mb frame limit
     )))
