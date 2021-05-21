@@ -2,6 +2,7 @@ use std::net::Ipv4Addr;
 
 use actix::prelude::*;
 use actix_http::ws::Codec;
+use actix_http::http::Uri;
 use actix_web::{get, middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
 use actix_web_actors::ws;
 use clap::Clap;
@@ -24,7 +25,7 @@ struct Opts {
     #[clap(
         short = 'l',
         long = "listen",
-        default_value = "127.0.0.1:8000",
+        default_value = "127.0.0.1:8001",
         about = "This is the socket address Telemetry is listening to. This is restricted to localhost (127.0.0.1) by default and should be fine for most use cases. If you are using Telemetry in a container, you likely want to set this to '0.0.0.0:8000'"
     )]
     socket: std::net::SocketAddr,
@@ -36,6 +37,13 @@ struct Opts {
         about = "Log level."
     )]
     log_level: LogLevel,
+    #[clap(
+    	short = 'c',
+    	long = "core",
+    	default_value = "ws://127.0.0.1:8000/shard_submit/",
+    	about = "Url to the Backend Core endpoint accepting shard connections"
+    )]
+    core_url: Uri,
 }
 
 #[derive(Clap, Debug, PartialEq)]
@@ -97,7 +105,9 @@ async fn main() -> std::io::Result<()> {
         .init()
         .expect("Must be able to start a logger");
 
-    let aggregator = Aggregator::default().start();
+    println!("URL? {:?} {:?}", opts.core_url.host(), opts.core_url.port_u16());
+
+    let aggregator = Aggregator::new(opts.core_url).start();
 
     log::info!(
         "Starting Telemetry Shard version: {}",

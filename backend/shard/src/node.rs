@@ -110,13 +110,13 @@ impl NodeConnector {
             }
             ConnMultiplex::Waiting { backlog } => {
                 if let Payload::SystemConnected(connected) = payload {
-                    println!("Node connected {:?}", connected);
+                    println!("Node connected {:?}", connected.node);
                     self.aggregator.do_send(AddNode {
                         genesis_hash: connected.genesis_hash,
                         ip: self.ip,
-                        // node: connected.node,
-                        // conn_id,
-                        // node_connector: ctx.address(),
+                        node: connected.node,
+                        conn_id,
+                        node_connector: ctx.address(),
                     });
                 } else {
                     if backlog.len() >= 10 {
