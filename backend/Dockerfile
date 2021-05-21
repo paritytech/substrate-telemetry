@@ -21,4 +21,4 @@ RUN apt-get -y update && apt-get -y install openssl && apt-get autoremove -y && 
 
 EXPOSE 8000
 
-ENTRYPOINT ["telemetry", "--listen", "0.0.0.0:8000"]
+ENTRYPOINT ["telemetry"]
