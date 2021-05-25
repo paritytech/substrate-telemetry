@@ -114,6 +114,8 @@ async fn shard_route(
     let hash_str = path.into_inner();
     let genesis_hash = hash_str.parse()?;
 
+    println!("Genesis hash {}", genesis_hash);
+
     let mut res = ws::handshake(&req)?;
 
     let aggregator = aggregator.get_ref().clone();
@@ -214,6 +216,7 @@ async fn main() -> std::io::Result<()> {
             .service(node_route)
             .service(feed_route)
             .service(state_route)
+            .service(shard_route)
             .service(health)
     })
     .bind(opts.socket)?

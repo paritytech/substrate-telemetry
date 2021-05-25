@@ -73,10 +73,11 @@ impl ShardConnector {
     }
 
     fn handle_message(&mut self, msg: ShardMessage, ctx: &mut <Self as Actor>::Context) {
-        match msg {
-            ShardMessage::New(ip) => (),
-            ShardMessage::Payload { conn_id, payload } => (),
-        }
+        println!("{:?}", msg);
+        // match msg {
+        //     ShardMessage::New(ip) => (),
+        //     ShardMessage::Payload { conn_id, payload } => (),
+        // }
 
         // TODO: get `NodeId` for `ShardConnId` and proxy payload to `self.chain`.
     }
@@ -105,14 +106,16 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ShardConnector {
             }
         };
 
+        println!("Received {} bytes", data.len());
+
         match bincode::options().deserialize(&data) {
             Ok(msg) => self.handle_message(msg, ctx),
-            #[cfg(debug)]
+            // #[cfg(debug)]
             Err(err) => {
                 log::warn!("Failed to parse shard message: {}", err,)
             }
-            #[cfg(not(debug))]
-            Err(_) => (),
+            // #[cfg(not(debug))]
+            // Err(_) => (),
         }
     }
 }
