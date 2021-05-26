@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::net::Ipv4Addr;
 use std::time::{Duration, Instant};
 
-use crate::aggregator::{AddNode, Aggregator};
+use crate::aggregator::{AddNode, Aggregator, NodeSource};
 use crate::chain::{Chain, RemoveNode, UpdateNode};
 use crate::location::LocateRequest;
 use crate::node::NodeId;
@@ -122,8 +122,10 @@ impl NodeConnector {
                     self.aggregator.do_send(AddNode {
                         node: connected.node,
                         genesis_hash: connected.genesis_hash,
-                        conn_id,
-                        node_connector: ctx.address(),
+                        source: NodeSource::Direct {
+                            conn_id,
+                            node_connector: ctx.address(),
+                        },
                     });
                 } else {
                     if backlog.len() >= 10 {

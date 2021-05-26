@@ -4,7 +4,7 @@ use rustc_hash::FxHashMap;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::aggregator::{Aggregator, DropChain, NodeCount, RenameChain};
+use crate::aggregator::{Aggregator, DropChain, NodeCount, NodeSource, RenameChain};
 use crate::feed::connector::{FeedConnector, FeedId, Subscribed, Unsubscribed};
 use crate::feed::{self, FeedMessageSerializer};
 use crate::node::{
@@ -205,10 +205,8 @@ impl Actor for Chain {
 pub struct AddNode {
     /// Details of the node being added to the aggregator
     pub node: NodeDetails,
-    /// Connection id used by the node connector for multiplexing parachains
-    pub conn_id: ConnId,
-    /// Address of the NodeConnector actor to which we send [`Initialize`] or [`Mute`] messages.
-    pub node_connector: Addr<NodeConnector>,
+    /// Source from which this node is being added (Direct | Shard)
+    pub source: NodeSource,
 }
 
 /// Message sent from the NodeConnector to the Chain when it receives new telemetry data
@@ -257,14 +255,33 @@ impl Message for GetNodeNetworkState {
     type Result = Option<Bytes>;
 }
 
+impl NodeSource {
+    pub fn init(self, nid: NodeId, chain: Addr<Chain>) -> bool {
+        match self {
+            NodeSource::Direct { conn_id, node_connector } => {
+                node_connector
+                    .try_send(Initialize {
+                        nid,
+                        conn_id,
+                        chain,
+                    })
+                    .is_err()
+            },
+            NodeSource::Shard => {
+                // TODO
+                false
+            }
+        }
+    }
+}
+
 impl Handler<AddNode> for Chain {
     type Result = ();
 
     fn handle(&mut self, msg: AddNode, ctx: &mut Self::Context) {
         let AddNode {
             node,
-            conn_id,
-            node_connector,
+            source,
         } = msg;
         log::trace!(target: "Chain::AddNode", "New node connected. Chain '{}', node count goes from {} to {}", node.chain, self.nodes.len(), self.nodes.len() + 1);
         self.increment_label_count(&node.chain);
@@ -272,14 +289,7 @@ impl Handler<AddNode> for Chain {
         let nid = self.nodes.add(Node::new(node));
         let chain = ctx.address();
 
-        if node_connector
-            .try_send(Initialize {
-                nid,
-                conn_id,
-                chain,
-            })
-            .is_err()
-        {
+        if source.init(nid, chain) {
             self.nodes.remove(nid);
         } else if let Some(node) = self.nodes.get(nid) {
             self.serializer.push(feed::AddedNode(nid, node));

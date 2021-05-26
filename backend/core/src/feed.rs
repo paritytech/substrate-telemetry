@@ -6,7 +6,7 @@ use crate::node::Node;
 use serde_json::to_writer;
 use shared::types::{
     Address, BlockDetails, BlockHash, BlockNumber, NodeHardware, NodeIO, NodeId, NodeStats,
-    Timestamp,
+    Timestamp, NodeDetails,
 };
 
 pub mod connector;
@@ -199,9 +199,18 @@ impl FeedMessageWrite for AddedNode<'_> {
     fn write_to_feed(&self, ser: &mut FeedMessageSerializer) {
         let AddedNode(nid, node) = self;
 
+        let details = node.details();
+        let details = (
+            &details.name,
+            &details.implementation,
+            &details.version,
+            &details.validator,
+            &details.network_id,
+        );
+
         ser.write(&(
             nid,
-            node.details(),
+            details,
             node.stats(),
             node.io(),
             node.hardware(),

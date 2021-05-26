@@ -10,7 +10,7 @@ pub type Timestamp = u64;
 pub type Address = Box<str>;
 pub use primitive_types::H256 as BlockHash;
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct NodeDetails {
     pub chain: Box<str>,
     pub name: Box<str>,
@@ -84,20 +84,20 @@ pub struct NodeLocation {
     pub city: Box<str>,
 }
 
-impl Serialize for NodeDetails {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut tup = serializer.serialize_tuple(6)?;
-        tup.serialize_element(&self.name)?;
-        tup.serialize_element(&self.implementation)?;
-        tup.serialize_element(&self.version)?;
-        tup.serialize_element(&self.validator)?;
-        tup.serialize_element(&self.network_id)?;
-        tup.end()
-    }
-}
+// impl Serialize for NodeDetails {
+//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+//     where
+//         S: Serializer,
+//     {
+//         let mut tup = serializer.serialize_tuple(6)?;
+//         tup.serialize_element(&self.name)?;
+//         tup.serialize_element(&self.implementation)?;
+//         tup.serialize_element(&self.version)?;
+//         tup.serialize_element(&self.validator)?;
+//         tup.serialize_element(&self.network_id)?;
+//         tup.end()
+//     }
+// }
 
 impl Serialize for NodeStats {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

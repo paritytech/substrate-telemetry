@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use crate::aggregator::{AddNode, Aggregator};
+use crate::aggregator::{AddNode, Aggregator, NodeSource};
 use crate::chain::{Chain, RemoveNode, UpdateNode};
 use actix::prelude::*;
 use actix_web_actors::ws::{self, CloseReason};
@@ -74,12 +74,19 @@ impl ShardConnector {
 
     fn handle_message(&mut self, msg: ShardMessage, ctx: &mut <Self as Actor>::Context) {
         println!("{:?}", msg);
-        // match msg {
-        //     ShardMessage::New(ip) => (),
-        //     ShardMessage::Payload { conn_id, payload } => (),
-        // }
 
-        // TODO: get `NodeId` for `ShardConnId` and proxy payload to `self.chain`.
+        match msg {
+            ShardMessage::AddNode { ip, node, sid } => {
+                self.aggregator.do_send(AddNode {
+                    node,
+                    genesis_hash: self.genesis_hash,
+                    source: NodeSource::Shard,
+                });
+            },
+            ShardMessage::Payload { .. } => {
+                // TODO
+            },
+        }
     }
 }
 
