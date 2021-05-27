@@ -111,7 +111,7 @@ impl ShardConnector {
                     }
                 });
             },
-            ShardMessage::Payload { nid, payload } => {
+            ShardMessage::UpdateNode { nid, payload } => {
                 if let Some(chain) = self.chain.as_ref() {
                     chain.do_send(UpdateNode {
                         nid,

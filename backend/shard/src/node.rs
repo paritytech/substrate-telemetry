@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::net::Ipv4Addr;
 use std::time::{Duration, Instant};
 
-use crate::aggregator::{AddNode, Aggregator};
+use crate::aggregator::{AddNode, Aggregator, ChainMessage};
 // use crate::chain::{Chain, RemoveNode, UpdateNode};
 use actix::prelude::*;
 use actix_web_actors::ws::{self, CloseReason};
@@ -10,6 +10,7 @@ use bytes::Bytes;
 use shared::node::{NodeMessage, Payload};
 use shared::types::{ConnId, NodeId};
 use shared::ws::{MultipartHandler, WsMessage};
+use tokio::sync::mpsc::UnboundedSender;
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(20);
@@ -33,8 +34,8 @@ enum ConnMultiplex {
     Connected {
         /// Id of the node this multiplex connector is responsible for handling
         nid: NodeId,
-        // /// Chain address to which this multiplex connector is delegating messages
-        // chain: Addr<Chain>,
+        /// Chain address to which this multiplex connector is delegating messages
+        chain: UnboundedSender<ChainMessage>,
     },
     Waiting {
         /// Backlog of messages to be sent once we get a recipient handle to the chain
@@ -101,7 +102,7 @@ impl NodeConnector {
         let payload = msg.into();
 
         match self.multiplex.entry(conn_id).or_default() {
-            ConnMultiplex::Connected { nid } => {
+            ConnMultiplex::Connected { nid, chain } => {
                 // chain.do_send(UpdateNode {
                 //     nid: *nid,
                 //     raw: Some(data),
@@ -130,13 +131,12 @@ impl NodeConnector {
     }
 }
 
-// #[derive(Message)]
-// #[rtype(result = "()")]
-// pub struct Initialize {
-//     pub nid: NodeId,
-//     pub conn_id: ConnId,
-//     pub chain: Addr<Chain>,
-// }
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct Initialize {
+    pub nid: NodeId,
+    pub conn_id: ConnId,
+}
 
 // impl Handler<Initialize> for NodeConnector {
 //     type Result = ();

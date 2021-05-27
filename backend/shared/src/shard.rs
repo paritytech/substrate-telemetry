@@ -18,7 +18,7 @@ pub enum ShardMessage {
     	sid: ShardConnId,
     },
     /// Send a message payload for a given node
-    Payload {
+    UpdateNode {
         nid: NodeId,
         payload: Payload,
     },

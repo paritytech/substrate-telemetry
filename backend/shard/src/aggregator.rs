@@ -7,15 +7,17 @@ use actix_http::http::Uri;
 use bincode::Options;
 use rustc_hash::FxHashMap;
 use shared::util::{Hash, DenseMap};
-use shared::types::{ConnId, NodeDetails};
-use shared::shard::{ShardConnId, ShardMessage};
+use shared::types::{ConnId, NodeDetails, NodeId};
+use shared::node::Payload;
+use shared::shard::{ShardConnId, ShardMessage, BackendMessage};
 use soketto::handshake::{Client, ServerResponse};
 use crate::node::NodeConnector;
 use tokio::net::TcpStream;
 use tokio::sync::mpsc::{self, UnboundedSender};
 use tokio_util::compat::{Compat, TokioAsyncReadCompatExt};
 
-type WsChannel<T> = (soketto::Sender<Compat<T>>, soketto::Receiver<Compat<T>>);
+type WsSender = soketto::Sender<Compat<TcpStream>>;
+type WsReceiver = soketto::Receiver<Compat<TcpStream>>;
 
 #[derive(Default)]
 pub struct Aggregator {
@@ -55,16 +57,22 @@ impl Chain {
     }
 
     pub fn spawn(mut self) -> UnboundedSender<ChainMessage> {
-        let (tx, mut rx) = mpsc::unbounded_channel();
+        let (tx_ret, mut rx) = mpsc::unbounded_channel();
+
+        let tx = tx_ret.clone();
 
         tokio::task::spawn(async move {
-            let (mut sender, mut receiver) = match self.connect().await {
+            let mut sender = match self.connect(tx.clone()).await {
                 Ok(pair) => pair,
                 Err(err) => {
                     log::error!("Failed to connect to Backend Core: {:?}", err);
                     return;
                 }
             };
+
+            // tokio::task::spawn(async move {
+
+            // });
 
             loop {
                 match rx.recv().await {
@@ -85,6 +93,25 @@ impl Chain {
                         let _ = sender.send_binary_mut(bytes).await;
                         let _ = sender.flush().await;
                     },
+                    Some(ChainMessage::UpdateNode(nid, payload)) => {
+                        let bytes = bincode::options().serialize(&ShardMessage::UpdateNode {
+                            nid,
+                            payload,
+                        }).unwrap();
+
+                        println!("Sending update: {} bytes", bytes.len());
+
+                        let _ = sender.send_binary_mut(bytes).await;
+                        let _ = sender.flush().await;
+                    },
+                    Some(ChainMessage::Backend(BackendMessage::Initialize { sid, nid })) => {
+                        if let Some((addr, conn_id)) = self.nodes.get(sid as usize) {
+                            // TODO
+                        }
+                    },
+                    Some(ChainMessage::Backend(BackendMessage::Mute { sid, reason })) => {
+                        // TODO
+                    },
                     None => (),
                 }
             }
@@ -97,15 +124,13 @@ impl Chain {
             // };
         });
 
-        tx
+        tx_ret
     }
 
-    pub async fn connect(&self) -> anyhow::Result<WsChannel<TcpStream>> {
+    pub async fn connect(&self, tx: UnboundedSender<ChainMessage>) -> anyhow::Result<WsSender> {
         let host = self.url.host().unwrap_or("127.0.0.1");
         let port = self.url.port_u16().unwrap_or(8000);
         let path = format!("{}{}", self.url.path(), self.genesis_hash);
-
-        println!("Path {}", path);
 
         let socket = TcpStream::connect((host, port)).await?;
 
@@ -113,13 +138,37 @@ impl Chain {
 
         let mut client = Client::new(socket.compat(), host, &path);
 
-        match client.handshake().await? {
-            ServerResponse::Accepted { .. } => Ok(client.into_builder().finish()),
+        let (sender, receiver) = match client.handshake().await? {
+            ServerResponse::Accepted { .. } => client.into_builder().finish(),
             ServerResponse::Redirect { status_code, .. } |
             ServerResponse::Rejected { status_code } => {
-                Err(anyhow::anyhow!("Failed to connect, status code: {}", status_code))
+                return Err(anyhow::anyhow!("Failed to connect, status code: {}", status_code));
+            }
+        };
+
+        async fn read(tx: UnboundedSender<ChainMessage>, mut receiver: WsReceiver) -> anyhow::Result<()> {
+            let mut data = Vec::with_capacity(128);
+
+            loop {
+                data.clear();
+
+                receiver.receive_data(&mut data).await?;
+
+                println!("Received {} bytes from Backend Core", data.len());
+
+                match bincode::options().deserialize(&data) {
+                    Ok(msg) => tx.send(ChainMessage::Backend(msg))?,
+                    Err(err) => {
+                        log::error!("Failed to read message from Backend Core: {:?}", err);
+                    }
+                }
+
             }
         }
+
+        tokio::task::spawn(read(tx, receiver));
+
+        Ok(sender)
     }
 }
 
@@ -140,6 +189,8 @@ pub struct AddNode {
 #[derive(Debug)]
 pub enum ChainMessage {
     AddNode(AddNode),
+    UpdateNode(NodeId, Payload),
+    Backend(BackendMessage),
 }
 
 impl fmt::Debug for AddNode {
