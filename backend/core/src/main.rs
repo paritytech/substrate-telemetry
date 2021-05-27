@@ -109,6 +109,7 @@ async fn shard_route(
     req: HttpRequest,
     stream: web::Payload,
     aggregator: web::Data<Addr<Aggregator>>,
+    locator: web::Data<Addr<Locator>>,
     path: web::Path<Box<str>>,
 ) -> Result<HttpResponse, Error> {
     let hash_str = path.into_inner();
@@ -119,9 +120,10 @@ async fn shard_route(
     let mut res = ws::handshake(&req)?;
 
     let aggregator = aggregator.get_ref().clone();
+    let locator = locator.get_ref().clone().recipient();
 
     Ok(res.streaming(ws::WebsocketContext::with_codec(
-        ShardConnector::new(aggregator, genesis_hash),
+        ShardConnector::new(aggregator, locator, genesis_hash),
         stream,
         Codec::new().max_size(10 * 1024 * 1024), // 10mb frame limit
     )))

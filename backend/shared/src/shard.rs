@@ -1,5 +1,6 @@
 use std::net::Ipv4Addr;
 
+use crate::ws::MuteReason;
 use crate::node::Payload;
 use crate::types::{NodeId, NodeDetails};
 use serde::{Deserialize, Serialize};
@@ -7,7 +8,7 @@ use serde::{Deserialize, Serialize};
 /// Alias for the ID of the node connection
 pub type ShardConnId = u32;
 
-/// Message sent from the shard to backend core
+/// Message sent from the shard to the backend core
 #[derive(Deserialize, Serialize, Debug)]
 pub enum ShardMessage {
     /// Get a connection id for a new node, passing IPv4
@@ -23,8 +24,15 @@ pub enum ShardMessage {
     },
 }
 
-#[derive(Deserialize, Serialize)]
-pub struct NodeAdded {
-	pub sid: ShardConnId,
-	pub nid: NodeId,
+/// Message sent form the backend core to the shard
+#[derive(Deserialize, Serialize, Debug)]
+pub enum BackendMessage {
+	Initialize {
+		sid: ShardConnId,
+		nid: NodeId,
+	},
+	Mute {
+		sid: ShardConnId,
+		reason: MuteReason,
+	},
 }

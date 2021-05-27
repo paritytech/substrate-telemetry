@@ -7,10 +7,7 @@ use std::sync::Arc;
 use crate::aggregator::{Aggregator, DropChain, NodeCount, NodeSource, RenameChain};
 use crate::feed::connector::{FeedConnector, FeedId, Subscribed, Unsubscribed};
 use crate::feed::{self, FeedMessageSerializer};
-use crate::node::{
-    connector::{Initialize, NodeConnector},
-    Node,
-};
+use crate::node::Node;
 use shared::types::{Block, BlockNumber, ConnId, NodeDetails, NodeId, NodeLocation, Timestamp};
 use shared::util::{now, DenseMap, NumStats};
 use shared::node::Payload;
@@ -260,16 +257,21 @@ impl NodeSource {
         match self {
             NodeSource::Direct { conn_id, node_connector } => {
                 node_connector
-                    .try_send(Initialize {
+                    .try_send(crate::node::connector::Initialize {
                         nid,
                         conn_id,
                         chain,
                     })
-                    .is_err()
+                    .is_ok()
             },
-            NodeSource::Shard => {
-                // TODO
-                false
+            NodeSource::Shard { sid, shard_connector } => {
+                shard_connector
+                    .try_send(crate::shard::connector::Initialize {
+                        nid,
+                        sid,
+                        chain,
+                    })
+                    .is_ok()
             }
         }
     }

@@ -10,7 +10,7 @@ use actix::prelude::*;
 use actix_web_actors::ws::{self, CloseReason};
 use bytes::Bytes;
 use shared::types::ConnId;
-use shared::ws::{MultipartHandler, WsMessage};
+use shared::ws::{MultipartHandler, WsMessage, MuteReason};
 use shared::node::{NodeMessage, Payload};
 
 /// How often heartbeat pings are sent
@@ -139,19 +139,12 @@ impl NodeConnector {
     }
 }
 
-#[derive(Message)]
-#[rtype(result = "()")]
-pub struct Mute {
-    pub reason: CloseReason,
-}
-
-impl Handler<Mute> for NodeConnector {
+impl Handler<MuteReason> for NodeConnector {
     type Result = ();
-    fn handle(&mut self, msg: Mute, ctx: &mut Self::Context) {
-        let Mute { reason } = msg;
-        log::debug!(target: "NodeConnector::Mute", "Muting a node. Reason: {:?}", reason.description);
+    fn handle(&mut self, msg: MuteReason, ctx: &mut Self::Context) {
+        log::debug!(target: "NodeConnector::Mute", "Muting a node. Reason: {:?}", msg);
 
-        ctx.close(Some(reason));
+        ctx.close(Some(msg.into()));
         ctx.stop();
     }
 }

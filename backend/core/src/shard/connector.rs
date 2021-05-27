@@ -1,14 +1,17 @@
 use std::time::{Duration, Instant};
+use std::collections::BTreeMap;
+use std::net::Ipv4Addr;
 
 use crate::aggregator::{AddNode, Aggregator, NodeSource};
 use crate::chain::{Chain, RemoveNode, UpdateNode};
+use crate::location::LocateRequest;
 use actix::prelude::*;
 use actix_web_actors::ws::{self, CloseReason};
 use bincode::Options;
 use shared::types::NodeId;
-use shared::util::{DenseMap, Hash};
+use shared::util::Hash;
 use shared::ws::{MultipartHandler, WsMessage};
-use shared::shard::ShardMessage;
+use shared::shard::{ShardMessage, ShardConnId, BackendMessage};
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(20);
@@ -22,10 +25,14 @@ pub struct ShardConnector {
     aggregator: Addr<Aggregator>,
     /// Genesis hash of the chain this connection will be submitting data for
     genesis_hash: Hash,
-    /// Chain address to which this multiplex connector is delegating messages
+    /// Chain address to which this shard connector is delegating messages
     chain: Option<Addr<Chain>>,
-    /// Mapping `ShardConnId` to `NodeId`
-    nodes: DenseMap<NodeId>,
+    /// Transient mapping of `ShardConnId` to external IP address.
+    ips: BTreeMap<ShardConnId, Ipv4Addr>,
+    /// Mapping of `ShardConnId` to initialized `NodeId`s.
+    nodes: BTreeMap<ShardConnId, NodeId>,
+    /// Actix address of location services
+    locator: Recipient<LocateRequest>,
     /// Container for handling continuation messages
     multipart: MultipartHandler,
 }
@@ -39,7 +46,7 @@ impl Actor for ShardConnector {
 
     fn stopped(&mut self, _: &mut Self::Context) {
         if let Some(ref chain) = self.chain {
-            for (_, nid) in self.nodes.iter() {
+            for nid in self.nodes.values() {
                 chain.do_send(RemoveNode(*nid))
             }
         }
@@ -47,15 +54,29 @@ impl Actor for ShardConnector {
 }
 
 impl ShardConnector {
-    pub fn new(aggregator: Addr<Aggregator>, genesis_hash: Hash) -> Self {
+    pub fn new(
+        aggregator: Addr<Aggregator>,
+        locator: Recipient<LocateRequest>,
+        genesis_hash: Hash,
+    ) -> Self {
         Self {
             hb: Instant::now(),
             aggregator,
             genesis_hash,
             chain: None,
-            nodes: DenseMap::new(),
+            ips: BTreeMap::new(),
+            nodes: BTreeMap::new(),
+            locator,
             multipart: MultipartHandler::default(),
         }
+    }
+
+    fn shard_send(msg: BackendMessage, ctx: &mut <Self as Actor>::Context) {
+        let bytes = bincode::options().serialize(&msg).expect("Must be able to serialize to vec; qed");
+
+        println!("Sending back {} bytes", bytes.len());
+
+        ctx.binary(bytes);
     }
 
     fn heartbeat(&self, ctx: &mut <Self as Actor>::Context) {
@@ -77,19 +98,65 @@ impl ShardConnector {
 
         match msg {
             ShardMessage::AddNode { ip, node, sid } => {
+                if let Some(ip) = ip {
+                    self.ips.insert(sid, ip);
+                }
+
                 self.aggregator.do_send(AddNode {
                     node,
                     genesis_hash: self.genesis_hash,
-                    source: NodeSource::Shard,
+                    source: NodeSource::Shard {
+                        sid,
+                        shard_connector: ctx.address(),
+                    }
                 });
             },
-            ShardMessage::Payload { .. } => {
-                // TODO
+            ShardMessage::Payload { nid, payload } => {
+                if let Some(chain) = self.chain.as_ref() {
+                    chain.do_send(UpdateNode {
+                        nid,
+                        raw: None,
+                        payload,
+                    });
+                }
             },
         }
     }
 }
 
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct Initialize {
+    pub nid: NodeId,
+    pub sid: ShardConnId,
+    pub chain: Addr<Chain>,
+}
+
+impl Handler<Initialize> for ShardConnector {
+    type Result = ();
+
+    fn handle(&mut self, msg: Initialize, ctx: &mut Self::Context) {
+        let Initialize {
+            nid,
+            sid,
+            chain,
+        } = msg;
+        log::trace!(target: "ShardConnector::Initialize", "Initializing a node, nid={}, on conn_id={}", nid, 0);
+
+        if self.chain.is_none() {
+            self.chain = Some(chain.clone());
+        }
+
+        let be_msg = BackendMessage::Initialize { sid, nid };
+
+        Self::shard_send(be_msg, ctx);
+
+        // Acquire the node's physical location
+        if let Some(ip) = self.ips.remove(&sid) {
+            let _ = self.locator.do_send(LocateRequest { ip, nid, chain });
+        }
+    }
+}
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ShardConnector {
     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
         self.hb = Instant::now();

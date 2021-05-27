@@ -1,12 +1,42 @@
 use actix_http::ws::Item;
-use actix_web_actors::ws::{self, CloseReason};
+use actix_web_actors::ws::{self, CloseReason, CloseCode};
 use bytes::{Bytes, BytesMut};
+use serde::{Serialize, Deserialize};
+use actix::prelude::Message;
 
 /// Helper that will buffer continuation messages from actix
 /// until completion, capping at 10mb.
 #[derive(Default)]
 pub struct MultipartHandler {
     buf: BytesMut,
+}
+
+/// Message to signal that a node should be muted for a reason that's
+/// cheap to transfer between Actors or over the wire for shards.
+#[derive(Serialize, Deserialize, Message, Clone, Copy, Debug)]
+#[rtype("()")]
+pub enum MuteReason {
+    /// Node was denied connection for any arbitrary reason,
+    /// and should not attempt to reconnect.
+    Denied,
+    /// Node was denied because the chain it belongs to is currently
+    /// at the limit of allowed nodes, and it may attempt to reconnect.
+    Overquota,
+}
+
+impl From<MuteReason> for CloseReason {
+    fn from(mute: MuteReason) -> CloseReason {
+        match mute {
+            MuteReason::Denied => CloseReason {
+                code: CloseCode::Abnormal,
+                description: Some("Denied".into()),
+            },
+            MuteReason::Overquota => CloseReason {
+                code: CloseCode::Again,
+                description: Some("Overquota".into()),
+            },
+        }
+    }
 }
 
 /// Continuation buffer limit, 10mb
