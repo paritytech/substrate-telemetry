@@ -22,7 +22,6 @@ import {
   BlockPropagationColumn,
   LastBlockColumn,
   UptimeColumn,
-  NetworkStateColumn,
 } from './';
 
 import './Row.css';
@@ -64,7 +63,6 @@ export class Row extends React.Component<Row.Props, Row.State> {
     BlockPropagationColumn,
     LastBlockColumn,
     UptimeColumn,
-    NetworkStateColumn,
   ];
 
   private renderedChangeRef = 0;

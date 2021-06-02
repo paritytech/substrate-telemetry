@@ -238,7 +238,6 @@ export namespace State {
     blockpropagation: boolean;
     blocklasttime: boolean;
     uptime: boolean;
-    networkstate: boolean;
   }
 
   export interface SortBy {
