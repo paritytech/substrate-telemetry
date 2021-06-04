@@ -386,60 +386,60 @@ impl Handler<UpdateNode> for Chain {
                         node.set_network_state(raw);
                     }
                 }
-                Payload::AfgAuthoritySet(authority) => {
-                    node.set_validator_address(authority.authority_id.clone());
-                    self.broadcast();
-                    return;
-                }
-                Payload::AfgFinalized(finalized) => {
-                    if let Ok(finalized_number) = finalized.finalized_number.parse::<BlockNumber>()
-                    {
-                        if let Some(addr) = node.details().validator.clone() {
-                            self.serializer.push(feed::AfgFinalized(
-                                addr,
-                                finalized_number,
-                                finalized.finalized_hash,
-                            ));
-                            self.broadcast_finality();
-                        }
-                    }
-                    return;
-                }
-                Payload::AfgReceivedPrecommit(precommit) => {
-                    if let Ok(finalized_number) =
-                        precommit.received.target_number.parse::<BlockNumber>()
-                    {
-                        if let Some(addr) = node.details().validator.clone() {
-                            let voter = precommit.received.voter.clone();
-                            self.serializer.push(feed::AfgReceivedPrecommit(
-                                addr,
-                                finalized_number,
-                                precommit.received.target_hash,
-                                voter,
-                            ));
-                            self.broadcast_finality();
-                        }
-                    }
-                    return;
-                }
-                Payload::AfgReceivedPrevote(prevote) => {
-                    if let Ok(finalized_number) =
-                        prevote.received.target_number.parse::<BlockNumber>()
-                    {
-                        if let Some(addr) = node.details().validator.clone() {
-                            let voter = prevote.received.voter.clone();
-                            self.serializer.push(feed::AfgReceivedPrevote(
-                                addr,
-                                finalized_number,
-                                prevote.received.target_hash,
-                                voter,
-                            ));
-                            self.broadcast_finality();
-                        }
-                    }
-                    return;
-                }
-                Payload::AfgReceivedCommit(_) => {}
+                // Payload::AfgAuthoritySet(authority) => {
+                //     node.set_validator_address(authority.authority_id.clone());
+                //     self.broadcast();
+                //     return;
+                // }
+                // Payload::AfgFinalized(finalized) => {
+                //     if let Ok(finalized_number) = finalized.finalized_number.parse::<BlockNumber>()
+                //     {
+                //         if let Some(addr) = node.details().validator.clone() {
+                //             self.serializer.push(feed::AfgFinalized(
+                //                 addr,
+                //                 finalized_number,
+                //                 finalized.finalized_hash,
+                //             ));
+                //             self.broadcast_finality();
+                //         }
+                //     }
+                //     return;
+                // }
+                // Payload::AfgReceivedPrecommit(precommit) => {
+                //     if let Ok(finalized_number) =
+                //         precommit.received.target_number.parse::<BlockNumber>()
+                //     {
+                //         if let Some(addr) = node.details().validator.clone() {
+                //             let voter = precommit.received.voter.clone();
+                //             self.serializer.push(feed::AfgReceivedPrecommit(
+                //                 addr,
+                //                 finalized_number,
+                //                 precommit.received.target_hash,
+                //                 voter,
+                //             ));
+                //             self.broadcast_finality();
+                //         }
+                //     }
+                //     return;
+                // }
+                // Payload::AfgReceivedPrevote(prevote) => {
+                //     if let Ok(finalized_number) =
+                //         prevote.received.target_number.parse::<BlockNumber>()
+                //     {
+                //         if let Some(addr) = node.details().validator.clone() {
+                //             let voter = prevote.received.voter.clone();
+                //             self.serializer.push(feed::AfgReceivedPrevote(
+                //                 addr,
+                //                 finalized_number,
+                //                 prevote.received.target_hash,
+                //                 voter,
+                //             ));
+                //             self.broadcast_finality();
+                //         }
+                //     }
+                //     return;
+                // }
+                // Payload::AfgReceivedCommit(_) => {}
                 _ => (),
             }
 

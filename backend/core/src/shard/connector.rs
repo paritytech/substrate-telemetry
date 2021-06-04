@@ -157,6 +157,7 @@ impl Handler<Initialize> for ShardConnector {
         }
     }
 }
+
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ShardConnector {
     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
         self.hb = Instant::now();
@@ -179,8 +180,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ShardConnector {
                 return;
             }
         };
-
-        println!("Received {} bytes", data.len());
 
         match bincode::options().deserialize(&data) {
             Ok(msg) => self.handle_message(msg, ctx),

@@ -103,11 +103,8 @@ impl NodeConnector {
 
         match self.multiplex.entry(conn_id).or_default() {
             ConnMultiplex::Connected { nid, chain } => {
-                // chain.do_send(UpdateNode {
-                //     nid: *nid,
-                //     raw: Some(data),
-                //     payload,
-                // });
+                // TODO: error handle
+                let _ = chain.send(ChainMessage::UpdateNode(*nid, payload));
             }
             ConnMultiplex::Waiting { backlog } => {
                 if let Payload::SystemConnected(connected) = payload {
@@ -136,41 +133,34 @@ impl NodeConnector {
 pub struct Initialize {
     pub nid: NodeId,
     pub conn_id: ConnId,
+    pub chain: UnboundedSender<ChainMessage>,
 }
 
-// impl Handler<Initialize> for NodeConnector {
-//     type Result = ();
+impl Handler<Initialize> for NodeConnector {
+    type Result = ();
 
-//     fn handle(&mut self, msg: Initialize, _: &mut Self::Context) {
-//         let Initialize {
-//             nid,
-//             conn_id,
-//             chain,
-//         } = msg;
-//         log::trace!(target: "NodeConnector::Initialize", "Initializing a node, nid={}, on conn_id={}", nid, conn_id);
-//         let mx = self.multiplex.entry(conn_id).or_default();
+    fn handle(&mut self, msg: Initialize, _: &mut Self::Context) {
+        let Initialize {
+            nid,
+            conn_id,
+            chain,
+        } = msg;
+        log::trace!(target: "NodeConnector::Initialize", "Initializing a node, nid={}, on conn_id={}", nid, conn_id);
+        let mx = self.multiplex.entry(conn_id).or_default();
 
-//         if let ConnMultiplex::Waiting { backlog } = mx {
-//             for payload in backlog.drain(..) {
-//                 chain.do_send(UpdateNode {
-//                     nid,
-//                     raw: None,
-//                     payload,
-//                 });
-//             }
+        if let ConnMultiplex::Waiting { backlog } = mx {
+            for payload in backlog.drain(..) {
+                // TODO: error handle.
+                let _ = chain.send(ChainMessage::UpdateNode(nid, payload));
+            }
 
-//             *mx = ConnMultiplex::Connected {
-//                 nid,
-//                 chain: chain.clone(),
-//             };
-//         };
-
-//         // Acquire the node's physical location
-//         if let Some(ip) = self.ip {
-//             let _ = self.locator.do_send(LocateRequest { ip, nid, chain });
-//         }
-//     }
-// }
+            *mx = ConnMultiplex::Connected {
+                nid,
+                chain,
+            };
+        };
+    }
+}
 
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for NodeConnector {
     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {

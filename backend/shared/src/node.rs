@@ -2,6 +2,7 @@ use crate::types::{Block, BlockHash, BlockNumber, ConnId, NodeDetails};
 use crate::util::{Hash, NullAny};
 use actix::prelude::*;
 use serde::{Deserialize, Serialize};
+use serde::ser::Serializer;
 
 #[derive(Deserialize, Debug, Message)]
 #[rtype(result = "()")]
@@ -35,7 +36,7 @@ impl From<NodeMessage> for Payload {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Debug)]
 #[serde(tag = "msg")]
 pub enum Payload {
     #[serde(rename = "system.connected")]
@@ -50,22 +51,42 @@ pub enum Payload {
     NotifyFinalized(Finalized),
     #[serde(rename = "txpool.import")]
     TxPoolImport(NullAny),
-    #[serde(rename = "afg.finalized")]
-    AfgFinalized(AfgFinalized),
-    #[serde(rename = "afg.received_precommit")]
-    AfgReceivedPrecommit(AfgReceivedPrecommit),
-    #[serde(rename = "afg.received_prevote")]
-    AfgReceivedPrevote(AfgReceivedPrevote),
-    #[serde(rename = "afg.received_commit")]
-    AfgReceivedCommit(AfgReceivedCommit),
-    #[serde(rename = "afg.authority_set")]
-    AfgAuthoritySet(AfgAuthoritySet),
-    #[serde(rename = "afg.finalized_blocks_up_to")]
-    AfgFinalizedBlocksUpTo(NullAny),
-    #[serde(rename = "aura.pre_sealed_block")]
-    AuraPreSealedBlock(NullAny),
+    // #[serde(rename = "afg.finalized")]
+    // AfgFinalized(AfgFinalized),
+    // #[serde(rename = "afg.received_precommit")]
+    // AfgReceivedPrecommit(AfgReceivedPrecommit),
+    // #[serde(rename = "afg.received_prevote")]
+    // AfgReceivedPrevote(AfgReceivedPrevote),
+    // #[serde(rename = "afg.received_commit")]
+    // AfgReceivedCommit(AfgReceivedCommit),
+    // #[serde(rename = "afg.authority_set")]
+    // AfgAuthoritySet(AfgAuthoritySet),
+    // #[serde(rename = "afg.finalized_blocks_up_to")]
+    // AfgFinalizedBlocksUpTo(NullAny),
+    // #[serde(rename = "aura.pre_sealed_block")]
+    // AuraPreSealedBlock(NullAny),
     #[serde(rename = "prepared_block_for_proposing")]
     PreparedBlockForProposing(NullAny),
+}
+
+impl Serialize for Payload {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        use Payload::*;
+
+        match self {
+            SystemConnected(val) => serializer.serialize_newtype_variant("Payload", 0, "system.connected", val),
+            SystemInterval(val) => serializer.serialize_newtype_variant("Payload", 1, "system.interval", val),
+            SystemNetworkState(_) => serializer.serialize_unit_variant("Payload", 2, "system.network_state"),
+            BlockImport(val) => serializer.serialize_newtype_variant("Payload", 3, "block.import", val),
+            NotifyFinalized(val) => serializer.serialize_newtype_variant("Payload", 4, "notify.finalized", val),
+            TxPoolImport(_) => serializer.serialize_unit_variant("Payload", 3, "txpool.import"),
+            PreparedBlockForProposing(_) => serializer.serialize_unit_variant("Payload", 4, "prepared_block_for_proposing"),
+            _ => unimplemented!()
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -161,6 +182,7 @@ impl Payload {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bincode::Options;
 
     #[test]
     fn message_v1() {
@@ -184,5 +206,17 @@ mod tests {
             ),
             "message did not match variant V2",
         );
+    }
+
+    #[test]
+    fn bincode_block_zero() {
+        let raw = Block::zero();
+
+        let bytes = bincode::options().serialize(&raw).unwrap();
+
+        let deserialized: Block = bincode::options().deserialize(&bytes).unwrap();
+
+        assert_eq!(raw.hash, deserialized.hash);
+        assert_eq!(raw.height, deserialized.height);
     }
 }

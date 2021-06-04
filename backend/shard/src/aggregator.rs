@@ -11,7 +11,7 @@ use shared::types::{ConnId, NodeDetails, NodeId};
 use shared::node::Payload;
 use shared::shard::{ShardConnId, ShardMessage, BackendMessage};
 use soketto::handshake::{Client, ServerResponse};
-use crate::node::NodeConnector;
+use crate::node::{NodeConnector, Initialize};
 use tokio::net::TcpStream;
 use tokio::sync::mpsc::{self, UnboundedSender};
 use tokio_util::compat::{Compat, TokioAsyncReadCompatExt};
@@ -94,10 +94,14 @@ impl Chain {
                         let _ = sender.flush().await;
                     },
                     Some(ChainMessage::UpdateNode(nid, payload)) => {
-                        let bytes = bincode::options().serialize(&ShardMessage::UpdateNode {
+                        let msg = ShardMessage::UpdateNode {
                             nid,
                             payload,
-                        }).unwrap();
+                        };
+
+                        println!("Serialize {:?}", msg);
+
+                        let bytes = bincode::options().serialize(&msg).unwrap();
 
                         println!("Sending update: {} bytes", bytes.len());
 
@@ -106,7 +110,11 @@ impl Chain {
                     },
                     Some(ChainMessage::Backend(BackendMessage::Initialize { sid, nid })) => {
                         if let Some((addr, conn_id)) = self.nodes.get(sid as usize) {
-                            // TODO
+                            addr.do_send(Initialize {
+                                nid,
+                                conn_id: *conn_id,
+                                chain: tx.clone(),
+                            })
                         }
                     },
                     Some(ChainMessage::Backend(BackendMessage::Mute { sid, reason })) => {
