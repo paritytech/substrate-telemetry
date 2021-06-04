@@ -6,7 +6,6 @@ use crate::aggregator::{AddNode, Aggregator, ChainMessage};
 // use crate::chain::{Chain, RemoveNode, UpdateNode};
 use actix::prelude::*;
 use actix_web_actors::ws::{self, CloseReason};
-use bytes::Bytes;
 use shared::node::{NodeMessage, Payload};
 use shared::types::{ConnId, NodeId};
 use shared::ws::{MultipartHandler, WsMessage};
@@ -95,7 +94,6 @@ impl NodeConnector {
     fn handle_message(
         &mut self,
         msg: NodeMessage,
-        data: Bytes,
         ctx: &mut <Self as Actor>::Context,
     ) {
         let conn_id = msg.id();
@@ -186,7 +184,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for NodeConnector {
         };
 
         match serde_json::from_slice(&data) {
-            Ok(msg) => self.handle_message(msg, data, ctx),
+            Ok(msg) => self.handle_message(msg, ctx),
             #[cfg(debug)]
             Err(err) => {
                 let data: &[u8] = data.get(..512).unwrap_or_else(|| &data);

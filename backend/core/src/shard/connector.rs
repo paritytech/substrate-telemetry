@@ -115,7 +115,6 @@ impl ShardConnector {
                 if let Some(chain) = self.chain.as_ref() {
                     chain.do_send(UpdateNode {
                         nid,
-                        raw: None,
                         payload,
                     });
                 }

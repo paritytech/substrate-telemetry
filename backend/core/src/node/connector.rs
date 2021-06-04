@@ -103,7 +103,6 @@ impl NodeConnector {
     fn handle_message(
         &mut self,
         msg: NodeMessage,
-        data: Bytes,
         ctx: &mut <Self as Actor>::Context,
     ) {
         let conn_id = msg.id();
@@ -113,7 +112,6 @@ impl NodeConnector {
             ConnMultiplex::Connected { nid, chain } => {
                 chain.do_send(UpdateNode {
                     nid: *nid,
-                    raw: Some(data),
                     payload,
                 });
             }
@@ -173,7 +171,6 @@ impl Handler<Initialize> for NodeConnector {
             for payload in backlog.drain(..) {
                 chain.do_send(UpdateNode {
                     nid,
-                    raw: None,
                     payload,
                 });
             }
@@ -215,7 +212,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for NodeConnector {
         };
 
         match serde_json::from_slice(&data) {
-            Ok(msg) => self.handle_message(msg, data, ctx),
+            Ok(msg) => self.handle_message(msg, ctx),
             #[cfg(debug)]
             Err(err) => {
                 let data: &[u8] = data.get(..512).unwrap_or_else(|| &data);

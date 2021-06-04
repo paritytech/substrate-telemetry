@@ -43,8 +43,6 @@ pub enum Payload {
     SystemConnected(SystemConnected),
     #[serde(rename = "system.interval")]
     SystemInterval(SystemInterval),
-    #[serde(rename = "system.network_state")]
-    SystemNetworkState(NullAny),
     #[serde(rename = "block.import")]
     BlockImport(Block),
     #[serde(rename = "notify.finalized")]
@@ -79,7 +77,6 @@ impl Serialize for Payload {
         match self {
             SystemConnected(val) => serializer.serialize_newtype_variant("Payload", 0, "system.connected", val),
             SystemInterval(val) => serializer.serialize_newtype_variant("Payload", 1, "system.interval", val),
-            SystemNetworkState(_) => serializer.serialize_unit_variant("Payload", 2, "system.network_state"),
             BlockImport(val) => serializer.serialize_newtype_variant("Payload", 3, "block.import", val),
             NotifyFinalized(val) => serializer.serialize_newtype_variant("Payload", 4, "notify.finalized", val),
             TxPoolImport(_) => serializer.serialize_unit_variant("Payload", 3, "txpool.import"),
@@ -106,7 +103,6 @@ pub struct SystemInterval {
     pub finalized_hash: Option<BlockHash>,
     #[serde(flatten)]
     pub block: Option<Block>,
-    pub network_state: Option<NullAny>,
     pub used_state_cache_size: Option<f32>,
 }
 

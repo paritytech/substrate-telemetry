@@ -3,13 +3,13 @@ use ctor::ctor;
 use std::collections::{HashMap, HashSet};
 
 use crate::shard::connector::ShardConnector;
-use crate::chain::{self, Chain, ChainId, GetNodeNetworkState, Label};
+use crate::chain::{self, Chain, ChainId, Label};
 use crate::feed::connector::{Connected, FeedConnector, FeedId};
 use crate::feed::{self, FeedMessageSerializer};
 use crate::node::connector::NodeConnector;
 use shared::ws::MuteReason;
 use shared::shard::ShardConnId;
-use shared::types::{ConnId, NodeDetails, NodeId};
+use shared::types::{ConnId, NodeDetails};
 use shared::util::{DenseMap, Hash};
 
 pub struct Aggregator {
@@ -193,11 +193,6 @@ pub struct Disconnect(pub FeedId);
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct NodeCount(pub ChainId, pub usize);
-
-/// Message sent to the Aggregator to get the network state of a particular node
-#[derive(Message)]
-#[rtype(result = "Option<Request<Chain, GetNodeNetworkState>>")]
-pub struct GetNetworkState(pub Box<str>, pub NodeId);
 
 /// Message sent to the Aggregator to get a health check
 #[derive(Message)]
@@ -388,16 +383,6 @@ impl Handler<NodeCount> for Aggregator {
                 self.broadcast();
             }
         }
-    }
-}
-
-impl Handler<GetNetworkState> for Aggregator {
-    type Result = <GetNetworkState as Message>::Result;
-
-    fn handle(&mut self, msg: GetNetworkState, _: &mut Self::Context) -> Self::Result {
-        let GetNetworkState(chain, nid) = msg;
-
-        Some(self.get_chain(&*chain)?.addr.send(GetNodeNetworkState(nid)))
     }
 }
 
