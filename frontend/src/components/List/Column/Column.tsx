@@ -23,7 +23,6 @@ import {
   BlockPropagationColumn,
   LastBlockColumn,
   UptimeColumn,
-  NetworkStateColumn,
 } from './';
 
 export type Column =
@@ -44,8 +43,7 @@ export type Column =
   | typeof BlockTimeColumn
   | typeof BlockPropagationColumn
   | typeof LastBlockColumn
-  | typeof UptimeColumn
-  | typeof NetworkStateColumn;
+  | typeof UptimeColumn;
 
 export namespace Column {
   export interface Props {

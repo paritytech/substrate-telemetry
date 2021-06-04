@@ -25,7 +25,6 @@ export type CPUUse = Opaque<number, 'CPUUse'>;
 export type Bytes = Opaque<number, 'Bytes'>;
 export type BytesPerSecond = Opaque<number, 'BytesPerSecond'>;
 export type NetworkId = Opaque<string, 'NetworkId'>;
-export type NetworkState = Opaque<string | object, 'NetworkState'>;
 
 export type BlockDetails = [
   BlockNumber,
