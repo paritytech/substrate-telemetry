@@ -44,8 +44,6 @@ pub enum Payload {
     SystemConnected(SystemConnected),
     #[serde(rename = "system.interval")]
     SystemInterval(SystemInterval),
-    #[serde(rename = "system.network_state")]
-    SystemNetworkState(IgnoredAny),
     #[serde(rename = "block.import")]
     BlockImport(Block),
     #[serde(rename = "notify.finalized")]
@@ -87,7 +85,6 @@ pub struct SystemInterval {
     pub finalized_hash: Option<BlockHash>,
     #[serde(flatten)]
     pub block: Option<Block>,
-    pub network_state: Option<IgnoredAny>,
     pub used_state_cache_size: Option<f32>,
 }
 
