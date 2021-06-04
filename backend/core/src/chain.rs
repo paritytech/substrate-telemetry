@@ -1,5 +1,4 @@
 use actix::prelude::*;
-use bytes::Bytes;
 use rustc_hash::FxHashMap;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -216,7 +215,6 @@ pub struct AddNode {
 #[rtype(result = "()")]
 pub struct UpdateNode {
     pub nid: NodeId,
-    pub raw: Option<Bytes>,
     pub payload: Payload,
 }
 
@@ -249,12 +247,6 @@ pub struct NoMoreFinality(pub FeedId);
 pub struct LocateNode {
     pub nid: NodeId,
     pub location: Arc<NodeLocation>,
-}
-
-pub struct GetNodeNetworkState(pub NodeId);
-
-impl Message for GetNodeNetworkState {
-    type Result = Option<Bytes>;
 }
 
 impl Handler<AddNode> for Chain {
@@ -342,7 +334,7 @@ impl Handler<UpdateNode> for Chain {
     type Result = ();
 
     fn handle(&mut self, msg: UpdateNode, _: &mut Self::Context) {
-        let UpdateNode { nid, payload, raw } = msg;
+        let UpdateNode { nid, payload } = msg;
 
         if let Some(block) = payload.best_block() {
             self.handle_block(block, nid);
@@ -351,12 +343,6 @@ impl Handler<UpdateNode> for Chain {
         if let Some(node) = self.nodes.get_mut(nid) {
             match payload {
                 Payload::SystemInterval(ref interval) => {
-                    if interval.network_state.is_some() {
-                        if let Some(raw) = raw {
-                            node.set_network_state(raw);
-                        }
-                    }
-
                     if node.update_hardware(interval) {
                         self.serializer.push(feed::Hardware(nid, node.hardware()));
                     }
@@ -367,11 +353,6 @@ impl Handler<UpdateNode> for Chain {
 
                     if let Some(io) = node.update_io(interval) {
                         self.serializer.push(feed::NodeIOUpdate(nid, io));
-                    }
-                }
-                Payload::SystemNetworkState(_) => {
-                    if let Some(raw) = raw {
-                        node.set_network_state(raw);
                     }
                 }
                 Payload::AfgAuthoritySet(authority) => {
@@ -579,15 +560,5 @@ impl Handler<Unsubscribe> for Chain {
 
         self.feeds.remove(fid);
         self.finality_feeds.remove(&fid);
-    }
-}
-
-impl Handler<GetNodeNetworkState> for Chain {
-    type Result = <GetNodeNetworkState as Message>::Result;
-
-    fn handle(&mut self, msg: GetNodeNetworkState, _: &mut Self::Context) -> Self::Result {
-        let GetNodeNetworkState(nid) = msg;
-
-        self.nodes.get(nid)?.network_state()
     }
 }

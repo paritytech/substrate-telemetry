@@ -17,11 +17,10 @@ mod shard;
 mod types;
 mod util;
 
-use aggregator::{Aggregator, GetHealth, GetNetworkState};
+use aggregator::{Aggregator, GetHealth};
 use feed::connector::FeedConnector;
 use node::connector::NodeConnector;
 use shard::connector::ShardConnector;
-use types::NodeId;
 use util::{Locator, LocatorFactory};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -140,40 +139,6 @@ async fn feed_route(
     )
 }
 
-/// Entry point for network state dump
-#[get("/network_state/{chain}/{nid}")]
-async fn state_route(
-    path: web::Path<(Box<str>, NodeId)>,
-    aggregator: web::Data<Addr<Aggregator>>,
-) -> Result<HttpResponse, Error> {
-    let (chain, nid) = path.into_inner();
-
-    let res = match aggregator.send(GetNetworkState(chain, nid)).await {
-        Ok(Some(res)) => res.await,
-        Ok(None) => Ok(None),
-        Err(error) => Err(error),
-    };
-
-    match res {
-        Ok(Some(body)) => {
-            HttpResponse::Ok()
-                .content_type("application/json")
-                .body(body)
-                .await
-        }
-        Ok(None) => {
-            HttpResponse::Ok()
-                .body("Node has disconnected or has not submitted its network state yet")
-                .await
-        }
-        Err(error) => {
-            log::error!("Network state mailbox error: {:?}", error);
-
-            HttpResponse::InternalServerError().await
-        }
-    }
-}
-
 /// Entry point for health check monitoring bots
 #[get("/health")]
 async fn health(aggregator: web::Data<Addr<Aggregator>>) -> Result<HttpResponse, Error> {
@@ -214,7 +179,6 @@ async fn main() -> std::io::Result<()> {
             .data(locator.clone())
             .service(node_route)
             .service(feed_route)
-            .service(state_route)
             .service(health)
     })
     .bind(opts.socket)?

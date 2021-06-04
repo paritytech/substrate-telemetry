@@ -1,4 +1,3 @@
-use bytes::Bytes;
 use std::sync::Arc;
 
 use crate::types::{
@@ -38,8 +37,6 @@ pub struct Node {
     stale: bool,
     /// Unix timestamp for when node started up (falls back to connection time)
     startup_time: Option<Timestamp>,
-    /// Network state
-    network_state: Option<Bytes>,
 }
 
 impl Node {
@@ -60,7 +57,6 @@ impl Node {
             location: None,
             stale: false,
             startup_time,
-            network_state: None,
         }
     }
 
@@ -209,33 +205,6 @@ impl Node {
 
     pub fn set_validator_address(&mut self, addr: Box<str>) {
         self.details.validator = Some(addr);
-    }
-
-    pub fn set_network_state(&mut self, state: Bytes) {
-        self.network_state = Some(state);
-    }
-
-    pub fn network_state(&self) -> Option<Bytes> {
-        use serde::Deserialize;
-        use serde_json::value::RawValue;
-
-        #[derive(Deserialize)]
-        struct Wrapper<'a> {
-            #[serde(borrow)]
-            #[serde(alias = "network_state")]
-            state: &'a RawValue,
-        }
-
-        let raw = self.network_state.as_ref()?;
-        let wrap: Wrapper = serde_json::from_slice(raw).ok()?;
-        let json = wrap.state.get();
-
-        // Handle old nodes that exposed network_state as stringified JSON
-        if let Ok(stringified) = serde_json::from_str::<String>(json) {
-            Some(stringified.into())
-        } else {
-            Some(json.to_owned().into())
-        }
     }
 
     pub fn startup_time(&self) -> Option<Timestamp> {
