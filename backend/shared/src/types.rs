@@ -1,5 +1,5 @@
-use serde::ser::{Serialize, SerializeTuple, Serializer};
-use serde::Deserialize;
+use serde::ser::{SerializeTuple, Serializer};
+use serde::{Deserialize, Serialize};
 
 use crate::util::{now, MeanList};
 
@@ -10,7 +10,7 @@ pub type Timestamp = u64;
 pub type Address = Box<str>;
 pub use primitive_types::H256 as BlockHash;
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct NodeDetails {
     pub chain: Box<str>,
     pub name: Box<str>,
@@ -32,11 +32,20 @@ pub struct NodeIO {
     pub used_state_cache_size: MeanList<f32>,
 }
 
-#[derive(Deserialize, Debug, Clone, Copy)]
+#[derive(Deserialize, Serialize, Debug, Clone, Copy)]
 pub struct Block {
     #[serde(rename = "best")]
     pub hash: BlockHash,
     pub height: BlockNumber,
+}
+
+impl Block {
+    pub fn zero() -> Self {
+        Block {
+            hash: BlockHash::from([0; 32]),
+            height: 0,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -75,20 +84,20 @@ pub struct NodeLocation {
     pub city: Box<str>,
 }
 
-impl Serialize for NodeDetails {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut tup = serializer.serialize_tuple(6)?;
-        tup.serialize_element(&self.name)?;
-        tup.serialize_element(&self.implementation)?;
-        tup.serialize_element(&self.version)?;
-        tup.serialize_element(&self.validator)?;
-        tup.serialize_element(&self.network_id)?;
-        tup.end()
-    }
-}
+// impl Serialize for NodeDetails {
+//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+//     where
+//         S: Serializer,
+//     {
+//         let mut tup = serializer.serialize_tuple(6)?;
+//         tup.serialize_element(&self.name)?;
+//         tup.serialize_element(&self.implementation)?;
+//         tup.serialize_element(&self.version)?;
+//         tup.serialize_element(&self.validator)?;
+//         tup.serialize_element(&self.network_id)?;
+//         tup.end()
+//     }
+// }
 
 impl Serialize for NodeStats {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

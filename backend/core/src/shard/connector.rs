@@ -1,23 +1,22 @@
-use std::mem;
 use std::time::{Duration, Instant};
+use std::collections::BTreeMap;
+use std::net::Ipv4Addr;
 
-use crate::aggregator::{AddNode, Aggregator};
+use crate::aggregator::{AddNode, Aggregator, NodeSource};
 use crate::chain::{Chain, RemoveNode, UpdateNode};
-use crate::shard::ShardMessage;
-use crate::types::NodeId;
-use crate::util::{DenseMap, Hash};
+use crate::location::LocateRequest;
 use actix::prelude::*;
-use actix_http::ws::Item;
 use actix_web_actors::ws::{self, CloseReason};
 use bincode::Options;
-use bytes::{Bytes, BytesMut};
+use shared::types::NodeId;
+use shared::util::Hash;
+use shared::ws::{MultipartHandler, WsMessage};
+use shared::shard::{ShardMessage, ShardConnId, BackendMessage};
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(20);
 /// How long before lack of client response causes a timeout
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(60);
-/// Continuation buffer limit, 10mb
-const CONT_BUF_LIMIT: usize = 10 * 1024 * 1024;
 
 pub struct ShardConnector {
     /// Client must send ping at least once every 60 seconds (CLIENT_TIMEOUT),
@@ -26,12 +25,16 @@ pub struct ShardConnector {
     aggregator: Addr<Aggregator>,
     /// Genesis hash of the chain this connection will be submitting data for
     genesis_hash: Hash,
-    /// Chain address to which this multiplex connector is delegating messages
+    /// Chain address to which this shard connector is delegating messages
     chain: Option<Addr<Chain>>,
-    /// Mapping `ShardConnId` to `NodeId`
-    nodes: DenseMap<NodeId>,
-    /// Buffer for constructing continuation messages
-    contbuf: BytesMut,
+    /// Transient mapping of `ShardConnId` to external IP address.
+    ips: BTreeMap<ShardConnId, Ipv4Addr>,
+    /// Mapping of `ShardConnId` to initialized `NodeId`s.
+    nodes: BTreeMap<ShardConnId, NodeId>,
+    /// Actix address of location services
+    locator: Recipient<LocateRequest>,
+    /// Container for handling continuation messages
+    multipart: MultipartHandler,
 }
 
 impl Actor for ShardConnector {
@@ -43,7 +46,7 @@ impl Actor for ShardConnector {
 
     fn stopped(&mut self, _: &mut Self::Context) {
         if let Some(ref chain) = self.chain {
-            for (_, nid) in self.nodes.iter() {
+            for nid in self.nodes.values() {
                 chain.do_send(RemoveNode(*nid))
             }
         }
@@ -51,15 +54,29 @@ impl Actor for ShardConnector {
 }
 
 impl ShardConnector {
-    pub fn new(aggregator: Addr<Aggregator>, genesis_hash: Hash) -> Self {
+    pub fn new(
+        aggregator: Addr<Aggregator>,
+        locator: Recipient<LocateRequest>,
+        genesis_hash: Hash,
+    ) -> Self {
         Self {
             hb: Instant::now(),
             aggregator,
             genesis_hash,
             chain: None,
-            nodes: DenseMap::new(),
-            contbuf: BytesMut::new(),
+            ips: BTreeMap::new(),
+            nodes: BTreeMap::new(),
+            locator,
+            multipart: MultipartHandler::default(),
         }
+    }
+
+    fn shard_send(msg: BackendMessage, ctx: &mut <Self as Actor>::Context) {
+        let bytes = bincode::options().serialize(&msg).expect("Must be able to serialize to vec; qed");
+
+        println!("Sending back {} bytes", bytes.len());
+
+        ctx.binary(bytes);
     }
 
     fn heartbeat(&self, ctx: &mut <Self as Actor>::Context) {
@@ -77,30 +94,66 @@ impl ShardConnector {
     }
 
     fn handle_message(&mut self, msg: ShardMessage, ctx: &mut <Self as Actor>::Context) {
-        let ShardMessage { conn_id, payload } = msg;
+        println!("{:?}", msg);
 
-        // TODO: get `NodeId` for `ShardConnId` and proxy payload to `self.chain`.
-    }
+        match msg {
+            ShardMessage::AddNode { ip, node, sid } => {
+                if let Some(ip) = ip {
+                    self.ips.insert(sid, ip);
+                }
 
-    fn start_frame(&mut self, bytes: &[u8]) {
-        if !self.contbuf.is_empty() {
-            log::error!("Unused continuation buffer");
-            self.contbuf.clear();
+                self.aggregator.do_send(AddNode {
+                    node,
+                    genesis_hash: self.genesis_hash,
+                    source: NodeSource::Shard {
+                        sid,
+                        shard_connector: ctx.address(),
+                    }
+                });
+            },
+            ShardMessage::UpdateNode { nid, payload } => {
+                if let Some(chain) = self.chain.as_ref() {
+                    chain.do_send(UpdateNode {
+                        nid,
+                        payload,
+                    });
+                }
+            },
         }
-        self.continue_frame(bytes);
     }
+}
 
-    fn continue_frame(&mut self, bytes: &[u8]) {
-        if self.contbuf.len() + bytes.len() <= CONT_BUF_LIMIT {
-            self.contbuf.extend_from_slice(&bytes);
-        } else {
-            log::error!("Continuation buffer overflow");
-            self.contbuf = BytesMut::new();
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct Initialize {
+    pub nid: NodeId,
+    pub sid: ShardConnId,
+    pub chain: Addr<Chain>,
+}
+
+impl Handler<Initialize> for ShardConnector {
+    type Result = ();
+
+    fn handle(&mut self, msg: Initialize, ctx: &mut Self::Context) {
+        let Initialize {
+            nid,
+            sid,
+            chain,
+        } = msg;
+        log::trace!(target: "ShardConnector::Initialize", "Initializing a node, nid={}, on conn_id={}", nid, 0);
+
+        if self.chain.is_none() {
+            self.chain = Some(chain.clone());
         }
-    }
 
-    fn finish_frame(&mut self) -> Bytes {
-        mem::replace(&mut self.contbuf, BytesMut::new()).freeze()
+        let be_msg = BackendMessage::Initialize { sid, nid };
+
+        Self::shard_send(be_msg, ctx);
+
+        // Acquire the node's physical location
+        if let Some(ip) = self.ips.remove(&sid) {
+            let _ = self.locator.do_send(LocateRequest { ip, nid, chain });
+        }
     }
 }
 
@@ -108,34 +161,18 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ShardConnector {
     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
         self.hb = Instant::now();
 
-        let data = match msg {
-            Ok(ws::Message::Ping(msg)) => {
+        let data = match msg.map(|msg| self.multipart.handle(msg)) {
+            Ok(WsMessage::Nop) => return,
+            Ok(WsMessage::Ping(msg)) => {
                 ctx.pong(&msg);
                 return;
             }
-            Ok(ws::Message::Pong(_)) => return,
-            Ok(ws::Message::Text(text)) => text.into_bytes(),
-            Ok(ws::Message::Binary(data)) => data,
-            Ok(ws::Message::Close(reason)) => {
+            Ok(WsMessage::Data(data)) => data,
+            Ok(WsMessage::Close(reason)) => {
                 ctx.close(reason);
                 ctx.stop();
                 return;
             }
-            Ok(ws::Message::Nop) => return,
-            Ok(ws::Message::Continuation(cont)) => match cont {
-                Item::FirstText(bytes) | Item::FirstBinary(bytes) => {
-                    self.start_frame(&bytes);
-                    return;
-                }
-                Item::Continue(bytes) => {
-                    self.continue_frame(&bytes);
-                    return;
-                }
-                Item::Last(bytes) => {
-                    self.continue_frame(&bytes);
-                    self.finish_frame()
-                }
-            },
             Err(error) => {
                 log::error!("{:?}", error);
                 ctx.stop();
@@ -145,12 +182,12 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ShardConnector {
 
         match bincode::options().deserialize(&data) {
             Ok(msg) => self.handle_message(msg, ctx),
-            #[cfg(debug)]
+            // #[cfg(debug)]
             Err(err) => {
                 log::warn!("Failed to parse shard message: {}", err,)
             }
-            #[cfg(not(debug))]
-            Err(_) => (),
+            // #[cfg(not(debug))]
+            // Err(_) => (),
         }
     }
 }

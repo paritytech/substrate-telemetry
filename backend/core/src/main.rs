@@ -12,21 +12,20 @@ use simple_logger::SimpleLogger;
 mod aggregator;
 mod chain;
 mod feed;
+mod location;
 mod node;
 mod shard;
-mod types;
-mod util;
 
 use aggregator::{Aggregator, GetHealth};
 use feed::connector::FeedConnector;
+use location::{Locator, LocatorFactory};
 use node::connector::NodeConnector;
 use shard::connector::ShardConnector;
-use util::{Locator, LocatorFactory};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
-const NAME: &str = "Substrate Telemetry Backend";
-const ABOUT: &str = "This is the Telemetry Backend that injects and provide the data sent by Substrate/Polkadot nodes";
+const NAME: &str = "Substrate Telemetry Backend Core";
+const ABOUT: &str = "This is the Telemetry Backend Core that injects and provide the data sent by Substrate/Polkadot nodes";
 
 #[derive(Clap, Debug)]
 #[clap(name = NAME, version = VERSION, author = AUTHORS, about = ABOUT)]
@@ -109,17 +108,21 @@ async fn shard_route(
     req: HttpRequest,
     stream: web::Payload,
     aggregator: web::Data<Addr<Aggregator>>,
+    locator: web::Data<Addr<Locator>>,
     path: web::Path<Box<str>>,
 ) -> Result<HttpResponse, Error> {
     let hash_str = path.into_inner();
     let genesis_hash = hash_str.parse()?;
 
+    println!("Genesis hash {}", genesis_hash);
+
     let mut res = ws::handshake(&req)?;
 
     let aggregator = aggregator.get_ref().clone();
+    let locator = locator.get_ref().clone().recipient();
 
     Ok(res.streaming(ws::WebsocketContext::with_codec(
-        ShardConnector::new(aggregator, genesis_hash),
+        ShardConnector::new(aggregator, locator, genesis_hash),
         stream,
         Codec::new().max_size(10 * 1024 * 1024), // 10mb frame limit
     )))
@@ -171,7 +174,7 @@ async fn main() -> std::io::Result<()> {
     let aggregator = Aggregator::new(denylist).start();
     let factory = LocatorFactory::new();
     let locator = SyncArbiter::start(4, move || factory.create());
-    log::info!("Starting telemetry version: {}", env!("CARGO_PKG_VERSION"));
+    log::info!("Starting Telemetry Core version: {}", env!("CARGO_PKG_VERSION"));
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::NormalizePath::default())
@@ -179,6 +182,7 @@ async fn main() -> std::io::Result<()> {
             .data(locator.clone())
             .service(node_route)
             .service(feed_route)
+            .service(shard_route)
             .service(health)
     })
     .bind(opts.socket)?

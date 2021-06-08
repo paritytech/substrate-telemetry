@@ -1,15 +1,13 @@
 use std::sync::Arc;
 
-use crate::types::{
+use shared::types::{
     Block, BlockDetails, NodeDetails, NodeHardware, NodeIO, NodeId, NodeLocation, NodeStats,
     Timestamp,
 };
-use crate::util::now;
+use shared::util::now;
+use shared::node::SystemInterval;
 
 pub mod connector;
-pub mod message;
-
-use message::SystemInterval;
 
 /// Minimum time between block below broadcasting updates to the browser gets throttled, in ms.
 const THROTTLE_THRESHOLD: u64 = 100;

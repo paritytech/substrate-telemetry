@@ -3,18 +3,31 @@ use serde::Serialize;
 use std::mem;
 
 use crate::node::Node;
-use crate::types::{
-    Address, BlockDetails, BlockHash, BlockNumber, NodeHardware, NodeIO, NodeId, NodeStats,
-    Timestamp,
-};
 use serde_json::to_writer;
+use shared::types::{
+    Address, BlockDetails, BlockHash, BlockNumber, NodeHardware, NodeIO, NodeId, NodeStats,
+    Timestamp, NodeDetails,
+};
 
 pub mod connector;
 
 use connector::Serialized;
 
-pub trait FeedMessage: Serialize {
+pub trait FeedMessage {
     const ACTION: u8;
+}
+
+pub trait FeedMessageWrite: FeedMessage {
+    fn write_to_feed(&self, ser: &mut FeedMessageSerializer);
+}
+
+impl<T> FeedMessageWrite for T
+where
+    T: FeedMessage + Serialize,
+{
+    fn write_to_feed(&self, ser: &mut FeedMessageSerializer) {
+        ser.write(self)
+    }
 }
 
 pub struct FeedMessageSerializer {
@@ -33,7 +46,7 @@ impl FeedMessageSerializer {
 
     pub fn push<Message>(&mut self, msg: Message)
     where
-        Message: FeedMessage,
+        Message: FeedMessageWrite,
     {
         let glue = match self.buffer.len() {
             0 => b'[',
@@ -41,9 +54,16 @@ impl FeedMessageSerializer {
         };
 
         self.buffer.push(glue);
-        let _ = to_writer(&mut self.buffer, &Message::ACTION);
+        self.write(&Message::ACTION);
         self.buffer.push(b',');
-        let _ = to_writer(&mut self.buffer, &msg);
+        msg.write_to_feed(self);
+    }
+
+    fn write<S>(&mut self, value: &S)
+    where
+        S: Serialize,
+    {
+        let _ = to_writer(&mut self.buffer, value);
     }
 
     pub fn finalize(&mut self) -> Option<Serialized> {
@@ -175,21 +195,28 @@ pub struct AfgAuthoritySet(
 #[derive(Serialize)]
 pub struct StaleNode(pub NodeId);
 
-impl Serialize for AddedNode<'_> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
+impl FeedMessageWrite for AddedNode<'_> {
+    fn write_to_feed(&self, ser: &mut FeedMessageSerializer) {
         let AddedNode(nid, node) = self;
-        let mut tup = serializer.serialize_tuple(8)?;
-        tup.serialize_element(nid)?;
-        tup.serialize_element(node.details())?;
-        tup.serialize_element(node.stats())?;
-        tup.serialize_element(node.io())?;
-        tup.serialize_element(node.hardware())?;
-        tup.serialize_element(node.block_details())?;
-        tup.serialize_element(&node.location())?;
-        tup.serialize_element(&node.startup_time())?;
-        tup.end()
+
+        let details = node.details();
+        let details = (
+            &details.name,
+            &details.implementation,
+            &details.version,
+            &details.validator,
+            &details.network_id,
+        );
+
+        ser.write(&(
+            nid,
+            details,
+            node.stats(),
+            node.io(),
+            node.hardware(),
+            node.block_details(),
+            &node.location(),
+            &node.startup_time(),
+        ));
     }
 }

@@ -1,9 +1,8 @@
-use crate::node::NodeDetails;
-use crate::types::{Block, BlockHash, BlockNumber, ConnId};
-use crate::util::Hash;
+use crate::types::{Block, BlockHash, BlockNumber, ConnId, NodeDetails};
+use crate::util::{Hash, NullAny};
 use actix::prelude::*;
-use serde::de::IgnoredAny;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use serde::ser::Serializer;
 
 #[derive(Deserialize, Debug, Message)]
 #[rtype(result = "()")]
@@ -49,33 +48,52 @@ pub enum Payload {
     #[serde(rename = "notify.finalized")]
     NotifyFinalized(Finalized),
     #[serde(rename = "txpool.import")]
-    TxPoolImport(IgnoredAny),
-    #[serde(rename = "afg.finalized")]
-    AfgFinalized(AfgFinalized),
-    #[serde(rename = "afg.received_precommit")]
-    AfgReceivedPrecommit(AfgReceivedPrecommit),
-    #[serde(rename = "afg.received_prevote")]
-    AfgReceivedPrevote(AfgReceivedPrevote),
-    #[serde(rename = "afg.received_commit")]
-    AfgReceivedCommit(AfgReceivedCommit),
-    #[serde(rename = "afg.authority_set")]
-    AfgAuthoritySet(AfgAuthoritySet),
-    #[serde(rename = "afg.finalized_blocks_up_to")]
-    AfgFinalizedBlocksUpTo(IgnoredAny),
-    #[serde(rename = "aura.pre_sealed_block")]
-    AuraPreSealedBlock(IgnoredAny),
+    TxPoolImport(NullAny),
+    // #[serde(rename = "afg.finalized")]
+    // AfgFinalized(AfgFinalized),
+    // #[serde(rename = "afg.received_precommit")]
+    // AfgReceivedPrecommit(AfgReceivedPrecommit),
+    // #[serde(rename = "afg.received_prevote")]
+    // AfgReceivedPrevote(AfgReceivedPrevote),
+    // #[serde(rename = "afg.received_commit")]
+    // AfgReceivedCommit(AfgReceivedCommit),
+    // #[serde(rename = "afg.authority_set")]
+    // AfgAuthoritySet(AfgAuthoritySet),
+    // #[serde(rename = "afg.finalized_blocks_up_to")]
+    // AfgFinalizedBlocksUpTo(NullAny),
+    // #[serde(rename = "aura.pre_sealed_block")]
+    // AuraPreSealedBlock(NullAny),
     #[serde(rename = "prepared_block_for_proposing")]
-    PreparedBlockForProposing(IgnoredAny),
+    PreparedBlockForProposing(NullAny),
 }
 
-#[derive(Deserialize, Debug)]
+impl Serialize for Payload {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        use Payload::*;
+
+        match self {
+            SystemConnected(val) => serializer.serialize_newtype_variant("Payload", 0, "system.connected", val),
+            SystemInterval(val) => serializer.serialize_newtype_variant("Payload", 1, "system.interval", val),
+            BlockImport(val) => serializer.serialize_newtype_variant("Payload", 3, "block.import", val),
+            NotifyFinalized(val) => serializer.serialize_newtype_variant("Payload", 4, "notify.finalized", val),
+            TxPoolImport(_) => serializer.serialize_unit_variant("Payload", 3, "txpool.import"),
+            PreparedBlockForProposing(_) => serializer.serialize_unit_variant("Payload", 4, "prepared_block_for_proposing"),
+            _ => unimplemented!()
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug)]
 pub struct SystemConnected {
     pub genesis_hash: Hash,
     #[serde(flatten)]
     pub node: NodeDetails,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct SystemInterval {
     pub peers: Option<u64>,
     pub txcount: Option<u64>,
@@ -88,58 +106,49 @@ pub struct SystemInterval {
     pub used_state_cache_size: Option<f32>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct Finalized {
     #[serde(rename = "best")]
     pub hash: BlockHash,
     pub height: Box<str>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct AfgAuthoritySet {
     pub authority_id: Box<str>,
     pub authorities: Box<str>,
     pub authority_set_id: Box<str>,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct AfgFinalized {
     pub finalized_hash: BlockHash,
     pub finalized_number: Box<str>,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct AfgReceived {
     pub target_hash: BlockHash,
     pub target_number: Box<str>,
     pub voter: Option<Box<str>>,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct AfgReceivedPrecommit {
     #[serde(flatten)]
     pub received: AfgReceived,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct AfgReceivedPrevote {
     #[serde(flatten)]
     pub received: AfgReceived,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct AfgReceivedCommit {
     #[serde(flatten)]
     pub received: AfgReceived,
-}
-
-impl Block {
-    pub fn zero() -> Self {
-        Block {
-            hash: BlockHash::from([0; 32]),
-            height: 0,
-        }
-    }
 }
 
 impl Payload {
@@ -169,6 +178,7 @@ impl Payload {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bincode::Options;
 
     #[test]
     fn message_v1() {
@@ -192,5 +202,17 @@ mod tests {
             ),
             "message did not match variant V2",
         );
+    }
+
+    #[test]
+    fn bincode_block_zero() {
+        let raw = Block::zero();
+
+        let bytes = bincode::options().serialize(&raw).unwrap();
+
+        let deserialized: Block = bincode::options().deserialize(&bytes).unwrap();
+
+        assert_eq!(raw.hash, deserialized.hash);
+        assert_eq!(raw.height, deserialized.height);
     }
 }

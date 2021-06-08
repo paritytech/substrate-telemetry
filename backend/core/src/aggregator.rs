@@ -1,14 +1,16 @@
 use actix::prelude::*;
-use actix_web_actors::ws::{CloseCode, CloseReason};
 use ctor::ctor;
 use std::collections::{HashMap, HashSet};
 
+use crate::shard::connector::ShardConnector;
 use crate::chain::{self, Chain, ChainId, Label};
 use crate::feed::connector::{Connected, FeedConnector, FeedId};
 use crate::feed::{self, FeedMessageSerializer};
-use crate::node::connector::{Mute, NodeConnector};
-use crate::types::{ConnId, NodeDetails};
-use crate::util::{DenseMap, Hash};
+use crate::node::connector::NodeConnector;
+use shared::ws::MuteReason;
+use shared::shard::ShardConnId;
+use shared::types::{ConnId, NodeDetails};
+use shared::util::{DenseMap, Hash};
 
 pub struct Aggregator {
     genesis_hashes: HashMap<Hash, ChainId>,
@@ -124,10 +126,24 @@ pub struct AddNode {
     pub node: NodeDetails,
     /// Genesis [`Hash`] of the chain the node is being added to.
     pub genesis_hash: Hash,
-    /// Connection id used by the node connector for multiplexing parachains
-    pub conn_id: ConnId,
-    /// Address of the NodeConnector actor
-    pub node_connector: Addr<NodeConnector>,
+    /// Source from which this node is being added (Direct | Shard)
+    pub source: NodeSource,
+}
+
+pub enum NodeSource {
+    Direct {
+        /// Connection id used by the node connector for multiplexing parachains
+        conn_id: ConnId,
+        /// Address of the NodeConnector actor
+        node_connector: Addr<NodeConnector>,
+    },
+    // TODO
+    Shard {
+        /// `ShardConnId` that identifies the node connection within a shard.
+        sid: ShardConnId,
+        /// Address to the ShardConnector actor
+        shard_connector: Addr<ShardConnector>,
+    }
 }
 
 /// Message sent from the Chain to the Aggregator when the Chain loses all nodes
@@ -183,25 +199,36 @@ pub struct NodeCount(pub ChainId, pub usize);
 #[rtype(result = "usize")]
 pub struct GetHealth;
 
+impl NodeSource {
+    pub fn mute(&self, reason: MuteReason) {
+        match self {
+            NodeSource::Direct { node_connector, .. } => {
+                node_connector.do_send(reason);
+            },
+            // TODO
+            NodeSource::Shard { shard_connector, .. } => {
+                // shard_connector.do_send(Mute { reason });
+            },
+        }
+    }
+}
+
 impl Handler<AddNode> for Aggregator {
     type Result = ();
 
     fn handle(&mut self, msg: AddNode, ctx: &mut Self::Context) {
         if self.denylist.contains(&*msg.node.chain) {
             log::warn!(target: "Aggregator::AddNode", "'{}' is on the denylist.", msg.node.chain);
-            let AddNode { node_connector, .. } = msg;
-            let reason = CloseReason {
-                code: CloseCode::Abnormal,
-                description: Some("Denied".into()),
-            };
-            node_connector.do_send(Mute { reason });
+
+            msg.source.mute(MuteReason::Denied);
             return;
         }
         let AddNode {
             node,
             genesis_hash,
-            conn_id,
-            node_connector,
+            source,
+            // conn_id,
+            // node_connector,
         } = msg;
         log::trace!(target: "Aggregator::AddNode", "New node connected. Chain '{}'", node.chain);
 
@@ -213,16 +240,12 @@ impl Handler<AddNode> for Aggregator {
         if chain.nodes < chain.max_nodes {
             chain.addr.do_send(chain::AddNode {
                 node,
-                conn_id,
-                node_connector,
+                source,
             });
         } else {
             log::warn!(target: "Aggregator::AddNode", "Chain {} is over quota ({})", chain.label, chain.max_nodes);
-            let reason = CloseReason {
-                code: CloseCode::Again,
-                description: Some("Overquota".into()),
-            };
-            node_connector.do_send(Mute { reason });
+
+            source.mute(MuteReason::Overquota);
         }
     }
 }

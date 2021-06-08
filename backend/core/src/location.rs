@@ -7,7 +7,7 @@ use rustc_hash::FxHashMap;
 use serde::Deserialize;
 
 use crate::chain::{Chain, LocateNode};
-use crate::types::{NodeId, NodeLocation};
+use shared::types::{NodeId, NodeLocation};
 
 #[derive(Clone)]
 pub struct Locator {

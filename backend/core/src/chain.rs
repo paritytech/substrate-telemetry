@@ -3,16 +3,13 @@ use rustc_hash::FxHashMap;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::aggregator::{Aggregator, DropChain, NodeCount, RenameChain};
+use crate::aggregator::{Aggregator, DropChain, NodeCount, NodeSource, RenameChain};
 use crate::feed::connector::{FeedConnector, FeedId, Subscribed, Unsubscribed};
 use crate::feed::{self, FeedMessageSerializer};
-use crate::node::{
-    connector::{Initialize, NodeConnector},
-    message::Payload,
-    Node,
-};
-use crate::types::{Block, BlockNumber, ConnId, NodeDetails, NodeId, NodeLocation, Timestamp};
-use crate::util::{now, DenseMap, NumStats};
+use crate::node::Node;
+use shared::types::{Block, NodeDetails, NodeId, NodeLocation, Timestamp};
+use shared::util::{now, DenseMap, NumStats};
+use shared::node::Payload;
 
 const STALE_TIMEOUT: u64 = 2 * 60 * 1000; // 2 minutes
 
@@ -204,10 +201,8 @@ impl Actor for Chain {
 pub struct AddNode {
     /// Details of the node being added to the aggregator
     pub node: NodeDetails,
-    /// Connection id used by the node connector for multiplexing parachains
-    pub conn_id: ConnId,
-    /// Address of the NodeConnector actor to which we send [`Initialize`] or [`Mute`] messages.
-    pub node_connector: Addr<NodeConnector>,
+    /// Source from which this node is being added (Direct | Shard)
+    pub source: NodeSource,
 }
 
 /// Message sent from the NodeConnector to the Chain when it receives new telemetry data
@@ -249,14 +244,38 @@ pub struct LocateNode {
     pub location: Arc<NodeLocation>,
 }
 
+impl NodeSource {
+    pub fn init(self, nid: NodeId, chain: Addr<Chain>) -> bool {
+        match self {
+            NodeSource::Direct { conn_id, node_connector } => {
+                node_connector
+                    .try_send(crate::node::connector::Initialize {
+                        nid,
+                        conn_id,
+                        chain,
+                    })
+                    .is_ok()
+            },
+            NodeSource::Shard { sid, shard_connector } => {
+                shard_connector
+                    .try_send(crate::shard::connector::Initialize {
+                        nid,
+                        sid,
+                        chain,
+                    })
+                    .is_ok()
+            }
+        }
+    }
+}
+
 impl Handler<AddNode> for Chain {
     type Result = ();
 
     fn handle(&mut self, msg: AddNode, ctx: &mut Self::Context) {
         let AddNode {
             node,
-            conn_id,
-            node_connector,
+            source,
         } = msg;
         log::trace!(target: "Chain::AddNode", "New node connected. Chain '{}', node count goes from {} to {}", node.chain, self.nodes.len(), self.nodes.len() + 1);
         self.increment_label_count(&node.chain);
@@ -264,14 +283,7 @@ impl Handler<AddNode> for Chain {
         let nid = self.nodes.add(Node::new(node));
         let chain = ctx.address();
 
-        if node_connector
-            .try_send(Initialize {
-                nid,
-                conn_id,
-                chain,
-            })
-            .is_err()
-        {
+        if source.init(nid, chain) {
             self.nodes.remove(nid);
         } else if let Some(node) = self.nodes.get(nid) {
             self.serializer.push(feed::AddedNode(nid, node));
@@ -355,60 +367,60 @@ impl Handler<UpdateNode> for Chain {
                         self.serializer.push(feed::NodeIOUpdate(nid, io));
                     }
                 }
-                Payload::AfgAuthoritySet(authority) => {
-                    node.set_validator_address(authority.authority_id.clone());
-                    self.broadcast();
-                    return;
-                }
-                Payload::AfgFinalized(finalized) => {
-                    if let Ok(finalized_number) = finalized.finalized_number.parse::<BlockNumber>()
-                    {
-                        if let Some(addr) = node.details().validator.clone() {
-                            self.serializer.push(feed::AfgFinalized(
-                                addr,
-                                finalized_number,
-                                finalized.finalized_hash,
-                            ));
-                            self.broadcast_finality();
-                        }
-                    }
-                    return;
-                }
-                Payload::AfgReceivedPrecommit(precommit) => {
-                    if let Ok(finalized_number) =
-                        precommit.received.target_number.parse::<BlockNumber>()
-                    {
-                        if let Some(addr) = node.details().validator.clone() {
-                            let voter = precommit.received.voter.clone();
-                            self.serializer.push(feed::AfgReceivedPrecommit(
-                                addr,
-                                finalized_number,
-                                precommit.received.target_hash,
-                                voter,
-                            ));
-                            self.broadcast_finality();
-                        }
-                    }
-                    return;
-                }
-                Payload::AfgReceivedPrevote(prevote) => {
-                    if let Ok(finalized_number) =
-                        prevote.received.target_number.parse::<BlockNumber>()
-                    {
-                        if let Some(addr) = node.details().validator.clone() {
-                            let voter = prevote.received.voter.clone();
-                            self.serializer.push(feed::AfgReceivedPrevote(
-                                addr,
-                                finalized_number,
-                                prevote.received.target_hash,
-                                voter,
-                            ));
-                            self.broadcast_finality();
-                        }
-                    }
-                    return;
-                }
-                Payload::AfgReceivedCommit(_) => {}
+                // Payload::AfgAuthoritySet(authority) => {
+                //     node.set_validator_address(authority.authority_id.clone());
+                //     self.broadcast();
+                //     return;
+                // }
+                // Payload::AfgFinalized(finalized) => {
+                //     if let Ok(finalized_number) = finalized.finalized_number.parse::<BlockNumber>()
+                //     {
+                //         if let Some(addr) = node.details().validator.clone() {
+                //             self.serializer.push(feed::AfgFinalized(
+                //                 addr,
+                //                 finalized_number,
+                //                 finalized.finalized_hash,
+                //             ));
+                //             self.broadcast_finality();
+                //         }
+                //     }
+                //     return;
+                // }
+                // Payload::AfgReceivedPrecommit(precommit) => {
+                //     if let Ok(finalized_number) =
+                //         precommit.received.target_number.parse::<BlockNumber>()
+                //     {
+                //         if let Some(addr) = node.details().validator.clone() {
+                //             let voter = precommit.received.voter.clone();
+                //             self.serializer.push(feed::AfgReceivedPrecommit(
+                //                 addr,
+                //                 finalized_number,
+                //                 precommit.received.target_hash,
+                //                 voter,
+                //             ));
+                //             self.broadcast_finality();
+                //         }
+                //     }
+                //     return;
+                // }
+                // Payload::AfgReceivedPrevote(prevote) => {
+                //     if let Ok(finalized_number) =
+                //         prevote.received.target_number.parse::<BlockNumber>()
+                //     {
+                //         if let Some(addr) = node.details().validator.clone() {
+                //             let voter = prevote.received.voter.clone();
+                //             self.serializer.push(feed::AfgReceivedPrevote(
+                //                 addr,
+                //                 finalized_number,
+                //                 prevote.received.target_hash,
+                //                 voter,
+                //             ));
+                //             self.broadcast_finality();
+                //         }
+                //     }
+                //     return;
+                // }
+                // Payload::AfgReceivedCommit(_) => {}
                 _ => (),
             }
 
