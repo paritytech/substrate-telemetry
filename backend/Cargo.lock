@@ -512,6 +512,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "common"
+version = "0.1.0"
+dependencies = [
+ "actix",
+ "actix-http",
+ "actix-web",
+ "actix-web-actors",
+ "bincode",
+ "bytes 1.0.1",
+ "fnv",
+ "hex",
+ "log",
+ "num-traits",
+ "primitive-types",
+ "rustc-hash",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "const_fn"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1635,37 +1656,16 @@ dependencies = [
  "bincode",
  "bytes 1.0.1",
  "clap",
+ "common",
  "log",
  "rustc-hash",
  "serde",
  "serde_json",
- "shared",
  "simple_logger",
  "soketto",
  "tokio",
  "tokio-stream",
  "tokio-util",
-]
-
-[[package]]
-name = "shared"
-version = "0.1.0"
-dependencies = [
- "actix",
- "actix-http",
- "actix-web",
- "actix-web-actors",
- "bincode",
- "bytes 1.0.1",
- "fnv",
- "hex",
- "log",
- "num-traits",
- "primitive-types",
- "rustc-hash",
- "serde",
- "serde_json",
- "thiserror",
 ]
 
 [[package]]
@@ -1828,6 +1828,7 @@ dependencies = [
  "bytes 1.0.1",
  "chrono",
  "clap",
+ "common",
  "ctor",
  "log",
  "parking_lot",
@@ -1835,7 +1836,6 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serde_json",
- "shared",
  "simple_logger",
 ]
 

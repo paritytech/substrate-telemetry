@@ -7,9 +7,9 @@ use crate::aggregator::{Aggregator, DropChain, NodeCount, NodeSource, RenameChai
 use crate::feed::connector::{FeedConnector, FeedId, Subscribed, Unsubscribed};
 use crate::feed::{self, FeedMessageSerializer};
 use crate::node::Node;
-use shared::types::{Block, NodeDetails, NodeId, NodeLocation, Timestamp};
-use shared::util::{now, DenseMap, NumStats};
-use shared::node::Payload;
+use common::types::{Block, NodeDetails, NodeId, NodeLocation, Timestamp};
+use common::util::{now, DenseMap, NumStats};
+use common::node::Payload;
 
 const STALE_TIMEOUT: u64 = 2 * 60 * 1000; // 2 minutes
 

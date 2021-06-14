@@ -4,7 +4,7 @@ use crate::feed::{FeedMessageSerializer, Pong};
 use actix::prelude::*;
 use actix_web_actors::ws;
 use bytes::Bytes;
-use shared::util::fnv;
+use common::util::fnv;
 use std::time::{Duration, Instant};
 
 pub type FeedId = usize;

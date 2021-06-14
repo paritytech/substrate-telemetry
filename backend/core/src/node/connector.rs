@@ -9,9 +9,9 @@ use crate::node::NodeId;
 use actix::prelude::*;
 use actix_web_actors::ws::{self, CloseReason};
 use bytes::Bytes;
-use shared::types::ConnId;
-use shared::ws::{MultipartHandler, WsMessage, MuteReason};
-use shared::node::{NodeMessage, Payload};
+use common::types::ConnId;
+use common::ws::{MultipartHandler, WsMessage, MuteReason};
+use common::node::{NodeMessage, Payload};
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(20);

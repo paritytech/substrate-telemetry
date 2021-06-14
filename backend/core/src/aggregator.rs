@@ -7,10 +7,10 @@ use crate::chain::{self, Chain, ChainId, Label};
 use crate::feed::connector::{Connected, FeedConnector, FeedId};
 use crate::feed::{self, FeedMessageSerializer};
 use crate::node::connector::NodeConnector;
-use shared::ws::MuteReason;
-use shared::shard::ShardConnId;
-use shared::types::{ConnId, NodeDetails};
-use shared::util::{DenseMap, Hash};
+use common::ws::MuteReason;
+use common::shard::ShardConnId;
+use common::types::{ConnId, NodeDetails};
+use common::util::{DenseMap, Hash};
 
 pub struct Aggregator {
     genesis_hashes: HashMap<Hash, ChainId>,

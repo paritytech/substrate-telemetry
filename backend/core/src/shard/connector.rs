@@ -8,10 +8,10 @@ use crate::location::LocateRequest;
 use actix::prelude::*;
 use actix_web_actors::ws::{self, CloseReason};
 use bincode::Options;
-use shared::types::NodeId;
-use shared::util::Hash;
-use shared::ws::{MultipartHandler, WsMessage};
-use shared::shard::{ShardMessage, ShardConnId, BackendMessage};
+use common::types::NodeId;
+use common::util::Hash;
+use common::ws::{MultipartHandler, WsMessage};
+use common::shard::{ShardMessage, ShardConnId, BackendMessage};
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(20);

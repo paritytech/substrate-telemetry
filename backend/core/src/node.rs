@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
-use shared::types::{
+use common::types::{
     Block, BlockDetails, NodeDetails, NodeHardware, NodeIO, NodeId, NodeLocation, NodeStats,
     Timestamp,
 };
-use shared::util::now;
-use shared::node::SystemInterval;
+use common::util::now;
+use common::node::SystemInterval;
 
 pub mod connector;
 

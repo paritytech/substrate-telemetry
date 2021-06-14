@@ -6,9 +6,9 @@ use crate::aggregator::{AddNode, Aggregator, ChainMessage};
 // use crate::chain::{Chain, RemoveNode, UpdateNode};
 use actix::prelude::*;
 use actix_web_actors::ws::{self, CloseReason};
-use shared::node::{NodeMessage, Payload};
-use shared::types::{ConnId, NodeId};
-use shared::ws::{MultipartHandler, WsMessage};
+use common::node::{NodeMessage, Payload};
+use common::types::{ConnId, NodeId};
+use common::ws::{MultipartHandler, WsMessage};
 use tokio::sync::mpsc::UnboundedSender;
 
 /// How often heartbeat pings are sent

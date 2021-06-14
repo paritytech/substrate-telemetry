@@ -1,8 +1,8 @@
 [workspace]
 members = [
+    "common",
     "core",
-    "shared",
-    "shard",
+    "shard"
 ]
 
 [profile.dev]
