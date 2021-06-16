@@ -14,15 +14,18 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Build
-      working-directory: ./backend
+    - name: Build Telemetry Core
+      working-directory: ./backend/core
       run: cargo build --verbose
     - name: Run tests
       working-directory: ./backend
       run: cargo test --verbose
-    - name: Build release and call executable
+    - name: Build release and call telemetry executable
       working-directory: ./backend
-      run: cargo run --release -- --help
+      run: cargo run --bin telemetry --release -- --help
+    - name: Build release and call telemetry executable
+      working-directory: ./backend
+      run: cargo run --bin shard --release -- --help
     - name: Login to Dockerhub
       uses: docker/login-action@v1
       with:
