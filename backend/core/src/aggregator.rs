@@ -9,11 +9,11 @@ use crate::feed::{self, FeedMessageSerializer};
 use crate::node::connector::NodeConnector;
 use common::ws::MuteReason;
 use common::shard::ShardConnId;
-use common::types::{ConnId, NodeDetails};
-use common::util::{DenseMap, Hash};
+use common::types::{ConnId, NodeDetails, BlockHash};
+use common::util::{DenseMap};
 
 pub struct Aggregator {
-    genesis_hashes: HashMap<Hash, ChainId>,
+    genesis_hashes: HashMap<BlockHash, ChainId>,
     labels: HashMap<Label, ChainId>,
     chains: DenseMap<ChainEntry>,
     feeds: DenseMap<Addr<FeedConnector>>,
@@ -26,7 +26,7 @@ pub struct ChainEntry {
     /// Address to the `Chain` agent
     addr: Addr<Chain>,
     /// Genesis [`Hash`] of the chain
-    genesis_hash: Hash,
+    genesis_hash: BlockHash,
     /// String name of the chain
     label: Label,
     /// Node count
@@ -66,7 +66,7 @@ impl Aggregator {
     /// or the address is disconnected (actor dropped), create a new one.
     pub fn lazy_chain(
         &mut self,
-        genesis_hash: Hash,
+        genesis_hash: BlockHash,
         label: &str,
         ctx: &mut <Self as Actor>::Context,
     ) -> ChainId {
@@ -125,7 +125,7 @@ pub struct AddNode {
     /// Details of the node being added to the aggregator
     pub node: NodeDetails,
     /// Genesis [`Hash`] of the chain the node is being added to.
-    pub genesis_hash: Hash,
+    pub genesis_hash: BlockHash,
     /// Source from which this node is being added (Direct | Shard)
     pub source: NodeSource,
 }

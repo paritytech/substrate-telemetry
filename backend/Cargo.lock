@@ -1658,6 +1658,7 @@ dependencies = [
  "clap",
  "common",
  "log",
+ "primitive-types",
  "rustc-hash",
  "serde",
  "serde_json",

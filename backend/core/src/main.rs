@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 use std::iter::FromIterator;
-use std::net::Ipv4Addr;
 
 use actix::prelude::*;
 use actix_http::ws::Codec;
@@ -19,7 +18,6 @@ mod shard;
 use aggregator::{Aggregator, GetHealth};
 use feed::connector::FeedConnector;
 use location::{Locator, LocatorFactory};
-use node::connector::NodeConnector;
 use shard::connector::ShardConnector;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -74,35 +72,6 @@ impl From<&LogLevel> for log::LevelFilter {
     }
 }
 
-/// Entry point for connecting nodes
-#[get("/submit")]
-async fn node_route(
-    req: HttpRequest,
-    stream: web::Payload,
-    aggregator: web::Data<Addr<Aggregator>>,
-    locator: web::Data<Addr<Locator>>,
-) -> Result<HttpResponse, Error> {
-    let ip = req
-        .connection_info()
-        .realip_remote_addr()
-        .and_then(|mut addr| {
-            if let Some(port_idx) = addr.find(':') {
-                addr = &addr[..port_idx];
-            }
-            addr.parse::<Ipv4Addr>().ok()
-        });
-
-    let mut res = ws::handshake(&req)?;
-    let aggregator = aggregator.get_ref().clone();
-    let locator = locator.get_ref().clone().recipient();
-
-    Ok(res.streaming(ws::WebsocketContext::with_codec(
-        NodeConnector::new(aggregator, locator, ip),
-        stream,
-        Codec::new().max_size(10 * 1024 * 1024), // 10mb frame limit
-    )))
-}
-
 #[get("/shard_submit/{chain_hash}")]
 async fn shard_route(
     req: HttpRequest,
@@ -112,7 +81,7 @@ async fn shard_route(
     path: web::Path<Box<str>>,
 ) -> Result<HttpResponse, Error> {
     let hash_str = path.into_inner();
-    let genesis_hash = hash_str.parse()?;
+    let genesis_hash = hash_str.parse::<common::json::Hash>()?.into();
 
     println!("Genesis hash {}", genesis_hash);
 
@@ -180,7 +149,6 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::NormalizePath::default())
             .data(aggregator.clone())
             .data(locator.clone())
-            .service(node_route)
             .service(feed_route)
             .service(shard_route)
             .service(health)

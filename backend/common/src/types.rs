@@ -2,6 +2,7 @@ use serde::ser::{SerializeTuple, Serializer};
 use serde::{Deserialize, Serialize};
 
 use crate::util::{now, MeanList};
+use crate::json;
 
 pub type NodeId = usize;
 pub type ConnId = u64;
@@ -21,6 +22,20 @@ pub struct NodeDetails {
     pub startup_time: Option<Box<str>>,
 }
 
+impl From<json::NodeDetails> for NodeDetails {
+    fn from(details: json::NodeDetails) -> Self {
+        NodeDetails {
+            chain: details.chain,
+            name: details.name,
+            implementation: details.implementation,
+            version: details.version,
+            validator: details.validator,
+            network_id: details.network_id,
+            startup_time: details.startup_time,
+        }
+    }
+}
+
 #[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct NodeStats {
     pub peers: u64,
@@ -34,9 +49,17 @@ pub struct NodeIO {
 
 #[derive(Deserialize, Serialize, Debug, Clone, Copy)]
 pub struct Block {
-    #[serde(rename = "best")]
     pub hash: BlockHash,
     pub height: BlockNumber,
+}
+
+impl From<json::Block> for Block {
+    fn from(block: json::Block) -> Self {
+        Block {
+            hash: block.hash.into(),
+            height: block.height
+        }
+    }
 }
 
 impl Block {

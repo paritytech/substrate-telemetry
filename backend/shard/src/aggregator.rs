@@ -6,8 +6,8 @@ use actix::prelude::*;
 use actix_http::http::Uri;
 use bincode::Options;
 use rustc_hash::FxHashMap;
-use common::util::{Hash, DenseMap};
-use common::types::{ConnId, NodeDetails, NodeId};
+use common::util::{DenseMap};
+use common::types::{ConnId, NodeDetails, NodeId, BlockHash};
 use common::node::Payload;
 use common::shard::{ShardConnId, ShardMessage, BackendMessage};
 use soketto::handshake::{Client, ServerResponse};
@@ -22,7 +22,7 @@ type WsReceiver = soketto::Receiver<Compat<TcpStream>>;
 #[derive(Default)]
 pub struct Aggregator {
     url: Uri,
-    chains: FxHashMap<Hash, UnboundedSender<ChainMessage>>,
+    chains: FxHashMap<BlockHash, UnboundedSender<ChainMessage>>,
 }
 
 impl Actor for Aggregator {
@@ -42,13 +42,13 @@ pub struct Chain {
     /// Base URL of Backend Core
     url: Uri,
     /// Genesis hash of the chain, required to construct the URL to connect to the Backend Core
-    genesis_hash: Hash,
+    genesis_hash: BlockHash,
     /// Dense mapping of SharedConnId -> Addr<NodeConnector> + multiplexing ConnId sent from the node.
     nodes: DenseMap<(Addr<NodeConnector>, ConnId)>,
 }
 
 impl Chain {
-    pub fn new(url: Uri, genesis_hash: Hash) -> Self {
+    pub fn new(url: Uri, genesis_hash: BlockHash) -> Self {
         Chain {
             url,
             genesis_hash,
@@ -188,7 +188,7 @@ impl Actor for Chain {
 #[rtype(result = "()")]
 pub struct AddNode {
     pub ip: Option<Ipv4Addr>,
-    pub genesis_hash: Hash,
+    pub genesis_hash: BlockHash,
     pub node: NodeDetails,
     pub conn_id: ConnId,
     pub node_connector: Addr<NodeConnector>,

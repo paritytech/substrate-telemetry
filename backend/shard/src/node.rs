@@ -8,6 +8,7 @@ use actix::prelude::*;
 use actix_web_actors::ws::{self, CloseReason};
 use common::node::{NodeMessage, Payload};
 use common::types::{ConnId, NodeId};
+use common::json;
 use common::ws::{MultipartHandler, WsMessage};
 use tokio::sync::mpsc::UnboundedSender;
 
@@ -93,9 +94,10 @@ impl NodeConnector {
 
     fn handle_message(
         &mut self,
-        msg: NodeMessage,
+        msg: json::NodeMessage,
         ctx: &mut <Self as Actor>::Context,
     ) {
+        let msg: NodeMessage = msg.into();
         let conn_id = msg.id();
         let payload = msg.into();
 

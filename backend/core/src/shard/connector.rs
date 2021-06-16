@@ -8,8 +8,7 @@ use crate::location::LocateRequest;
 use actix::prelude::*;
 use actix_web_actors::ws::{self, CloseReason};
 use bincode::Options;
-use common::types::NodeId;
-use common::util::Hash;
+use common::types::{BlockHash, NodeId};
 use common::ws::{MultipartHandler, WsMessage};
 use common::shard::{ShardMessage, ShardConnId, BackendMessage};
 
@@ -24,7 +23,7 @@ pub struct ShardConnector {
     /// Aggregator actor address
     aggregator: Addr<Aggregator>,
     /// Genesis hash of the chain this connection will be submitting data for
-    genesis_hash: Hash,
+    genesis_hash: BlockHash,
     /// Chain address to which this shard connector is delegating messages
     chain: Option<Addr<Chain>>,
     /// Transient mapping of `ShardConnId` to external IP address.
@@ -57,7 +56,7 @@ impl ShardConnector {
     pub fn new(
         aggregator: Addr<Aggregator>,
         locator: Recipient<LocateRequest>,
-        genesis_hash: Hash,
+        genesis_hash: BlockHash,
     ) -> Self {
         Self {
             hb: Instant::now(),

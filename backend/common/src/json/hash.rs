@@ -8,9 +8,15 @@ use serde::de::{self, Deserialize, Deserializer, Unexpected, Visitor, SeqAccess}
 const HASH_BYTES: usize = 32;
 
 /// Newtype wrapper for 32-byte hash values, implementing readable `Debug` and `serde::Deserialize`.
-// We could use primitive_types::H256 here, but opted for a custom type to avoid more dependencies.
+/// This can deserialize from a JSON string or array.
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
 pub struct Hash([u8; HASH_BYTES]);
+
+impl From<Hash> for crate::types::BlockHash {
+    fn from(hash: Hash) -> Self {
+        hash.0.into()
+    }
+}
 
 struct HashVisitor;
 
