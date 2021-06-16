@@ -47,11 +47,11 @@ pub enum Payload {
     #[serde(rename = "afg.finalized")]
     AfgFinalized(AfgFinalized),
     #[serde(rename = "afg.received_precommit")]
-    AfgReceivedPrecommit(AfgReceivedPrecommit),
+    AfgReceivedPrecommit(AfgReceived),
     #[serde(rename = "afg.received_prevote")]
-    AfgReceivedPrevote(AfgReceivedPrevote),
+    AfgReceivedPrevote(AfgReceived),
     #[serde(rename = "afg.received_commit")]
-    AfgReceivedCommit(AfgReceivedCommit),
+    AfgReceivedCommit(AfgReceived),
     #[serde(rename = "afg.authority_set")]
     AfgAuthoritySet(AfgAuthoritySet),
     #[serde(rename = "afg.finalized_blocks_up_to")]
@@ -107,24 +107,6 @@ pub struct AfgReceived {
     pub target_hash: Hash,
     pub target_number: Box<str>,
     pub voter: Option<Box<str>>,
-}
-
-#[derive(Deserialize, Debug, Clone)]
-pub struct AfgReceivedPrecommit {
-    #[serde(flatten)]
-    pub received: AfgReceived,
-}
-
-#[derive(Deserialize, Debug, Clone)]
-pub struct AfgReceivedPrevote {
-    #[serde(flatten)]
-    pub received: AfgReceived,
-}
-
-#[derive(Deserialize, Debug, Clone)]
-pub struct AfgReceivedCommit {
-    #[serde(flatten)]
-    pub received: AfgReceived,
 }
 
 #[derive(Deserialize, Debug, Clone, Copy)]
@@ -187,6 +169,55 @@ mod tests {
                 NodeMessage::V2 { .. },
             ),
             "message did not match variant V2",
+        );
+    }
+
+    #[test]
+    fn message_v2_received_precommit() {
+        let json = r#"{
+            "id":1,
+            "ts":"2021-01-13T12:22:20.053527101+01:00",
+            "payload":{
+                "target_hash":"0xcc41708573f2acaded9dd75e07dac2d4163d136ca35b3061c558d7a35a09dd8d",
+                "target_number":"209",
+                "voter":"foo",
+                "msg":"afg.received_precommit"
+            }
+        }"#;
+        assert!(
+            matches!(
+                serde_json::from_str::<NodeMessage>(json).unwrap(),
+                NodeMessage::V2 {
+                    payload: Payload::AfgReceivedPrecommit(..),
+                    ..
+                },
+            ),
+            "message did not match the expected output",
+        );
+    }
+
+    #[test]
+    fn message_v2_tx_pool_import() {
+        // We should happily ignore any fields we don't care about.
+        let json = r#"{
+            "id":1,
+            "ts":"2021-01-13T12:22:20.053527101+01:00",
+            "payload":{
+                "foo":"Something",
+                "bar":123,
+                "wibble":"wobble",
+                "msg":"txpool.import"
+            }
+        }"#;
+        assert!(
+            matches!(
+                serde_json::from_str::<NodeMessage>(json).unwrap(),
+                NodeMessage::V2 {
+                    payload: Payload::TxPoolImport,
+                    ..
+                },
+            ),
+            "message did not match the expected output",
         );
     }
 }

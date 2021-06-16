@@ -86,13 +86,13 @@ impl From<json::Payload> for Payload {
                 Payload::AfgFinalized(m.into())
             },
             json::Payload::AfgReceivedPrecommit(m) => {
-                Payload::AfgReceivedPrecommit(m.received.into())
+                Payload::AfgReceivedPrecommit(m.into())
             },
             json::Payload::AfgReceivedPrevote(m) => {
-                Payload::AfgReceivedPrevote(m.received.into())
+                Payload::AfgReceivedPrevote(m.into())
             },
             json::Payload::AfgReceivedCommit(m) => {
-                Payload::AfgReceivedCommit(m.received.into())
+                Payload::AfgReceivedCommit(m.into())
             },
             json::Payload::AfgAuthoritySet(m) => {
                 Payload::AfgAuthoritySet(m.into())
