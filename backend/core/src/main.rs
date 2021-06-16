@@ -104,8 +104,10 @@ async fn feed_route(
     stream: web::Payload,
     aggregator: web::Data<Addr<Aggregator>>,
 ) -> Result<HttpResponse, Error> {
+    let aggregator = aggregator.get_ref().clone();
+
     ws::start(
-        FeedConnector::new(aggregator.get_ref().clone()),
+        FeedConnector::new(aggregator),
         &req,
         stream,
     )

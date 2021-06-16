@@ -78,6 +78,8 @@ impl FeedConnector {
     fn handle_cmd(&mut self, cmd: &str, payload: &str, ctx: &mut <Self as Actor>::Context) {
         match cmd {
             "subscribe" => {
+                // Hash the chain label the frontend wants to subscribe to.
+                // If it's already subscribed to the same chain, nothing to do.
                 match fnv(payload) {
                     hash if hash == self.chain_label_hash => return,
                     hash => self.chain_label_hash = hash,

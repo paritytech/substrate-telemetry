@@ -247,15 +247,6 @@ pub struct LocateNode {
 impl NodeSource {
     pub fn init(self, nid: NodeId, chain: Addr<Chain>) -> bool {
         match self {
-            NodeSource::Direct { conn_id, node_connector } => {
-                node_connector
-                    .try_send(crate::node::connector::Initialize {
-                        nid,
-                        conn_id,
-                        chain,
-                    })
-                    .is_ok()
-            },
             NodeSource::Shard { sid, shard_connector } => {
                 shard_connector
                     .try_send(crate::shard::connector::Initialize {

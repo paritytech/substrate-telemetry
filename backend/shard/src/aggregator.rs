@@ -100,8 +100,6 @@ impl Chain {
                             payload,
                         };
 
-                        println!("Serialize {:?}", msg);
-
                         let bytes = bincode::options().serialize(&msg).unwrap();
 
                         println!("Sending update: {} bytes", bytes.len());

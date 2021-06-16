@@ -6,7 +6,6 @@ use crate::shard::connector::ShardConnector;
 use crate::chain::{self, Chain, ChainId, Label};
 use crate::feed::connector::{Connected, FeedConnector, FeedId};
 use crate::feed::{self, FeedMessageSerializer};
-use crate::node::connector::NodeConnector;
 use common::ws::MuteReason;
 use common::shard::ShardConnId;
 use common::types::{ConnId, NodeDetails, BlockHash};
@@ -131,13 +130,6 @@ pub struct AddNode {
 }
 
 pub enum NodeSource {
-    Direct {
-        /// Connection id used by the node connector for multiplexing parachains
-        conn_id: ConnId,
-        /// Address of the NodeConnector actor
-        node_connector: Addr<NodeConnector>,
-    },
-    // TODO
     Shard {
         /// `ShardConnId` that identifies the node connection within a shard.
         sid: ShardConnId,
@@ -202,9 +194,6 @@ pub struct GetHealth;
 impl NodeSource {
     pub fn mute(&self, reason: MuteReason) {
         match self {
-            NodeSource::Direct { node_connector, .. } => {
-                node_connector.do_send(reason);
-            },
             // TODO
             NodeSource::Shard { shard_connector, .. } => {
                 // shard_connector.do_send(Mute { reason });
