@@ -18,6 +18,12 @@ impl From<Hash> for crate::types::BlockHash {
     }
 }
 
+impl From<crate::types::BlockHash> for Hash {
+    fn from(hash: crate::types::BlockHash) -> Self {
+        Hash(hash.0)
+    }
+}
+
 struct HashVisitor;
 
 impl<'de> Visitor<'de> for HashVisitor {

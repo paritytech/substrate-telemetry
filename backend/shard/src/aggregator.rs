@@ -10,6 +10,7 @@ use common::util::{DenseMap};
 use common::types::{ConnId, NodeDetails, NodeId, BlockHash};
 use common::node::Payload;
 use common::shard::{ShardConnId, ShardMessage, BackendMessage};
+use common::json;
 use soketto::handshake::{Client, ServerResponse};
 use crate::node::{NodeConnector, Initialize};
 use tokio::net::TcpStream;
@@ -138,7 +139,8 @@ impl Chain {
     pub async fn connect(&self, tx: UnboundedSender<ChainMessage>) -> anyhow::Result<WsSender> {
         let host = self.url.host().unwrap_or("127.0.0.1");
         let port = self.url.port_u16().unwrap_or(8000);
-        let path = format!("{}{}", self.url.path(), self.genesis_hash);
+        let json_hash: json::Hash = self.genesis_hash.into();
+        let path = format!("{}{}", self.url.path(), json_hash);
 
         let socket = TcpStream::connect((host, port)).await?;
 
