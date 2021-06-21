@@ -1,9 +1,9 @@
-use common::{internal_messages::{self, LocalId}, node};
+use common::{internal_messages::{self, LocalId}, node, assign_id::AssignId};
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
 use futures::{channel::mpsc, future};
 use futures::{ Sink, SinkExt, StreamExt };
-use std::collections::{ HashMap, HashSet };
+use std::collections::{ HashSet };
 use crate::connection::{ create_ws_connection, Message };
 
 /// A unique Id is assigned per websocket connection (or more accurately,
@@ -100,8 +100,6 @@ impl Aggregator {
     async fn handle_messages(mut rx_from_external: mpsc::Receiver<ToAggregator>, mut tx_to_telemetry_core: mpsc::Sender<FromAggregator>) {
         use internal_messages::{ FromShardAggregator, FromTelemetryCore };
 
-        let mut next_local_id: LocalId = 1;
-
         // Just as an optimisation, we can keep track of whether we're connected to the backend
         // or not, and ignore incoming messages while we aren't.
         let mut connected_to_telemetry_core = false;
@@ -112,8 +110,7 @@ impl Aggregator {
 
         // Maintain mappings from the connection ID and node message ID to the "local ID" which we
         // broadcast to the telemetry core.
-        let mut to_local_id: HashMap<(ConnId, node::NodeMessageId), LocalId> = HashMap::new();
-        let mut from_local_id: HashMap<LocalId, (ConnId, node::NodeMessageId)> = HashMap::new();
+        let mut to_local_id = AssignId::new();
 
         // Any messages coming from nodes that have been muted are ignored:
         let mut muted: HashSet<LocalId> = HashSet::new();
@@ -132,9 +129,9 @@ impl Aggregator {
 
                     // We've told everything to disconnect. Now, reset our state:
                     close_connections = vec![];
-                    to_local_id = HashMap::new();
-                    from_local_id = HashMap::new();
-                    muted = HashSet::new();
+                    to_local_id.clear();
+                    muted.clear();
+
                     connected_to_telemetry_core = true;
                     log::info!("Connected to telemetry core");
                 },
@@ -151,12 +148,7 @@ impl Aggregator {
                     if !connected_to_telemetry_core { continue }
 
                     // Generate a new "local ID" for messages from this connection:
-                    let local_id = next_local_id;
-                    next_local_id += 1;
-
-                    // Store mapping to/from local_id to conn/message ID paid:
-                    to_local_id.insert((conn_id, message_id), local_id);
-                    from_local_id.insert(local_id, (conn_id, message_id));
+                    let local_id = to_local_id.assign_id((conn_id, message_id));
 
                     // Send the message to the telemetry core with this local ID:
                     let _ = tx_to_telemetry_core.send(FromShardAggregator::AddNode {
@@ -170,8 +162,8 @@ impl Aggregator {
                     if !connected_to_telemetry_core { continue }
 
                     // Get the local ID, ignoring the message if none match:
-                    let local_id = match to_local_id.get(&(conn_id, message_id)) {
-                        Some(id) => *id,
+                    let local_id = match to_local_id.get_id(&(conn_id, message_id)) {
+                        Some(id) => id,
                         None => continue
                     };
 

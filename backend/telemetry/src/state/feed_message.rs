@@ -5,7 +5,7 @@ use serde::ser::{SerializeTuple, Serializer};
 use serde::Serialize;
 use std::mem;
 
-use crate::node::Node;
+use super::node::Node;
 use serde_json::to_writer;
 use common::types::{
     Address, BlockDetails, BlockHash, BlockNumber, NodeHardware, NodeIO, NodeId, NodeStats,

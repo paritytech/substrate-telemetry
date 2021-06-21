@@ -2,14 +2,15 @@ use std::net::IpAddr;
 
 use crate::node::Payload;
 use crate::types::{NodeDetails};
+use crate::assign_id::Id;
 use serde::{Deserialize, Serialize};
 
 /// The shard-local ID of a given node, where a single connection
 /// might send data on behalf of more than one chain.
-pub type LocalId = u64;
+pub type LocalId = Id;
 
 /// A global ID assigned to messages from each different pair of ConnId+LocalId.
-pub type GlobalId = u64;
+pub type GlobalId = Id;
 
 /// Message sent from the shard to the backend core
 #[derive(Deserialize, Serialize, Debug, Clone)]

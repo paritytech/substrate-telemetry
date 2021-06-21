@@ -1,6 +1,5 @@
 mod aggregator;
-mod feed_message;
-mod node;
+mod state;
 
 use std::net::SocketAddr;
 use std::str::FromStr;

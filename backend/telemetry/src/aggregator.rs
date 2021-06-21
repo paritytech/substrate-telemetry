@@ -1,4 +1,4 @@
-use common::{internal_messages::{self, LocalId}, node};
+use common::{internal_messages::{GlobalId, LocalId}, node, assign_id::AssignId};
 use std::{str::FromStr, sync::Arc};
 use std::sync::atomic::AtomicU64;
 use futures::channel::{ mpsc, oneshot };
@@ -6,6 +6,7 @@ use futures::{ Sink, SinkExt, StreamExt };
 use tokio::net::TcpStream;
 use tokio_util::compat::{ TokioAsyncReadCompatExt };
 use std::collections::{ HashMap, HashSet };
+use crate::state::State;
 
 /// A unique Id is assigned per websocket connection (or more accurately,
 /// per feed socket and per shard socket). This can be combined with the
@@ -137,6 +138,12 @@ impl Aggregator {
     // any more, this task will gracefully end.
     async fn handle_messages(mut rx_from_external: mpsc::Receiver<ToAggregator>, denylist: Vec<String>) {
 
+        let mut nodes_state = State::new();
+
+        // Maintain mappings from the shard connection ID and local ID of messages to a global ID
+        // that uniquely identifies nodes in our node state.
+        let mut to_global_id = AssignId::new();
+
         // Temporary: if we drop channels to shards, they will be booted:
         let mut to_shards = vec![];
 
@@ -162,10 +169,13 @@ impl Aggregator {
                     to_shards.push(channel);
                 },
                 ToAggregator::FromShardWebsocket(shard_conn_id, FromShardWebsocket::Add { local_id, ip, node }) => {
-
+                    let global_id = to_global_id.assign_id((shard_conn_id, local_id));
                 },
                 ToAggregator::FromShardWebsocket(shard_conn_id, FromShardWebsocket::Update { local_id, payload }) => {
-
+                    let global_id = match to_global_id.get_id(&(shard_conn_id, local_id)) {
+                        Some(id) => id,
+                        None => continue
+                    };
                 },
             }
         }
