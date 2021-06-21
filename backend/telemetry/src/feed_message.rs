@@ -1,3 +1,6 @@
+//! This module provides the messages that will be
+//! sent to subscribing feeds.
+
 use serde::ser::{SerializeTuple, Serializer};
 use serde::Serialize;
 use std::mem;
@@ -8,10 +11,6 @@ use common::types::{
     Address, BlockDetails, BlockHash, BlockNumber, NodeHardware, NodeIO, NodeId, NodeStats,
     Timestamp, NodeDetails,
 };
-
-pub mod connector;
-
-use connector::Serialized;
 
 pub trait FeedMessage {
     const ACTION: u8;
@@ -66,16 +65,16 @@ impl FeedMessageSerializer {
         let _ = to_writer(&mut self.buffer, value);
     }
 
-    pub fn finalize(&mut self) -> Option<Serialized> {
+    pub fn finalize(&mut self) -> Option<Vec<u8>> {
         if self.buffer.is_empty() {
             return None;
         }
 
         self.buffer.push(b']');
 
-        let bytes = mem::replace(&mut self.buffer, Vec::with_capacity(BUFCAP)).into();
+        let bytes = mem::replace(&mut self.buffer, Vec::with_capacity(BUFCAP));
 
-        Some(Serialized(bytes))
+        Some(bytes)
     }
 }
 
@@ -90,28 +89,28 @@ macro_rules! actions {
 }
 
 actions! {
-    0x00: Version,
-    0x01: BestBlock,
-    0x02: BestFinalized,
-    0x03: AddedNode<'_>,
-    0x04: RemovedNode,
-    0x05: LocatedNode<'_>,
-    0x06: ImportedBlock<'_>,
-    0x07: FinalizedBlock,
-    0x08: NodeStatsUpdate<'_>,
-    0x09: Hardware<'_>,
-    0x0A: TimeSync,
-    0x0B: AddedChain<'_>,
-    0x0C: RemovedChain<'_>,
-    0x0D: SubscribedTo<'_>,
-    0x0E: UnsubscribedFrom<'_>,
-    0x0F: Pong<'_>,
-    0x10: AfgFinalized,
-    0x11: AfgReceivedPrevote,
-    0x12: AfgReceivedPrecommit,
-    0x13: AfgAuthoritySet,
-    0x14: StaleNode,
-    0x15: NodeIOUpdate<'_>,
+     0: Version,
+     1: BestBlock,
+     2: BestFinalized,
+     3: AddedNode<'_>,
+     4: RemovedNode,
+     5: LocatedNode<'_>,
+     6: ImportedBlock<'_>,
+     7: FinalizedBlock,
+     8: NodeStatsUpdate<'_>,
+     9: Hardware<'_>,
+    10: TimeSync,
+    11: AddedChain<'_>,
+    12: RemovedChain<'_>,
+    13: SubscribedTo<'_>,
+    14: UnsubscribedFrom<'_>,
+    15: Pong<'_>,
+    16: AfgFinalized,
+    17: AfgReceivedPrevote,
+    18: AfgReceivedPrecommit,
+    19: AfgAuthoritySet,
+    20: StaleNode,
+    21: NodeIOUpdate<'_>,
 }
 
 #[derive(Serialize)]

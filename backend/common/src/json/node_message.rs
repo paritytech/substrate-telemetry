@@ -26,7 +26,7 @@ pub enum NodeMessage {
         payload: Payload,
     },
     V2 {
-        id: ConnId,
+        id: NodeMessageId,
         payload: Payload,
     },
 }
@@ -127,7 +127,7 @@ pub struct NodeDetails {
     pub startup_time: Option<Box<str>>,
 }
 
-type ConnId = u64;
+type NodeMessageId = u64;
 type BlockNumber = u64;
 
 #[cfg(test)]

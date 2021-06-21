@@ -1,239 +1,213 @@
-use std::net::Ipv4Addr;
-use std::fmt;
-// use std::sync::mpsc::{self, Sender};
+use common::{internal_messages::{self, LocalId}, node};
+use std::sync::Arc;
+use std::sync::atomic::AtomicU64;
+use futures::{channel::mpsc, future};
+use futures::{ Sink, SinkExt, StreamExt };
+use std::collections::{ HashMap, HashSet };
+use crate::connection::{ create_ws_connection, Message };
 
-use actix::prelude::*;
-use actix_http::http::Uri;
-use bincode::Options;
-use rustc_hash::FxHashMap;
-use common::util::{DenseMap};
-use common::types::{ConnId, NodeDetails, NodeId, BlockHash};
-use common::node::Payload;
-use common::shard::{ShardConnId, ShardMessage, BackendMessage};
-use common::json;
-use soketto::handshake::{Client, ServerResponse};
-use crate::node::{NodeConnector, Initialize};
-use tokio::net::TcpStream;
-use tokio::sync::mpsc::{self, UnboundedSender};
-use tokio_util::compat::{Compat, TokioAsyncReadCompatExt};
+/// A unique Id is assigned per websocket connection (or more accurately,
+/// per thing-that-subscribes-to-the-aggregator). That connection might send
+/// data on behalf of multiple chains, so this ID is local to the aggregator,
+/// and a unique ID is assigned per batch of data too ([`internal_messages::LocalId`]).
+type ConnId = u64;
 
-type WsSender = soketto::Sender<Compat<TcpStream>>;
-type WsReceiver = soketto::Receiver<Compat<TcpStream>>;
-
-#[derive(Default)]
-pub struct Aggregator {
-    url: Uri,
-    chains: FxHashMap<BlockHash, UnboundedSender<ChainMessage>>,
+/// Incoming messages are either from websocket connections or
+/// from the telemetry core. This can be private since the only
+/// external messages are via subscriptions that take
+/// [`FromWebsocket`] instances.
+#[derive(Clone,Debug)]
+enum ToAggregator {
+    DisconnectedFromTelemetryCore,
+    ConnectedToTelemetryCore,
+    FromWebsocket(ConnId, FromWebsocket),
+    FromTelemetryCore(internal_messages::FromTelemetryCore)
 }
 
-impl Actor for Aggregator {
-    type Context = Context<Self>;
+/// An incoming socket connection can provide these messages.
+/// Until a node has been Added via [`FromWebsocket::Add`],
+/// messages from it will be ignored.
+#[derive(Clone,Debug)]
+pub enum FromWebsocket {
+    /// Tell the aggregator about a new node.
+    Add {
+        message_id: node::NodeMessageId,
+        ip: Option<std::net::IpAddr>,
+        node: common::types::NodeDetails,
+        /// When a message is sent back up this channel, we terminate
+        /// the websocket connection and force the node to reconnect
+        /// so that it sends its system info again incase the telemetry
+        /// core has restarted.
+        close_connection: mpsc::Sender<()>
+    },
+    /// Update/pass through details about a node.
+    Update {
+        message_id: node::NodeMessageId,
+        payload: node::Payload
+    }
+}
+
+pub type FromAggregator = internal_messages::FromShardAggregator;
+
+#[derive(Clone)]
+pub struct Aggregator(Arc<AggregatorInternal>);
+
+struct AggregatorInternal {
+    /// Nodes that connect are each assigned a unique connection ID. Nodes
+    /// can send messages on behalf of more than one chain, and so this ID is
+    /// only really used inside the Aggregator in conjunction with a per-message
+    /// ID.
+    conn_id: AtomicU64,
+    /// Send messages to the aggregator from websockets via this. This is
+    /// stored here so that anybody holding an `Aggregator` handle can
+    /// make use of it.
+    tx_to_aggregator: mpsc::Sender<ToAggregator>
 }
 
 impl Aggregator {
-    pub fn new(url: Uri) -> Self {
-        Aggregator {
-            url,
-            chains: Default::default(),
-        }
-    }
-}
+    /// Spawn a new Aggregator. This connects to the telemetry backend
+    pub async fn spawn(telemetry_uri: http::Uri) -> anyhow::Result<Aggregator> {
+        let (tx_to_aggregator, rx_from_external) = mpsc::channel(10);
 
-pub struct Chain {
-    /// Base URL of Backend Core
-    url: Uri,
-    /// Genesis hash of the chain, required to construct the URL to connect to the Backend Core
-    genesis_hash: BlockHash,
-    /// Dense mapping of SharedConnId -> Addr<NodeConnector> + multiplexing ConnId sent from the node.
-    nodes: DenseMap<(Addr<NodeConnector>, ConnId)>,
-}
-
-impl Chain {
-    pub fn new(url: Uri, genesis_hash: BlockHash) -> Self {
-        Chain {
-            url,
-            genesis_hash,
-            nodes: DenseMap::new(),
-        }
-    }
-
-    pub fn spawn(mut self) -> UnboundedSender<ChainMessage> {
-        let (tx_ret, mut rx) = mpsc::unbounded_channel();
-
-        let tx = tx_ret.clone();
-
-        tokio::task::spawn(async move {
-            let mut sender = match self.connect(tx.clone()).await {
-                Ok(pair) => pair,
-                Err(err) => {
-                    log::error!("Failed to connect to Backend Core: {:?}", err);
-                    return;
-                }
-            };
-
-            // tokio::task::spawn(async move {
-
-            // });
-
-            loop {
-                match rx.recv().await {
-                    Some(ChainMessage::AddNode(msg)) => {
-                        println!("Add node {:?}", msg);
-
-                        let AddNode { node, ip, conn_id, node_connector, .. } = msg;
-                        let sid = self.nodes.add((node_connector, conn_id)) as ShardConnId;
-
-                        let bytes = bincode::options().serialize(&ShardMessage::AddNode {
-                            ip,
-                            node,
-                            sid,
-                        }).unwrap();
-
-                        println!("Sending {} bytes", bytes.len());
-
-                        let _ = sender.send_binary_mut(bytes).await;
-                        let _ = sender.flush().await;
-                    },
-                    Some(ChainMessage::UpdateNode(nid, payload)) => {
-                        let msg = ShardMessage::UpdateNode {
-                            nid,
-                            payload,
-                        };
-
-                        let bytes = bincode::options().serialize(&msg).unwrap();
-
-                        println!("Sending update: {} bytes", bytes.len());
-
-                        let _ = sender.send_binary_mut(bytes).await;
-                        let _ = sender.flush().await;
-                    },
-                    Some(ChainMessage::Backend(BackendMessage::Initialize { sid, nid })) => {
-                        if let Some((addr, conn_id)) = self.nodes.get(sid as usize) {
-                            addr.do_send(Initialize {
-                                nid,
-                                conn_id: *conn_id,
-                                chain: tx.clone(),
-                            })
-                        }
-                    },
-                    Some(ChainMessage::Backend(BackendMessage::Mute { sid, reason })) => {
-                        // TODO
-                    },
-                    None => (),
-                }
-            }
-            // let mut client = Client::new(socket.compat(), host, &path);
-
-            // let (mut sender, mut receiver) = match client.handshake().await? {
-            //     ServerResponse::Accepted { .. } => client.into_builder().finish(),
-            //     ServerResponse::Redirect { status_code, location } => unimplemented!("follow location URL"),
-            //     ServerResponse::Rejected { status_code } => unimplemented!("handle failure")
-            // };
+        // Map responses from our connection into messages that will be sent to the aggregator:
+        let tx_from_connection = tx_to_aggregator.clone().with(|msg| {
+            future::ok::<_,mpsc::SendError>(match msg {
+                Message::Connected => ToAggregator::ConnectedToTelemetryCore,
+                Message::Disconnected => ToAggregator::DisconnectedFromTelemetryCore,
+                Message::Data(data) => ToAggregator::FromTelemetryCore(data)
+            })
         });
 
-        tx_ret
+        // Establish a resiliant connection to the core (this retries as needed):
+        let tx_to_telemetry_core = create_ws_connection(
+            tx_from_connection,
+            telemetry_uri
+        ).await;
+
+        // Handle any incoming messages in our handler loop:
+        tokio::spawn(Aggregator::handle_messages(rx_from_external, tx_to_telemetry_core));
+
+        // Return a handle to our aggregator:
+        Ok(Aggregator(Arc::new(AggregatorInternal {
+            conn_id: AtomicU64::new(1),
+            tx_to_aggregator,
+        })))
     }
 
-    pub async fn connect(&self, tx: UnboundedSender<ChainMessage>) -> anyhow::Result<WsSender> {
-        let host = self.url.host().unwrap_or("127.0.0.1");
-        let port = self.url.port_u16().unwrap_or(8000);
-        let json_hash: json::Hash = self.genesis_hash.into();
-        let path = format!("{}{}", self.url.path(), json_hash);
+    // This is spawned into a separate task and handles any messages coming
+    // in to the aggregator. If nobody is tolding the tx side of the channel
+    // any more, this task will gracefully end.
+    async fn handle_messages(mut rx_from_external: mpsc::Receiver<ToAggregator>, mut tx_to_telemetry_core: mpsc::Sender<FromAggregator>) {
+        use internal_messages::{ FromShardAggregator, FromTelemetryCore };
 
-        let socket = TcpStream::connect((host, port)).await?;
+        let mut next_local_id: LocalId = 1;
 
-        socket.set_nodelay(true).unwrap();
+        // Just as an optimisation, we can keep track of whether we're connected to the backend
+        // or not, and ignore incoming messages while we aren't.
+        let mut connected_to_telemetry_core = false;
 
-        let mut client = Client::new(socket.compat(), host, &path);
+        // A list of close channels for the current connections. Send an empty tuple to
+        // these to ask the connections to be closed.
+        let mut close_connections: Vec<mpsc::Sender<()>> = vec![];
 
-        let (sender, receiver) = match client.handshake().await? {
-            ServerResponse::Accepted { .. } => client.into_builder().finish(),
-            ServerResponse::Redirect { status_code, .. } |
-            ServerResponse::Rejected { status_code } => {
-                return Err(anyhow::anyhow!("Failed to connect, status code: {}", status_code));
-            }
-        };
+        // Maintain mappings from the connection ID and node message ID to the "local ID" which we
+        // broadcast to the telemetry core.
+        let mut to_local_id: HashMap<(ConnId, node::NodeMessageId), LocalId> = HashMap::new();
+        let mut from_local_id: HashMap<LocalId, (ConnId, node::NodeMessageId)> = HashMap::new();
 
-        async fn read(tx: UnboundedSender<ChainMessage>, mut receiver: WsReceiver) -> anyhow::Result<()> {
-            let mut data = Vec::with_capacity(128);
+        // Any messages coming from nodes that have been muted are ignored:
+        let mut muted: HashSet<LocalId> = HashSet::new();
 
-            loop {
-                data.clear();
+        // Now, loop and receive messages to handle.
+        while let Some(msg) = rx_from_external.next().await {
+            match msg {
+                ToAggregator::ConnectedToTelemetryCore => {
+                    // Take hold of the connection closers and run them all.
+                    let closers = close_connections;
 
-                receiver.receive_data(&mut data).await?;
-
-                println!("Received {} bytes from Backend Core", data.len());
-
-                match bincode::options().deserialize(&data) {
-                    Ok(msg) => tx.send(ChainMessage::Backend(msg))?,
-                    Err(err) => {
-                        log::error!("Failed to read message from Backend Core: {:?}", err);
+                    for mut closer in closers {
+                        // if this fails, it probably means the connection has died already anyway.
+                        let _ = closer.send(());
                     }
-                }
 
+                    // We've told everything to disconnect. Now, reset our state:
+                    close_connections = vec![];
+                    to_local_id = HashMap::new();
+                    from_local_id = HashMap::new();
+                    muted = HashSet::new();
+                    connected_to_telemetry_core = true;
+                    log::info!("Connected to telemetry core");
+                },
+                ToAggregator::DisconnectedFromTelemetryCore => {
+                    connected_to_telemetry_core = false;
+                    log::info!("Disconnected from telemetry core");
+                },
+                ToAggregator::FromWebsocket(conn_id, FromWebsocket::Add { message_id, ip, node, close_connection }) => {
+                    // Keep the close_connection channel incase we need it:
+                    close_connections.push(close_connection);
+
+                    // Don't bother doing anything else if we're disconnected, since we'll force the
+                    // ndoe to reconnect anyway when the backend does:
+                    if !connected_to_telemetry_core { continue }
+
+                    // Generate a new "local ID" for messages from this connection:
+                    let local_id = next_local_id;
+                    next_local_id += 1;
+
+                    // Store mapping to/from local_id to conn/message ID paid:
+                    to_local_id.insert((conn_id, message_id), local_id);
+                    from_local_id.insert(local_id, (conn_id, message_id));
+
+                    // Send the message to the telemetry core with this local ID:
+                    let _ = tx_to_telemetry_core.send(FromShardAggregator::AddNode {
+                        ip,
+                        node,
+                        local_id
+                    }).await;
+                },
+                ToAggregator::FromWebsocket(conn_id, FromWebsocket::Update { message_id, payload }) => {
+                    // Ignore incoming messages if we're not connected to the backend:
+                    if !connected_to_telemetry_core { continue }
+
+                    // Get the local ID, ignoring the message if none match:
+                    let local_id = match to_local_id.get(&(conn_id, message_id)) {
+                        Some(id) => *id,
+                        None => continue
+                    };
+
+                    // ignore the message if this node has been muted:
+                    if muted.contains(&local_id) {
+                        continue;
+                    }
+
+                    // Send the message to the telemetry core with this local ID:
+                    let _ = tx_to_telemetry_core.send(FromShardAggregator::UpdateNode {
+                        local_id,
+                        payload
+                    }).await;
+                },
+                ToAggregator::FromTelemetryCore(FromTelemetryCore::Mute { local_id  }) => {
+                    // Ignore incoming messages if we're not connected to the backend:
+                    if !connected_to_telemetry_core { continue }
+
+                    // Mute the local ID we've been told to:
+                    muted.insert(local_id);
+                }
             }
         }
-
-        tokio::task::spawn(read(tx, receiver));
-
-        Ok(sender)
     }
-}
 
-impl Actor for Chain {
-    type Context = Context<Self>;
-}
+    /// Return a sink that a node can send messages into to be handled by the aggregator.
+    pub fn subscribe_node(&self) -> impl Sink<FromWebsocket, Error = anyhow::Error> + Unpin {
+        // Assign a unique aggregator-local ID to each connection that subscribes, and pass
+        // that along with every message to the aggregator loop:
+        let conn_id: ConnId = self.0.conn_id.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let tx_to_aggregator = self.0.tx_to_aggregator.clone();
 
-#[derive(Message)]
-#[rtype(result = "()")]
-pub struct AddNode {
-    pub ip: Option<Ipv4Addr>,
-    pub genesis_hash: BlockHash,
-    pub node: NodeDetails,
-    pub conn_id: ConnId,
-    pub node_connector: Addr<NodeConnector>,
-}
-
-#[derive(Debug)]
-pub enum ChainMessage {
-    AddNode(AddNode),
-    UpdateNode(NodeId, Payload),
-    Backend(BackendMessage),
-}
-
-impl fmt::Debug for AddNode {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str("AddNode")
-    }
-}
-
-impl Handler<AddNode> for Aggregator {
-    type Result = ();
-
-    fn handle(&mut self, msg: AddNode, ctx: &mut Self::Context) {
-        let AddNode { genesis_hash, .. } = msg;
-
-        let url = &self.url;
-        let chain = self
-            .chains
-            .entry(genesis_hash)
-            .or_insert_with(move || Chain::new(url.clone(), genesis_hash).spawn());
-
-        if let Err(err) = chain.send(ChainMessage::AddNode(msg)) {
-            let msg = err.0;
-            log::error!("Failed to add node to chain, shutting down chain");
-            self.chains.remove(&genesis_hash);
-            // TODO: Send a message back to clean up node connections
-        }
-    }
-}
-
-impl Handler<AddNode> for Chain {
-    type Result = ();
-
-    fn handle(&mut self, msg: AddNode, ctx: &mut Self::Context) {
-        let AddNode { ip, node_connector, .. } = msg;
-
-        println!("Node connected to {}: {:?}", self.genesis_hash, ip);
+        // Calling `send` on this Sink requires Unpin. There may be a nicer way than this,
+        // but pinning by boxing is the easy solution for now:
+        Box::pin(tx_to_aggregator.with(move |msg| async move {
+            Ok(ToAggregator::FromWebsocket(conn_id, msg))
+        }))
     }
 }

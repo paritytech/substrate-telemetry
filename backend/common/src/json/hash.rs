@@ -1,7 +1,5 @@
 use std::fmt::{self, Debug, Display};
 use std::str::FromStr;
-
-use actix_web::error::ResponseError;
 use serde::ser::{Serialize, Serializer};
 use serde::de::{self, Deserialize, Deserializer, Unexpected, Visitor, SeqAccess};
 
@@ -140,17 +138,11 @@ impl Debug for Hash {
 
 #[derive(thiserror::Error, Debug)]
 pub enum HashParseError {
+    #[error("Error parsing string into hex: {0}")]
     HexError(hex::FromHexError),
+    #[error("Invalid hex prefix: expected '0x'")]
     InvalidPrefix,
 }
-
-impl Display for HashParseError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Debug::fmt(self, f)
-    }
-}
-
-impl ResponseError for HashParseError {}
 
 #[cfg(test)]
 mod tests {

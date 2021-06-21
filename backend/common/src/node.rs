@@ -1,36 +1,41 @@
-use crate::types::{Block, BlockHash, BlockNumber, ConnId, NodeDetails};
+use crate::types::{Block, BlockHash, BlockNumber, NodeDetails};
 use crate::json;
-
-use actix::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Message)]
-#[rtype(result = "()")]
+pub type NodeMessageId = u64;
+
+#[derive(Serialize, Deserialize, Debug)]
 pub enum NodeMessage {
     V1 {
         payload: Payload,
     },
     V2 {
-        id: ConnId,
+        id: NodeMessageId,
         payload: Payload,
     },
 }
 
 impl NodeMessage {
-    /// Returns the connection ID or 0 if there is no ID.
-    pub fn id(&self) -> ConnId {
+    /// Returns the ID associated with the node message, or 0
+    /// if the message has no ID.
+    pub fn id(&self) -> NodeMessageId {
         match self {
             NodeMessage::V1 { .. } => 0,
             NodeMessage::V2 { id, .. } => *id,
+        }
+    }
+    /// Return the payload associated with the message.
+    pub fn into_payload(self) -> Payload {
+        match self {
+            NodeMessage::V1 { payload, .. } |
+            NodeMessage::V2 { payload, .. } => payload,
         }
     }
 }
 
 impl From<NodeMessage> for Payload {
     fn from(msg: NodeMessage) -> Payload {
-        match msg {
-            NodeMessage::V1 { payload, .. } | NodeMessage::V2 { payload, .. } => payload,
-        }
+        msg.into_payload()
     }
 }
 
@@ -47,7 +52,7 @@ impl From<json::NodeMessage> for NodeMessage {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Payload {
     SystemConnected(SystemConnected),
     SystemInterval(SystemInterval),
@@ -110,7 +115,7 @@ impl From<json::Payload> for Payload {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SystemConnected {
     pub genesis_hash: BlockHash,
     pub node: NodeDetails,
@@ -125,7 +130,7 @@ impl From<json::SystemConnected> for SystemConnected {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SystemInterval {
     pub peers: Option<u64>,
     pub txcount: Option<u64>,
@@ -152,7 +157,7 @@ impl From<json::SystemInterval> for SystemInterval {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Finalized {
     pub hash: BlockHash,
     pub height: Box<str>,
@@ -199,7 +204,7 @@ impl From<json::AfgReceived> for AfgReceived {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AfgAuthoritySet {
     pub authority_id: Box<str>,
     pub authorities: Box<str>,

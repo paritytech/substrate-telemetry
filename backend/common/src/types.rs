@@ -5,7 +5,6 @@ use crate::util::{now, MeanList};
 use crate::json;
 
 pub type NodeId = usize;
-pub type ConnId = u64;
 pub type BlockNumber = u64;
 pub type Timestamp = u64;
 pub type Address = Box<str>;
