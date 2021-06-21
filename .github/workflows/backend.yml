@@ -16,8 +16,8 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Build telemetry executables (in debug mode)
-      working-directory: ./backend/core
-      run: cargo build --verbose
+      working-directory: ./backend
+      run: cargo build --bins --verbose
 
     - name: Run tests
       working-directory: ./backend
