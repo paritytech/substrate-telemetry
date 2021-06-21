@@ -196,7 +196,6 @@ impl Aggregator {
                     // TODO: node_state.add_node. Every feed should know about node count changes.
                 },
                 ToAggregator::FromShardWebsocket(shard_conn_id, FromShardWebsocket::Remove { local_id }) => {
-                    println!("Removed node! {:?}", local_id);
                     if let Some(id) = to_global_node_id.remove_by_details(&(shard_conn_id, local_id)) {
                         // TODO: node_state.remove_node, Every feed should know about node count changes.
                     }
