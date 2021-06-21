@@ -167,7 +167,9 @@ async fn handle_websocket_connection<S>(websocket: ws::WebSocket, mut tx_to_aggr
         }
     }
 
-    // loops ended; attempt to close the connection gracefully:
+    // loops ended; attempt to close the connection gracefully.
+    // Note: IF we want to close with a status code and reason, we need to construct
+    // a ws::Message using `ws::Message::close_with`, rather than using this method:
     let _ = websocket.close().await;
 }
 
