@@ -89,8 +89,13 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
             let tx_to_aggregator = aggregator.subscribe_node();
             log::info!("Opening /submit connection from {:?}", addr);
             ws.on_upgrade(move |websocket| async move {
-                handle_websocket_connection(websocket, tx_to_aggregator, addr).await;
+                let (mut tx_to_aggregator, websocket) = handle_websocket_connection(websocket, tx_to_aggregator, addr).await;
                 log::info!("Closing /submit connection from {:?}", addr);
+                // Tell the aggregator that this connection has closed, so it can tidy up.
+                let _ = tx_to_aggregator.send(FromWebsocket::Disconnected).await;
+                // Note: IF we want to close with a status code and reason, we need to construct
+                // a ws::Message using `ws::Message::close_with`, rather than using this method:
+                let _ = websocket.close().await;
             })
         });
 
@@ -101,53 +106,38 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
 }
 
 /// This takes care of handling messages from an established socket connection.
-async fn handle_websocket_connection<S>(websocket: ws::WebSocket, mut tx_to_aggregator: S, addr: Option<SocketAddr>)
+async fn handle_websocket_connection<S>(mut websocket: ws::WebSocket, mut tx_to_aggregator: S, addr: Option<SocketAddr>) -> (S, ws::WebSocket)
     where S: futures::Sink<FromWebsocket, Error = anyhow::Error> + Unpin
 {
-    let mut websocket = websocket.fuse();
-
     // This could be a oneshot channel, but it's useful to be able to clone
     // messages, and we can't clone oneshot channel senders.
     let (close_connection_tx, mut close_connection_rx) = mpsc::channel(0);
 
-    // First, we wait until we receive a SystemConnected message.
-    // Until this turns up, we ignore other messages. We could buffer
-    // a few quite easily if we liked.
-    while let Some(msg) = websocket.next().await {
-        let node_message = match deserialize_ws_message(msg) {
-            Ok(Some(msg)) => msg,
-            Ok(None) => continue,
-            Err(e) => { log::error!("{}", e); break }
-        };
-
-        let message_id = node_message.id();
-        let payload = node_message.into_payload();
-
-        if let node::Payload::SystemConnected(info) = payload {
-            let _ = tx_to_aggregator.send(FromWebsocket::Add {
-                message_id,
-                ip: addr.map(|a| a.ip()),
-                node: info.node,
-                close_connection: close_connection_tx,
-            }).await;
-            break;
-        }
+    // Tell the aggregator about this new connection, and give it a way to close this connection:
+    let init_msg = FromWebsocket::Initialize {
+        close_connection: close_connection_tx
+    };
+    if let Err(e) = tx_to_aggregator.send(init_msg).await {
+        log::error!("Error sending message to aggregator: {}", e);
+        return (tx_to_aggregator, websocket);
     }
 
-    // Now, the node has been added, so we forward messages along as updates.
-    // We keep an eye on the close_connection channel; if that resolves, then
-    // end this loop and let the connection close gracefully.
+    // Now we've "initialized", wait for messages from the node. Messages will
+    // either be `SystemConnected` type messages that inform us that a new set
+    // of messages with some message ID will be sent (a node could have more
+    // than one of these), or updates linked to a specific message_id.
     loop {
-        futures::select_biased! {
+        tokio::select! {
             // The close channel has fired, so end the loop:
             _ = close_connection_rx.next() => {
+                log::info!("connection to {:?} being closed by aggregator", addr);
                 break
             },
             // A message was received; handle it:
             msg = websocket.next() => {
                 let msg = match msg {
                     Some(msg) => msg,
-                    None => break
+                    None => { log::warn!("Websocket connection from {:?} closed", addr); break }
                 };
 
                 let node_message = match deserialize_ws_message(msg) {
@@ -159,7 +149,19 @@ async fn handle_websocket_connection<S>(websocket: ws::WebSocket, mut tx_to_aggr
                 let message_id = node_message.id();
                 let payload = node_message.into_payload();
 
-                if let Err(e) = tx_to_aggregator.send(FromWebsocket::Update { message_id, payload } ).await {
+                // Until the aggregator receives an `Add` message, which we can create once
+                // we see one of these SystemConnected ones, it will ignore messages with
+                // the corresponding message_id.
+                if let node::Payload::SystemConnected(info) = payload {
+                    let _ = tx_to_aggregator.send(FromWebsocket::Add {
+                        message_id,
+                        ip: addr.map(|a| a.ip()),
+                        node: info.node,
+                    }).await;
+                }
+                // Anything that's not an "Add" is an Update. The aggregator will ignore
+                // updates against a message_id that hasn't first been Added, above.
+                else if let Err(e) = tx_to_aggregator.send(FromWebsocket::Update { message_id, payload } ).await {
                     log::error!("Failed to send node message to aggregator: {}", e);
                     continue;
                 }
@@ -167,10 +169,8 @@ async fn handle_websocket_connection<S>(websocket: ws::WebSocket, mut tx_to_aggr
         }
     }
 
-    // loops ended; attempt to close the connection gracefully.
-    // Note: IF we want to close with a status code and reason, we need to construct
-    // a ws::Message using `ws::Message::close_with`, rather than using this method:
-    let _ = websocket.close().await;
+    // Return what we need to close the connection gracefully:
+    (tx_to_aggregator, websocket)
 }
 
 /// Deserialize an incoming websocket message, returning an error if something

@@ -69,4 +69,8 @@ impl <Details> AssignId<Details> where Details: Eq + Hash + Clone {
     pub fn clear(&mut self) {
         *self = AssignId::new()
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = (Id, &Details)> {
+        self.from_id.iter().map(|(id, details)| (*id, details))
+    }
 }

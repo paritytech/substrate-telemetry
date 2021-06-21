@@ -29,22 +29,27 @@ enum ToAggregator {
 /// messages from it will be ignored.
 #[derive(Clone,Debug)]
 pub enum FromWebsocket {
-    /// Tell the aggregator about a new node.
-    Add {
-        message_id: node::NodeMessageId,
-        ip: Option<std::net::IpAddr>,
-        node: common::types::NodeDetails,
+    /// Fire this when the connection is established.
+    Initialize {
         /// When a message is sent back up this channel, we terminate
         /// the websocket connection and force the node to reconnect
         /// so that it sends its system info again incase the telemetry
         /// core has restarted.
         close_connection: mpsc::Sender<()>
     },
+    /// Tell the aggregator about a new node.
+    Add {
+        message_id: node::NodeMessageId,
+        ip: Option<std::net::IpAddr>,
+        node: common::types::NodeDetails,
+    },
     /// Update/pass through details about a node.
     Update {
         message_id: node::NodeMessageId,
         payload: node::Payload
-    }
+    },
+    /// Make a note when the node disconnects.
+    Disconnected
 }
 
 pub type FromAggregator = internal_messages::FromShardAggregator;
@@ -139,10 +144,13 @@ impl Aggregator {
                     connected_to_telemetry_core = false;
                     log::info!("Disconnected from telemetry core");
                 },
-                ToAggregator::FromWebsocket(conn_id, FromWebsocket::Add { message_id, ip, node, close_connection }) => {
-                    // Keep the close_connection channel incase we need it:
+                ToAggregator::FromWebsocket(_conn_id, FromWebsocket::Initialize { close_connection }) => {
+                    // We boot all connections on a reconnect-to-core to force new systemconnected
+                    // messages to be sent. We could boot on muting, but need to be careful not to boot
+                    // connections where we mute one set of messages it sends and not others.
                     close_connections.push(close_connection);
-
+                },
+                ToAggregator::FromWebsocket(conn_id, FromWebsocket::Add { message_id, ip, node }) => {
                     // Don't bother doing anything else if we're disconnected, since we'll force the
                     // ndoe to reconnect anyway when the backend does:
                     if !connected_to_telemetry_core { continue }
@@ -177,6 +185,20 @@ impl Aggregator {
                         local_id,
                         payload
                     }).await;
+                },
+                ToAggregator::FromWebsocket(disconnected_conn_id, FromWebsocket::Disconnected) => {
+                    // Find all of the local IDs corresponding to the disconnected connection ID and
+                    // remove them, telling Telemetry Core about them too. This could be more efficient,
+                    // but the mapping isn't currently cached and it's not a super frequent op.
+                    let local_ids_disconnected: Vec<_> = to_local_id.iter()
+                        .filter(|(_, &(conn_id, _))| disconnected_conn_id == conn_id)
+                        .map(|(local_id, _)| local_id)
+                        .collect();
+
+                    for local_id in local_ids_disconnected {
+                        to_local_id.remove_by_id(local_id);
+                        let _ = tx_to_telemetry_core.send(FromShardAggregator::RemoveNode { local_id }).await;
+                    }
                 },
                 ToAggregator::FromTelemetryCore(FromTelemetryCore::Mute { local_id  }) => {
                     // Ignore incoming messages if we're not connected to the backend:

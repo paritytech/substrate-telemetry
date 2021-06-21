@@ -199,6 +199,9 @@ async fn handle_shard_websocket_connection<S>(mut websocket: ws::WebSocket, mut 
                     internal_messages::FromShardAggregator::UpdateNode { payload, local_id } => {
                         FromShardWebsocket::Update { local_id, payload }
                     },
+                    internal_messages::FromShardAggregator::RemoveNode { local_id } => {
+                        FromShardWebsocket::Remove { local_id }
+                    },
                 };
                 if let Err(e) = tx_to_aggregator.send(aggregator_msg).await {
                     log::error!("Failed to send message to aggregator; closing shard: {}", e);

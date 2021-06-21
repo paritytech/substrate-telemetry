@@ -26,6 +26,10 @@ pub enum FromShardAggregator {
         local_id: LocalId,
         payload: Payload,
     },
+    /// Inform the core that a node has been removed
+    RemoveNode {
+        local_id: LocalId
+    }
 }
 
 /// Message sent form the backend core to the shard

@@ -38,6 +38,10 @@ pub enum FromShardWebsocket {
     Update {
         local_id: LocalId,
         payload: node::Payload
+    },
+    /// Tell the aggregator that a node has been removed when it disconnects.
+    Remove {
+        local_id: LocalId,
     }
 }
 
@@ -138,44 +142,72 @@ impl Aggregator {
     // any more, this task will gracefully end.
     async fn handle_messages(mut rx_from_external: mpsc::Receiver<ToAggregator>, denylist: Vec<String>) {
 
-        let mut nodes_state = State::new();
+        let mut node_state = State::new();
 
         // Maintain mappings from the shard connection ID and local ID of messages to a global ID
         // that uniquely identifies nodes in our node state.
-        let mut to_global_id = AssignId::new();
+        let mut to_global_node_id = AssignId::new();
 
-        // Temporary: if we drop channels to shards, they will be booted:
-        let mut to_shards = vec![];
+        // Keep track of channels to communicate with feeds and shards:
+        let mut feed_channels = HashMap::new();
+        let mut shard_channels = HashMap::new();
+
+        // What chains have aour feeds subscribed to (one at a time at the mo):
+        let mut feed_conn_id_to_chain: HashMap<ConnId, Box<str>> = HashMap::new();
+        let mut chain_to_feed_conn_ids: HashMap<Box<str>, HashSet<ConnId>> = HashMap::new();
+        let mut feed_conn_id_finality: HashSet<ConnId> = HashSet::new();
 
         // Now, loop and receive messages to handle.
         while let Some(msg) = rx_from_external.next().await {
             match msg {
                 ToAggregator::FromFeedWebsocket(feed_conn_id, FromFeedWebsocket::Initialize { channel }) => {
+                    feed_channels.insert(feed_conn_id, channel);
 
+                    // TODO: `feed::AddedChain` message to tell feed about current chains.
                 },
                 ToAggregator::FromFeedWebsocket(feed_conn_id, FromFeedWebsocket::Ping { chain }) => {
-
+                    // TODO: Return with feed::Pong(chain) feed message.
                 },
                 ToAggregator::FromFeedWebsocket(feed_conn_id, FromFeedWebsocket::Subscribe { chain }) => {
+                    // Unsubscribe from previous chain if subscribed to one:
+                    if let Some(feed_ids) = chain_to_feed_conn_ids.get_mut(&chain) {
+                        feed_ids.remove(&feed_conn_id);
+                    }
+
+                    // Subscribe to the new chain:
+                    feed_conn_id_to_chain.insert(feed_conn_id, chain.clone());
+                    chain_to_feed_conn_ids.entry(chain).or_default().insert(feed_conn_id);
 
                 },
-                ToAggregator::FromFeedWebsocket(feed_conn_id, FromFeedWebsocket::SendFinality { chain }) => {
-
+                ToAggregator::FromFeedWebsocket(feed_conn_id, FromFeedWebsocket::SendFinality { chain: _ }) => {
+                    feed_conn_id_finality.insert(feed_conn_id);
+                    // TODO: Do we care about the chain here?
                 },
-                ToAggregator::FromFeedWebsocket(feed_conn_id, FromFeedWebsocket::NoMoreFinality { chain }) => {
-
+                ToAggregator::FromFeedWebsocket(feed_conn_id, FromFeedWebsocket::NoMoreFinality { chain: _ }) => {
+                    feed_conn_id_finality.remove(&feed_conn_id);
+                    // TODO: Do we care about the chain here?
                 },
                 ToAggregator::FromShardWebsocket(shard_conn_id, FromShardWebsocket::Initialize { channel }) => {
-                    to_shards.push(channel);
+                    shard_channels.insert(shard_conn_id, channel);
                 },
                 ToAggregator::FromShardWebsocket(shard_conn_id, FromShardWebsocket::Add { local_id, ip, node }) => {
-                    let global_id = to_global_id.assign_id((shard_conn_id, local_id));
+                    let global_node_id = to_global_node_id.assign_id((shard_conn_id, local_id));
+
+                    // TODO: node_state.add_node. Every feed should know about node count changes.
+                },
+                ToAggregator::FromShardWebsocket(shard_conn_id, FromShardWebsocket::Remove { local_id }) => {
+                    println!("Removed node! {:?}", local_id);
+                    if let Some(id) = to_global_node_id.remove_by_details(&(shard_conn_id, local_id)) {
+                        // TODO: node_state.remove_node, Every feed should know about node count changes.
+                    }
                 },
                 ToAggregator::FromShardWebsocket(shard_conn_id, FromShardWebsocket::Update { local_id, payload }) => {
-                    let global_id = match to_global_id.get_id(&(shard_conn_id, local_id)) {
+                    let global_node_id = match to_global_node_id.get_id(&(shard_conn_id, local_id)) {
                         Some(id) => id,
                         None => continue
                     };
+
+                    // TODO: node_state.update_node, then handle returned diffs
                 },
             }
         }
