@@ -91,8 +91,10 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
             let tx_to_aggregator = shard_aggregator.subscribe_shard();
             log::info!("Opening /shard_submit connection from {:?}", addr);
             ws.on_upgrade(move |websocket| async move {
-                let websocket = handle_shard_websocket_connection(websocket, tx_to_aggregator).await;
+                let (mut tx_to_aggregator, websocket) = handle_shard_websocket_connection(websocket, tx_to_aggregator).await;
                 log::info!("Closing /shard_submit connection from {:?}", addr);
+                // Tell the aggregator that this connection has closed, so it can tidy up.
+                let _ = tx_to_aggregator.send(FromShardWebsocket::Disconnected).await;
                 let _ = websocket.close().await;
             })
         });
@@ -106,8 +108,10 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
             let tx_to_aggregator = feed_aggregator.subscribe_feed();
             log::info!("Opening /feed connection from {:?}", addr);
             ws.on_upgrade(move |websocket| async move {
-                let websocket = handle_feed_websocket_connection(websocket, tx_to_aggregator).await;
+                let (mut tx_to_aggregator, websocket) = handle_feed_websocket_connection(websocket, tx_to_aggregator).await;
                 log::info!("Closing /feed connection from {:?}", addr);
+                // Tell the aggregator that this connection has closed, so it can tidy up.
+                let _ = tx_to_aggregator.send(FromFeedWebsocket::Disconnected).await;
                 let _ = websocket.close().await;
             })
         });
@@ -121,7 +125,7 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
 }
 
 /// This handles messages coming to/from a shard connection
-async fn handle_shard_websocket_connection<S>(mut websocket: ws::WebSocket, mut tx_to_aggregator: S) -> ws::WebSocket
+async fn handle_shard_websocket_connection<S>(mut websocket: ws::WebSocket, mut tx_to_aggregator: S) -> (S, ws::WebSocket)
     where S: futures::Sink<FromShardWebsocket, Error = anyhow::Error> + Unpin
 {
     let (tx_to_shard_conn, mut rx_from_aggregator) = mpsc::channel(10);
@@ -132,7 +136,7 @@ async fn handle_shard_websocket_connection<S>(mut websocket: ws::WebSocket, mut 
     };
     if let Err(e) = tx_to_aggregator.send(init_msg).await {
         log::error!("Error sending message to aggregator: {}", e);
-        return websocket;
+        return (tx_to_aggregator, websocket);
     }
 
     // Loop, handling new messages from the shard or from the aggregator:
@@ -213,14 +217,15 @@ async fn handle_shard_websocket_connection<S>(mut websocket: ws::WebSocket, mut 
     }
 
     // loop ended; give socket back to parent:
-    websocket
+    (tx_to_aggregator, websocket)
 }
 
 /// This handles messages coming from a feed connection
-async fn handle_feed_websocket_connection<S>(mut websocket: ws::WebSocket, mut tx_to_aggregator: S) -> ws::WebSocket
+async fn handle_feed_websocket_connection<S>(mut websocket: ws::WebSocket, mut tx_to_aggregator: S) -> (S, ws::WebSocket)
     where S: futures::Sink<FromFeedWebsocket, Error = anyhow::Error> + Unpin
 {
-    let (tx_to_feed_conn, mut rx_from_aggregator) = mpsc::channel(10);
+    // unbounded channel so that slow feeds don't block aggregator progress:
+    let (tx_to_feed_conn, mut rx_from_aggregator) = mpsc::unbounded();
 
     // Tell the aggregator about this new connection, and give it a way to send messages to us:
     let init_msg = FromFeedWebsocket::Initialize {
@@ -228,7 +233,7 @@ async fn handle_feed_websocket_connection<S>(mut websocket: ws::WebSocket, mut t
     };
     if let Err(e) = tx_to_aggregator.send(init_msg).await {
         log::error!("Error sending message to aggregator: {}", e);
-        return websocket;
+        return (tx_to_aggregator, websocket);
     }
 
     // Loop, handling new messages from the shard or from the aggregator:
@@ -290,5 +295,5 @@ async fn handle_feed_websocket_connection<S>(mut websocket: ws::WebSocket, mut t
     }
 
     // loop ended; give socket back to parent:
-    websocket
+    (tx_to_aggregator, websocket)
 }

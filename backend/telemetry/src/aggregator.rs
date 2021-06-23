@@ -49,7 +49,9 @@ pub enum FromShardWebsocket {
     /// Tell the aggregator that a node has been removed when it disconnects.
     Remove {
         local_id: LocalId,
-    }
+    },
+    /// The shard is disconnected.
+    Disconnected
 }
 
 /// The aggregator can these messages back to a shard connection.
@@ -66,8 +68,10 @@ pub enum ToShardWebsocket {
 pub enum FromFeedWebsocket {
     /// When the socket is opened, it'll send this first
     /// so that we have a way to communicate back to it.
+    /// Unbounded so that slow feeds don't block aggregato
+    /// progress.
     Initialize {
-        channel: mpsc::Sender<ToFeedWebsocket>,
+        channel: mpsc::UnboundedSender<ToFeedWebsocket>,
     },
     /// The feed can subscribe to a chain to receive
     /// messages relating to it.
@@ -81,7 +85,9 @@ pub enum FromFeedWebsocket {
     /// An explicit ping message.
     Ping {
         chain: Box<str>
-    }
+    },
+    /// The feed is disconnected.
+    Disconnected
 }
 
 // The frontend sends text based commands; parse them into these messages:
@@ -166,6 +172,7 @@ impl Aggregator {
         // Now, loop and receive messages to handle.
         while let Some(msg) = rx_from_external.next().await {
             match msg {
+                // FROM FEED
                 ToAggregator::FromFeedWebsocket(feed_conn_id, FromFeedWebsocket::Initialize { mut channel }) => {
                     feed_channels.insert(feed_conn_id, channel.clone());
 
@@ -268,6 +275,16 @@ impl Aggregator {
                 ToAggregator::FromFeedWebsocket(feed_conn_id, FromFeedWebsocket::NoMoreFinality) => {
                     feed_conn_id_finality.remove(&feed_conn_id);
                 },
+                ToAggregator::FromFeedWebsocket(feed_conn_id, FromFeedWebsocket::Disconnected) => {
+                    // The feed has disconnected; clean up references to it:
+                    if let Some(chain) = feed_conn_id_to_chain.remove(&feed_conn_id) {
+                        chain_to_feed_conn_ids.remove(&chain);
+                    }
+                    feed_channels.remove(&feed_conn_id);
+                    feed_conn_id_finality.remove(&feed_conn_id);
+                },
+
+                // FROM SHARD
                 ToAggregator::FromShardWebsocket(shard_conn_id, FromShardWebsocket::Initialize { channel }) => {
                     shard_channels.insert(shard_conn_id, channel);
                 },
@@ -325,6 +342,10 @@ impl Aggregator {
 
                     // TODO: node_state.update_node, then handle returned diffs
                 },
+                ToAggregator::FromShardWebsocket(shard_conn_id, FromShardWebsocket::Disconnected) => {
+                    // The shard has disconnected; remove the shard channel, but also
+                    // remove any nodes associated with the shard, firing the relevant feed messages.
+                }
             }
         }
     }
