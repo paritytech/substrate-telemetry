@@ -5,6 +5,7 @@ authors = ["Parity Technologies Ltd. <admin@parity.io>"]
 edition = "2018"
 
 [dependencies]
+bimap = "0.6.1"
 bytes = "1.0.1"
 fnv = "1.0.7"
 hex = "0.4.3"

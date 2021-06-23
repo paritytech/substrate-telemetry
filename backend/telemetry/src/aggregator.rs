@@ -1,9 +1,9 @@
 use common::{
     internal_messages::{GlobalId, LocalId},
     node,
-    assign_id::AssignId,
     util::now
 };
+use bimap::BiMap;
 use std::{str::FromStr, sync::Arc};
 use std::sync::atomic::AtomicU64;
 use futures::channel::{ mpsc, oneshot };
@@ -155,7 +155,7 @@ impl Aggregator {
 
         // Maintain mappings from the shard connection ID and local ID of messages to a global ID
         // that uniquely identifies nodes in our node state.
-        let mut to_global_node_id = AssignId::new();
+        let mut global_ids: BiMap<GlobalId, (u64, LocalId)> = BiMap::new();
 
         // Keep track of channels to communicate with feeds and shards:
         let mut feed_channels = HashMap::new();
@@ -294,13 +294,13 @@ impl Aggregator {
                     // TODO: node_state.add_node. Every feed should know about node count changes.
                 },
                 ToAggregator::FromShardWebsocket(shard_conn_id, FromShardWebsocket::Remove { local_id }) => {
-                    if let Some(id) = to_global_node_id.remove_by_details(&(shard_conn_id, local_id)) {
+                    if let Some(id) = global_ids.remove_by_right(&(shard_conn_id, local_id)) {
                         // TODO: node_state.remove_node, Every feed should know about node count changes.
                     }
                 },
                 ToAggregator::FromShardWebsocket(shard_conn_id, FromShardWebsocket::Update { local_id, payload }) => {
                     // TODO: Fill this all in...
-                    let global_node_id = match to_global_node_id.get_id(&(shard_conn_id, local_id)) {
+                    let global_node_id = match global_ids.get_by_right(&(shard_conn_id, local_id)) {
                         Some(id) => id,
                         None => continue
                     };

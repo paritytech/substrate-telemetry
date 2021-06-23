@@ -1,5 +1,6 @@
-use std::{collections::HashMap, hash::Hash};
+use std::hash::Hash;
 use serde::{Serialize,Deserialize};
+use bimap::BiMap;
 
 #[derive(Clone,Copy,Debug,Hash,PartialEq,Eq,Serialize,Deserialize)]
 pub struct Id(usize);
@@ -7,6 +8,11 @@ pub struct Id(usize);
 impl std::convert::From<Id> for usize {
     fn from(id: Id) -> usize {
         id.0
+    }
+}
+impl std::convert::From<usize> for Id {
+    fn from(n: usize) -> Id {
+        Id(n)
     }
 }
 
@@ -17,60 +23,45 @@ impl std::convert::From<Id> for usize {
 #[derive(Debug)]
 pub struct AssignId<Details> {
     current_id: Id,
-    from_details: HashMap<Details, Id>,
-    from_id: HashMap<Id, Details>
+    mapping: BiMap<Id, Details>
 }
 
-impl <Details> AssignId<Details> where Details: Eq + Hash + Clone {
+impl <Details> AssignId<Details> where Details: Eq + Hash {
     pub fn new() -> Self {
         Self {
             current_id: Id(0),
-            from_details: HashMap::new(),
-            from_id: HashMap::new()
+            mapping: BiMap::new()
         }
     }
 
     pub fn assign_id(&mut self, details: Details) -> Id {
         let this_id = self.current_id;
         self.current_id.0 += 1;
-
-        self.from_details.insert(details.clone(), this_id);
-        self.from_id.insert(this_id, details);
-
+        self.mapping.insert(this_id, details);
         this_id
     }
 
     pub fn get_details(&mut self, id: Id) -> Option<&Details> {
-        self.from_id.get(&id)
+        self.mapping.get_by_left(&id)
     }
 
     pub fn get_id(&mut self, details: &Details) -> Option<Id> {
-        self.from_details.get(details).map(|id| *id)
+        self.mapping.get_by_right(details).map(|id| *id)
     }
 
     pub fn remove_by_id(&mut self, id: Id) -> Option<Details> {
-        if let Some(details) = self.from_id.remove(&id) {
-            self.from_details.remove(&details);
-            Some(details)
-        } else {
-            None
-        }
+        self.mapping.remove_by_left(&id).map(|(_,details)| details)
     }
 
     pub fn remove_by_details(&mut self, details: &Details) -> Option<Id> {
-        if let Some(id) = self.from_details.remove(&details) {
-            self.from_id.remove(&id);
-            Some(id)
-        } else {
-            None
-        }
+        self.mapping.remove_by_right(&details).map(|(id,_)| id)
     }
 
     pub fn clear(&mut self) {
-        *self = AssignId::new()
+        *self = AssignId::new();
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (Id, &Details)> {
-        self.from_id.iter().map(|(id, details)| (*id, details))
+        self.mapping.iter().map(|(id, details)| (*id, details))
     }
 }
