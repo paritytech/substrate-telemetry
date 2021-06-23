@@ -151,8 +151,8 @@ async fn handle_shard_websocket_connection<S>(mut websocket: ws::WebSocket, mut 
                 };
 
                 let internal_msg = match msg {
-                    ToShardWebsocket::Mute { local_id } => {
-                        internal_messages::FromTelemetryCore::Mute { local_id }
+                    ToShardWebsocket::Mute { local_id, reason } => {
+                        internal_messages::FromTelemetryCore::Mute { local_id, reason }
                     }
                 };
 

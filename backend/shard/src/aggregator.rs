@@ -202,7 +202,7 @@ impl Aggregator {
                         let _ = tx_to_telemetry_core.send(FromShardAggregator::RemoveNode { local_id }).await;
                     }
                 },
-                ToAggregator::FromTelemetryCore(FromTelemetryCore::Mute { local_id  }) => {
+                ToAggregator::FromTelemetryCore(FromTelemetryCore::Mute { local_id, reason: _  }) => {
                     // Ignore incoming messages if we're not connected to the backend:
                     if !connected_to_telemetry_core { continue }
 

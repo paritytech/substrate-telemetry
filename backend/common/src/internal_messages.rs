@@ -9,9 +9,6 @@ use serde::{Deserialize, Serialize};
 /// might send data on behalf of more than one chain.
 pub type LocalId = Id;
 
-/// A global ID assigned to messages from each different pair of ConnId+LocalId.
-pub type GlobalId = usize;
-
 /// Message sent from the shard to the backend core
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub enum FromShardAggregator {
@@ -37,6 +34,14 @@ pub enum FromShardAggregator {
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub enum FromTelemetryCore {
 	Mute {
-		local_id: LocalId
+		local_id: LocalId,
+        reason: MuteReason
 	}
+}
+
+/// Why is the thing being muted?
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub enum MuteReason {
+    Overquota,
+    ChainNotAllowed
 }

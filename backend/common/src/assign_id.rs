@@ -16,7 +16,7 @@ impl std::convert::From<usize> for Id {
     }
 }
 
-/// A struct that allows you to assign ID to an arbitrary set of
+/// A struct that allows you to assign an ID to an arbitrary set of
 /// details (so long as they are Eq+Hash+Clone), and then access
 /// the assigned ID given those details or access the details given
 /// the ID.

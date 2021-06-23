@@ -1,60 +1,48 @@
 use std::sync::Arc;
 use std::collections::{ HashSet, HashMap };
 use common::types::{ BlockHash };
-use common::internal_messages::{ GlobalId };
 use super::node::Node;
-use once_cell::sync::Lazy;
-use common::types::{Block, NodeDetails, NodeId, NodeLocation, Timestamp};
+use common::types::{Block, NodeDetails, NodeLocation, Timestamp};
 use common::util::{now, DenseMap, NumStats};
 use common::node::Payload;
 use std::iter::IntoIterator;
 
-use super::chain::Chain;
+use super::chain::{ self, Chain };
 
-pub type ChainId = usize;
+pub type NodeId = usize;
 pub type Label = Arc<str>;
 
 /// Our state constains node and chain information
 pub struct State {
-    chains: DenseMap<Chain>,
-    nodes: HashMap<GlobalId, Node>,
-    chains_by_genesis_hash: HashMap<BlockHash, ChainId>,
-    chains_by_label: HashMap<Label, ChainId>,
+    next_id: NodeId,
+    chains: HashMap<BlockHash, Chain>,
+    chains_by_label: HashMap<Label, BlockHash>,
+    chains_by_node: HashMap<NodeId, BlockHash>,
     /// Denylist for networks we do not want to allow connecting.
     denylist: HashSet<String>,
 }
 
-/// Labels of chains we consider "first party". These chains allow any
-/// number of nodes to connect.
-static FIRST_PARTY_NETWORKS: Lazy<HashSet<&'static str>> = Lazy::new(|| {
-    let mut set = HashSet::new();
-    set.insert("Polkadot");
-    set.insert("Kusama");
-    set.insert("Westend");
-    set.insert("Rococo");
-    set
-});
-
-/// Max number of nodes allowed to connect to the telemetry server.
-const THIRD_PARTY_NETWORKS_MAX_NODES: usize = 500;
-
 /// Adding a node to a chain leads to this result:
-pub enum AddNodeResult {
+pub enum AddNodeResult<'a> {
     /// The chain is on the "deny list", so we can't add the node
     ChainOnDenyList,
     /// The chain is over quota (too many nodes connected), so can't add the node
     ChainOverQuota,
     /// The node was added to the chain
-    NodeAddedToChain(NodeAddedToChain)
+    NodeAddedToChain(NodeAddedToChain<'a>)
 }
 
-pub struct NodeAddedToChain {
-    /// The label for the chain (which may have changed as a result of adding the node):
-    chain_label: Arc<str>,
+pub struct NodeAddedToChain<'a> {
+    /// The ID assigned to this node.
+    pub id: NodeId,
+    /// The chain the node was added to.
+    pub chain: &'a Chain,
+    /// The node that was added.
+    pub node: &'a Node,
+    /// Is this chain newly added?
+    pub chain_just_added: bool,
     /// Has the chain label been updated?
-    has_chain_label_changed: bool,
-    // How many nodes now exist in the chain?
-    chain_node_count: usize
+    pub has_chain_label_changed: bool
 }
 
 pub struct RemoveNodeResult {
@@ -65,10 +53,10 @@ pub struct RemoveNodeResult {
 impl State {
     pub fn new<T: IntoIterator<Item=String>>(denylist: T) -> State {
         State {
-            chains: DenseMap::new(),
-            nodes: HashMap::new(),
-            chains_by_genesis_hash: HashMap::new(),
+            next_id: 0,
+            chains: HashMap::new(),
             chains_by_label: HashMap::new(),
+            chains_by_node: HashMap::new(),
             denylist: denylist.into_iter().collect()
         }
     }
@@ -82,12 +70,40 @@ impl State {
     pub fn get_chain_by_label(&self, label: &str) -> Option<&Chain> {
         self.chains_by_label
             .get(label)
-            .and_then(|chain_id| self.chains.get(*chain_id))
+            .and_then(|chain_id| self.chains.get(chain_id))
     }
 
-    pub fn get_nodes_in_chain<'s>(&'s self, chain: &'s Chain) -> impl Iterator<Item=(GlobalId,&Node)> {
-        chain.node_ids()
-            .filter_map(move |id| self.nodes.get(&id).map(|node| (id, node)))
+    pub fn add_node(&mut self, genesis_hash: BlockHash, node_details: NodeDetails) -> AddNodeResult<'_> {
+        if self.denylist.contains(&*node_details.chain) {
+            return AddNodeResult::ChainOnDenyList;
+        }
+
+        let chain = self.chains
+            .entry(genesis_hash)
+            .or_insert_with(|| Chain::new(node_details.chain.clone()));
+
+        if !chain.can_add_node() {
+            return AddNodeResult::ChainOverQuota;
+        }
+
+        let node_id = self.next_id;
+        self.next_id += 1;
+
+        match chain.add_node(node_id, node_details) {
+            chain::AddNodeResult::Overquota => {
+                AddNodeResult::ChainOverQuota
+            },
+            chain::AddNodeResult::Added { chain_renamed } => {
+                let node = chain.get_node(node_id).unwrap();
+                AddNodeResult::NodeAddedToChain(NodeAddedToChain {
+                    id: node_id,
+                    chain: chain,
+                    node: node,
+                    chain_just_added: chain.node_count() == 1,
+                    has_chain_label_changed: chain_renamed
+                })
+            }
+        }
     }
 
     // /// Add a new node to our state.
@@ -117,13 +133,3 @@ impl State {
     // }
 }
 
-/// First party networks (Polkadot, Kusama etc) are allowed any number of nodes.
-/// Third party networks are allowed `THIRD_PARTY_NETWORKS_MAX_NODES` nodes and
-/// no more.
-fn max_nodes(label: &str) -> usize {
-    if FIRST_PARTY_NETWORKS.contains(label) {
-        usize::MAX
-    } else {
-        THIRD_PARTY_NETWORKS_MAX_NODES
-    }
-}
