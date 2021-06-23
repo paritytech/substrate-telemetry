@@ -1,5 +1,6 @@
 mod aggregator;
 mod state;
+mod feed_message;
 
 use std::net::SocketAddr;
 use std::str::FromStr;
@@ -193,8 +194,8 @@ async fn handle_shard_websocket_connection<S>(mut websocket: ws::WebSocket, mut 
 
                 // Convert and send to the aggregator:
                 let aggregator_msg = match msg {
-                    internal_messages::FromShardAggregator::AddNode { ip, node, local_id } => {
-                        FromShardWebsocket::Add { ip, node, local_id }
+                    internal_messages::FromShardAggregator::AddNode { ip, node, local_id, genesis_hash } => {
+                        FromShardWebsocket::Add { ip, node, genesis_hash, local_id }
                     },
                     internal_messages::FromShardAggregator::UpdateNode { payload, local_id } => {
                         FromShardWebsocket::Update { local_id, payload }
@@ -241,7 +242,13 @@ async fn handle_feed_websocket_connection<S>(mut websocket: ws::WebSocket, mut t
                     None => break
                 };
 
-                println!("TODO: encode message and send down feed websocket: {:?}", msg);
+                // Send messages to the client (currently the only message is
+                // pre-serialized bytes that we send as binary):
+                match msg {
+                    ToFeedWebsocket::Bytes(bytes) => {
+                        let _ = websocket.send(ws::Message::binary(bytes)).await;
+                    }
+                }
             }
             // FRONTEND -> AGGREGATOR
             msg = websocket.next() => {

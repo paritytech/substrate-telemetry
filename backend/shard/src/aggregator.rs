@@ -1,4 +1,4 @@
-use common::{internal_messages::{self, LocalId}, node, assign_id::AssignId};
+use common::{internal_messages::{self, LocalId}, node, assign_id::AssignId, types::BlockHash};
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
 use futures::{channel::mpsc, future};
@@ -42,6 +42,7 @@ pub enum FromWebsocket {
         message_id: node::NodeMessageId,
         ip: Option<std::net::IpAddr>,
         node: common::types::NodeDetails,
+        genesis_hash: BlockHash
     },
     /// Update/pass through details about a node.
     Update {
@@ -150,7 +151,7 @@ impl Aggregator {
                     // connections where we mute one set of messages it sends and not others.
                     close_connections.push(close_connection);
                 },
-                ToAggregator::FromWebsocket(conn_id, FromWebsocket::Add { message_id, ip, node }) => {
+                ToAggregator::FromWebsocket(conn_id, FromWebsocket::Add { message_id, ip, node, genesis_hash }) => {
                     // Don't bother doing anything else if we're disconnected, since we'll force the
                     // ndoe to reconnect anyway when the backend does:
                     if !connected_to_telemetry_core { continue }
@@ -162,6 +163,7 @@ impl Aggregator {
                     let _ = tx_to_telemetry_core.send(FromShardAggregator::AddNode {
                         ip,
                         node,
+                        genesis_hash,
                         local_id
                     }).await;
                 },

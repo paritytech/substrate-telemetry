@@ -157,6 +157,7 @@ async fn handle_websocket_connection<S>(mut websocket: ws::WebSocket, mut tx_to_
                         message_id,
                         ip: addr.map(|a| a.ip()),
                         node: info.node,
+                        genesis_hash: info.genesis_hash,
                     }).await;
                 }
                 // Anything that's not an "Add" is an Update. The aggregator will ignore

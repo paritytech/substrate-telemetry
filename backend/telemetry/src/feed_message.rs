@@ -1,15 +1,14 @@
-//! This module provides the messages that will be
-//! sent to subscribing feeds.
+//! This module provides a way of encoding the various messages that we'll
+//! send to subscribed feeds (browsers).
 
-use serde::ser::{SerializeTuple, Serializer};
 use serde::Serialize;
 use std::mem;
 
-use super::node::Node;
+use crate::state::Node;
 use serde_json::to_writer;
 use common::types::{
     Address, BlockDetails, BlockHash, BlockNumber, NodeHardware, NodeIO, NodeId, NodeStats,
-    Timestamp, NodeDetails,
+    Timestamp
 };
 
 pub trait FeedMessage {
@@ -65,6 +64,8 @@ impl FeedMessageSerializer {
         let _ = to_writer(&mut self.buffer, value);
     }
 
+    /// Return the bytes we've serialized so far and prepare a new buffer. If you're
+    /// finished serializing data, prefer [`FeedMessageSerializer::into_finalized`]
     pub fn finalize(&mut self) -> Option<Vec<u8>> {
         if self.buffer.is_empty() {
             return None;
@@ -75,6 +76,16 @@ impl FeedMessageSerializer {
         let bytes = mem::replace(&mut self.buffer, Vec::with_capacity(BUFCAP));
 
         Some(bytes)
+    }
+
+    /// Return the bytes that we've serialized so far, consuming the serializer.
+    pub fn into_finalized(mut self) -> Option<Vec<u8>> {
+        if self.buffer.is_empty() {
+            return None;
+        }
+
+        self.buffer.push(b']');
+        Some(self.buffer)
     }
 }
 

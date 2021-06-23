@@ -1,4 +1,9 @@
-use common::{internal_messages::{GlobalId, LocalId}, node, assign_id::AssignId};
+use common::{
+    internal_messages::{GlobalId, LocalId},
+    node,
+    assign_id::AssignId,
+    util::now
+};
 use std::{str::FromStr, sync::Arc};
 use std::sync::atomic::AtomicU64;
 use futures::channel::{ mpsc, oneshot };
@@ -7,6 +12,7 @@ use tokio::net::TcpStream;
 use tokio_util::compat::{ TokioAsyncReadCompatExt };
 use std::collections::{ HashMap, HashSet };
 use crate::state::State;
+use crate::feed_message::{ self, FeedMessageSerializer };
 
 /// A unique Id is assigned per websocket connection (or more accurately,
 /// per feed socket and per shard socket). This can be combined with the
@@ -33,6 +39,7 @@ pub enum FromShardWebsocket {
         local_id: LocalId,
         ip: Option<std::net::IpAddr>,
         node: common::types::NodeDetails,
+        genesis_hash: common::types::BlockHash
     },
     /// Update/pass through details about a node.
     Update {
@@ -68,13 +75,9 @@ pub enum FromFeedWebsocket {
         chain: Box<str>
     },
     /// The feed wants finality info for the chain, too.
-    SendFinality {
-        chain: Box<str>
-    },
+    SendFinality,
     /// The feed doesn't want any more finality info for the chain.
-    NoMoreFinality {
-        chain: Box<str>
-    },
+    NoMoreFinality,
     /// An explicit ping message.
     Ping {
         chain: Box<str>
@@ -92,8 +95,8 @@ impl FromStr for FromFeedWebsocket {
         match cmd {
             "ping" => Ok(FromFeedWebsocket::Ping { chain }),
             "subscribe" => Ok(FromFeedWebsocket::Subscribe { chain }),
-            "send-finality" => Ok(FromFeedWebsocket::SendFinality { chain }),
-            "no-more-finality" => Ok(FromFeedWebsocket::NoMoreFinality { chain }),
+            "send-finality" => Ok(FromFeedWebsocket::SendFinality),
+            "no-more-finality" => Ok(FromFeedWebsocket::NoMoreFinality),
             _ => return Err(anyhow::anyhow!("Command {} not recognised", cmd))
         }
     }
@@ -102,7 +105,7 @@ impl FromStr for FromFeedWebsocket {
 /// The aggregator can these messages back to a feed connection.
 #[derive(Debug)]
 pub enum ToFeedWebsocket {
-
+    Bytes(Vec<u8>)
 }
 
 #[derive(Clone)]
@@ -142,7 +145,7 @@ impl Aggregator {
     // any more, this task will gracefully end.
     async fn handle_messages(mut rx_from_external: mpsc::Receiver<ToAggregator>, denylist: Vec<String>) {
 
-        let mut node_state = State::new();
+        let mut node_state = State::new(denylist);
 
         // Maintain mappings from the shard connection ID and local ID of messages to a global ID
         // that uniquely identifies nodes in our node state.
@@ -152,46 +155,124 @@ impl Aggregator {
         let mut feed_channels = HashMap::new();
         let mut shard_channels = HashMap::new();
 
-        // What chains have aour feeds subscribed to (one at a time at the mo):
+        // What chains have our feeds subscribed to (one at a time at the mo)?
+        // Both of these need to be kept in sync (should move to own struct eventually).
         let mut feed_conn_id_to_chain: HashMap<ConnId, Box<str>> = HashMap::new();
         let mut chain_to_feed_conn_ids: HashMap<Box<str>, HashSet<ConnId>> = HashMap::new();
+
+        // Which feeds want finality info too?
         let mut feed_conn_id_finality: HashSet<ConnId> = HashSet::new();
 
         // Now, loop and receive messages to handle.
         while let Some(msg) = rx_from_external.next().await {
             match msg {
-                ToAggregator::FromFeedWebsocket(feed_conn_id, FromFeedWebsocket::Initialize { channel }) => {
-                    feed_channels.insert(feed_conn_id, channel);
+                ToAggregator::FromFeedWebsocket(feed_conn_id, FromFeedWebsocket::Initialize { mut channel }) => {
+                    feed_channels.insert(feed_conn_id, channel.clone());
 
-                    // TODO: `feed::AddedChain` message to tell feed about current chains.
-                },
-                ToAggregator::FromFeedWebsocket(feed_conn_id, FromFeedWebsocket::Ping { chain }) => {
-                    // TODO: Return with feed::Pong(chain) feed message.
-                },
-                ToAggregator::FromFeedWebsocket(feed_conn_id, FromFeedWebsocket::Subscribe { chain }) => {
-                    // Unsubscribe from previous chain if subscribed to one:
-                    if let Some(feed_ids) = chain_to_feed_conn_ids.get_mut(&chain) {
-                        feed_ids.remove(&feed_conn_id);
+                    // Tell the new feed subscription some basic things to get it going:
+                    let mut feed_serializer = FeedMessageSerializer::new();
+                    feed_serializer.push(feed_message::Version(31));
+                    for chain in node_state.iter_chains() {
+                        feed_serializer.push(feed_message::AddedChain(
+                            chain.label(),
+                            chain.node_count()
+                        ));
                     }
 
-                    // Subscribe to the new chain:
-                    feed_conn_id_to_chain.insert(feed_conn_id, chain.clone());
-                    chain_to_feed_conn_ids.entry(chain).or_default().insert(feed_conn_id);
+                    // Send this to the channel that subscribed:
+                    if let Some(bytes) = feed_serializer.into_finalized() {
+                        let _ = channel.send(ToFeedWebsocket::Bytes(bytes)).await;
+                    }
+                },
+                ToAggregator::FromFeedWebsocket(feed_conn_id, FromFeedWebsocket::Ping { chain }) => {
+                    let feed_channel = match feed_channels.get_mut(&feed_conn_id) {
+                        Some(chan) => chan,
+                        None => continue
+                    };
 
+                    // Pong!
+                    let mut feed_serializer = FeedMessageSerializer::new();
+                    feed_serializer.push(feed_message::Pong(&chain));
+                    if let Some(bytes) = feed_serializer.into_finalized() {
+                        let _ = feed_channel.send(ToFeedWebsocket::Bytes(bytes)).await;
+                    }
                 },
-                ToAggregator::FromFeedWebsocket(feed_conn_id, FromFeedWebsocket::SendFinality { chain: _ }) => {
-                    feed_conn_id_finality.insert(feed_conn_id);
-                    // TODO: Do we care about the chain here?
-                },
-                ToAggregator::FromFeedWebsocket(feed_conn_id, FromFeedWebsocket::NoMoreFinality { chain: _ }) => {
+                ToAggregator::FromFeedWebsocket(feed_conn_id, FromFeedWebsocket::Subscribe { chain }) => {
+                    let feed_channel = match feed_channels.get_mut(&feed_conn_id) {
+                        Some(chan) => chan,
+                        None => continue
+                    };
+
+                    // Unsubscribe from previous chain if subscribed to one:
+                    let old_chain_label = feed_conn_id_to_chain.remove(&feed_conn_id);
+                    if let Some(old_chain_label) = &old_chain_label {
+                        if let Some(map) = chain_to_feed_conn_ids.get_mut(old_chain_label) {
+                            map.remove(&feed_conn_id);
+                        }
+                    }
+
+                    // Untoggle request for finality feeds:
                     feed_conn_id_finality.remove(&feed_conn_id);
-                    // TODO: Do we care about the chain here?
+
+                    // Get the chain we're subscribing to, ignoring the rest if it doesn't exist.
+                    let chain = match node_state.get_chain_by_label(&chain) {
+                        Some(chain) => chain,
+                        None => continue
+                    };
+
+                    // Send messages to the feed about the new chain:
+                    let mut feed_serializer = FeedMessageSerializer::new();
+                    if let Some(old_chain_label) = old_chain_label {
+                        feed_serializer.push(feed_message::UnsubscribedFrom(&old_chain_label));
+                    }
+                    feed_serializer.push(feed_message::SubscribedTo(chain.label()));
+                    feed_serializer.push(feed_message::TimeSync(now()));
+                    feed_serializer.push(feed_message::BestBlock (
+                        chain.best_block().height,
+                        chain.timestamp(),
+                        chain.average_block_time()
+                    ));
+                    feed_serializer.push(feed_message::BestFinalized (
+                        chain.finalized_block().height,
+                        chain.finalized_block().hash
+                    ));
+                    for (idx, (gid, node)) in node_state.get_nodes_in_chain(chain).enumerate() {
+                        // Send subscription confirmation and chain head before doing all the nodes,
+                        // and continue sending batches of 32 nodes a time over the wire subsequently
+                        if idx % 32 == 0 {
+                            if let Some(bytes) = feed_serializer.finalize() {
+                                let _ = feed_channel.send(ToFeedWebsocket::Bytes(bytes)).await;
+                            }
+                        }
+                        feed_serializer.push(feed_message::AddedNode(gid, node));
+                        feed_serializer.push(feed_message::FinalizedBlock(
+                            gid,
+                            node.finalized().height,
+                            node.finalized().hash,
+                        ));
+                        if node.stale() {
+                            feed_serializer.push(feed_message::StaleNode(gid));
+                        }
+                    }
+                    if let Some(bytes) = feed_serializer.into_finalized() {
+                        let _ = feed_channel.send(ToFeedWebsocket::Bytes(bytes)).await;
+                    }
+
+                    // Actually make a note of the new chain subsciption:
+                    feed_conn_id_to_chain.insert(feed_conn_id, chain.label().into());
+                    chain_to_feed_conn_ids.entry(chain.label().into()).or_default().insert(feed_conn_id);
+                },
+                ToAggregator::FromFeedWebsocket(feed_conn_id, FromFeedWebsocket::SendFinality) => {
+                    feed_conn_id_finality.insert(feed_conn_id);
+                },
+                ToAggregator::FromFeedWebsocket(feed_conn_id, FromFeedWebsocket::NoMoreFinality) => {
+                    feed_conn_id_finality.remove(&feed_conn_id);
                 },
                 ToAggregator::FromShardWebsocket(shard_conn_id, FromShardWebsocket::Initialize { channel }) => {
                     shard_channels.insert(shard_conn_id, channel);
                 },
-                ToAggregator::FromShardWebsocket(shard_conn_id, FromShardWebsocket::Add { local_id, ip, node }) => {
-                    let global_node_id = to_global_node_id.assign_id((shard_conn_id, local_id));
+                ToAggregator::FromShardWebsocket(shard_conn_id, FromShardWebsocket::Add { local_id, ip, node, genesis_hash }) => {
+                    // Get globalId from add_node and store that against shard/local_id.
 
                     // TODO: node_state.add_node. Every feed should know about node count changes.
                 },
@@ -201,10 +282,46 @@ impl Aggregator {
                     }
                 },
                 ToAggregator::FromShardWebsocket(shard_conn_id, FromShardWebsocket::Update { local_id, payload }) => {
+                    // TODO: Fill this all in...
                     let global_node_id = match to_global_node_id.get_id(&(shard_conn_id, local_id)) {
                         Some(id) => id,
                         None => continue
                     };
+
+                    if let Some(block) = payload.best_block() {
+
+                    }
+
+                    match payload {
+                        node::Payload::SystemInterval(system_interval) => {
+
+                        },
+                        node::Payload::AfgAuthoritySet(_) => {
+
+                        },
+                        node::Payload::AfgFinalized(_) => {
+
+                        },
+                        node::Payload::AfgReceivedPrecommit(_) => {
+
+                        },
+                        node::Payload::AfgReceivedPrevote(_) => {
+
+                        },
+                        // This message should have been handled before the payload made it this far:
+                        node::Payload::SystemConnected(_) => {
+                            unreachable!("SystemConnected message seen in Telemetry Core, but should have been handled in shard");
+                        },
+                        // The following messages aren't handled at the moment. List them explicitly so
+                        // that we have to make an explicit choice for any new messages:
+                        node::Payload::BlockImport(_) |
+                        node::Payload::NotifyFinalized(_) |
+                        node::Payload::AfgReceivedCommit(_) |
+                        node::Payload::TxPoolImport |
+                        node::Payload::AfgFinalizedBlocksUpTo |
+                        node::Payload::AuraPreSealedBlock |
+                        node::Payload::PreparedBlockForProposing => {},
+                    }
 
                     // TODO: node_state.update_node, then handle returned diffs
                 },
