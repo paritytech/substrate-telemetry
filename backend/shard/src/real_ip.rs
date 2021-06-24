@@ -29,29 +29,39 @@ pub fn real_ip() -> impl warp::Filter<Extract = (Option<IpAddr>,), Error = warp:
         .and(header::optional("x-forwarded-for"))
         .and(header::optional("x-real-ip"))
         .and(addr::remote())
-        .map(|forwarded: Option<String>, forwarded_for: Option<String>, real_ip: Option<String>, addr: Option<SocketAddr>| {
-            let realip = forwarded.as_ref().and_then(|val| get_first_addr_from_forwarded_header(val))
-                .or_else(|| {
-                    // fall back to X-Forwarded-For
-                    forwarded_for.as_ref().and_then(|val| get_first_addr_from_x_forwarded_for_header(val))
-                })
-                .or_else(|| {
-                    // fall back to X-Real-IP
-                    real_ip.as_ref().map(|val| val.trim())
-                })
-                .and_then(|ip| {
-                    // Trim the port if it exists
-                    ip.split(":").next()
-                })
-                .and_then(|ip| {
-                    // Attempt to parse to a socket address
-                    ip.parse::<IpAddr>().ok()
-                })
-                // Fall back to local IP address if the above fails
-                .or(addr.map(|a| a.ip()));
+        .map(pick_best_ip_from_options)
+}
 
-            realip
+fn pick_best_ip_from_options(
+    // Forwarded header value (if present)
+    forwarded: Option<String>,
+    // X-Forwarded-For header value (if present)
+    forwarded_for: Option<String>,
+    // X-Real-IP header value (if present)
+    real_ip: Option<String>,
+    // socket address (if known)
+    addr: Option<SocketAddr>
+) -> Option<IpAddr> {
+    let realip = forwarded.as_ref().and_then(|val| get_first_addr_from_forwarded_header(val))
+        .or_else(|| {
+            // fall back to X-Forwarded-For
+            forwarded_for.as_ref().and_then(|val| get_first_addr_from_x_forwarded_for_header(val))
         })
+        .or_else(|| {
+            // fall back to X-Real-IP
+            real_ip.as_ref().map(|val| val.trim())
+        })
+        .and_then(|ip| {
+            // Try parsing assuming it may have a port first,
+            // and then assuming it doesn't.
+            ip.parse::<SocketAddr>().map(|s| s.ip())
+                .or_else(|_| ip.parse::<IpAddr>())
+                .ok()
+        })
+        // Fall back to local IP address if the above fails
+        .or(addr.map(|a| a.ip()));
+
+    realip
 }
 
 /// Follow https://datatracker.ietf.org/doc/html/rfc7239 to decode the Forwarded header value.
