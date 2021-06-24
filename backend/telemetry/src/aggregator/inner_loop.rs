@@ -10,11 +10,11 @@ use common::{
 use bimap::BiMap;
 use std::{iter::FromIterator, net::Ipv4Addr, str::FromStr};
 use futures::channel::{ mpsc };
-use futures::{ future, SinkExt, StreamExt };
+use futures::{ SinkExt, StreamExt };
 use std::collections::{ HashMap, HashSet };
 use crate::state::{ self, State, NodeId };
 use crate::feed_message::{ self, FeedMessageSerializer };
-use super::find_location::{ self, find_location };
+use super::find_location;
 
 /// A unique Id is assigned per websocket connection (or more accurately,
 /// per feed socket and per shard socket). This can be combined with the
@@ -151,14 +151,9 @@ impl InnerLoop {
     /// Create a new inner loop handler with the various state it needs.
     pub fn new(
         rx_from_external: mpsc::Receiver<ToAggregator>,
-        tx_to_aggregator: mpsc::Sender<ToAggregator>,
+        tx_to_locator: mpsc::UnboundedSender<(NodeId, Ipv4Addr)>,
         denylist: Vec<String>
     ) -> Self {
-
-        let tx_to_locator = find_location(tx_to_aggregator.with(|(node_id, msg)| {
-            future::ok::<_,mpsc::SendError>(ToAggregator::FromFindLocation(node_id, msg))
-        }));
-
         InnerLoop {
             rx_from_external,
             node_state: State::new(denylist),
