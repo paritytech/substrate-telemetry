@@ -153,7 +153,7 @@ impl Aggregator {
                 },
                 ToAggregator::FromWebsocket(conn_id, FromWebsocket::Add { message_id, ip, node, genesis_hash }) => {
                     // Don't bother doing anything else if we're disconnected, since we'll force the
-                    // ndoe to reconnect anyway when the backend does:
+                    // node to reconnect anyway when the backend does:
                     if !connected_to_telemetry_core { continue }
 
                     // Generate a new "local ID" for messages from this connection:

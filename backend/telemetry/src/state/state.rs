@@ -6,6 +6,7 @@ use common::types::{Block, NodeDetails, NodeLocation, Timestamp};
 use common::util::{now, DenseMap, NumStats};
 use common::node::Payload;
 use std::iter::IntoIterator;
+use crate::find_location;
 
 use super::chain::{ self, Chain };
 
@@ -16,7 +17,7 @@ pub type Label = Arc<str>;
 pub struct State {
     next_id: NodeId,
     chains: HashMap<BlockHash, Chain>,
-    chains_by_label: HashMap<Label, BlockHash>,
+    chains_by_label: HashMap<String, BlockHash>,
     chains_by_node: HashMap<NodeId, BlockHash>,
     /// Denylist for networks we do not want to allow connecting.
     denylist: HashSet<String>,
@@ -94,6 +95,14 @@ impl State {
                 AddNodeResult::ChainOverQuota
             },
             chain::AddNodeResult::Added { chain_renamed } => {
+                // Update the label we use to reference the chain if
+                // it changes (it'll always change first time a node's added):
+                if chain_renamed {
+                    let label = chain.label().to_owned();
+                    self.chains_by_label.remove(&label);
+                    self.chains_by_label.insert(label, genesis_hash);
+                }
+
                 let node = chain.get_node(node_id).unwrap();
                 AddNodeResult::NodeAddedToChain(NodeAddedToChain {
                     id: node_id,
@@ -104,6 +113,30 @@ impl State {
                 })
             }
         }
+    }
+
+    /// Update the location for a node. Return `false` if the node was not found.
+    pub fn update_node_location(&mut self, node_id: NodeId, location: find_location::Location) -> bool {
+        if let Some(node) = self.get_node_mut(node_id) {
+            node.update_location(location);
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Get the chain that a node belongs to.
+    pub fn get_node_chain(&self, node_id: NodeId) -> Option<&Chain> {
+        self.chains_by_node
+            .get(&node_id)
+            .and_then(|chain_id| self.chains.get(chain_id))
+    }
+
+    /// Obtain mutable access to a node, if it's found.
+    fn get_node_mut(&mut self, node_id: NodeId) -> Option<&mut Node> {
+        let chain_id = *self.chains_by_node.get(&node_id)?;
+        let chain = self.chains.get_mut(&chain_id)?;
+        chain.get_node_mut(node_id)
     }
 
     // /// Add a new node to our state.

@@ -6,6 +6,7 @@ use common::types::{
 };
 use common::util::now;
 use common::node::SystemInterval;
+use crate::find_location;
 
 /// Minimum time between block below broadcasting updates to the browser gets throttled, in ms.
 const THROTTLE_THRESHOLD: u64 = 100;
@@ -28,7 +29,7 @@ pub struct Node {
     /// Hardware stats over time
     hardware: NodeHardware,
     /// Physical location details
-    location: Option<Arc<NodeLocation>>,
+    location: find_location::Location,
     /// Flag marking if the node is stale (not syncing or producing blocks)
     stale: bool,
     /// Unix timestamp for when node started up (falls back to connection time)
@@ -88,8 +89,8 @@ impl Node {
         self.location.as_deref()
     }
 
-    pub fn update_location(&mut self, location: Arc<NodeLocation>) {
-        self.location = Some(location);
+    pub fn update_location(&mut self, location: find_location::Location) {
+        self.location = location;
     }
 
     pub fn block_details(&self) -> &BlockDetails {

@@ -3,7 +3,7 @@ use std::sync::atomic::AtomicU64;
 use futures::channel::mpsc;
 use futures::{ future, Sink, SinkExt };
 use super::inner_loop;
-use super::find_location::{ self, find_location };
+use crate::find_location::find_location;
 use crate::state::NodeId;
 use std::net::Ipv4Addr;
 

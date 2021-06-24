@@ -8,13 +8,13 @@ use common::{
     util::now
 };
 use bimap::BiMap;
-use std::{iter::FromIterator, net::Ipv4Addr, str::FromStr};
+use std::{net::{IpAddr, Ipv4Addr}, str::FromStr};
 use futures::channel::{ mpsc };
 use futures::{ SinkExt, StreamExt };
 use std::collections::{ HashMap, HashSet };
 use crate::state::{ self, State, NodeId };
 use crate::feed_message::{ self, FeedMessageSerializer };
-use super::find_location;
+use crate::find_location;
 
 /// A unique Id is assigned per websocket connection (or more accurately,
 /// per feed socket and per shard socket). This can be combined with the
@@ -143,7 +143,7 @@ pub struct InnerLoop {
     /// These feeds want finality info, too.
     feed_conn_id_finality: HashSet<ConnId>,
 
-    /// Send messages here to make location requests, which are sent back into the loop.
+    /// Send messages here to make geographical location requests.
     tx_to_locator: mpsc::UnboundedSender<(NodeId, Ipv4Addr)>
 }
 
@@ -184,8 +184,32 @@ impl InnerLoop {
         }
     }
 
+    /// Handle messages that come from the node geographical locator.
     async fn handle_from_find_location(&mut self, node_id: NodeId, location: find_location::Location) {
-        // TODO: Update node location here
+        self.node_state.update_node_location(node_id, location.clone());
+
+        if let Some(loc) = location {
+            let mut feed_message_serializer = FeedMessageSerializer::new();
+            feed_message_serializer.push(feed_message::LocatedNode(
+                node_id,
+                loc.latitude,
+                loc.longitude,
+                &loc.city
+            ));
+
+            if let Some(bytes) = feed_message_serializer.into_finalized() {
+                let chain_label = self.node_state
+                    .get_node_chain(node_id)
+                    .map(|chain| chain.label());
+
+                if let Some(chain_label) = chain_label {
+                    // Don't hold onto lifetime from self because we call a mut fn next:
+                    let label = chain_label.to_owned();
+                    // Update location for any feeds subscribed to the node's chain.
+                    self.broadcast_to_chain_feeds(&label, ToFeedWebsocket::Bytes(bytes)).await;
+                }
+            }
+        }
     }
 
     /// Handle messages coming from shards.
@@ -228,7 +252,10 @@ impl InnerLoop {
                             ).await
                         }
 
-                        // TODO: The node has been added. use it's IP to find a location.
+                        // Currently we only geographically locate IPV4 addresses so ignore IPV6;
+                        if let Some(IpAddr::V4(ip_v4)) = ip {
+                            let _ = self.tx_to_locator.send((node_id, ip_v4)).await;
+                        }
                     },
                 }
             },
@@ -409,6 +436,7 @@ impl InnerLoop {
         if let Some(feeds) = self.chain_to_feed_conn_ids.get(chain) {
             for &feed_id in feeds {
                 // How much faster would it be if we processed these in parallel?
+                // Is it practical to do so given lifetimes and such?
                 if let Some(chan) = self.feed_channels.get_mut(&feed_id) {
                     chan.send(message.clone()).await;
                 }

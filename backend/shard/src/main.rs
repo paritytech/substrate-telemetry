@@ -1,7 +1,8 @@
 mod aggregator;
 mod connection;
+mod real_ip;
 
-use std::net::SocketAddr;
+use std::net::IpAddr;
 
 use structopt::StructOpt;
 use http::Uri;
@@ -11,6 +12,7 @@ use warp::Filter;
 use warp::filters::ws;
 use common::{json, node, log_level::LogLevel};
 use aggregator::{ Aggregator, FromWebsocket };
+use real_ip::real_ip;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
@@ -82,8 +84,8 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
     let ws_route =
         warp::path("submit")
         .and(warp::ws())
-        .and(warp::filters::addr::remote())
-        .map(move |ws: ws::Ws, addr: Option<SocketAddr>| {
+        .and(real_ip())
+        .map(move |ws: ws::Ws, addr: Option<IpAddr>| {
             // Send messages from the websocket connection to this sink
             // to have them pass to the aggregator.
             let tx_to_aggregator = aggregator.subscribe_node();
@@ -106,7 +108,7 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
 }
 
 /// This takes care of handling messages from an established socket connection.
-async fn handle_websocket_connection<S>(mut websocket: ws::WebSocket, mut tx_to_aggregator: S, addr: Option<SocketAddr>) -> (S, ws::WebSocket)
+async fn handle_websocket_connection<S>(mut websocket: ws::WebSocket, mut tx_to_aggregator: S, addr: Option<IpAddr>) -> (S, ws::WebSocket)
     where S: futures::Sink<FromWebsocket, Error = anyhow::Error> + Unpin
 {
     // This could be a oneshot channel, but it's useful to be able to clone
@@ -155,7 +157,7 @@ async fn handle_websocket_connection<S>(mut websocket: ws::WebSocket, mut tx_to_
                 if let node::Payload::SystemConnected(info) = payload {
                     let _ = tx_to_aggregator.send(FromWebsocket::Add {
                         message_id,
-                        ip: addr.map(|a| a.ip()),
+                        ip: addr,
                         node: info.node,
                         genesis_hash: info.genesis_hash,
                     }).await;
