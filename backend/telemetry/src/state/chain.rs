@@ -19,7 +19,7 @@ pub struct Chain {
     /// the most commonly used label as nodes are added/removed.
     labels: MostSeen<Label>,
     /// Set of nodes that are in this chain
-    nodes: HashMap<NodeId, Node>,
+    node_ids: HashSet<NodeId>,
     /// Best block
     best: Block,
     /// Finalized block
@@ -29,7 +29,9 @@ pub struct Chain {
     /// Calculated average block time
     average_block_time: Option<u64>,
     /// When the best block first arrived
-    timestamp: Option<Timestamp>
+    timestamp: Option<Timestamp>,
+    /// Genesis hash of this chain
+    genesis_hash: BlockHash
 }
 
 pub enum AddNodeResult {
@@ -37,6 +39,10 @@ pub enum AddNodeResult {
     Added {
         chain_renamed: bool
     }
+}
+
+pub struct RemoveNodeResult {
+    pub chain_renamed: bool
 }
 
 /// Labels of chains we consider "first party". These chains allow any
@@ -55,52 +61,60 @@ const THIRD_PARTY_NETWORKS_MAX_NODES: usize = 500;
 
 impl Chain {
     /// Create a new chain with an initial label.
-    pub fn new(label: Label) -> Self {
+    pub fn new(genesis_hash: BlockHash) -> Self {
         Chain {
-            labels: MostSeen::new(label),
-            nodes: HashMap::new(),
+            labels: MostSeen::default(),
+            node_ids: HashSet::new(),
             best: Block::zero(),
             finalized: Block::zero(),
             block_times: NumStats::new(50),
             average_block_time: None,
-            timestamp: None
+            timestamp: None,
+            genesis_hash
         }
     }
+
     /// Can we add a node? If not, it's because the chain is at its quota.
     pub fn can_add_node(&self) -> bool {
         // Dynamically determine the max nodes based on the most common
         // label so far, in case it changes to something with a different limit.
-        self.nodes.len() < max_nodes(self.labels.best())
+        self.node_ids.len() < max_nodes(self.labels.best())
     }
+
     /// Assign a node to this chain. If the function returns false, it
     /// means that the node could not be added as we're at quota.
-    pub fn add_node(&mut self, node_id: NodeId, node_details: NodeDetails) -> AddNodeResult {
+    pub fn add_node(&mut self, node_id: NodeId, chain_label: &Box<str>) -> AddNodeResult {
         if !self.can_add_node() {
             return AddNodeResult::Overquota
         }
 
-        let label_result = self.labels.insert(&node_details.chain);
-        let new_node = Node::new(node_details);
-        self.nodes.insert(node_id, new_node);
+        let label_result = self.labels.insert(chain_label);
+        self.node_ids.insert(node_id);
 
         AddNodeResult::Added {
             chain_renamed: label_result.has_changed()
         }
     }
-    pub fn get_node(&self, node_id: NodeId) -> Option<&Node> {
-        self.nodes.get(&node_id)
+
+    /// Remove a node from this chain. We expect the label it used for the chain so
+    /// that we can keep track of which label is most popular.
+    pub fn remove_node(&mut self, node_id: NodeId, chain_label: &Box<str>) -> RemoveNodeResult {
+        let label_result = self.labels.remove(&chain_label);
+        self.node_ids.remove(&node_id);
+
+        RemoveNodeResult {
+            chain_renamed: label_result.has_changed()
+        }
     }
-    pub fn get_node_mut(&mut self, node_id: NodeId) -> Option<&mut Node> {
-        self.nodes.get_mut(&node_id)
-    }
+
     pub fn label(&self) -> &str {
         &self.labels.best()
     }
-    pub fn node_count(&self) -> usize {
-        self.nodes.len()
+    pub fn node_ids(&self) -> impl Iterator<Item=NodeId> + '_ {
+        self.node_ids.iter().copied()
     }
-    pub fn nodes(&self) -> impl Iterator<Item=(NodeId, &Node)> + '_ {
-        self.nodes.iter().map(|(id, node)| (*id, node))
+    pub fn node_count(&self) -> usize {
+        self.node_ids.len()
     }
     pub fn best_block(&self) -> &Block {
         &self.best
@@ -113,6 +127,9 @@ impl Chain {
     }
     pub fn finalized_block(&self) -> &Block {
         &self.finalized
+    }
+    pub fn genesis_hash(&self) -> &BlockHash {
+        &self.genesis_hash
     }
 }
 

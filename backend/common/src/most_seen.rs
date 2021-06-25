@@ -10,7 +10,13 @@ pub struct MostSeen<T> {
     others: HashMap<T, usize>
 }
 
-impl <T: Hash + Eq> MostSeen<T> {
+impl <T: Default> Default for MostSeen<T> {
+    fn default() -> Self {
+        MostSeen::new(T::default())
+    }
+}
+
+impl <T> MostSeen<T> {
     pub fn new(item: T) -> Self {
         Self {
             current_best: item,

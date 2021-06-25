@@ -1,4 +1,4 @@
-use std::hash::Hash;
+use std::{fmt::Display, hash::Hash};
 use serde::{Serialize,Deserialize};
 use bimap::BiMap;
 
@@ -13,6 +13,11 @@ impl std::convert::From<Id> for usize {
 impl std::convert::From<usize> for Id {
     fn from(n: usize) -> Id {
         Id(n)
+    }
+}
+impl Display for Id {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
     }
 }
 

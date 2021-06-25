@@ -77,4 +77,16 @@ impl<T> DenseMap<T> {
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
+    /// Return the next Id that will be assigned.
+    pub fn next_id(&self) -> usize {
+        match self.retired.last() {
+            Some(id) => {
+                *id
+            }
+            None => {
+                self.items.len()
+            }
+        }
+    }
 }
