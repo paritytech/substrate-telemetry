@@ -252,6 +252,7 @@ async fn handle_feed_websocket_connection<S>(mut websocket: ws::WebSocket, mut t
                 // pre-serialized bytes that we send as binary):
                 match msg {
                     ToFeedWebsocket::Bytes(bytes) => {
+                        log::debug!("Message to feed: {}", std::str::from_utf8(&bytes).unwrap_or("INVALID UTF8"));
                         let _ = websocket.send(ws::Message::binary(bytes)).await;
                     }
                 }

@@ -137,8 +137,9 @@ mod test {
     #[test]
     fn default_renames_instantly() {
         let mut a: MostSeen<&str> = MostSeen::default();
-        a.insert(&"Hello");
+        let res = a.insert(&"Hello");
         assert_eq!(*a.best(), "Hello");
+        assert!(res.has_changed());
     }
 
     #[test]

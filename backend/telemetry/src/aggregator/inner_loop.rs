@@ -4,6 +4,7 @@ use common::{
         LocalId,
         MuteReason
     },
+    types::BlockHash,
     node,
     util::now
 };
@@ -88,7 +89,7 @@ pub enum FromFeedWebsocket {
     NoMoreFinality,
     /// An explicit ping message.
     Ping {
-        chain: Box<str>
+        value: Box<str>
     },
     /// The feed is disconnected.
     Disconnected
@@ -98,13 +99,13 @@ pub enum FromFeedWebsocket {
 impl FromStr for FromFeedWebsocket {
     type Err = anyhow::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (cmd, chain) = match s.find(':') {
+        let (cmd, value) = match s.find(':') {
             Some(idx) => (&s[..idx], s[idx+1..].into()),
             None => return Err(anyhow::anyhow!("Expecting format `CMD:CHAIN_NAME`"))
         };
         match cmd {
-            "ping" => Ok(FromFeedWebsocket::Ping { chain }),
-            "subscribe" => Ok(FromFeedWebsocket::Subscribe { chain }),
+            "ping" => Ok(FromFeedWebsocket::Ping { value }),
+            "subscribe" => Ok(FromFeedWebsocket::Subscribe { chain: value }),
             "send-finality" => Ok(FromFeedWebsocket::SendFinality),
             "no-more-finality" => Ok(FromFeedWebsocket::NoMoreFinality),
             _ => return Err(anyhow::anyhow!("Command {} not recognised", cmd))
@@ -136,9 +137,11 @@ pub struct InnerLoop {
     shard_channels: HashMap<ConnId, mpsc::Sender<ToShardWebsocket>>,
 
     /// Which chain is a feed subscribed to?
-    feed_conn_id_to_chain: HashMap<ConnId, Box<str>>,
+    /// Feed Connection ID -> Chain Genesis Hash
+    feed_conn_id_to_chain: HashMap<ConnId, BlockHash>,
     /// Which feeds are subscribed to a given chain (needs to stay in sync with above)?
-    chain_to_feed_conn_ids: HashMap<Box<str>, HashSet<ConnId>>,
+    /// Chain Genesis Hash -> Feed Connection IDs
+    chain_to_feed_conn_ids: HashMap<BlockHash, HashSet<ConnId>>,
 
     /// These feeds want finality info, too.
     feed_conn_id_finality: HashSet<ConnId>,
@@ -197,18 +200,19 @@ impl InnerLoop {
                 &loc.city
             ));
 
-            let chain_label = self.node_state
+            let chain_genesis_hash = self.node_state
                 .get_node_chain(node_id)
-                .map(|chain| chain.label().to_owned());
+                .map(|chain| *chain.genesis_hash());
 
-            if let Some(chain_label) = chain_label {
-                self.finalize_and_broadcast_to_chain_feeds(&chain_label, feed_message_serializer).await;
+            if let Some(chain_genesis_hash) = chain_genesis_hash {
+                self.finalize_and_broadcast_to_chain_feeds(&chain_genesis_hash, feed_message_serializer).await;
             }
         }
     }
 
     /// Handle messages coming from shards.
     async fn handle_from_shard(&mut self, shard_conn_id: ConnId, msg: FromShardWebsocket) {
+        log::debug!("Message from shard ({}): {:?}", shard_conn_id, msg);
         match msg {
             FromShardWebsocket::Initialize { channel } => {
                 self.shard_channels.insert(shard_conn_id, channel);
@@ -246,7 +250,7 @@ impl InnerLoop {
                         // Tell chain subscribers about the node we've just added:
                         let mut feed_messages_for_chain = FeedMessageSerializer::new();
                         feed_messages_for_chain.push(feed_message::AddedNode(node_id, &details.node));
-                        self.finalize_and_broadcast_to_chain_feeds(&old_chain_label, feed_messages_for_chain).await;
+                        self.finalize_and_broadcast_to_chain_feeds(&genesis_hash, feed_messages_for_chain).await;
 
                         // Tell everybody about the new node count and potential rename:
                         let mut feed_messages_for_all = FeedMessageSerializer::new();
@@ -334,6 +338,7 @@ impl InnerLoop {
 
     /// Handle messages coming from feeds.
     async fn handle_from_feed(&mut self, feed_conn_id: ConnId, msg: FromFeedWebsocket) {
+        log::debug!("Message from feed ({}): {:?}", feed_conn_id, msg);
         match msg {
             FromFeedWebsocket::Initialize { mut channel } => {
                 self.feed_channels.insert(feed_conn_id, channel.clone());
@@ -353,7 +358,7 @@ impl InnerLoop {
                     let _ = channel.send(ToFeedWebsocket::Bytes(bytes)).await;
                 }
             },
-            FromFeedWebsocket::Ping { chain } => {
+            FromFeedWebsocket::Ping { value } => {
                 let feed_channel = match self.feed_channels.get_mut(&feed_conn_id) {
                     Some(chan) => chan,
                     None => return
@@ -361,7 +366,7 @@ impl InnerLoop {
 
                 // Pong!
                 let mut feed_serializer = FeedMessageSerializer::new();
-                feed_serializer.push(feed_message::Pong(&chain));
+                feed_serializer.push(feed_message::Pong(&value));
                 if let Some(bytes) = feed_serializer.into_finalized() {
                     let _ = feed_channel.send(ToFeedWebsocket::Bytes(bytes)).await;
                 }
@@ -373,9 +378,9 @@ impl InnerLoop {
                 };
 
                 // Unsubscribe from previous chain if subscribed to one:
-                let old_chain_label = self.feed_conn_id_to_chain.remove(&feed_conn_id);
-                if let Some(old_chain_label) = &old_chain_label {
-                    if let Some(map) = self.chain_to_feed_conn_ids.get_mut(old_chain_label) {
+                let old_genesis_hash = self.feed_conn_id_to_chain.remove(&feed_conn_id);
+                if let Some(old_genesis_hash) = &old_genesis_hash {
+                    if let Some(map) = self.chain_to_feed_conn_ids.get_mut(old_genesis_hash) {
                         map.remove(&feed_conn_id);
                     }
                 }
@@ -383,29 +388,34 @@ impl InnerLoop {
                 // Untoggle request for finality feeds:
                 self.feed_conn_id_finality.remove(&feed_conn_id);
 
-                // Get the chain we're subscribing to, ignoring the rest if it doesn't exist.
-                let chain = match self.node_state.get_chain_by_label(&chain) {
+                // Get old chain if there was one:
+                let node_state = &self.node_state;
+                let old_chain = old_genesis_hash
+                    .and_then(|hash| node_state.get_chain_by_genesis_hash(&hash));
+
+                // Get new chain, ignoring the rest if it doesn't exist.
+                let new_chain = match self.node_state.get_chain_by_label(&chain) {
                     Some(chain) => chain,
                     None => return
                 };
 
-                // Send messages to the feed about the new chain:
+                // Send messages to the feed about this subscription:
                 let mut feed_serializer = FeedMessageSerializer::new();
-                if let Some(old_chain_label) = old_chain_label {
-                    feed_serializer.push(feed_message::UnsubscribedFrom(&old_chain_label));
+                if let Some(old_chain) = old_chain {
+                    feed_serializer.push(feed_message::UnsubscribedFrom(old_chain.label()));
                 }
-                feed_serializer.push(feed_message::SubscribedTo(chain.label()));
+                feed_serializer.push(feed_message::SubscribedTo(new_chain.label()));
                 feed_serializer.push(feed_message::TimeSync(now()));
                 feed_serializer.push(feed_message::BestBlock (
-                    chain.best_block().height,
-                    chain.timestamp(),
-                    chain.average_block_time()
+                    new_chain.best_block().height,
+                    new_chain.timestamp(),
+                    new_chain.average_block_time()
                 ));
                 feed_serializer.push(feed_message::BestFinalized (
-                    chain.finalized_block().height,
-                    chain.finalized_block().hash
+                    new_chain.finalized_block().height,
+                    new_chain.finalized_block().hash
                 ));
-                for (idx, (node_id, node)) in chain.iter_nodes().enumerate() {
+                for (idx, (node_id, node)) in new_chain.iter_nodes().enumerate() {
                     // Send subscription confirmation and chain head before doing all the nodes,
                     // and continue sending batches of 32 nodes a time over the wire subsequently
                     if idx % 32 == 0 {
@@ -428,8 +438,9 @@ impl InnerLoop {
                 }
 
                 // Actually make a note of the new chain subsciption:
-                self.feed_conn_id_to_chain.insert(feed_conn_id, chain.label().into());
-                self.chain_to_feed_conn_ids.entry(chain.label().into()).or_default().insert(feed_conn_id);
+                let new_genesis_hash = *new_chain.genesis_hash();
+                self.feed_conn_id_to_chain.insert(feed_conn_id, new_genesis_hash);
+                self.chain_to_feed_conn_ids.entry(new_genesis_hash).or_default().insert(feed_conn_id);
             },
             FromFeedWebsocket::SendFinality => {
                 self.feed_conn_id_finality.insert(feed_conn_id);
@@ -452,11 +463,10 @@ impl InnerLoop {
     async fn remove_nodes_and_broadcast_result(&mut self, node_ids: impl IntoIterator<Item=NodeId>) {
 
         // Group by chain to simplify the handling of feed messages:
-        let mut node_ids_per_chain: HashMap<String,Vec<NodeId>> = HashMap::new();
+        let mut node_ids_per_chain: HashMap<BlockHash,Vec<NodeId>> = HashMap::new();
         for node_id in node_ids.into_iter() {
             if let Some(chain) = self.node_state.get_node_chain(node_id) {
-                let chain_label = chain.label().to_owned();
-                node_ids_per_chain.entry(chain_label).or_default().push(node_id);
+                node_ids_per_chain.entry(*chain.genesis_hash()).or_default().push(node_id);
             }
         }
 
@@ -519,15 +529,18 @@ impl InnerLoop {
     }
 
     /// Finalize a [`FeedMessageSerializer`] and broadcast the result to feeds for the chain.
-    async fn finalize_and_broadcast_to_chain_feeds(&mut self, chain: &str, serializer: FeedMessageSerializer) {
+    async fn finalize_and_broadcast_to_chain_feeds(&mut self, genesis_hash: &BlockHash, serializer: FeedMessageSerializer) {
         if let Some(bytes) = serializer.into_finalized() {
-            self.broadcast_to_chain_feeds(chain, ToFeedWebsocket::Bytes(bytes)).await;
+            self.broadcast_to_chain_feeds(genesis_hash, ToFeedWebsocket::Bytes(bytes)).await;
         }
     }
 
     /// Send a message to all chain feeds.
-    async fn broadcast_to_chain_feeds(&mut self, chain: &str, message: ToFeedWebsocket) {
-        if let Some(feeds) = self.chain_to_feed_conn_ids.get(chain) {
+    async fn broadcast_to_chain_feeds(&mut self, genesis_hash: &BlockHash, message: ToFeedWebsocket) {
+
+println!("BROADCAST TO CHAIN FEEDS, {}, \n\n{:?}\n\n{:?}\n\n", genesis_hash, self.chain_to_feed_conn_ids, self.feed_conn_id_to_chain);
+
+        if let Some(feeds) = self.chain_to_feed_conn_ids.get(genesis_hash) {
             for &feed_id in feeds {
                 // How much faster would it be if we processed these in parallel?
                 // Is it practical to do so given lifetimes and such?
