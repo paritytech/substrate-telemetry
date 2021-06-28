@@ -12,7 +12,11 @@ pub struct MostSeen<T> {
 
 impl <T: Default> Default for MostSeen<T> {
     fn default() -> Self {
-        MostSeen::new(T::default())
+        Self {
+            current_best: T::default(),
+            current_count: 0,
+            others: HashMap::new()
+        }
     }
 }
 
@@ -26,6 +30,9 @@ impl <T> MostSeen<T> {
     }
     pub fn best(&self) -> &T {
         &self.current_best
+    }
+    pub fn best_count(&self) -> usize {
+        self.current_count
     }
 }
 
@@ -43,11 +50,16 @@ impl <T: Hash + Eq + Clone> MostSeen<T> {
 
         // Is item now the best?
         if *item_count > self.current_count {
-            let (item, count) = self.others
+            let (mut item, mut count) = self.others
                 .remove_entry(item)
                 .expect("item added above");
-            self.current_best = item;
-            self.current_count = count;
+
+            // Swap the current best for the new best:
+            std::mem::swap(&mut item, &mut self.current_best);
+            std::mem::swap(&mut count, &mut self.current_count);
+
+            // Insert the old best back into the map:
+            self.others.insert(item, count);
 
             ChangeResult::NewMostSeenItem
         } else {
@@ -56,8 +68,8 @@ impl <T: Hash + Eq + Clone> MostSeen<T> {
     }
     pub fn remove(&mut self, item: &T) -> ChangeResult {
         if &self.current_best == item {
-            // Item already the best one; reduce count
-            self.current_count -= 1;
+            // Item already the best one; reduce count (don't allow to drop below 0)
+            self.current_count = self.current_count.saturating_sub(1);
 
             // Is there a new best?
             let other_best = self.others
@@ -75,12 +87,16 @@ impl <T: Hash + Eq + Clone> MostSeen<T> {
                 // instead, but most of the time there is no change, so I'm
                 // aiming to keep that path cheaper.
                 let other_item = other_item.clone();
-                let (other_item, other_count) = self.others
+                let (mut other_item, mut other_count) = self.others
                     .remove_entry(&other_item)
                     .expect("item returned above, so def exists");
 
-                self.current_best = other_item;
-                self.current_count = other_count;
+                // Swap the current best for the new best:
+                std::mem::swap(&mut other_item, &mut self.current_best);
+                std::mem::swap(&mut other_count, &mut self.current_count);
+
+                // Insert the old best back into the map:
+                self.others.insert(other_item, other_count);
 
                 return ChangeResult::NewMostSeenItem;
             } else {
@@ -112,4 +128,107 @@ impl ChangeResult {
             ChangeResult::NoChange => false
         }
     }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn default_renames_instantly() {
+        let mut a: MostSeen<&str> = MostSeen::default();
+        a.insert(&"Hello");
+        assert_eq!(*a.best(), "Hello");
+    }
+
+    #[test]
+    fn new_renames_on_second_change() {
+        let mut a: MostSeen<&str> = MostSeen::new("First");
+        a.insert(&"Second");
+        assert_eq!(*a.best(), "First");
+        a.insert(&"Second");
+        assert_eq!(*a.best(), "Second");
+    }
+
+    #[test]
+    fn removing_doesnt_underflow() {
+        let mut a: MostSeen<&str> = MostSeen::new("First");
+        a.remove(&"First");
+        a.remove(&"First");
+        a.remove(&"Second");
+        a.remove(&"Third");
+    }
+
+    #[test]
+    fn keeps_track_of_best_count() {
+        let mut a: MostSeen<&str> = MostSeen::default();
+        a.insert(&"First");
+        assert_eq!(a.best_count(), 1);
+
+        a.insert(&"First");
+        assert_eq!(a.best_count(), 2);
+
+        a.insert(&"First");
+        assert_eq!(a.best_count(), 3);
+
+        a.remove(&"First");
+        assert_eq!(a.best_count(), 2);
+
+        a.remove(&"First");
+        assert_eq!(a.best_count(), 1);
+
+        a.remove(&"First");
+        assert_eq!(a.best_count(), 0);
+
+        a.remove(&"First");
+        assert_eq!(a.best_count(), 0);
+    }
+
+    #[test]
+    fn it_tracks_best_on_insert() {
+        let mut a: MostSeen<&str> = MostSeen::default();
+
+        a.insert(&"First");
+        assert_eq!(*a.best(), "First", "1");
+
+        a.insert(&"Second");
+        assert_eq!(*a.best(), "First", "2");
+
+        a.insert(&"Second");
+        assert_eq!(*a.best(), "Second", "3");
+
+        a.insert(&"First");
+        assert_eq!(*a.best(), "Second", "4");
+
+        a.insert(&"First");
+        assert_eq!(*a.best(), "First", "5");
+    }
+
+    #[test]
+    fn it_tracks_best() {
+        let mut a: MostSeen<&str> = MostSeen::default();
+        a.insert(&"First");
+        a.insert(&"Second");
+        a.insert(&"Third"); // 1
+
+        a.insert(&"Second");
+        a.insert(&"Second"); // 3
+        a.insert(&"First");  // 2
+
+        assert_eq!(*a.best(), "Second");
+        assert_eq!(a.best_count(), 3);
+
+        let res = a.remove(&"Second");
+
+        assert!(!res.has_changed());
+        assert_eq!(a.best_count(), 2);
+        assert_eq!(*a.best(), "Second"); // Tied with "First"
+
+        let res = a.remove(&"Second");
+
+        assert!(res.has_changed());
+        assert_eq!(a.best_count(), 2);
+        assert_eq!(*a.best(), "First"); // First is now ahead
+    }
+
 }
