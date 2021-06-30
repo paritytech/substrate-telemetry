@@ -1,4 +1,4 @@
-use common::{internal_messages::{self, LocalId}, node, assign_id::AssignId, types::BlockHash};
+use common::{internal_messages::{self, ShardNodeId}, node, assign_id::AssignId, types::BlockHash};
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
 use futures::{channel::mpsc, future};
@@ -119,7 +119,7 @@ impl Aggregator {
         let mut to_local_id = AssignId::new();
 
         // Any messages coming from nodes that have been muted are ignored:
-        let mut muted: HashSet<LocalId> = HashSet::new();
+        let mut muted: HashSet<ShardNodeId> = HashSet::new();
 
         // Now, loop and receive messages to handle.
         while let Some(msg) = rx_from_external.next().await {

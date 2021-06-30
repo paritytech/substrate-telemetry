@@ -5,11 +5,17 @@ use common::util::{now, DenseMap, NumStats};
 use common::most_seen::MostSeen;
 use common::node::Payload;
 use once_cell::sync::Lazy;
+use common::id_type;
 
 use crate::feed_message::{self, FeedMessageSerializer};
+use crate::find_location;
 
 use super::node::Node;
-use super::NodeId;
+
+id_type!{
+    /// A Node ID that is unique to the chain it's in.
+    pub ChainNodeId(usize)
+}
 
 pub type Label = Box<str>;
 
@@ -20,7 +26,7 @@ pub struct Chain {
     /// the most commonly used label as nodes are added/removed.
     labels: MostSeen<Label>,
     /// Set of nodes that are in this chain
-    node_ids: HashSet<NodeId>,
+    nodes: DenseMap<ChainNodeId, Node>,
     /// Best block
     best: Block,
     /// Finalized block
@@ -38,6 +44,7 @@ pub struct Chain {
 pub enum AddNodeResult {
     Overquota,
     Added {
+        id: ChainNodeId,
         chain_renamed: bool
     }
 }
@@ -65,7 +72,7 @@ impl Chain {
     pub fn new(genesis_hash: BlockHash) -> Self {
         Chain {
             labels: MostSeen::default(),
-            node_ids: HashSet::new(),
+            nodes: DenseMap::new(),
             best: Block::zero(),
             finalized: Block::zero(),
             block_times: NumStats::new(50),
@@ -79,29 +86,34 @@ impl Chain {
     pub fn can_add_node(&self) -> bool {
         // Dynamically determine the max nodes based on the most common
         // label so far, in case it changes to something with a different limit.
-        self.node_ids.len() < max_nodes(self.labels.best())
+        self.nodes.len() < max_nodes(self.labels.best())
     }
 
-    /// Assign a node to this chain. If the function returns false, it
-    /// means that the node could not be added as we're at quota.
-    pub fn add_node(&mut self, node_id: NodeId, chain_label: &Box<str>) -> AddNodeResult {
+    /// Assign a node to this chain.
+    pub fn add_node(&mut self, node: Node) -> AddNodeResult {
         if !self.can_add_node() {
             return AddNodeResult::Overquota
         }
 
-        let label_result = self.labels.insert(chain_label);
-        self.node_ids.insert(node_id);
+        let node_chain_label = &node.details().chain;
+        let label_result = self.labels.insert(node_chain_label);
+        let node_id = self.nodes.add(node);
 
         AddNodeResult::Added {
+            id: node_id,
             chain_renamed: label_result.has_changed()
         }
     }
 
-    /// Remove a node from this chain. We expect the label it used for the chain so
-    /// that we can keep track of which label is most popular.
-    pub fn remove_node(&mut self, node_id: NodeId, chain_label: &Box<str>) -> RemoveNodeResult {
-        let label_result = self.labels.remove(&chain_label);
-        self.node_ids.remove(&node_id);
+    /// Remove a node from this chain.
+    pub fn remove_node(&mut self, node_id: ChainNodeId) -> RemoveNodeResult {
+        let node = match self.nodes.remove(node_id) {
+            Some(node) => node,
+            None => return RemoveNodeResult { chain_renamed: false }
+        };
+
+        let node_chain_label = &node.details().chain;
+        let label_result = self.labels.remove(node_chain_label);
 
         RemoveNodeResult {
             chain_renamed: label_result.has_changed()
@@ -110,25 +122,25 @@ impl Chain {
 
     /// Attempt to update the best block seen in this chain.
     /// Returns a boolean which denotes whether the output is for finalization feeds (true) or not (false).
-    pub fn update_node(&mut self, all_nodes: &mut DenseMap<Node>, nid: NodeId, payload: Payload, feed: &mut FeedMessageSerializer) -> bool {
+    pub fn update_node(&mut self, nid: ChainNodeId, payload: Payload, feed: &mut FeedMessageSerializer) -> bool {
 
         if let Some(block) = payload.best_block() {
-            self.handle_block(all_nodes, block, nid, feed);
+            self.handle_block(block, nid, feed);
         }
 
-        if let Some(node) = all_nodes.get_mut(nid) {
+        if let Some(node) = self.nodes.get_mut(nid) {
             match payload {
                 Payload::SystemInterval(ref interval) => {
                     if node.update_hardware(interval) {
-                        feed.push(feed_message::Hardware(nid, node.hardware()));
+                        feed.push(feed_message::Hardware(nid.into(), node.hardware()));
                     }
 
                     if let Some(stats) = node.update_stats(interval) {
-                        feed.push(feed_message::NodeStatsUpdate(nid, stats));
+                        feed.push(feed_message::NodeStatsUpdate(nid.into(), stats));
                     }
 
                     if let Some(io) = node.update_io(interval) {
-                        feed.push(feed_message::NodeIOUpdate(nid, io));
+                        feed.push(feed_message::NodeIOUpdate(nid.into(), io));
                     }
                 }
                 Payload::AfgAuthoritySet(authority) => {
@@ -187,7 +199,7 @@ impl Chain {
             if let Some(block) = payload.finalized_block() {
                 if let Some(finalized) = node.update_finalized(block) {
                     feed.push(feed_message::FinalizedBlock(
-                        nid,
+                        nid.into(),
                         finalized.height,
                         finalized.hash,
                     ));
@@ -203,14 +215,14 @@ impl Chain {
         false
     }
 
-    fn handle_block(&mut self, all_nodes: &mut DenseMap<Node>, block: &Block, nid: NodeId, feed: &mut FeedMessageSerializer) {
+    fn handle_block(&mut self, block: &Block, nid: ChainNodeId, feed: &mut FeedMessageSerializer) {
         let mut propagation_time = None;
         let now = now();
-        let nodes_len = self.node_ids.len();
+        let nodes_len = self.nodes.len();
 
-        self.update_stale_nodes(all_nodes, now, feed);
+        self.update_stale_nodes(now, feed);
 
-        let node = match all_nodes.get_mut(nid) {
+        let node = match self.nodes.get_mut(nid) {
             Some(node) => node,
             None => return,
         };
@@ -243,14 +255,14 @@ impl Chain {
             }
 
             if let Some(details) = node.update_details(now, propagation_time) {
-                feed.push(feed_message::ImportedBlock(nid, details));
+                feed.push(feed_message::ImportedBlock(nid.into(), details));
             }
         }
     }
 
     /// Check if the chain is stale (has not received a new best block in a while).
     /// If so, find a new best block, ignoring any stale nodes and marking them as such.
-    fn update_stale_nodes(&mut self, all_nodes: &mut DenseMap<Node>, now: u64, feed: &mut FeedMessageSerializer) {
+    fn update_stale_nodes(&mut self, now: u64, feed: &mut FeedMessageSerializer) {
 
         let threshold = now - STALE_TIMEOUT;
         let timestamp = match self.timestamp {
@@ -267,11 +279,7 @@ impl Chain {
         let mut finalized = Block::zero();
         let mut timestamp = None;
 
-        for &nid in self.node_ids.iter() {
-            let node = match all_nodes.get_mut(nid) {
-                Some(node) => node,
-                None => continue
-            };
+        for (nid, node) in self.nodes.iter_mut() {
             if !node.update_stale(threshold) {
                 if node.best().height > best.height {
                     best = *node.best();
@@ -282,7 +290,7 @@ impl Chain {
                     finalized = *node.finalized();
                 }
             } else {
-                feed.push(feed_message::StaleNode(nid));
+                feed.push(feed_message::StaleNode(nid.into()));
             }
         }
 
@@ -301,14 +309,26 @@ impl Chain {
         }
     }
 
+    pub fn update_node_location(&mut self, node_id: ChainNodeId, location: find_location::Location) -> bool {
+        if let Some(node) = self.nodes.get_mut(node_id) {
+            node.update_location(location);
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn get_node(&self, id: ChainNodeId) -> Option<&Node> {
+        self.nodes.get(id)
+    }
+    pub fn iter_nodes(&self) -> impl Iterator<Item=(ChainNodeId, &Node)> {
+        self.nodes.iter()
+    }
     pub fn label(&self) -> &str {
         &self.labels.best()
     }
-    pub fn node_ids(&self) -> impl Iterator<Item=NodeId> + '_ {
-        self.node_ids.iter().copied()
-    }
     pub fn node_count(&self) -> usize {
-        self.node_ids.len()
+        self.nodes.len()
     }
     pub fn best_block(&self) -> &Block {
         &self.best

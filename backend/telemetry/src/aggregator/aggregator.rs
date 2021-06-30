@@ -5,12 +5,15 @@ use futures::{ future, Sink, SinkExt };
 use super::inner_loop;
 use crate::find_location::find_location;
 use crate::state::NodeId;
+use common::id_type;
 use std::net::Ipv4Addr;
 
-/// A unique Id is assigned per websocket connection (or more accurately,
-/// per feed socket and per shard socket). This can be combined with the
-/// [`LocalId`] of messages to give us a global ID.
-type ConnId = u64;
+id_type! {
+    /// A unique Id is assigned per websocket connection (or more accurately,
+    /// per feed socket and per shard socket). This can be combined with the
+    /// [`LocalId`] of messages to give us a global ID.
+    pub ConnId(u64)
+}
 
 #[derive(Clone)]
 pub struct Aggregator(Arc<AggregatorInternal>);
@@ -64,13 +67,13 @@ impl Aggregator {
     pub fn subscribe_shard(&self) -> impl Sink<inner_loop::FromShardWebsocket, Error = anyhow::Error> + Unpin {
         // Assign a unique aggregator-local ID to each connection that subscribes, and pass
         // that along with every message to the aggregator loop:
-        let shard_conn_id: ConnId = self.0.shard_conn_id.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let shard_conn_id = self.0.shard_conn_id.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let tx_to_aggregator = self.0.tx_to_aggregator.clone();
 
         // Calling `send` on this Sink requires Unpin. There may be a nicer way than this,
         // but pinning by boxing is the easy solution for now:
         Box::pin(tx_to_aggregator.with(move |msg| async move {
-            Ok(inner_loop::ToAggregator::FromShardWebsocket(shard_conn_id, msg))
+            Ok(inner_loop::ToAggregator::FromShardWebsocket(shard_conn_id.into(), msg))
         }))
     }
 
@@ -78,13 +81,13 @@ impl Aggregator {
     pub fn subscribe_feed(&self) -> impl Sink<inner_loop::FromFeedWebsocket, Error = anyhow::Error> + Unpin {
         // Assign a unique aggregator-local ID to each connection that subscribes, and pass
         // that along with every message to the aggregator loop:
-        let feed_conn_id: ConnId = self.0.feed_conn_id.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let feed_conn_id = self.0.feed_conn_id.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let tx_to_aggregator = self.0.tx_to_aggregator.clone();
 
         // Calling `send` on this Sink requires Unpin. There may be a nicer way than this,
         // but pinning by boxing is the easy solution for now:
         Box::pin(tx_to_aggregator.with(move |msg| async move {
-            Ok(inner_loop::ToAggregator::FromFeedWebsocket(feed_conn_id, msg))
+            Ok(inner_loop::ToAggregator::FromFeedWebsocket(feed_conn_id.into(), msg))
         }))
     }
 

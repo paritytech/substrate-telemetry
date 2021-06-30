@@ -7,28 +7,39 @@ use common::node::Payload;
 use std::iter::IntoIterator;
 use crate::feed_message::FeedMessageSerializer;
 use crate::find_location;
+use common::id_type;
 
-use super::chain::{ self, Chain };
+use super::chain::{ self, Chain, ChainNodeId };
 
-pub type NodeId = usize;
-pub type ChainId = usize;
+id_type!{
+    /// A globally unique Chain ID.
+    pub ChainId(usize)
+}
+
+/// A "global" Node ID is a composite of the ID of the chain it's
+/// on, and it's chain local ID.
+#[derive(Debug,Clone,Copy,Hash,PartialEq,Eq)]
+pub struct NodeId(ChainId, ChainNodeId);
+
+impl NodeId {
+    pub fn get_chain_node_id(&self) -> ChainNodeId {
+        self.1
+    }
+}
 
 /// Our state constains node and chain information
 pub struct State {
-    // Store nodes and chains in a fairly compact format.
-    nodes: DenseMap<Node>,
-    chains: DenseMap<Chain>,
+    chains: DenseMap<ChainId, Chain>,
 
     // Find the right chain given various details.
     chains_by_genesis_hash: HashMap<BlockHash, ChainId>,
     chains_by_label: HashMap<Box<str>, ChainId>,
-    chains_by_node: HashMap<NodeId, ChainId>,
 
     /// Chain labels that we do not want to allow connecting.
     denylist: HashSet<String>,
 }
 
-/// Adding a node to a chain leads to this result
+/// Adding a node to a chain leads to this node_idult
 pub enum AddNodeResult<'a> {
     /// The chain is on the "deny list", so we can't add the node
     ChainOnDenyList,
@@ -36,6 +47,16 @@ pub enum AddNodeResult<'a> {
     ChainOverQuota,
     /// The node was added to the chain
     NodeAddedToChain(NodeAddedToChain<'a>)
+}
+
+#[cfg(test)]
+impl <'a> AddNodeResult<'a> {
+    pub fn unwrap_id(&self) -> NodeId {
+        match &self {
+            AddNodeResult::NodeAddedToChain(d) => d.id,
+            _ => panic!("Attempt to unwrap_id on AddNodeResult that did not succeed")
+        }
+    }
 }
 
 pub struct NodeAddedToChain<'a> {
@@ -65,25 +86,12 @@ pub struct RemovedNode {
     pub new_chain_label: Box<str>,
 }
 
-/// If removing a node goes wrong, we get this back
-#[derive(Debug, thiserror::Error)]
-pub enum RemoveNodeError {
-    /// The node that you tried to remove wasn't found
-    #[error("Node not found")]
-    NodeNotFound,
-    /// The chain associated to the node wasn't found
-    #[error("Node chain not found")]
-    NodeChainNotFound
-}
-
 impl State {
     pub fn new<T: IntoIterator<Item=String>>(denylist: T) -> State {
         State {
-            nodes: DenseMap::new(),
             chains: DenseMap::new(),
             chains_by_genesis_hash: HashMap::new(),
             chains_by_label: HashMap::new(),
-            chains_by_node: HashMap::new(),
             denylist: denylist.into_iter().collect(),
         }
     }
@@ -91,28 +99,27 @@ impl State {
     pub fn iter_chains(&self) -> impl Iterator<Item=StateChain<'_>> {
         self.chains
             .iter()
-            .map(move |(_,chain)| StateChain { state: self, chain })
+            .map(move |(_,chain)| StateChain { chain })
     }
 
     pub fn get_chain_by_node_id(&self, node_id: NodeId) -> Option<StateChain<'_>> {
-        self.chains_by_node
-            .get(&node_id)
-            .and_then(|&chain_id| self.chains.get(chain_id))
-            .map(|chain| StateChain { state: self, chain })
+        self.chains
+            .get(node_id.0)
+            .map(|chain| StateChain { chain })
     }
 
     pub fn get_chain_by_genesis_hash(&self, genesis_hash: &BlockHash) -> Option<StateChain<'_>> {
         self.chains_by_genesis_hash
             .get(genesis_hash)
             .and_then(|&chain_id| self.chains.get(chain_id))
-            .map(|chain| StateChain { state: self, chain })
+            .map(|chain| StateChain { chain })
     }
 
     pub fn get_chain_by_label(&self, label: &str) -> Option<StateChain<'_>> {
         self.chains_by_label
             .get(label)
             .and_then(|&chain_id| self.chains.get(chain_id))
-            .map(|chain| StateChain { state: self, chain })
+            .map(|chain| StateChain { chain })
     }
 
     pub fn add_node(&mut self, genesis_hash: BlockHash, node_details: NodeDetails) -> AddNodeResult<'_> {
@@ -137,36 +144,26 @@ impl State {
         let chain = self.chains.get_mut(chain_id)
             .expect("should be known to exist after the above (unless chains_by_genesis_hash out of sync)");
 
-        // What ID will the node have when it's added? We don't actually want
-        // to add it until we know whether the chain will accept it, but we want
-        // an ID to give to the chain.
-        let node_id = self.nodes.next_id();
-        let node_chain_label = node_details.chain.clone();
+        let node = Node::new(node_details);
         let old_chain_label = chain.label().into();
 
-        match chain.add_node(node_id, &node_chain_label) {
+        match chain.add_node(node) {
             chain::AddNodeResult::Overquota => {
                 AddNodeResult::ChainOverQuota
             },
-            chain::AddNodeResult::Added { chain_renamed } => {
+            chain::AddNodeResult::Added { id, chain_renamed } => {
                 let chain = &*chain;
-
-                // Actually add the node, and a reference to its chain,
-                // if the chain adds it successfully:
-                self.nodes.add(Node::new(node_details));
-                self.chains_by_node.insert(node_id, chain_id);
 
                 // Update the label we use to reference the chain if
                 // it changes (it'll always change first time a node's added):
                 if chain_renamed {
                     self.chains_by_label.remove(&old_chain_label);
-                    self.chains_by_label.insert(chain.label().to_string().into_boxed_str(), chain_id);
+                    self.chains_by_label.insert(chain.label().into(), chain_id);
                 }
 
-                let node = self.nodes.get(node_id).expect("node added above");
                 AddNodeResult::NodeAddedToChain(NodeAddedToChain {
-                    id: node_id,
-                    node: node,
+                    id: NodeId(chain_id, id),
+                    node: chain.get_node(id).expect("node added above"),
                     old_chain_label: old_chain_label,
                     new_chain_label: chain.label(),
                     chain_node_count: chain.node_count(),
@@ -177,24 +174,20 @@ impl State {
     }
 
     /// Remove a node
-    pub fn remove_node(&mut self, node_id: NodeId) -> Result<RemovedNode,RemoveNodeError> {
-        self.nodes.remove(node_id)
-            .ok_or(RemoveNodeError::NodeNotFound)?;
+    pub fn remove_node(&mut self, NodeId(chain_id, chain_node_id): NodeId) -> Option<RemovedNode> {
+        let chain = self.chains.get_mut(chain_id)?;
+        let old_chain_label = chain.label().into();
 
-        let chain_id = self.chains_by_node.remove(&node_id)
-            .ok_or(RemoveNodeError::NodeChainNotFound)?;
+        // Actually remove the node
+        let remove_result = chain.remove_node(chain_node_id);
 
-        let chain = self.chains.get_mut(chain_id)
-            .ok_or(RemoveNodeError::NodeChainNotFound)?;
-
-        let old_chain_label = chain.label().to_string().into_boxed_str();
-        let remove_result = chain.remove_node(node_id, &old_chain_label);
-        let new_chain_label = chain.label().to_string().into_boxed_str();
+        // Get updated chain details.
+        let new_chain_label: Box<str> = chain.label().into();
         let chain_node_count = chain.node_count();
-        let genesis_hash = *chain.genesis_hash();
 
         // Is the chain empty? Remove if so and clean up indexes to it
         if chain_node_count == 0 {
+            let genesis_hash = *chain.genesis_hash();
             self.chains_by_label.remove(&old_chain_label);
             self.chains_by_genesis_hash.remove(&genesis_hash);
             self.chains.remove(chain_id);
@@ -206,7 +199,7 @@ impl State {
             self.chains_by_label.insert(new_chain_label.clone(), chain_id);
         }
 
-        Ok(RemovedNode {
+        Some(RemovedNode {
             old_chain_label,
             new_chain_label,
             chain_node_count: chain_node_count,
@@ -216,25 +209,19 @@ impl State {
 
     /// Attempt to update the best block seen, given a node and block.
     /// Returns a boolean which denotes whether the output is for finalization feeds (true) or not (false).
-    pub fn update_node(&mut self, node_id: NodeId, payload: Payload, feed: &mut FeedMessageSerializer) -> bool {
-        let chain_id = match self.chains_by_node.get(&node_id) {
-            Some(chain_id) => *chain_id,
-            None => { log::error!("Cannot find chain_id for node with ID {}", node_id); return false }
-        };
-
+    pub fn update_node(&mut self, NodeId(chain_id, chain_node_id): NodeId, payload: Payload, feed: &mut FeedMessageSerializer) -> bool {
         let chain = match self.chains.get_mut(chain_id) {
             Some(chain) => chain,
-            None => { log::error!("Cannot find chain for node with ID {}", node_id); return false }
+            None => { log::error!("Cannot find chain for node with ID {:?}", chain_id); return false }
         };
 
-        chain.update_node(&mut self.nodes, node_id, payload, feed)
+        chain.update_node(chain_node_id, payload, feed)
     }
 
     /// Update the location for a node. Return `false` if the node was not found.
-    pub fn update_node_location(&mut self, node_id: NodeId, location: find_location::Location) -> bool {
-        if let Some(node) = self.nodes.get_mut(node_id) {
-            node.update_location(location);
-            true
+    pub fn update_node_location(&mut self, NodeId(chain_id, chain_node_id): NodeId, location: find_location::Location) -> bool {
+        if let Some(chain) = self.chains.get_mut(chain_id) {
+            chain.update_node_location(chain_node_id, location)
         } else {
             false
         }
@@ -247,7 +234,6 @@ impl State {
 /// aren't really intended for use outside of [`State`] methods. Any modification
 /// of a chain needs to go through [`State`].
 pub struct StateChain<'a> {
-    state: &'a State,
     chain: &'a Chain
 }
 
@@ -273,11 +259,8 @@ impl <'a> StateChain<'a> {
     pub fn finalized_block(&self) -> &'a Block {
         self.chain.finalized_block()
     }
-    pub fn iter_nodes(&self) -> impl Iterator<Item=(NodeId, &'a Node)> + 'a {
-        let state = self.state;
-        self.chain.node_ids().filter_map(move |id| {
-            Some((id, state.nodes.get(id)?))
-        })
+    pub fn iter_nodes(&self) -> impl Iterator<Item=(ChainNodeId, &'a Node)> + 'a {
+        self.chain.iter_nodes()
     }
 }
 
@@ -314,7 +297,7 @@ mod test {
             AddNodeResult::NodeAddedToChain(details) => details
         };
 
-        assert_eq!(add_node_result.id, 0);
+        assert_eq!(add_node_result.id, NodeId(0.into(), 0.into()));
         assert_eq!(&*add_node_result.old_chain_label, "");
         assert_eq!(&*add_node_result.new_chain_label, "Chain One");
         assert_eq!(add_node_result.chain_node_count, 1);
@@ -331,7 +314,7 @@ mod test {
             AddNodeResult::NodeAddedToChain(details) => details
         };
 
-        assert_eq!(add_node_result.id, 1);
+        assert_eq!(add_node_result.id, NodeId(0.into(), 1.into()));
         assert_eq!(&*add_node_result.old_chain_label, "Chain One");
         assert_eq!(&*add_node_result.new_chain_label, "Chain One");
         assert_eq!(add_node_result.chain_node_count, 2);
@@ -343,32 +326,38 @@ mod test {
         let mut state = State::new(None);
 
         let chain1_genesis = BlockHash::from_low_u64_be(1);
-        state.add_node(chain1_genesis, node("A", "Chain One")); // 0
+        let node_id0 = state
+            .add_node(chain1_genesis, node("A", "Chain One")) // 0
+            .unwrap_id();
 
-        assert_eq!(state.get_chain_by_node_id(0).expect("Chain should exist").label(), "Chain One");
+        assert_eq!(state.get_chain_by_node_id(node_id0).expect("Chain should exist").label(), "Chain One");
         assert!(state.get_chain_by_label("Chain One").is_some());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_some());
 
-        state.add_node(chain1_genesis, node("B", "Chain Two")); // 1
+        let node_id1 = state
+            .add_node(chain1_genesis, node("B", "Chain Two")) // 1
+            .unwrap_id();
 
         // Chain name hasn't changed yet; "Chain One" as common as "Chain Two"..
-        assert_eq!(state.get_chain_by_node_id(0).expect("Chain should exist").label(), "Chain One");
+        assert_eq!(state.get_chain_by_node_id(node_id0).expect("Chain should exist").label(), "Chain One");
         assert!(state.get_chain_by_label("Chain One").is_some());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_some());
 
-        state.add_node(chain1_genesis, node("B", "Chain Two")); // 2
+        let node_id2 = state
+            .add_node(chain1_genesis, node("B", "Chain Two"))
+            .unwrap_id(); // 2
 
         // Chain name has changed; "Chain Two" the winner now..
-        assert_eq!(state.get_chain_by_node_id(0).expect("Chain should exist").label(), "Chain Two");
+        assert_eq!(state.get_chain_by_node_id(node_id0).expect("Chain should exist").label(), "Chain Two");
         assert!(state.get_chain_by_label("Chain One").is_none());
         assert!(state.get_chain_by_label("Chain Two").is_some());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_some());
 
-        state.remove_node(1).expect("Removal OK (id: 1)");
-        state.remove_node(2).expect("Removal OK (id: 2");
+        state.remove_node(node_id1).expect("Removal OK (id: 1)");
+        state.remove_node(node_id2).expect("Removal OK (id: 2)");
 
         // Removed both "Chain Two" nodes; dominant name now "Chain One" again..
-        assert_eq!(state.get_chain_by_node_id(0).expect("Chain should exist").label(), "Chain One");
+        assert_eq!(state.get_chain_by_node_id(node_id0).expect("Chain should exist").label(), "Chain One");
         assert!(state.get_chain_by_label("Chain One").is_some());
         assert!(state.get_chain_by_label("Chain Two").is_none());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_some());
@@ -379,13 +368,15 @@ mod test {
         let mut state = State::new(None);
 
         let chain1_genesis = BlockHash::from_low_u64_be(1);
-        state.add_node(chain1_genesis, node("A", "Chain One")); // 0
+        let node_id = state
+            .add_node(chain1_genesis, node("A", "Chain One")) // 0
+            .unwrap_id();
 
         assert!(state.get_chain_by_label("Chain One").is_some());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_some());
         assert_eq!(state.iter_chains().count(), 1);
 
-        state.remove_node(0);
+        state.remove_node(node_id);
 
         assert!(state.get_chain_by_label("Chain One").is_none());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_none());

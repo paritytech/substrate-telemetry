@@ -4,10 +4,8 @@ use serde::{Deserialize, Serialize};
 use crate::util::{now, MeanList};
 use crate::json;
 
-pub type NodeId = usize;
 pub type BlockNumber = u64;
 pub type Timestamp = u64;
-pub type Address = Box<str>;
 pub use primitive_types::H256 as BlockHash;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -105,21 +103,6 @@ pub struct NodeLocation {
     pub longitude: f32,
     pub city: Box<str>,
 }
-
-// impl Serialize for NodeDetails {
-//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-//     where
-//         S: Serializer,
-//     {
-//         let mut tup = serializer.serialize_tuple(6)?;
-//         tup.serialize_element(&self.name)?;
-//         tup.serialize_element(&self.implementation)?;
-//         tup.serialize_element(&self.version)?;
-//         tup.serialize_element(&self.validator)?;
-//         tup.serialize_element(&self.network_id)?;
-//         tup.end()
-//     }
-// }
 
 impl Serialize for NodeStats {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

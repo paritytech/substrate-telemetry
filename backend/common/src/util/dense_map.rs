@@ -1,17 +1,22 @@
-pub type Id = usize;
-
-pub struct DenseMap<T> {
+pub struct DenseMap<Id, T> {
     /// List of retired indexes that can be re-used
-    retired: Vec<Id>,
+    retired: Vec<usize>,
     /// All items
     items: Vec<Option<T>>,
+    /// Our ID type
+    _id_ty: std::marker::PhantomData<Id>
 }
 
-impl<T> DenseMap<T> {
+impl<Id, T> DenseMap<Id, T>
+where
+    Id: From<usize> + Copy,
+    usize: From<Id>
+{
     pub fn new() -> Self {
         DenseMap {
             retired: Vec::new(),
             items: Vec::new(),
+            _id_ty: std::marker::PhantomData
         }
     }
 
@@ -25,11 +30,12 @@ impl<T> DenseMap<T> {
     {
         match self.retired.pop() {
             Some(id) => {
-                self.items[id] = Some(f(id));
-                id
+                let id_out = id.into();
+                self.items[id] = Some(f(id_out));
+                id_out
             }
             None => {
-                let id = self.items.len();
+                let id = self.items.len().into();
                 self.items.push(Some(f(id)));
                 id
             }
@@ -37,14 +43,17 @@ impl<T> DenseMap<T> {
     }
 
     pub fn get(&self, id: Id) -> Option<&T> {
+        let id: usize = id.into();
         self.items.get(id).and_then(|item| item.as_ref())
     }
 
     pub fn get_mut(&mut self, id: Id) -> Option<&mut T> {
+        let id: usize = id.into();
         self.items.get_mut(id).and_then(|item| item.as_mut())
     }
 
     pub fn remove(&mut self, id: Id) -> Option<T> {
+        let id: usize = id.into();
         let old = self.items.get_mut(id).and_then(|item| item.take());
 
         if old.is_some() {
@@ -60,14 +69,14 @@ impl<T> DenseMap<T> {
         self.items
             .iter()
             .enumerate()
-            .filter_map(|(id, item)| Some((id, item.as_ref()?)))
+            .filter_map(|(id, item)| Some((id.into(), item.as_ref()?)))
     }
 
     pub fn iter_mut(&mut self) -> impl Iterator<Item = (Id, &mut T)> + '_ {
         self.items
             .iter_mut()
             .enumerate()
-            .filter_map(|(id, item)| Some((id, item.as_mut()?)))
+            .filter_map(|(id, item)| Some((id.into(), item.as_mut()?)))
     }
 
     pub fn len(&self) -> usize {

@@ -2,12 +2,16 @@ use std::net::IpAddr;
 
 use crate::node::Payload;
 use crate::types::{NodeDetails, BlockHash};
-use crate::assign_id::Id;
+use crate::id_type;
 use serde::{Deserialize, Serialize};
 
-/// The shard-local ID of a given node, where a single connection
-/// might send data on behalf of more than one chain.
-pub type LocalId = Id;
+id_type! {
+    /// The shard-local ID of a given node, where a single connection
+    /// might send data on behalf of more than one chain.
+    #[derive(serde::Serialize, serde::Deserialize)]
+    pub ShardNodeId(usize);
+}
+
 
 /// Message sent from the shard to the backend core
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -16,17 +20,17 @@ pub enum FromShardAggregator {
     AddNode {
     	ip: Option<IpAddr>,
     	node: NodeDetails,
-    	local_id: LocalId,
+    	local_id: ShardNodeId,
         genesis_hash: BlockHash
     },
     /// Send a message payload to update details for a node
     UpdateNode {
-        local_id: LocalId,
+        local_id: ShardNodeId,
         payload: Payload,
     },
     /// Inform the core that a node has been removed
     RemoveNode {
-        local_id: LocalId
+        local_id: ShardNodeId
     }
 }
 
@@ -34,7 +38,7 @@ pub enum FromShardAggregator {
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub enum FromTelemetryCore {
 	Mute {
-		local_id: LocalId,
+		local_id: ShardNodeId,
         reason: MuteReason
 	}
 }

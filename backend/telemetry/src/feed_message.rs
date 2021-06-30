@@ -7,9 +7,12 @@ use std::mem;
 use crate::state::Node;
 use serde_json::to_writer;
 use common::types::{
-    Address, BlockDetails, BlockHash, BlockNumber, NodeHardware, NodeIO, NodeId, NodeStats,
+    BlockDetails, BlockHash, BlockNumber, NodeHardware, NodeIO, NodeStats,
     Timestamp
 };
+
+type Address = Box<str>;
+type FeedNodeId = usize;
 
 pub trait FeedMessage {
     const ACTION: u8;
@@ -133,28 +136,28 @@ pub struct BestBlock(pub BlockNumber, pub Timestamp, pub Option<u64>);
 #[derive(Serialize)]
 pub struct BestFinalized(pub BlockNumber, pub BlockHash);
 
-pub struct AddedNode<'a>(pub NodeId, pub &'a Node);
+pub struct AddedNode<'a>(pub FeedNodeId, pub &'a Node);
 
 #[derive(Serialize)]
-pub struct RemovedNode(pub NodeId);
+pub struct RemovedNode(pub FeedNodeId);
 
 #[derive(Serialize)]
-pub struct LocatedNode<'a>(pub NodeId, pub f32, pub f32, pub &'a str);
+pub struct LocatedNode<'a>(pub FeedNodeId, pub f32, pub f32, pub &'a str);
 
 #[derive(Serialize)]
-pub struct ImportedBlock<'a>(pub NodeId, pub &'a BlockDetails);
+pub struct ImportedBlock<'a>(pub FeedNodeId, pub &'a BlockDetails);
 
 #[derive(Serialize)]
-pub struct FinalizedBlock(pub NodeId, pub BlockNumber, pub BlockHash);
+pub struct FinalizedBlock(pub FeedNodeId, pub BlockNumber, pub BlockHash);
 
 #[derive(Serialize)]
-pub struct NodeStatsUpdate<'a>(pub NodeId, pub &'a NodeStats);
+pub struct NodeStatsUpdate<'a>(pub FeedNodeId, pub &'a NodeStats);
 
 #[derive(Serialize)]
-pub struct NodeIOUpdate<'a>(pub NodeId, pub &'a NodeIO);
+pub struct NodeIOUpdate<'a>(pub FeedNodeId, pub &'a NodeIO);
 
 #[derive(Serialize)]
-pub struct Hardware<'a>(pub NodeId, pub &'a NodeHardware);
+pub struct Hardware<'a>(pub FeedNodeId, pub &'a NodeHardware);
 
 #[derive(Serialize)]
 pub struct TimeSync(pub u64);
@@ -203,7 +206,7 @@ pub struct AfgAuthoritySet(
 );
 
 #[derive(Serialize)]
-pub struct StaleNode(pub NodeId);
+pub struct StaleNode(pub FeedNodeId);
 
 impl FeedMessageWrite for AddedNode<'_> {
     fn write_to_feed(&self, ser: &mut FeedMessageSerializer) {
