@@ -13,7 +13,7 @@ use std::{net::{IpAddr, Ipv4Addr}, str::FromStr};
 use futures::channel::{ mpsc };
 use futures::{ SinkExt, StreamExt };
 use std::collections::{ HashMap, HashSet };
-use crate::state::{ self, State, NodeId, OnUpdateNode };
+use crate::state::{ self, State, NodeId };
 use crate::feed_message::{ self, FeedMessageSerializer };
 use crate::find_location;
 
@@ -304,54 +304,8 @@ impl InnerLoop {
 
     async fn handle_from_shard_update(&mut self, node_id: NodeId, payload: node::Payload) {
         let mut feed_message_serializer = FeedMessageSerializer::new();
-        let mut broadcast_finality = false;
 
-        self.node_state.update_node(node_id, payload, |msg| {
-            match msg {
-                OnUpdateNode::StaleNode(to_feed) => {
-                    feed_message_serializer.push(to_feed);
-                }
-                OnUpdateNode::BestBlock(to_feed) => {
-                    feed_message_serializer.push(to_feed);
-                }
-                OnUpdateNode::BestFinalized(to_feed) => {
-                    feed_message_serializer.push(to_feed);
-                }
-                OnUpdateNode::ImportedBlock(to_feed) => {
-                    feed_message_serializer.push(to_feed);
-                }
-                OnUpdateNode::Hardware(to_feed) => {
-                    feed_message_serializer.push(to_feed);
-                }
-                OnUpdateNode::NodeStatsUpdate(to_feed) => {
-                    feed_message_serializer.push(to_feed);
-                }
-                OnUpdateNode::NodeIOUpdate(to_feed) => {
-                    feed_message_serializer.push(to_feed);
-                }
-                OnUpdateNode::AfgFinalized(to_feed) => {
-                    feed_message_serializer.push(to_feed);
-                    // All messages sent in an update leading to this message are only
-                    // broadcast to feeds subscribed to chain finality info
-                    broadcast_finality = true;
-                }
-                OnUpdateNode::AfgReceivedPrecommit(to_feed) => {
-                    feed_message_serializer.push(to_feed);
-                    // All messages sent in an update leading to this message are only
-                    // broadcast to feeds subscribed to chain finality info
-                    broadcast_finality = true;
-                }
-                OnUpdateNode::AfgReceivedPrevote(to_feed) => {
-                    feed_message_serializer.push(to_feed);
-                    // All messages sent in an update leading to this message are only
-                    // broadcast to feeds subscribed to chain finality info
-                    broadcast_finality = true;
-                }
-                OnUpdateNode::FinalizedBlock(to_feed) => {
-                    feed_message_serializer.push(to_feed);
-                }
-            }
-        });
+        let broadcast_finality = self.node_state.update_node(node_id, payload, &mut feed_message_serializer);
 
         if let Some(chain) = self.node_state.get_chain_by_node_id(node_id) {
             let genesis_hash = *chain.genesis_hash();

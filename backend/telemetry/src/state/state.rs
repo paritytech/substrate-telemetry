@@ -5,6 +5,7 @@ use common::types::{Block, NodeDetails, Timestamp};
 use common::util::{DenseMap};
 use common::node::Payload;
 use std::iter::IntoIterator;
+use crate::feed_message::FeedMessageSerializer;
 use crate::find_location;
 
 use super::chain::{ self, Chain };
@@ -51,9 +52,6 @@ pub struct NodeAddedToChain<'a> {
     /// Has the chain label been updated?
     pub has_chain_label_changed: bool
 }
-
-/// During a node update, we get given various messages about the update
-pub type OnUpdateNode<'a> = chain::OnUpdateNode<'a>;
 
 /// if removing a node is successful, we get this information back.
 pub struct RemovedNode {
@@ -217,20 +215,19 @@ impl State {
     }
 
     /// Attempt to update the best block seen, given a node and block.
-    pub fn update_node<OnUpdate>(&mut self, node_id: NodeId, payload: Payload, on_update: OnUpdate)
-    where OnUpdate: FnMut(OnUpdateNode)
-    {
+    /// Returns a boolean which denotes whether the output is for finalization feeds (true) or not (false).
+    pub fn update_node(&mut self, node_id: NodeId, payload: Payload, feed: &mut FeedMessageSerializer) -> bool {
         let chain_id = match self.chains_by_node.get(&node_id) {
             Some(chain_id) => *chain_id,
-            None => { log::error!("Cannot find chain_id for node with ID {}", node_id); return }
+            None => { log::error!("Cannot find chain_id for node with ID {}", node_id); return false }
         };
 
         let chain = match self.chains.get_mut(chain_id) {
             Some(chain) => chain,
-            None => { log::error!("Cannot find chain for node with ID {}", node_id); return }
+            None => { log::error!("Cannot find chain for node with ID {}", node_id); return false }
         };
 
-        chain.update_node(&mut self.nodes, node_id, payload, on_update);
+        chain.update_node(&mut self.nodes, node_id, payload, feed)
     }
 
     /// Update the location for a node. Return `false` if the node was not found.
