@@ -39,7 +39,6 @@ struct Opts {
         required = false,
         long = "log",
         default_value = "info",
-        about = "Log level."
     )]
     log_level: LogLevel,
     /// Url to the Backend Core endpoint accepting shard connections

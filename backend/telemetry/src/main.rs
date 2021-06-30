@@ -39,7 +39,6 @@ struct Opts {
         required = false,
         long = "log",
         default_value = "info",
-        about = "Log level."
     )]
     log_level: LogLevel,
     /// Space delimited list of the names of chains that are not allowed to connect to
