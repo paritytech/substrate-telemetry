@@ -1,7 +1,5 @@
-use std::sync::Arc;
-
 use common::types::{
-    Block, BlockDetails, NodeDetails, NodeHardware, NodeIO, NodeId, NodeLocation, NodeStats,
+    Block, BlockDetails, NodeDetails, NodeHardware, NodeIO, NodeLocation, NodeStats,
     Timestamp,
 };
 use common::util::now;

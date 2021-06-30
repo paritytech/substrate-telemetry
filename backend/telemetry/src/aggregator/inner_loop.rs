@@ -13,7 +13,7 @@ use std::{net::{IpAddr, Ipv4Addr}, str::FromStr};
 use futures::channel::{ mpsc };
 use futures::{ SinkExt, StreamExt };
 use std::collections::{ HashMap, HashSet };
-use crate::state::{ self, State, NodeId };
+use crate::state::{ self, State, NodeId, OnUpdateNode };
 use crate::feed_message::{ self, FeedMessageSerializer };
 use crate::find_location;
 
@@ -201,7 +201,7 @@ impl InnerLoop {
             ));
 
             let chain_genesis_hash = self.node_state
-                .get_node_chain(node_id)
+                .get_chain_by_node_id(node_id)
                 .map(|chain| *chain.genesis_hash());
 
             if let Some(chain_genesis_hash) = chain_genesis_hash {
@@ -279,48 +279,14 @@ impl InnerLoop {
                 self.remove_nodes_and_broadcast_result(Some(node_id)).await;
             },
             FromShardWebsocket::Update { local_id, payload } => {
-                // TODO: Fill this all in...
                 let node_id = match self.node_ids.get_by_right(&(shard_conn_id, local_id)) {
-                    Some(id) => id,
-                    None => return
+                    Some(id) => *id,
+                    None => {
+                        log::error!("Cannot find ID for node with shard/connectionId of {}/{}", shard_conn_id, local_id);
+                        return
+                    }
                 };
-
-                if let Some(block) = payload.best_block() {
-
-                }
-
-                match payload {
-                    node::Payload::SystemInterval(system_interval) => {
-
-                    },
-                    node::Payload::AfgAuthoritySet(_) => {
-
-                    },
-                    node::Payload::AfgFinalized(_) => {
-
-                    },
-                    node::Payload::AfgReceivedPrecommit(_) => {
-
-                    },
-                    node::Payload::AfgReceivedPrevote(_) => {
-
-                    },
-                    // This message should have been handled before the payload made it this far:
-                    node::Payload::SystemConnected(_) => {
-                        unreachable!("SystemConnected message seen in Telemetry Core, but should have been handled in shard");
-                    },
-                    // The following messages aren't handled at the moment. List them explicitly so
-                    // that we have to make an explicit choice for any new messages:
-                    node::Payload::BlockImport(_) |
-                    node::Payload::NotifyFinalized(_) |
-                    node::Payload::AfgReceivedCommit(_) |
-                    node::Payload::TxPoolImport |
-                    node::Payload::AfgFinalizedBlocksUpTo |
-                    node::Payload::AuraPreSealedBlock |
-                    node::Payload::PreparedBlockForProposing => {},
-                }
-
-                // TODO: node_state.update_node, then handle returned diffs
+                self.handle_from_shard_update(node_id, payload).await;
             },
             FromShardWebsocket::Disconnected => {
                 // Find all nodes associated with this shard connection ID:
@@ -332,6 +298,67 @@ impl InnerLoop {
 
                 // ... and remove them:
                 self.remove_nodes_and_broadcast_result(node_ids_to_remove).await;
+            }
+        }
+    }
+
+    async fn handle_from_shard_update(&mut self, node_id: NodeId, payload: node::Payload) {
+        let mut feed_message_serializer = FeedMessageSerializer::new();
+        let mut broadcast_finality = false;
+
+        self.node_state.update_node(node_id, payload, |msg| {
+            match msg {
+                OnUpdateNode::StaleNode(to_feed) => {
+                    feed_message_serializer.push(to_feed);
+                }
+                OnUpdateNode::BestBlock(to_feed) => {
+                    feed_message_serializer.push(to_feed);
+                }
+                OnUpdateNode::BestFinalized(to_feed) => {
+                    feed_message_serializer.push(to_feed);
+                }
+                OnUpdateNode::ImportedBlock(to_feed) => {
+                    feed_message_serializer.push(to_feed);
+                }
+                OnUpdateNode::Hardware(to_feed) => {
+                    feed_message_serializer.push(to_feed);
+                }
+                OnUpdateNode::NodeStatsUpdate(to_feed) => {
+                    feed_message_serializer.push(to_feed);
+                }
+                OnUpdateNode::NodeIOUpdate(to_feed) => {
+                    feed_message_serializer.push(to_feed);
+                }
+                OnUpdateNode::AfgFinalized(to_feed) => {
+                    feed_message_serializer.push(to_feed);
+                    // All messages sent in an update leading to this message are only
+                    // broadcast to feeds subscribed to chain finality info
+                    broadcast_finality = true;
+                }
+                OnUpdateNode::AfgReceivedPrecommit(to_feed) => {
+                    feed_message_serializer.push(to_feed);
+                    // All messages sent in an update leading to this message are only
+                    // broadcast to feeds subscribed to chain finality info
+                    broadcast_finality = true;
+                }
+                OnUpdateNode::AfgReceivedPrevote(to_feed) => {
+                    feed_message_serializer.push(to_feed);
+                    // All messages sent in an update leading to this message are only
+                    // broadcast to feeds subscribed to chain finality info
+                    broadcast_finality = true;
+                }
+                OnUpdateNode::FinalizedBlock(to_feed) => {
+                    feed_message_serializer.push(to_feed);
+                }
+            }
+        });
+
+        if let Some(chain) = self.node_state.get_chain_by_node_id(node_id) {
+            let genesis_hash = *chain.genesis_hash();
+            if broadcast_finality {
+                self.finalize_and_broadcast_to_chain_finality_feeds(&genesis_hash, feed_message_serializer).await;
+            } else {
+                self.finalize_and_broadcast_to_chain_feeds(&genesis_hash, feed_message_serializer).await;
             }
         }
     }
@@ -465,7 +492,7 @@ impl InnerLoop {
         // Group by chain to simplify the handling of feed messages:
         let mut node_ids_per_chain: HashMap<BlockHash,Vec<NodeId>> = HashMap::new();
         for node_id in node_ids.into_iter() {
-            if let Some(chain) = self.node_state.get_node_chain(node_id) {
+            if let Some(chain) = self.node_state.get_chain_by_node_id(node_id) {
                 node_ids_per_chain.entry(*chain.genesis_hash()).or_default().push(node_id);
             }
         }
@@ -537,13 +564,8 @@ impl InnerLoop {
 
     /// Send a message to all chain feeds.
     async fn broadcast_to_chain_feeds(&mut self, genesis_hash: &BlockHash, message: ToFeedWebsocket) {
-
-println!("BROADCAST TO CHAIN FEEDS, {}, \n\n{:?}\n\n{:?}\n\n", genesis_hash, self.chain_to_feed_conn_ids, self.feed_conn_id_to_chain);
-
         if let Some(feeds) = self.chain_to_feed_conn_ids.get(genesis_hash) {
             for &feed_id in feeds {
-                // How much faster would it be if we processed these in parallel?
-                // Is it practical to do so given lifetimes and such?
                 if let Some(chan) = self.feed_channels.get_mut(&feed_id) {
                     let _ = chan.send(message.clone()).await;
                 }
@@ -561,9 +583,27 @@ println!("BROADCAST TO CHAIN FEEDS, {}, \n\n{:?}\n\n{:?}\n\n", genesis_hash, sel
     /// Send a message to everybody.
     async fn broadcast_to_all_feeds(&mut self, message: ToFeedWebsocket) {
         for chan in self.feed_channels.values_mut() {
-            // How much faster would it be if we processed these in parallel?
-            // Is it practical to do so given lifetimes and such?
             let _ = chan.send(message.clone()).await;
+        }
+    }
+
+    /// Finalize a [`FeedMessageSerializer`] and broadcast the result to chain finality feeds
+    async fn finalize_and_broadcast_to_chain_finality_feeds(&mut self, genesis_hash: &BlockHash, serializer: FeedMessageSerializer) {
+        if let Some(bytes) = serializer.into_finalized() {
+            self.broadcast_to_chain_finality_feeds(genesis_hash, ToFeedWebsocket::Bytes(bytes)).await;
+        }
+    }
+
+    /// Send a message to all chain finality feeds.
+    async fn broadcast_to_chain_finality_feeds(&mut self, genesis_hash: &BlockHash, message: ToFeedWebsocket) {
+        if let Some(feeds) = self.chain_to_feed_conn_ids.get(genesis_hash) {
+            // Get all feeds for the chain, but only broadcast to those feeds that
+            // are also subscribed to receive finality updates.
+            for &feed_id in feeds.union(&self.feed_conn_id_finality) {
+                if let Some(chan) = self.feed_channels.get_mut(&feed_id) {
+                    let _ = chan.send(message.clone()).await;
+                }
+            }
         }
     }
 }

@@ -1,9 +1,8 @@
-use std::sync::Arc;
 use std::collections::{ HashSet, HashMap };
 use common::types::{ BlockHash };
 use super::node::Node;
-use common::types::{Block, NodeDetails, NodeLocation, Timestamp};
-use common::util::{now, DenseMap, NumStats};
+use common::types::{Block, NodeDetails, Timestamp};
+use common::util::{DenseMap};
 use common::node::Payload;
 use std::iter::IntoIterator;
 use crate::find_location;
@@ -53,7 +52,10 @@ pub struct NodeAddedToChain<'a> {
     pub has_chain_label_changed: bool
 }
 
-// if removing a node is successful, we get this information back.
+/// During a node update, we get given various messages about the update
+pub type OnUpdateNode<'a> = chain::OnUpdateNode<'a>;
+
+/// if removing a node is successful, we get this information back.
 pub struct RemovedNode {
     /// How many nodes remain on the chain (0 if the chain was removed)
     pub chain_node_count: usize,
@@ -92,6 +94,13 @@ impl State {
         self.chains
             .iter()
             .map(move |(_,chain)| StateChain { state: self, chain })
+    }
+
+    pub fn get_chain_by_node_id(&self, node_id: NodeId) -> Option<StateChain<'_>> {
+        self.chains_by_node
+            .get(&node_id)
+            .and_then(|&chain_id| self.chains.get(chain_id))
+            .map(|chain| StateChain { state: self, chain })
     }
 
     pub fn get_chain_by_genesis_hash(&self, genesis_hash: &BlockHash) -> Option<StateChain<'_>> {
@@ -207,27 +216,31 @@ impl State {
         })
     }
 
+    /// Attempt to update the best block seen, given a node and block.
+    pub fn update_node<OnUpdate>(&mut self, node_id: NodeId, payload: Payload, on_update: OnUpdate)
+    where OnUpdate: FnMut(OnUpdateNode)
+    {
+        let chain_id = match self.chains_by_node.get(&node_id) {
+            Some(chain_id) => *chain_id,
+            None => { log::error!("Cannot find chain_id for node with ID {}", node_id); return }
+        };
+
+        let chain = match self.chains.get_mut(chain_id) {
+            Some(chain) => chain,
+            None => { log::error!("Cannot find chain for node with ID {}", node_id); return }
+        };
+
+        chain.update_node(&mut self.nodes, node_id, payload, on_update);
+    }
+
     /// Update the location for a node. Return `false` if the node was not found.
     pub fn update_node_location(&mut self, node_id: NodeId, location: find_location::Location) -> bool {
-        if let Some(node) = self.get_node_mut(node_id) {
+        if let Some(node) = self.nodes.get_mut(node_id) {
             node.update_location(location);
             true
         } else {
             false
         }
-    }
-
-    /// Get the chain that a node belongs to.
-    pub fn get_node_chain(&self, node_id: NodeId) -> Option<StateChain<'_>> {
-        self.chains_by_node
-            .get(&node_id)
-            .and_then(|&chain_id| self.chains.get(chain_id))
-            .map(|chain| StateChain { state: self, chain })
-    }
-
-    /// Obtain mutable access to a node, if it's found.
-    fn get_node_mut(&mut self, node_id: NodeId) -> Option<&mut Node> {
-        self.nodes.get_mut(node_id)
     }
 }
 
@@ -255,7 +268,7 @@ impl <'a> StateChain<'a> {
         self.chain.best_block()
     }
     pub fn timestamp(&self) -> Timestamp {
-        self.chain.timestamp()
+        self.chain.timestamp().unwrap_or(0)
     }
     pub fn average_block_time(&self) -> Option<u64> {
         self.chain.average_block_time()
@@ -335,21 +348,21 @@ mod test {
         let chain1_genesis = BlockHash::from_low_u64_be(1);
         state.add_node(chain1_genesis, node("A", "Chain One")); // 0
 
-        assert_eq!(state.get_node_chain(0).expect("Chain should exist").label(), "Chain One");
+        assert_eq!(state.get_chain_by_node_id(0).expect("Chain should exist").label(), "Chain One");
         assert!(state.get_chain_by_label("Chain One").is_some());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_some());
 
         state.add_node(chain1_genesis, node("B", "Chain Two")); // 1
 
         // Chain name hasn't changed yet; "Chain One" as common as "Chain Two"..
-        assert_eq!(state.get_node_chain(0).expect("Chain should exist").label(), "Chain One");
+        assert_eq!(state.get_chain_by_node_id(0).expect("Chain should exist").label(), "Chain One");
         assert!(state.get_chain_by_label("Chain One").is_some());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_some());
 
         state.add_node(chain1_genesis, node("B", "Chain Two")); // 2
 
         // Chain name has changed; "Chain Two" the winner now..
-        assert_eq!(state.get_node_chain(0).expect("Chain should exist").label(), "Chain Two");
+        assert_eq!(state.get_chain_by_node_id(0).expect("Chain should exist").label(), "Chain Two");
         assert!(state.get_chain_by_label("Chain One").is_none());
         assert!(state.get_chain_by_label("Chain Two").is_some());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_some());
@@ -358,7 +371,7 @@ mod test {
         state.remove_node(2).expect("Removal OK (id: 2");
 
         // Removed both "Chain Two" nodes; dominant name now "Chain One" again..
-        assert_eq!(state.get_node_chain(0).expect("Chain should exist").label(), "Chain One");
+        assert_eq!(state.get_chain_by_node_id(0).expect("Chain should exist").label(), "Chain One");
         assert!(state.get_chain_by_label("Chain One").is_some());
         assert!(state.get_chain_by_label("Chain Two").is_none());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_some());
