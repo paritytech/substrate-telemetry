@@ -1,7 +1,7 @@
 use std::net::IpAddr;
 
-use crate::node::Payload;
-use crate::types::{NodeDetails, BlockHash};
+use crate::node_message::Payload;
+use crate::node_types::{NodeDetails, BlockHash};
 use crate::id_type;
 use serde::{Deserialize, Serialize};
 

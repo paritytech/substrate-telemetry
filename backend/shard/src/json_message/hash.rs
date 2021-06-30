@@ -10,14 +10,14 @@ const HASH_BYTES: usize = 32;
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
 pub struct Hash([u8; HASH_BYTES]);
 
-impl From<Hash> for crate::types::BlockHash {
+impl From<Hash> for common::node_types::BlockHash {
     fn from(hash: Hash) -> Self {
         hash.0.into()
     }
 }
 
-impl From<crate::types::BlockHash> for Hash {
-    fn from(hash: crate::types::BlockHash) -> Self {
+impl From<common::node_types::BlockHash> for Hash {
+    fn from(hash: common::node_types::BlockHash) -> Self {
         Hash(hash.0)
     }
 }

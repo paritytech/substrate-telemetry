@@ -1,8 +1,7 @@
 use serde::ser::{SerializeTuple, Serializer};
 use serde::{Deserialize, Serialize};
 
-use crate::util::{now, MeanList};
-use crate::json;
+use crate::{time, MeanList};
 
 pub type BlockNumber = u64;
 pub type Timestamp = u64;
@@ -17,20 +16,6 @@ pub struct NodeDetails {
     pub validator: Option<Box<str>>,
     pub network_id: Option<Box<str>>,
     pub startup_time: Option<Box<str>>,
-}
-
-impl From<json::NodeDetails> for NodeDetails {
-    fn from(details: json::NodeDetails) -> Self {
-        NodeDetails {
-            chain: details.chain,
-            name: details.name,
-            implementation: details.implementation,
-            version: details.version,
-            validator: details.validator,
-            network_id: details.network_id,
-            startup_time: details.startup_time,
-        }
-    }
 }
 
 #[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -48,15 +33,6 @@ pub struct NodeIO {
 pub struct Block {
     pub hash: BlockHash,
     pub height: BlockNumber,
-}
-
-impl From<json::Block> for Block {
-    fn from(block: json::Block) -> Self {
-        Block {
-            hash: block.hash.into(),
-            height: block.height
-        }
-    }
 }
 
 impl Block {
@@ -80,7 +56,7 @@ impl Default for BlockDetails {
     fn default() -> Self {
         BlockDetails {
             block: Block::zero(),
-            block_timestamp: now(),
+            block_timestamp: time::now(),
             block_time: 0,
             propagation_time: None,
         }

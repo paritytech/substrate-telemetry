@@ -4,9 +4,9 @@ use common::{
         ShardNodeId,
         MuteReason
     },
-    types::BlockHash,
-    node,
-    util::now
+    node_types::BlockHash,
+    node_message,
+    time
 };
 use bimap::BiMap;
 use std::{net::{IpAddr, Ipv4Addr}, str::FromStr};
@@ -38,13 +38,13 @@ pub enum FromShardWebsocket {
     Add {
         local_id: ShardNodeId,
         ip: Option<std::net::IpAddr>,
-        node: common::types::NodeDetails,
-        genesis_hash: common::types::BlockHash
+        node: common::node_types::NodeDetails,
+        genesis_hash: common::node_types::BlockHash
     },
     /// Update/pass through details about a node.
     Update {
         local_id: ShardNodeId,
-        payload: node::Payload
+        payload: node_message::Payload
     },
     /// Tell the aggregator that a node has been removed when it disconnects.
     Remove {
@@ -379,7 +379,7 @@ impl InnerLoop {
                     feed_serializer.push(feed_message::UnsubscribedFrom(old_chain.label()));
                 }
                 feed_serializer.push(feed_message::SubscribedTo(new_chain.label()));
-                feed_serializer.push(feed_message::TimeSync(now()));
+                feed_serializer.push(feed_message::TimeSync(time::now()));
                 feed_serializer.push(feed_message::BestBlock (
                     new_chain.best_block().height,
                     new_chain.timestamp(),

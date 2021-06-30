@@ -7,13 +7,12 @@ use std::net::SocketAddr;
 use std::str::FromStr;
 
 use bincode::Options;
-use common::internal_messages;
 use structopt::StructOpt;
 use simple_logger::SimpleLogger;
 use futures::{StreamExt, SinkExt, channel::mpsc};
 use warp::Filter;
 use warp::filters::ws;
-use common::{log_level::LogLevel};
+use common::{ internal_messages, LogLevel };
 use aggregator::{ Aggregator, FromFeedWebsocket, ToFeedWebsocket, FromShardWebsocket, ToShardWebsocket };
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");

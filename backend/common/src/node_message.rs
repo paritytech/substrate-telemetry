@@ -1,5 +1,4 @@
-use crate::types::{Block, BlockHash, BlockNumber, NodeDetails};
-use crate::json;
+use crate::node_types::{Block, BlockHash, BlockNumber, NodeDetails};
 use serde::{Deserialize, Serialize};
 
 pub type NodeMessageId = u64;
@@ -39,19 +38,6 @@ impl From<NodeMessage> for Payload {
     }
 }
 
-impl From<json::NodeMessage> for NodeMessage {
-    fn from(msg: json::NodeMessage) -> Self {
-        match msg {
-            json::NodeMessage::V1 { payload } => {
-                NodeMessage::V1 { payload: payload.into() }
-            },
-            json::NodeMessage::V2 { id, payload } => {
-                NodeMessage::V2 { id, payload: payload.into() }
-            },
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Payload {
     SystemConnected(SystemConnected),
@@ -69,65 +55,10 @@ pub enum Payload {
     PreparedBlockForProposing,
 }
 
-impl From<json::Payload> for Payload {
-    fn from(msg: json::Payload) -> Self {
-        match msg {
-            json::Payload::SystemConnected(m) => {
-                Payload::SystemConnected(m.into())
-            },
-            json::Payload::SystemInterval(m) => {
-                Payload::SystemInterval(m.into())
-            },
-            json::Payload::BlockImport(m) => {
-                Payload::BlockImport(m.into())
-            },
-            json::Payload::NotifyFinalized(m) => {
-                Payload::NotifyFinalized(m.into())
-            },
-            json::Payload::TxPoolImport => {
-                Payload::TxPoolImport
-            },
-            json::Payload::AfgFinalized(m) => {
-                Payload::AfgFinalized(m.into())
-            },
-            json::Payload::AfgReceivedPrecommit(m) => {
-                Payload::AfgReceivedPrecommit(m.into())
-            },
-            json::Payload::AfgReceivedPrevote(m) => {
-                Payload::AfgReceivedPrevote(m.into())
-            },
-            json::Payload::AfgReceivedCommit(m) => {
-                Payload::AfgReceivedCommit(m.into())
-            },
-            json::Payload::AfgAuthoritySet(m) => {
-                Payload::AfgAuthoritySet(m.into())
-            },
-            json::Payload::AfgFinalizedBlocksUpTo => {
-                Payload::AfgFinalizedBlocksUpTo
-            },
-            json::Payload::AuraPreSealedBlock => {
-                Payload::AuraPreSealedBlock
-            },
-            json::Payload::PreparedBlockForProposing => {
-                Payload::PreparedBlockForProposing
-            },
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SystemConnected {
     pub genesis_hash: BlockHash,
     pub node: NodeDetails,
-}
-
-impl From<json::SystemConnected> for SystemConnected {
-    fn from(msg: json::SystemConnected) -> Self {
-        SystemConnected {
-            genesis_hash: msg.genesis_hash.into(),
-            node: msg.node.into()
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -142,49 +73,16 @@ pub struct SystemInterval {
     pub used_state_cache_size: Option<f32>,
 }
 
-impl From<json::SystemInterval> for SystemInterval {
-    fn from(msg: json::SystemInterval) -> Self {
-        SystemInterval {
-            peers: msg.peers,
-            txcount: msg.txcount,
-            bandwidth_upload: msg.bandwidth_upload,
-            bandwidth_download: msg.bandwidth_download,
-            finalized_height: msg.finalized_height,
-            finalized_hash: msg.finalized_hash.map(|h| h.into()),
-            block: msg.block.map(|b| b.into()),
-            used_state_cache_size: msg.used_state_cache_size,
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Finalized {
     pub hash: BlockHash,
     pub height: Box<str>,
 }
 
-impl From<json::Finalized> for Finalized {
-    fn from(msg: json::Finalized) -> Self {
-        Finalized {
-            hash: msg.hash.into(),
-            height: msg.height,
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AfgFinalized {
     pub finalized_hash: BlockHash,
     pub finalized_number: Box<str>,
-}
-
-impl From<json::AfgFinalized> for AfgFinalized {
-    fn from(msg: json::AfgFinalized) -> Self {
-        AfgFinalized {
-            finalized_hash: msg.finalized_hash.into(),
-            finalized_number: msg.finalized_number,
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -194,31 +92,11 @@ pub struct AfgReceived {
     pub voter: Option<Box<str>>,
 }
 
-impl From<json::AfgReceived> for AfgReceived {
-    fn from(msg: json::AfgReceived) -> Self {
-        AfgReceived {
-            target_hash: msg.target_hash.into(),
-            target_number: msg.target_number,
-            voter: msg.voter,
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AfgAuthoritySet {
     pub authority_id: Box<str>,
     pub authorities: Box<str>,
     pub authority_set_id: Box<str>,
-}
-
-impl From<json::AfgAuthoritySet> for AfgAuthoritySet {
-    fn from(msg: json::AfgAuthoritySet) -> Self {
-        AfgAuthoritySet {
-            authority_id: msg.authority_id,
-            authorities: msg.authorities,
-            authority_set_id: msg.authority_set_id,
-        }
-    }
 }
 
 impl Payload {

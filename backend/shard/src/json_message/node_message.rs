@@ -5,6 +5,8 @@
 //! structures (for example, to support bincode better).
 use super::hash::Hash;
 use serde::{Deserialize};
+use common::node_message as internal;
+use common::node_types;
 
 /// This struct represents a telemetry message sent from a node as
 /// a JSON payload. Since JSON is self describing, we can use attributes
@@ -29,6 +31,19 @@ pub enum NodeMessage {
         id: NodeMessageId,
         payload: Payload,
     },
+}
+
+impl From<NodeMessage> for internal::NodeMessage {
+    fn from(msg: NodeMessage) -> Self {
+        match msg {
+            NodeMessage::V1 { payload } => {
+                internal::NodeMessage::V1 { payload: payload.into() }
+            },
+            NodeMessage::V2 { id, payload } => {
+                internal::NodeMessage::V2 { id, payload: payload.into() }
+            },
+        }
+    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -62,11 +77,66 @@ pub enum Payload {
     PreparedBlockForProposing,
 }
 
+impl From<Payload> for internal::Payload {
+    fn from(msg: Payload) -> Self {
+        match msg {
+            Payload::SystemConnected(m) => {
+                internal::Payload::SystemConnected(m.into())
+            },
+            Payload::SystemInterval(m) => {
+                internal::Payload::SystemInterval(m.into())
+            },
+            Payload::BlockImport(m) => {
+                internal::Payload::BlockImport(m.into())
+            },
+            Payload::NotifyFinalized(m) => {
+                internal::Payload::NotifyFinalized(m.into())
+            },
+            Payload::TxPoolImport => {
+                internal::Payload::TxPoolImport
+            },
+            Payload::AfgFinalized(m) => {
+                internal::Payload::AfgFinalized(m.into())
+            },
+            Payload::AfgReceivedPrecommit(m) => {
+                internal::Payload::AfgReceivedPrecommit(m.into())
+            },
+            Payload::AfgReceivedPrevote(m) => {
+                internal::Payload::AfgReceivedPrevote(m.into())
+            },
+            Payload::AfgReceivedCommit(m) => {
+                internal::Payload::AfgReceivedCommit(m.into())
+            },
+            Payload::AfgAuthoritySet(m) => {
+                internal::Payload::AfgAuthoritySet(m.into())
+            },
+            Payload::AfgFinalizedBlocksUpTo => {
+                internal::Payload::AfgFinalizedBlocksUpTo
+            },
+            Payload::AuraPreSealedBlock => {
+                internal::Payload::AuraPreSealedBlock
+            },
+            Payload::PreparedBlockForProposing => {
+                internal::Payload::PreparedBlockForProposing
+            },
+        }
+    }
+}
+
 #[derive(Deserialize, Debug)]
 pub struct SystemConnected {
     pub genesis_hash: Hash,
     #[serde(flatten)]
     pub node: NodeDetails,
+}
+
+impl From<SystemConnected> for internal::SystemConnected {
+    fn from(msg: SystemConnected) -> Self {
+        internal::SystemConnected {
+            genesis_hash: msg.genesis_hash.into(),
+            node: msg.node.into()
+        }
+    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -82,11 +152,35 @@ pub struct SystemInterval {
     pub used_state_cache_size: Option<f32>,
 }
 
+impl From<SystemInterval> for internal::SystemInterval {
+    fn from(msg: SystemInterval) -> Self {
+        internal::SystemInterval {
+            peers: msg.peers,
+            txcount: msg.txcount,
+            bandwidth_upload: msg.bandwidth_upload,
+            bandwidth_download: msg.bandwidth_download,
+            finalized_height: msg.finalized_height,
+            finalized_hash: msg.finalized_hash.map(|h| h.into()),
+            block: msg.block.map(|b| b.into()),
+            used_state_cache_size: msg.used_state_cache_size,
+        }
+    }
+}
+
 #[derive(Deserialize, Debug)]
 pub struct Finalized {
     #[serde(rename = "best")]
     pub hash: Hash,
     pub height: Box<str>,
+}
+
+impl From<Finalized> for internal::Finalized {
+    fn from(msg: Finalized) -> Self {
+        internal::Finalized {
+            hash: msg.hash.into(),
+            height: msg.height,
+        }
+    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -96,10 +190,29 @@ pub struct AfgAuthoritySet {
     pub authority_set_id: Box<str>,
 }
 
+impl From<AfgAuthoritySet> for internal::AfgAuthoritySet {
+    fn from(msg: AfgAuthoritySet) -> Self {
+        internal::AfgAuthoritySet {
+            authority_id: msg.authority_id,
+            authorities: msg.authorities,
+            authority_set_id: msg.authority_set_id,
+        }
+    }
+}
+
 #[derive(Deserialize, Debug, Clone)]
 pub struct AfgFinalized {
     pub finalized_hash: Hash,
     pub finalized_number: Box<str>,
+}
+
+impl From<AfgFinalized> for internal::AfgFinalized {
+    fn from(msg: AfgFinalized) -> Self {
+        internal::AfgFinalized {
+            finalized_hash: msg.finalized_hash.into(),
+            finalized_number: msg.finalized_number,
+        }
+    }
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -109,11 +222,30 @@ pub struct AfgReceived {
     pub voter: Option<Box<str>>,
 }
 
+impl From<AfgReceived> for internal::AfgReceived {
+    fn from(msg: AfgReceived) -> Self {
+        internal::AfgReceived {
+            target_hash: msg.target_hash.into(),
+            target_number: msg.target_number,
+            voter: msg.voter,
+        }
+    }
+}
+
 #[derive(Deserialize, Debug, Clone, Copy)]
 pub struct Block {
     #[serde(rename = "best")]
     pub hash: Hash,
     pub height: BlockNumber,
+}
+
+impl From<Block> for node_types::Block {
+    fn from(block: Block) -> Self {
+        node_types::Block {
+            hash: block.hash.into(),
+            height: block.height
+        }
+    }
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -125,6 +257,20 @@ pub struct NodeDetails {
     pub validator: Option<Box<str>>,
     pub network_id: Option<Box<str>>,
     pub startup_time: Option<Box<str>>,
+}
+
+impl From<NodeDetails> for node_types::NodeDetails {
+    fn from(details: NodeDetails) -> Self {
+        node_types::NodeDetails {
+            chain: details.chain,
+            name: details.name,
+            implementation: details.implementation,
+            version: details.version,
+            validator: details.validator,
+            network_id: details.network_id,
+            startup_time: details.startup_time,
+        }
+    }
 }
 
 type NodeMessageId = u64;

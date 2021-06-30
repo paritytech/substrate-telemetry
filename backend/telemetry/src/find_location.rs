@@ -7,7 +7,7 @@ use serde::Deserialize;
 use futures::{Sink, SinkExt, StreamExt};
 use futures::channel::mpsc;
 
-use common::types::NodeLocation;
+use common::node_types::NodeLocation;
 use tokio::sync::Semaphore;
 
 /// The returned location is optional; it may be None if not found.

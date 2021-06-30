@@ -4,7 +4,7 @@ pub struct DenseMap<Id, T> {
     /// All items
     items: Vec<Option<T>>,
     /// Our ID type
-    _id_ty: std::marker::PhantomData<Id>
+    _id_type: std::marker::PhantomData<Id>
 }
 
 impl<Id, T> DenseMap<Id, T>
@@ -16,7 +16,7 @@ where
         DenseMap {
             retired: Vec::new(),
             items: Vec::new(),
-            _id_ty: std::marker::PhantomData
+            _id_type: std::marker::PhantomData
         }
     }
 

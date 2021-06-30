@@ -1,4 +1,4 @@
-use common::{internal_messages::{self, ShardNodeId}, node, assign_id::AssignId, types::BlockHash};
+use common::{internal_messages::{self, ShardNodeId}, node_message, AssignId, node_types::BlockHash};
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
 use futures::{channel::mpsc, future};
@@ -39,15 +39,15 @@ pub enum FromWebsocket {
     },
     /// Tell the aggregator about a new node.
     Add {
-        message_id: node::NodeMessageId,
+        message_id: node_message::NodeMessageId,
         ip: Option<std::net::IpAddr>,
-        node: common::types::NodeDetails,
+        node: common::node_types::NodeDetails,
         genesis_hash: BlockHash
     },
     /// Update/pass through details about a node.
     Update {
-        message_id: node::NodeMessageId,
-        payload: node::Payload
+        message_id: node_message::NodeMessageId,
+        payload: node_message::Payload
     },
     /// Make a note when the node disconnects.
     Disconnected

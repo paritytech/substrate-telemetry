@@ -1,13 +1,11 @@
 use std::collections::{ HashSet, HashMap };
-use common::types::{ BlockHash };
 use super::node::Node;
-use common::types::{Block, NodeDetails, Timestamp};
-use common::util::{DenseMap};
-use common::node::Payload;
+use common::node_types::{Block, BlockHash, NodeDetails, Timestamp};
+use common::node_message::Payload;
+use common::{ id_type, DenseMap };
 use std::iter::IntoIterator;
 use crate::feed_message::FeedMessageSerializer;
 use crate::find_location;
-use common::id_type;
 
 use super::chain::{ self, Chain, ChainNodeId };
 

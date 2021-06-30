@@ -1,6 +1,7 @@
 mod aggregator;
 mod connection;
 mod real_ip;
+mod json_message;
 
 use std::net::IpAddr;
 
@@ -10,7 +11,7 @@ use simple_logger::SimpleLogger;
 use futures::{StreamExt, SinkExt, channel::mpsc};
 use warp::Filter;
 use warp::filters::ws;
-use common::{json, node, log_level::LogLevel};
+use common::{node_message, LogLevel};
 use aggregator::{ Aggregator, FromWebsocket };
 use real_ip::real_ip;
 
@@ -154,7 +155,7 @@ async fn handle_websocket_connection<S>(mut websocket: ws::WebSocket, mut tx_to_
                 // Until the aggregator receives an `Add` message, which we can create once
                 // we see one of these SystemConnected ones, it will ignore messages with
                 // the corresponding message_id.
-                if let node::Payload::SystemConnected(info) = payload {
+                if let node_message::Payload::SystemConnected(info) = payload {
                     let _ = tx_to_aggregator.send(FromWebsocket::Add {
                         message_id,
                         ip: addr,
@@ -179,7 +180,7 @@ async fn handle_websocket_connection<S>(mut websocket: ws::WebSocket, mut tx_to_
 /// Deserialize an incoming websocket message, returning an error if something
 /// fatal went wrong, [`Some`] message if all went well, and [`None`] if a non-fatal
 /// issue was encountered and the message should simply be ignored.
-fn deserialize_ws_message(msg: Result<ws::Message, warp::Error>) -> anyhow::Result<Option<node::NodeMessage>> {
+fn deserialize_ws_message(msg: Result<ws::Message, warp::Error>) -> anyhow::Result<Option<node_message::NodeMessage>> {
     // If we see any errors, log them and end our loop:
     let msg = match msg {
         Err(e) => {
@@ -196,7 +197,7 @@ fn deserialize_ws_message(msg: Result<ws::Message, warp::Error>) -> anyhow::Resu
 
     // Deserialize from JSON, warning if deserialization fails:
     let bytes = msg.as_bytes();
-    let node_message: json::NodeMessage = match serde_json::from_slice(bytes) {
+    let node_message: json_message::NodeMessage = match serde_json::from_slice(bytes) {
         Ok(node_message) => node_message,
         Err(_e) => {
             // let bytes: &[u8] = bytes.get(..512).unwrap_or_else(|| &bytes);
@@ -207,6 +208,6 @@ fn deserialize_ws_message(msg: Result<ws::Message, warp::Error>) -> anyhow::Resu
     };
 
     // Pull relevant details from the message:
-    let node_message: node::NodeMessage = node_message.into();
+    let node_message: node_message::NodeMessage = node_message.into();
     Ok(Some(node_message))
 }

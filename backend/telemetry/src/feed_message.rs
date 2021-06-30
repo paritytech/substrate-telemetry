@@ -6,7 +6,7 @@ use std::mem;
 
 use crate::state::Node;
 use serde_json::to_writer;
-use common::types::{
+use common::node_types::{
     BlockDetails, BlockHash, BlockNumber, NodeHardware, NodeIO, NodeStats,
     Timestamp
 };

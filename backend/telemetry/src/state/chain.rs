@@ -1,11 +1,9 @@
 use std::collections::{ HashSet };
-use common::types::{ BlockHash, BlockNumber };
-use common::types::{Block, Timestamp};
-use common::util::{now, DenseMap, NumStats};
-use common::most_seen::MostSeen;
-use common::node::Payload;
+use common::node_types::{ BlockHash, BlockNumber };
+use common::node_types::{Block, Timestamp};
+use common::node_message::Payload;
+use common::{time, id_type, DenseMap, MostSeen, NumStats};
 use once_cell::sync::Lazy;
-use common::id_type;
 
 use crate::feed_message::{self, FeedMessageSerializer};
 use crate::find_location;
@@ -217,7 +215,7 @@ impl Chain {
 
     fn handle_block(&mut self, block: &Block, nid: ChainNodeId, feed: &mut FeedMessageSerializer) {
         let mut propagation_time = None;
-        let now = now();
+        let now = time::now();
         let nodes_len = self.nodes.len();
 
         self.update_stale_nodes(now, feed);

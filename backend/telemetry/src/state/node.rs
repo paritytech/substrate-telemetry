@@ -1,9 +1,9 @@
-use common::types::{
+use common::node_types::{
     Block, BlockDetails, NodeDetails, NodeHardware, NodeIO, NodeLocation, NodeStats,
     Timestamp,
 };
-use common::util::now;
-use common::node::SystemInterval;
+use common::time;
+use common::node_message::SystemInterval;
 use crate::find_location;
 
 /// Minimum time between block below broadcasting updates to the browser gets throttled, in ms.
@@ -135,7 +135,7 @@ impl Node {
         if let Some(download) = interval.bandwidth_download {
             changed |= self.hardware.download.push(download);
         }
-        self.hardware.chart_stamps.push(now() as f64);
+        self.hardware.chart_stamps.push(time::now() as f64);
 
         changed
     }
