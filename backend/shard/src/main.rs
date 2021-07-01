@@ -6,7 +6,7 @@ mod real_ip;
 use std::net::IpAddr;
 
 use aggregator::{Aggregator, FromWebsocket};
-use common::{node_message, LogLevel};
+use common::node_message;
 use futures::{channel::mpsc, SinkExt, StreamExt};
 use http::Uri;
 use real_ip::real_ip;
@@ -32,7 +32,7 @@ struct Opts {
     /// The desired log level; one of 'error', 'warn', 'info', 'debug' or 'trace', where
     /// 'error' only logs errors and 'trace' logs everything.
     #[structopt(required = false, long = "log", default_value = "info")]
-    log_level: LogLevel,
+    log_level: log::LevelFilter,
     /// Url to the Backend Core endpoint accepting shard connections
     #[structopt(
         short = "c",
@@ -45,10 +45,9 @@ struct Opts {
 #[tokio::main]
 async fn main() {
     let opts = Opts::from_args();
-    let log_level = &opts.log_level;
 
     SimpleLogger::new()
-        .with_level(log_level.into())
+        .with_level(opts.log_level)
         .init()
         .expect("Must be able to start a logger");
 

@@ -10,7 +10,7 @@ use aggregator::{
     Aggregator, FromFeedWebsocket, FromShardWebsocket, ToFeedWebsocket, ToShardWebsocket,
 };
 use bincode::Options;
-use common::{internal_messages, LogLevel};
+use common::internal_messages;
 use futures::{channel::mpsc, SinkExt, StreamExt};
 use simple_logger::SimpleLogger;
 use structopt::StructOpt;
@@ -34,7 +34,7 @@ struct Opts {
     /// The desired log level; one of 'error', 'warn', 'info', 'debug' or 'trace', where
     /// 'error' only logs errors and 'trace' logs everything.
     #[structopt(required = false, long = "log", default_value = "info")]
-    log_level: LogLevel,
+    log_level: log::LevelFilter,
     /// Space delimited list of the names of chains that are not allowed to connect to
     /// telemetry. Case sensitive.
     #[structopt(required = false, long = "denylist")]
@@ -44,10 +44,9 @@ struct Opts {
 #[tokio::main]
 async fn main() {
     let opts = Opts::from_args();
-    let log_level = &opts.log_level;
 
     SimpleLogger::new()
-        .with_level(log_level.into())
+        .with_level(opts.log_level)
         .init()
         .expect("Must be able to start a logger");
 
