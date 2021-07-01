@@ -1,3 +1,5 @@
+//! Internal messages passed between the shard and telemetry core.
+
 use std::net::IpAddr;
 
 use crate::id_type;

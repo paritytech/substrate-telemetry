@@ -1,3 +1,8 @@
+//! This is the internal represenation of telemetry messages sent from nodes.
+//! There is a separate JSON representation of these types, because internally we want to be
+//! able to serialize these messages to bincode, and various serde attribtues aren't compatible
+//! with this, hence this separate internal representation.
+
 use crate::node_types::{Block, BlockHash, BlockNumber, NodeDetails};
 use serde::{Deserialize, Serialize};
 

@@ -1,5 +1,6 @@
-/// A log level that can be used as an expected argument,
-/// decoded from a string, and converted into a [`log::LevelFilter`]
+/// A log level that can be decoded from a string (and so can be used
+/// as a CLI argument by things like StructOpt). It can be converted into
+/// a [`log::LevelFilter`] for passing into logging systems.
 #[derive(Debug, PartialEq)]
 pub enum LogLevel {
     Error,
