@@ -11,7 +11,7 @@ use super::chain::{self, Chain, ChainNodeId};
 
 id_type! {
     /// A globally unique Chain ID.
-    pub ChainId(usize)
+    pub struct ChainId(usize)
 }
 
 /// A "global" Node ID is a composite of the ID of the chain it's

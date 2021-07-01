@@ -2,7 +2,7 @@
 /// and serialized/deserialized transparently into the inner type.
 #[macro_export]
 macro_rules! id_type {
-    ($( #[$attrs:meta] )* $vis:vis $ty:ident ( $inner:ident ) $(;)? ) => {
+    ($( #[$attrs:meta] )* $vis:vis struct $ty:ident ( $inner:ident ) $(;)? ) => {
         #[derive(Debug,Clone,Copy,PartialEq,Eq,Hash)]
         $( #[$attrs] )*
         $vis struct $ty($inner);
@@ -30,26 +30,45 @@ macro_rules! id_type {
 
 #[cfg(test)]
 mod test {
+    //! Mostly we're just checking that everything compiles OK
+    //! when the macro is used as expected..
+
+    // A basic definition is possible:
+    id_type! {
+        struct Foo(usize)
+    }
+
+    // We can add a ';' on the end:
+    id_type! {
+        struct Bar(usize);
+    }
+
+    // Visibility qualifiers are allowed:
+    id_type! {
+        pub struct Wibble(u64)
+    }
+
+    // Doc strings are possible
+    id_type! {
+        /// We can have doc strings, too
+        pub(crate) struct Wobble(u16)
+    }
+
+    // In fact, any attributes can be added (common
+    // derives are added already):
+    id_type! {
+        /// We can have doc strings, too
+        #[derive(serde::Serialize)]
+        #[serde(transparent)]
+        pub(crate) struct Lark(u16)
+    }
 
     #[test]
     fn create_and_use_new_id_type() {
-        id_type! {
-            Foo(usize)
-        };
         let _ = Foo::new(123);
         let id = Foo::from(123);
-        let _: usize = id.into();
+        let id_num: usize = id.into();
 
-        // Check that these don't lead to compile errors:
-        id_type! {
-            Bar(usize);
-        };
-        id_type! {
-            pub Wibble(u64)
-        };
-        id_type! {
-            /// We can have doc strings, too
-            pub(crate) Wobble(u16)
-        };
+        assert_eq!(id_num, 123);
     }
 }

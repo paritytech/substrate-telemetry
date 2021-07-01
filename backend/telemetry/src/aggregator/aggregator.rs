@@ -12,7 +12,7 @@ id_type! {
     /// A unique Id is assigned per websocket connection (or more accurately,
     /// per feed socket and per shard socket). This can be combined with the
     /// [`LocalId`] of messages to give us a global ID.
-    pub ConnId(u64)
+    pub struct ConnId(u64)
 }
 
 #[derive(Clone)]

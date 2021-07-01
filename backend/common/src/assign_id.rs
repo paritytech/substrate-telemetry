@@ -1,10 +1,13 @@
 use bimap::BiMap;
 use std::hash::Hash;
 
-/// A struct that allows you to assign an ID to an arbitrary set of
+/// A struct that allows you to assign an Id to an arbitrary set of
 /// details (so long as they are Eq+Hash+Clone), and then access
-/// the assigned ID given those details or access the details given
-/// the ID.
+/// the assigned Id given those details or access the details given
+/// the Id.
+///
+/// The Id can be any type that's convertible to/from a `usize`. Using
+/// a custom type is recommended for increased type safety.
 #[derive(Debug)]
 pub struct AssignId<Id, Details> {
     current_id: usize,

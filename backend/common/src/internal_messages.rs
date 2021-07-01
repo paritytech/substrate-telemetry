@@ -9,7 +9,7 @@ id_type! {
     /// The shard-local ID of a given node, where a single connection
     /// might send data on behalf of more than one chain.
     #[derive(serde::Serialize, serde::Deserialize)]
-    pub ShardNodeId(usize);
+    pub struct ShardNodeId(usize);
 }
 
 /// Message sent from the shard to the backend core

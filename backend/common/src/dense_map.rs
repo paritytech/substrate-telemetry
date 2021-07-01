@@ -1,3 +1,12 @@
+/// This stores items in contiguous memory, making a note of free
+/// slots when items are removed again so that they can be reused.
+///
+/// This is particularly efficient when items are often added and
+/// seldom removed.
+///
+/// Items are keyed by an Id, which can be any type you wish, but
+/// must be convertible to/from a `usize`. This promotes using a
+/// custom Id type to talk about items in the map.
 pub struct DenseMap<Id, T> {
     /// List of retired indexes that can be re-used
     retired: Vec<usize>,

@@ -12,7 +12,7 @@ use super::node::Node;
 
 id_type! {
     /// A Node ID that is unique to the chain it's in.
-    pub ChainNodeId(usize)
+    pub struct ChainNodeId(usize)
 }
 
 pub type Label = Box<str>;
