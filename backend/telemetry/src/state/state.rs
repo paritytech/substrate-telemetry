@@ -1,22 +1,22 @@
-use std::collections::{ HashSet, HashMap };
 use super::node::Node;
-use common::node_types::{Block, BlockHash, NodeDetails, Timestamp};
-use common::node_message::Payload;
-use common::{ id_type, DenseMap };
-use std::iter::IntoIterator;
 use crate::feed_message::FeedMessageSerializer;
 use crate::find_location;
+use common::node_message::Payload;
+use common::node_types::{Block, BlockHash, NodeDetails, Timestamp};
+use common::{id_type, DenseMap};
+use std::collections::{HashMap, HashSet};
+use std::iter::IntoIterator;
 
-use super::chain::{ self, Chain, ChainNodeId };
+use super::chain::{self, Chain, ChainNodeId};
 
-id_type!{
+id_type! {
     /// A globally unique Chain ID.
     pub ChainId(usize)
 }
 
 /// A "global" Node ID is a composite of the ID of the chain it's
 /// on, and it's chain local ID.
-#[derive(Debug,Clone,Copy,Hash,PartialEq,Eq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct NodeId(ChainId, ChainNodeId);
 
 impl NodeId {
@@ -44,15 +44,15 @@ pub enum AddNodeResult<'a> {
     /// The chain is over quota (too many nodes connected), so can't add the node
     ChainOverQuota,
     /// The node was added to the chain
-    NodeAddedToChain(NodeAddedToChain<'a>)
+    NodeAddedToChain(NodeAddedToChain<'a>),
 }
 
 #[cfg(test)]
-impl <'a> AddNodeResult<'a> {
+impl<'a> AddNodeResult<'a> {
     pub fn unwrap_id(&self) -> NodeId {
         match &self {
             AddNodeResult::NodeAddedToChain(d) => d.id,
-            _ => panic!("Attempt to unwrap_id on AddNodeResult that did not succeed")
+            _ => panic!("Attempt to unwrap_id on AddNodeResult that did not succeed"),
         }
     }
 }
@@ -69,7 +69,7 @@ pub struct NodeAddedToChain<'a> {
     /// Number of nodes in the chain. If 1, the chain was just added.
     pub chain_node_count: usize,
     /// Has the chain label been updated?
-    pub has_chain_label_changed: bool
+    pub has_chain_label_changed: bool,
 }
 
 /// if removing a node is successful, we get this information back.
@@ -85,7 +85,7 @@ pub struct RemovedNode {
 }
 
 impl State {
-    pub fn new<T: IntoIterator<Item=String>>(denylist: T) -> State {
+    pub fn new<T: IntoIterator<Item = String>>(denylist: T) -> State {
         State {
             chains: DenseMap::new(),
             chains_by_genesis_hash: HashMap::new(),
@@ -94,16 +94,14 @@ impl State {
         }
     }
 
-    pub fn iter_chains(&self) -> impl Iterator<Item=StateChain<'_>> {
+    pub fn iter_chains(&self) -> impl Iterator<Item = StateChain<'_>> {
         self.chains
             .iter()
-            .map(move |(_,chain)| StateChain { chain })
+            .map(move |(_, chain)| StateChain { chain })
     }
 
     pub fn get_chain_by_node_id(&self, node_id: NodeId) -> Option<StateChain<'_>> {
-        self.chains
-            .get(node_id.0)
-            .map(|chain| StateChain { chain })
+        self.chains.get(node_id.0).map(|chain| StateChain { chain })
     }
 
     pub fn get_chain_by_genesis_hash(&self, genesis_hash: &BlockHash) -> Option<StateChain<'_>> {
@@ -120,7 +118,11 @@ impl State {
             .map(|chain| StateChain { chain })
     }
 
-    pub fn add_node(&mut self, genesis_hash: BlockHash, node_details: NodeDetails) -> AddNodeResult<'_> {
+    pub fn add_node(
+        &mut self,
+        genesis_hash: BlockHash,
+        node_details: NodeDetails,
+    ) -> AddNodeResult<'_> {
         if self.denylist.contains(&*node_details.chain) {
             return AddNodeResult::ChainOnDenyList;
         }
@@ -139,16 +141,15 @@ impl State {
         };
 
         // Get the chain.
-        let chain = self.chains.get_mut(chain_id)
-            .expect("should be known to exist after the above (unless chains_by_genesis_hash out of sync)");
+        let chain = self.chains.get_mut(chain_id).expect(
+            "should be known to exist after the above (unless chains_by_genesis_hash out of sync)",
+        );
 
         let node = Node::new(node_details);
         let old_chain_label = chain.label().into();
 
         match chain.add_node(node) {
-            chain::AddNodeResult::Overquota => {
-                AddNodeResult::ChainOverQuota
-            },
+            chain::AddNodeResult::Overquota => AddNodeResult::ChainOverQuota,
             chain::AddNodeResult::Added { id, chain_renamed } => {
                 let chain = &*chain;
 
@@ -165,7 +166,7 @@ impl State {
                     old_chain_label: old_chain_label,
                     new_chain_label: chain.label(),
                     chain_node_count: chain.node_count(),
-                    has_chain_label_changed: chain_renamed
+                    has_chain_label_changed: chain_renamed,
                 })
             }
         }
@@ -194,30 +195,43 @@ impl State {
         // Make sure chains always referenced by their most common label:
         if remove_result.chain_renamed {
             self.chains_by_label.remove(&old_chain_label);
-            self.chains_by_label.insert(new_chain_label.clone(), chain_id);
+            self.chains_by_label
+                .insert(new_chain_label.clone(), chain_id);
         }
 
         Some(RemovedNode {
             old_chain_label,
             new_chain_label,
             chain_node_count: chain_node_count,
-            has_chain_label_changed: remove_result.chain_renamed
+            has_chain_label_changed: remove_result.chain_renamed,
         })
     }
 
     /// Attempt to update the best block seen, given a node and block.
     /// Returns a boolean which denotes whether the output is for finalization feeds (true) or not (false).
-    pub fn update_node(&mut self, NodeId(chain_id, chain_node_id): NodeId, payload: Payload, feed: &mut FeedMessageSerializer) -> bool {
+    pub fn update_node(
+        &mut self,
+        NodeId(chain_id, chain_node_id): NodeId,
+        payload: Payload,
+        feed: &mut FeedMessageSerializer,
+    ) -> bool {
         let chain = match self.chains.get_mut(chain_id) {
             Some(chain) => chain,
-            None => { log::error!("Cannot find chain for node with ID {:?}", chain_id); return false }
+            None => {
+                log::error!("Cannot find chain for node with ID {:?}", chain_id);
+                return false;
+            }
         };
 
         chain.update_node(chain_node_id, payload, feed)
     }
 
     /// Update the location for a node. Return `false` if the node was not found.
-    pub fn update_node_location(&mut self, NodeId(chain_id, chain_node_id): NodeId, location: find_location::Location) -> bool {
+    pub fn update_node_location(
+        &mut self,
+        NodeId(chain_id, chain_node_id): NodeId,
+        location: find_location::Location,
+    ) -> bool {
         if let Some(chain) = self.chains.get_mut(chain_id) {
             chain.update_node_location(chain_node_id, location)
         } else {
@@ -226,16 +240,15 @@ impl State {
     }
 }
 
-
 /// When we ask for a chain, we get this struct back. This ensures that we have
 /// a consistent public interface, and don't expose methods on [`Chain`] that
 /// aren't really intended for use outside of [`State`] methods. Any modification
 /// of a chain needs to go through [`State`].
 pub struct StateChain<'a> {
-    chain: &'a Chain
+    chain: &'a Chain,
 }
 
-impl <'a> StateChain<'a> {
+impl<'a> StateChain<'a> {
     pub fn label(&self) -> &'a str {
         self.chain.label()
     }
@@ -257,7 +270,7 @@ impl <'a> StateChain<'a> {
     pub fn finalized_block(&self) -> &'a Block {
         self.chain.finalized_block()
     }
-    pub fn iter_nodes(&self) -> impl Iterator<Item=(ChainNodeId, &'a Node)> + 'a {
+    pub fn iter_nodes(&self) -> impl Iterator<Item = (ChainNodeId, &'a Node)> + 'a {
         self.chain.iter_nodes()
     }
 }
@@ -274,7 +287,7 @@ mod test {
             version: "0.1".into(),
             validator: None,
             network_id: None,
-            startup_time: None
+            startup_time: None,
         }
     }
 
@@ -284,15 +297,12 @@ mod test {
 
         let chain1_genesis = BlockHash::from_low_u64_be(1);
 
-        let add_result = state.add_node(
-            chain1_genesis,
-            node("A", "Chain One")
-        );
+        let add_result = state.add_node(chain1_genesis, node("A", "Chain One"));
 
         let add_node_result = match add_result {
             AddNodeResult::ChainOnDenyList => panic!("Chain not on deny list"),
             AddNodeResult::ChainOverQuota => panic!("Chain not Overquota"),
-            AddNodeResult::NodeAddedToChain(details) => details
+            AddNodeResult::NodeAddedToChain(details) => details,
         };
 
         assert_eq!(add_node_result.id, NodeId(0.into(), 0.into()));
@@ -301,15 +311,12 @@ mod test {
         assert_eq!(add_node_result.chain_node_count, 1);
         assert_eq!(add_node_result.has_chain_label_changed, true);
 
-        let add_result = state.add_node(
-            chain1_genesis,
-            node("A", "Chain One")
-        );
+        let add_result = state.add_node(chain1_genesis, node("A", "Chain One"));
 
         let add_node_result = match add_result {
             AddNodeResult::ChainOnDenyList => panic!("Chain not on deny list"),
             AddNodeResult::ChainOverQuota => panic!("Chain not Overquota"),
-            AddNodeResult::NodeAddedToChain(details) => details
+            AddNodeResult::NodeAddedToChain(details) => details,
         };
 
         assert_eq!(add_node_result.id, NodeId(0.into(), 1.into()));
@@ -328,7 +335,13 @@ mod test {
             .add_node(chain1_genesis, node("A", "Chain One")) // 0
             .unwrap_id();
 
-        assert_eq!(state.get_chain_by_node_id(node_id0).expect("Chain should exist").label(), "Chain One");
+        assert_eq!(
+            state
+                .get_chain_by_node_id(node_id0)
+                .expect("Chain should exist")
+                .label(),
+            "Chain One"
+        );
         assert!(state.get_chain_by_label("Chain One").is_some());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_some());
 
@@ -337,7 +350,13 @@ mod test {
             .unwrap_id();
 
         // Chain name hasn't changed yet; "Chain One" as common as "Chain Two"..
-        assert_eq!(state.get_chain_by_node_id(node_id0).expect("Chain should exist").label(), "Chain One");
+        assert_eq!(
+            state
+                .get_chain_by_node_id(node_id0)
+                .expect("Chain should exist")
+                .label(),
+            "Chain One"
+        );
         assert!(state.get_chain_by_label("Chain One").is_some());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_some());
 
@@ -346,7 +365,13 @@ mod test {
             .unwrap_id(); // 2
 
         // Chain name has changed; "Chain Two" the winner now..
-        assert_eq!(state.get_chain_by_node_id(node_id0).expect("Chain should exist").label(), "Chain Two");
+        assert_eq!(
+            state
+                .get_chain_by_node_id(node_id0)
+                .expect("Chain should exist")
+                .label(),
+            "Chain Two"
+        );
         assert!(state.get_chain_by_label("Chain One").is_none());
         assert!(state.get_chain_by_label("Chain Two").is_some());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_some());
@@ -355,7 +380,13 @@ mod test {
         state.remove_node(node_id2).expect("Removal OK (id: 2)");
 
         // Removed both "Chain Two" nodes; dominant name now "Chain One" again..
-        assert_eq!(state.get_chain_by_node_id(node_id0).expect("Chain should exist").label(), "Chain One");
+        assert_eq!(
+            state
+                .get_chain_by_node_id(node_id0)
+                .expect("Chain should exist")
+                .label(),
+            "Chain One"
+        );
         assert!(state.get_chain_by_label("Chain One").is_some());
         assert!(state.get_chain_by_label("Chain Two").is_none());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_some());

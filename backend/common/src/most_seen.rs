@@ -7,25 +7,25 @@ use std::hash::Hash;
 pub struct MostSeen<T> {
     current_best: T,
     current_count: usize,
-    others: HashMap<T, usize>
+    others: HashMap<T, usize>,
 }
 
-impl <T: Default> Default for MostSeen<T> {
+impl<T: Default> Default for MostSeen<T> {
     fn default() -> Self {
         Self {
             current_best: T::default(),
             current_count: 0,
-            others: HashMap::new()
+            others: HashMap::new(),
         }
     }
 }
 
-impl <T> MostSeen<T> {
+impl<T> MostSeen<T> {
     pub fn new(item: T) -> Self {
         Self {
             current_best: item,
             current_count: 1,
-            others: HashMap::new()
+            others: HashMap::new(),
         }
     }
     pub fn best(&self) -> &T {
@@ -36,7 +36,7 @@ impl <T> MostSeen<T> {
     }
 }
 
-impl <T: Hash + Eq + Clone> MostSeen<T> {
+impl<T: Hash + Eq + Clone> MostSeen<T> {
     pub fn insert(&mut self, item: &T) -> ChangeResult {
         if &self.current_best == item {
             // Item already the best one; bump count.
@@ -50,9 +50,7 @@ impl <T: Hash + Eq + Clone> MostSeen<T> {
 
         // Is item now the best?
         if *item_count > self.current_count {
-            let (mut item, mut count) = self.others
-                .remove_entry(item)
-                .expect("item added above");
+            let (mut item, mut count) = self.others.remove_entry(item).expect("item added above");
 
             // Swap the current best for the new best:
             std::mem::swap(&mut item, &mut self.current_best);
@@ -72,13 +70,11 @@ impl <T: Hash + Eq + Clone> MostSeen<T> {
             self.current_count = self.current_count.saturating_sub(1);
 
             // Is there a new best?
-            let other_best = self.others
-                .iter()
-                .max_by_key(|f| f.1);
+            let other_best = self.others.iter().max_by_key(|f| f.1);
 
             let (other_item, &other_count) = match other_best {
                 Some(item) => item,
-                None => { return ChangeResult::NoChange }
+                None => return ChangeResult::NoChange,
             };
 
             if other_count > self.current_count {
@@ -87,7 +83,8 @@ impl <T: Hash + Eq + Clone> MostSeen<T> {
                 // instead, but most of the time there is no change, so I'm
                 // aiming to keep that path cheaper.
                 let other_item = other_item.clone();
-                let (mut other_item, mut other_count) = self.others
+                let (mut other_item, mut other_count) = self
+                    .others
                     .remove_entry(&other_item)
                     .expect("item returned above, so def exists");
 
@@ -113,19 +110,19 @@ impl <T: Hash + Eq + Clone> MostSeen<T> {
 }
 
 /// Record the result of adding/removing an entry
-#[derive(Clone,Copy)]
+#[derive(Clone, Copy)]
 pub enum ChangeResult {
     /// The best item has remained the same.
     NoChange,
     /// There is a new best item now.
-    NewMostSeenItem
+    NewMostSeenItem,
 }
 
 impl ChangeResult {
     pub fn has_changed(self) -> bool {
         match self {
             ChangeResult::NewMostSeenItem => true,
-            ChangeResult::NoChange => false
+            ChangeResult::NoChange => false,
         }
     }
 }
@@ -214,7 +211,7 @@ mod test {
 
         a.insert(&"Second");
         a.insert(&"Second"); // 3
-        a.insert(&"First");  // 2
+        a.insert(&"First"); // 2
 
         assert_eq!(*a.best(), "Second");
         assert_eq!(a.best_count(), 3);
@@ -231,5 +228,4 @@ mod test {
         assert_eq!(a.best_count(), 2);
         assert_eq!(*a.best(), "First"); // First is now ahead
     }
-
 }

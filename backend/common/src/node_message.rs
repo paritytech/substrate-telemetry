@@ -5,13 +5,8 @@ pub type NodeMessageId = u64;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum NodeMessage {
-    V1 {
-        payload: Payload,
-    },
-    V2 {
-        id: NodeMessageId,
-        payload: Payload,
-    },
+    V1 { payload: Payload },
+    V2 { id: NodeMessageId, payload: Payload },
 }
 
 impl NodeMessage {
@@ -26,8 +21,7 @@ impl NodeMessage {
     /// Return the payload associated with the message.
     pub fn into_payload(self) -> Payload {
         match self {
-            NodeMessage::V1 { payload, .. } |
-            NodeMessage::V2 { payload, .. } => payload,
+            NodeMessage::V1 { payload, .. } | NodeMessage::V2 { payload, .. } => payload,
         }
     }
 }
@@ -133,7 +127,8 @@ mod tests {
     // we test the different types we want to (de)serialize ourselves. We just need to test each
     // type, not each variant.
     fn bincode_can_serialize_and_deserialize<'de, T>(item: T)
-    where T: Serialize + serde::de::DeserializeOwned
+    where
+        T: Serialize + serde::de::DeserializeOwned,
     {
         let bytes = bincode::serialize(&item).expect("Serialization should work");
         let _: T = bincode::deserialize(&bytes).expect("Deserialization should work");
@@ -141,111 +136,95 @@ mod tests {
 
     #[test]
     fn bincode_can_serialize_and_deserialize_node_message_system_connected() {
-        bincode_can_serialize_and_deserialize(
-            NodeMessage::V1 {
-                payload: Payload::SystemConnected(SystemConnected {
-                    genesis_hash: BlockHash::zero(),
-                    node: NodeDetails {
-                        chain: "foo".into(),
-                        name: "foo".into(),
-                        implementation: "foo".into(),
-                        version: "foo".into(),
-                        validator: None,
-                        network_id: None,
-                        startup_time: None,
-                    },
-                })
-            }
-        );
+        bincode_can_serialize_and_deserialize(NodeMessage::V1 {
+            payload: Payload::SystemConnected(SystemConnected {
+                genesis_hash: BlockHash::zero(),
+                node: NodeDetails {
+                    chain: "foo".into(),
+                    name: "foo".into(),
+                    implementation: "foo".into(),
+                    version: "foo".into(),
+                    validator: None,
+                    network_id: None,
+                    startup_time: None,
+                },
+            }),
+        });
     }
 
     #[test]
     fn bincode_can_serialize_and_deserialize_node_message_system_interval() {
-        bincode_can_serialize_and_deserialize(
-            NodeMessage::V1 {
-                payload: Payload::SystemInterval(SystemInterval {
-                    peers: None,
-                    txcount: None,
-                    bandwidth_upload: None,
-                    bandwidth_download: None,
-                    finalized_height: None,
-                    finalized_hash: None,
-                    block: None,
-                    used_state_cache_size: None,
-                })
-            }
-        );
+        bincode_can_serialize_and_deserialize(NodeMessage::V1 {
+            payload: Payload::SystemInterval(SystemInterval {
+                peers: None,
+                txcount: None,
+                bandwidth_upload: None,
+                bandwidth_download: None,
+                finalized_height: None,
+                finalized_hash: None,
+                block: None,
+                used_state_cache_size: None,
+            }),
+        });
     }
 
     #[test]
     fn bincode_can_serialize_and_deserialize_node_message_block_import() {
-        bincode_can_serialize_and_deserialize(
-            NodeMessage::V1 {
-                payload: Payload::BlockImport(Block {
-                    hash: BlockHash([0; 32]),
-                    height: 0,
-                })
-            }
-        );
+        bincode_can_serialize_and_deserialize(NodeMessage::V1 {
+            payload: Payload::BlockImport(Block {
+                hash: BlockHash([0; 32]),
+                height: 0,
+            }),
+        });
     }
 
     #[test]
     fn bincode_can_serialize_and_deserialize_node_message_notify_finalized() {
-        bincode_can_serialize_and_deserialize(
-            NodeMessage::V1 {
-                payload: Payload::NotifyFinalized(Finalized {
-                    hash: BlockHash::zero(),
-                    height: "foo".into(),
-                })
-            }
-        );
+        bincode_can_serialize_and_deserialize(NodeMessage::V1 {
+            payload: Payload::NotifyFinalized(Finalized {
+                hash: BlockHash::zero(),
+                height: "foo".into(),
+            }),
+        });
     }
 
     #[test]
     fn bincode_can_serialize_and_deserialize_node_message_tx_pool_import() {
-        bincode_can_serialize_and_deserialize(
-            NodeMessage::V1 {
-                payload: Payload::TxPoolImport
-            }
-        );
+        bincode_can_serialize_and_deserialize(NodeMessage::V1 {
+            payload: Payload::TxPoolImport,
+        });
     }
 
     #[test]
     fn bincode_can_serialize_and_deserialize_node_message_afg_finalized() {
-        bincode_can_serialize_and_deserialize(
-            NodeMessage::V1 {
-                payload: Payload::AfgFinalized(AfgFinalized {
-                    finalized_hash: BlockHash::zero(),
-                    finalized_number: "foo".into(),
-                })
-            }
-        );
+        bincode_can_serialize_and_deserialize(NodeMessage::V1 {
+            payload: Payload::AfgFinalized(AfgFinalized {
+                finalized_hash: BlockHash::zero(),
+                finalized_number: "foo".into(),
+            }),
+        });
     }
 
     #[test]
     fn bincode_can_serialize_and_deserialize_node_message_afg_received() {
-        bincode_can_serialize_and_deserialize(
-            NodeMessage::V1 {
-                payload: Payload::AfgReceivedPrecommit(AfgReceived {
-                    target_hash: BlockHash::zero(),
-                    target_number: "foo".into(),
-                    voter: None,
-                })
-            }
-        );
+        bincode_can_serialize_and_deserialize(NodeMessage::V1 {
+            payload: Payload::AfgReceivedPrecommit(AfgReceived {
+                target_hash: BlockHash::zero(),
+                target_number: "foo".into(),
+                voter: None,
+            }),
+        });
     }
 
     #[test]
     fn bincode_can_serialize_and_deserialize_node_message_afg_authority_set() {
-        bincode_can_serialize_and_deserialize(
-            NodeMessage::V1 {
-                payload: Payload::AfgAuthoritySet(AfgAuthoritySet {
-                    authority_id: "foo".into(),
-                    authorities: "foo".into(),
-                    authority_set_id: "foo".into(),
-                })
-            }
-        );
+        bincode_can_serialize_and_deserialize(NodeMessage::V1 {
+            payload: Payload::AfgAuthoritySet(AfgAuthoritySet {
+                authority_id: "foo".into(),
+                authorities: "foo".into(),
+                authority_set_id: "foo".into(),
+            }),
+        });
     }
 
     #[test]

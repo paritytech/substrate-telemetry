@@ -1,10 +1,9 @@
+use crate::find_location;
+use common::node_message::SystemInterval;
 use common::node_types::{
-    Block, BlockDetails, NodeDetails, NodeHardware, NodeIO, NodeLocation, NodeStats,
-    Timestamp,
+    Block, BlockDetails, NodeDetails, NodeHardware, NodeIO, NodeLocation, NodeStats, Timestamp,
 };
 use common::time;
-use common::node_message::SystemInterval;
-use crate::find_location;
 
 /// Minimum time between block below broadcasting updates to the browser gets throttled, in ms.
 const THROTTLE_THRESHOLD: u64 = 100;

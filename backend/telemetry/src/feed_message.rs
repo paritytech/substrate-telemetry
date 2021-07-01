@@ -5,11 +5,10 @@ use serde::Serialize;
 use std::mem;
 
 use crate::state::Node;
-use serde_json::to_writer;
 use common::node_types::{
-    BlockDetails, BlockHash, BlockNumber, NodeHardware, NodeIO, NodeStats,
-    Timestamp
+    BlockDetails, BlockHash, BlockNumber, NodeHardware, NodeIO, NodeStats, Timestamp,
 };
+use serde_json::to_writer;
 
 type Address = Box<str>;
 type FeedNodeId = usize;

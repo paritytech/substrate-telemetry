@@ -1,33 +1,32 @@
-use common::{
-    internal_messages::{
-        self,
-        ShardNodeId,
-        MuteReason
-    },
-    node_types::BlockHash,
-    node_message,
-    time
-};
-use bimap::BiMap;
-use std::{net::{IpAddr, Ipv4Addr}, str::FromStr};
-use futures::channel::{ mpsc };
-use futures::{ SinkExt, StreamExt };
-use std::collections::{ HashMap, HashSet };
-use crate::state::{ self, State, NodeId };
-use crate::feed_message::{ self, FeedMessageSerializer };
-use crate::find_location;
 use super::aggregator::ConnId;
+use crate::feed_message::{self, FeedMessageSerializer};
+use crate::find_location;
+use crate::state::{self, NodeId, State};
+use bimap::BiMap;
+use common::{
+    internal_messages::{self, MuteReason, ShardNodeId},
+    node_message,
+    node_types::BlockHash,
+    time,
+};
+use futures::channel::mpsc;
+use futures::{SinkExt, StreamExt};
+use std::collections::{HashMap, HashSet};
+use std::{
+    net::{IpAddr, Ipv4Addr},
+    str::FromStr,
+};
 
 /// Incoming messages come via subscriptions, and end up looking like this.
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 pub enum ToAggregator {
     FromShardWebsocket(ConnId, FromShardWebsocket),
     FromFeedWebsocket(ConnId, FromFeedWebsocket),
-    FromFindLocation(NodeId, find_location::Location)
+    FromFindLocation(NodeId, find_location::Location),
 }
 
 /// An incoming shard connection can send these messages to the aggregator.
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 pub enum FromShardWebsocket {
     /// When the socket is opened, it'll send this first
     /// so that we have a way to communicate back to it.
@@ -39,19 +38,17 @@ pub enum FromShardWebsocket {
         local_id: ShardNodeId,
         ip: Option<std::net::IpAddr>,
         node: common::node_types::NodeDetails,
-        genesis_hash: common::node_types::BlockHash
+        genesis_hash: common::node_types::BlockHash,
     },
     /// Update/pass through details about a node.
     Update {
         local_id: ShardNodeId,
-        payload: node_message::Payload
+        payload: node_message::Payload,
     },
     /// Tell the aggregator that a node has been removed when it disconnects.
-    Remove {
-        local_id: ShardNodeId,
-    },
+    Remove { local_id: ShardNodeId },
     /// The shard is disconnected.
-    Disconnected
+    Disconnected,
 }
 
 /// The aggregator can these messages back to a shard connection.
@@ -60,12 +57,12 @@ pub enum ToShardWebsocket {
     /// Mute messages to the core by passing the shard-local ID of them.
     Mute {
         local_id: ShardNodeId,
-        reason: internal_messages::MuteReason
-    }
+        reason: internal_messages::MuteReason,
+    },
 }
 
 /// An incoming feed connection can send these messages to the aggregator.
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 pub enum FromFeedWebsocket {
     /// When the socket is opened, it'll send this first
     /// so that we have a way to communicate back to it.
@@ -76,19 +73,15 @@ pub enum FromFeedWebsocket {
     },
     /// The feed can subscribe to a chain to receive
     /// messages relating to it.
-    Subscribe {
-        chain: Box<str>
-    },
+    Subscribe { chain: Box<str> },
     /// The feed wants finality info for the chain, too.
     SendFinality,
     /// The feed doesn't want any more finality info for the chain.
     NoMoreFinality,
     /// An explicit ping message.
-    Ping {
-        value: Box<str>
-    },
+    Ping { value: Box<str> },
     /// The feed is disconnected.
-    Disconnected
+    Disconnected,
 }
 
 // The frontend sends text based commands; parse them into these messages:
@@ -96,23 +89,23 @@ impl FromStr for FromFeedWebsocket {
     type Err = anyhow::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (cmd, value) = match s.find(':') {
-            Some(idx) => (&s[..idx], s[idx+1..].into()),
-            None => return Err(anyhow::anyhow!("Expecting format `CMD:CHAIN_NAME`"))
+            Some(idx) => (&s[..idx], s[idx + 1..].into()),
+            None => return Err(anyhow::anyhow!("Expecting format `CMD:CHAIN_NAME`")),
         };
         match cmd {
             "ping" => Ok(FromFeedWebsocket::Ping { value }),
             "subscribe" => Ok(FromFeedWebsocket::Subscribe { chain: value }),
             "send-finality" => Ok(FromFeedWebsocket::SendFinality),
             "no-more-finality" => Ok(FromFeedWebsocket::NoMoreFinality),
-            _ => return Err(anyhow::anyhow!("Command {} not recognised", cmd))
+            _ => return Err(anyhow::anyhow!("Command {} not recognised", cmd)),
         }
     }
 }
 
 /// The aggregator can these messages back to a feed connection.
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 pub enum ToFeedWebsocket {
-    Bytes(Vec<u8>)
+    Bytes(Vec<u8>),
 }
 
 /// Instances of this are responsible for handling incoming and
@@ -143,7 +136,7 @@ pub struct InnerLoop {
     feed_conn_id_finality: HashSet<ConnId>,
 
     /// Send messages here to make geographical location requests.
-    tx_to_locator: mpsc::UnboundedSender<(NodeId, Ipv4Addr)>
+    tx_to_locator: mpsc::UnboundedSender<(NodeId, Ipv4Addr)>,
 }
 
 impl InnerLoop {
@@ -151,7 +144,7 @@ impl InnerLoop {
     pub fn new(
         rx_from_external: mpsc::Receiver<ToAggregator>,
         tx_to_locator: mpsc::UnboundedSender<(NodeId, Ipv4Addr)>,
-        denylist: Vec<String>
+        denylist: Vec<String>,
     ) -> Self {
         InnerLoop {
             rx_from_external,
@@ -162,7 +155,7 @@ impl InnerLoop {
             feed_conn_id_to_chain: HashMap::new(),
             chain_to_feed_conn_ids: HashMap::new(),
             feed_conn_id_finality: HashSet::new(),
-            tx_to_locator
+            tx_to_locator,
         }
     }
 
@@ -172,10 +165,10 @@ impl InnerLoop {
             match msg {
                 ToAggregator::FromFeedWebsocket(feed_conn_id, msg) => {
                     self.handle_from_feed(feed_conn_id, msg).await
-                },
+                }
                 ToAggregator::FromShardWebsocket(shard_conn_id, msg) => {
                     self.handle_from_shard(shard_conn_id, msg).await
-                },
+                }
                 ToAggregator::FromFindLocation(node_id, location) => {
                     self.handle_from_find_location(node_id, location).await
                 }
@@ -184,8 +177,13 @@ impl InnerLoop {
     }
 
     /// Handle messages that come from the node geographical locator.
-    async fn handle_from_find_location(&mut self, node_id: NodeId, location: find_location::Location) {
-        self.node_state.update_node_location(node_id, location.clone());
+    async fn handle_from_find_location(
+        &mut self,
+        node_id: NodeId,
+        location: find_location::Location,
+    ) {
+        self.node_state
+            .update_node_location(node_id, location.clone());
 
         if let Some(loc) = location {
             let mut feed_message_serializer = FeedMessageSerializer::new();
@@ -193,15 +191,20 @@ impl InnerLoop {
                 node_id.get_chain_node_id().into(),
                 loc.latitude,
                 loc.longitude,
-                &loc.city
+                &loc.city,
             ));
 
-            let chain_genesis_hash = self.node_state
+            let chain_genesis_hash = self
+                .node_state
                 .get_chain_by_node_id(node_id)
                 .map(|chain| *chain.genesis_hash());
 
             if let Some(chain_genesis_hash) = chain_genesis_hash {
-                self.finalize_and_broadcast_to_chain_feeds(&chain_genesis_hash, feed_message_serializer).await;
+                self.finalize_and_broadcast_to_chain_feeds(
+                    &chain_genesis_hash,
+                    feed_message_serializer,
+                )
+                .await;
             }
         }
     }
@@ -213,25 +216,34 @@ impl InnerLoop {
         match msg {
             FromShardWebsocket::Initialize { channel } => {
                 self.shard_channels.insert(shard_conn_id, channel);
-            },
-            FromShardWebsocket::Add { local_id, ip, node, genesis_hash } => {
+            }
+            FromShardWebsocket::Add {
+                local_id,
+                ip,
+                node,
+                genesis_hash,
+            } => {
                 match self.node_state.add_node(genesis_hash, node) {
                     state::AddNodeResult::ChainOnDenyList => {
                         if let Some(shard_conn) = self.shard_channels.get_mut(&shard_conn_id) {
-                            let _ = shard_conn.send(ToShardWebsocket::Mute {
-                                local_id,
-                                reason: MuteReason::ChainNotAllowed
-                            }).await;
+                            let _ = shard_conn
+                                .send(ToShardWebsocket::Mute {
+                                    local_id,
+                                    reason: MuteReason::ChainNotAllowed,
+                                })
+                                .await;
                         }
-                    },
+                    }
                     state::AddNodeResult::ChainOverQuota => {
                         if let Some(shard_conn) = self.shard_channels.get_mut(&shard_conn_id) {
-                            let _ = shard_conn.send(ToShardWebsocket::Mute {
-                                local_id,
-                                reason: MuteReason::Overquota
-                            }).await;
+                            let _ = shard_conn
+                                .send(ToShardWebsocket::Mute {
+                                    local_id,
+                                    reason: MuteReason::Overquota,
+                                })
+                                .await;
                         }
-                    },
+                    }
                     state::AddNodeResult::NodeAddedToChain(details) => {
                         let node_id = details.id;
 
@@ -246,66 +258,96 @@ impl InnerLoop {
 
                         // Tell chain subscribers about the node we've just added:
                         let mut feed_messages_for_chain = FeedMessageSerializer::new();
-                        feed_messages_for_chain.push(feed_message::AddedNode(node_id.get_chain_node_id().into(), &details.node));
-                        self.finalize_and_broadcast_to_chain_feeds(&genesis_hash, feed_messages_for_chain).await;
+                        feed_messages_for_chain.push(feed_message::AddedNode(
+                            node_id.get_chain_node_id().into(),
+                            &details.node,
+                        ));
+                        self.finalize_and_broadcast_to_chain_feeds(
+                            &genesis_hash,
+                            feed_messages_for_chain,
+                        )
+                        .await;
 
                         // Tell everybody about the new node count and potential rename:
                         let mut feed_messages_for_all = FeedMessageSerializer::new();
                         if has_chain_label_changed {
-                            feed_messages_for_all.push(feed_message::RemovedChain(&old_chain_label));
+                            feed_messages_for_all
+                                .push(feed_message::RemovedChain(&old_chain_label));
                         }
-                        feed_messages_for_all.push(feed_message::AddedChain(&new_chain_label, chain_node_count));
-                        self.finalize_and_broadcast_to_all_feeds(feed_messages_for_all).await;
+                        feed_messages_for_all
+                            .push(feed_message::AddedChain(&new_chain_label, chain_node_count));
+                        self.finalize_and_broadcast_to_all_feeds(feed_messages_for_all)
+                            .await;
 
                         // Ask for the grographical location of the node.
                         // Currently we only geographically locate IPV4 addresses so ignore IPV6.
                         if let Some(IpAddr::V4(ip_v4)) = ip {
                             let _ = self.tx_to_locator.send((node_id, ip_v4)).await;
                         }
-                    },
+                    }
                 }
-            },
+            }
             FromShardWebsocket::Remove { local_id } => {
                 let node_id = match self.node_ids.remove_by_right(&(shard_conn_id, local_id)) {
                     Some((node_id, _)) => node_id,
                     None => {
-                        log::error!("Cannot find ID for node with shard/connectionId of {:?}/{:?}", shard_conn_id, local_id);
-                        return
+                        log::error!(
+                            "Cannot find ID for node with shard/connectionId of {:?}/{:?}",
+                            shard_conn_id,
+                            local_id
+                        );
+                        return;
                     }
                 };
                 self.remove_nodes_and_broadcast_result(Some(node_id)).await;
-            },
+            }
             FromShardWebsocket::Update { local_id, payload } => {
                 let node_id = match self.node_ids.get_by_right(&(shard_conn_id, local_id)) {
                     Some(id) => *id,
                     None => {
-                        log::error!("Cannot find ID for node with shard/connectionId of {:?}/{:?}", shard_conn_id, local_id);
-                        return
+                        log::error!(
+                            "Cannot find ID for node with shard/connectionId of {:?}/{:?}",
+                            shard_conn_id,
+                            local_id
+                        );
+                        return;
                     }
                 };
 
                 let mut feed_message_serializer = FeedMessageSerializer::new();
-                let broadcast_finality = self.node_state.update_node(node_id, payload, &mut feed_message_serializer);
+                let broadcast_finality =
+                    self.node_state
+                        .update_node(node_id, payload, &mut feed_message_serializer);
 
                 if let Some(chain) = self.node_state.get_chain_by_node_id(node_id) {
                     let genesis_hash = *chain.genesis_hash();
                     if broadcast_finality {
-                        self.finalize_and_broadcast_to_chain_finality_feeds(&genesis_hash, feed_message_serializer).await;
+                        self.finalize_and_broadcast_to_chain_finality_feeds(
+                            &genesis_hash,
+                            feed_message_serializer,
+                        )
+                        .await;
                     } else {
-                        self.finalize_and_broadcast_to_chain_feeds(&genesis_hash, feed_message_serializer).await;
+                        self.finalize_and_broadcast_to_chain_feeds(
+                            &genesis_hash,
+                            feed_message_serializer,
+                        )
+                        .await;
                     }
                 }
-            },
+            }
             FromShardWebsocket::Disconnected => {
                 // Find all nodes associated with this shard connection ID:
-                let node_ids_to_remove: Vec<NodeId> = self.node_ids
+                let node_ids_to_remove: Vec<NodeId> = self
+                    .node_ids
                     .iter()
                     .filter(|(_, &(this_shard_conn_id, _))| shard_conn_id == this_shard_conn_id)
-                    .map(|(&node_id,_)| node_id)
+                    .map(|(&node_id, _)| node_id)
                     .collect();
 
                 // ... and remove them:
-                self.remove_nodes_and_broadcast_result(node_ids_to_remove).await;
+                self.remove_nodes_and_broadcast_result(node_ids_to_remove)
+                    .await;
             }
         }
     }
@@ -321,21 +363,19 @@ impl InnerLoop {
                 let mut feed_serializer = FeedMessageSerializer::new();
                 feed_serializer.push(feed_message::Version(31));
                 for chain in self.node_state.iter_chains() {
-                    feed_serializer.push(feed_message::AddedChain(
-                        chain.label(),
-                        chain.node_count()
-                    ));
+                    feed_serializer
+                        .push(feed_message::AddedChain(chain.label(), chain.node_count()));
                 }
 
                 // Send this to the channel that subscribed:
                 if let Some(bytes) = feed_serializer.into_finalized() {
                     let _ = channel.send(ToFeedWebsocket::Bytes(bytes)).await;
                 }
-            },
+            }
             FromFeedWebsocket::Ping { value } => {
                 let feed_channel = match self.feed_channels.get_mut(&feed_conn_id) {
                     Some(chan) => chan,
-                    None => return
+                    None => return,
                 };
 
                 // Pong!
@@ -344,11 +384,11 @@ impl InnerLoop {
                 if let Some(bytes) = feed_serializer.into_finalized() {
                     let _ = feed_channel.send(ToFeedWebsocket::Bytes(bytes)).await;
                 }
-            },
+            }
             FromFeedWebsocket::Subscribe { chain } => {
                 let feed_channel = match self.feed_channels.get_mut(&feed_conn_id) {
                     Some(chan) => chan,
-                    None => return
+                    None => return,
                 };
 
                 // Unsubscribe from previous chain if subscribed to one:
@@ -364,13 +404,13 @@ impl InnerLoop {
 
                 // Get old chain if there was one:
                 let node_state = &self.node_state;
-                let old_chain = old_genesis_hash
-                    .and_then(|hash| node_state.get_chain_by_genesis_hash(&hash));
+                let old_chain =
+                    old_genesis_hash.and_then(|hash| node_state.get_chain_by_genesis_hash(&hash));
 
                 // Get new chain, ignoring the rest if it doesn't exist.
                 let new_chain = match self.node_state.get_chain_by_label(&chain) {
                     Some(chain) => chain,
-                    None => return
+                    None => return,
                 };
 
                 // Send messages to the feed about this subscription:
@@ -380,14 +420,14 @@ impl InnerLoop {
                 }
                 feed_serializer.push(feed_message::SubscribedTo(new_chain.label()));
                 feed_serializer.push(feed_message::TimeSync(time::now()));
-                feed_serializer.push(feed_message::BestBlock (
+                feed_serializer.push(feed_message::BestBlock(
                     new_chain.best_block().height,
                     new_chain.timestamp(),
-                    new_chain.average_block_time()
+                    new_chain.average_block_time(),
                 ));
-                feed_serializer.push(feed_message::BestFinalized (
+                feed_serializer.push(feed_message::BestFinalized(
                     new_chain.finalized_block().height,
-                    new_chain.finalized_block().hash
+                    new_chain.finalized_block().hash,
                 ));
                 for (idx, (chain_node_id, node)) in new_chain.iter_nodes().enumerate() {
                     let chain_node_id = chain_node_id.into();
@@ -415,15 +455,19 @@ impl InnerLoop {
 
                 // Actually make a note of the new chain subsciption:
                 let new_genesis_hash = *new_chain.genesis_hash();
-                self.feed_conn_id_to_chain.insert(feed_conn_id, new_genesis_hash);
-                self.chain_to_feed_conn_ids.entry(new_genesis_hash).or_default().insert(feed_conn_id);
-            },
+                self.feed_conn_id_to_chain
+                    .insert(feed_conn_id, new_genesis_hash);
+                self.chain_to_feed_conn_ids
+                    .entry(new_genesis_hash)
+                    .or_default()
+                    .insert(feed_conn_id);
+            }
             FromFeedWebsocket::SendFinality => {
                 self.feed_conn_id_finality.insert(feed_conn_id);
-            },
+            }
             FromFeedWebsocket::NoMoreFinality => {
                 self.feed_conn_id_finality.remove(&feed_conn_id);
-            },
+            }
             FromFeedWebsocket::Disconnected => {
                 // The feed has disconnected; clean up references to it:
                 if let Some(chain) = self.feed_conn_id_to_chain.remove(&feed_conn_id) {
@@ -431,18 +475,23 @@ impl InnerLoop {
                 }
                 self.feed_channels.remove(&feed_conn_id);
                 self.feed_conn_id_finality.remove(&feed_conn_id);
-            },
+            }
         }
     }
 
     /// Remove all of the node IDs provided and broadcast messages to feeds as needed.
-    async fn remove_nodes_and_broadcast_result(&mut self, node_ids: impl IntoIterator<Item=NodeId>) {
-
+    async fn remove_nodes_and_broadcast_result(
+        &mut self,
+        node_ids: impl IntoIterator<Item = NodeId>,
+    ) {
         // Group by chain to simplify the handling of feed messages:
-        let mut node_ids_per_chain: HashMap<BlockHash,Vec<NodeId>> = HashMap::new();
+        let mut node_ids_per_chain: HashMap<BlockHash, Vec<NodeId>> = HashMap::new();
         for node_id in node_ids.into_iter() {
             if let Some(chain) = self.node_state.get_chain_by_node_id(node_id) {
-                node_ids_per_chain.entry(*chain.genesis_hash()).or_default().push(node_id);
+                node_ids_per_chain
+                    .entry(*chain.genesis_hash())
+                    .or_default()
+                    .push(node_id);
             }
         }
 
@@ -454,12 +503,14 @@ impl InnerLoop {
                 self.remove_node(
                     node_id,
                     &mut feed_messages_for_chain,
-                    &mut feed_messages_for_all
+                    &mut feed_messages_for_all,
                 );
             }
-            self.finalize_and_broadcast_to_chain_feeds(&chain_label, feed_messages_for_chain).await;
+            self.finalize_and_broadcast_to_chain_feeds(&chain_label, feed_messages_for_chain)
+                .await;
         }
-        self.finalize_and_broadcast_to_all_feeds(feed_messages_for_all).await;
+        self.finalize_and_broadcast_to_all_feeds(feed_messages_for_all)
+            .await;
     }
 
     /// Remove a single node by its ID, pushing any messages we'd want to send
@@ -469,7 +520,7 @@ impl InnerLoop {
         &mut self,
         node_id: NodeId,
         feed_for_chain: &mut FeedMessageSerializer,
-        feed_for_all: &mut FeedMessageSerializer
+        feed_for_all: &mut FeedMessageSerializer,
     ) {
         // Remove our top level association (this may already have been done).
         self.node_ids.remove_by_left(&node_id);
@@ -478,41 +529,49 @@ impl InnerLoop {
             Some(remove_details) => remove_details,
             None => {
                 log::error!("Could not find node {:?}", node_id);
-                return
+                return;
             }
         };
 
         // The chain has been removed (no nodes left in it, or it was renamed):
         if removed_details.chain_node_count == 0 || removed_details.has_chain_label_changed {
-            feed_for_all.push(feed_message::RemovedChain(
-                &removed_details.old_chain_label
-            ));
+            feed_for_all.push(feed_message::RemovedChain(&removed_details.old_chain_label));
         }
 
         // If the chain still exists, tell everybody about the new label or updated node count:
         if removed_details.chain_node_count != 0 {
-            feed_for_all.push(
-                feed_message::AddedChain(&removed_details.new_chain_label, removed_details.chain_node_count)
-            );
+            feed_for_all.push(feed_message::AddedChain(
+                &removed_details.new_chain_label,
+                removed_details.chain_node_count,
+            ));
         }
 
         // Assuming the chain hasn't gone away, tell chain subscribers about the node removal
         if removed_details.chain_node_count != 0 {
-            feed_for_chain.push(
-                feed_message::RemovedNode(node_id.get_chain_node_id().into())
-            );
+            feed_for_chain.push(feed_message::RemovedNode(
+                node_id.get_chain_node_id().into(),
+            ));
         }
     }
 
     /// Finalize a [`FeedMessageSerializer`] and broadcast the result to feeds for the chain.
-    async fn finalize_and_broadcast_to_chain_feeds(&mut self, genesis_hash: &BlockHash, serializer: FeedMessageSerializer) {
+    async fn finalize_and_broadcast_to_chain_feeds(
+        &mut self,
+        genesis_hash: &BlockHash,
+        serializer: FeedMessageSerializer,
+    ) {
         if let Some(bytes) = serializer.into_finalized() {
-            self.broadcast_to_chain_feeds(genesis_hash, ToFeedWebsocket::Bytes(bytes)).await;
+            self.broadcast_to_chain_feeds(genesis_hash, ToFeedWebsocket::Bytes(bytes))
+                .await;
         }
     }
 
     /// Send a message to all chain feeds.
-    async fn broadcast_to_chain_feeds(&mut self, genesis_hash: &BlockHash, message: ToFeedWebsocket) {
+    async fn broadcast_to_chain_feeds(
+        &mut self,
+        genesis_hash: &BlockHash,
+        message: ToFeedWebsocket,
+    ) {
         if let Some(feeds) = self.chain_to_feed_conn_ids.get(genesis_hash) {
             for &feed_id in feeds {
                 if let Some(chan) = self.feed_channels.get_mut(&feed_id) {
@@ -525,7 +584,8 @@ impl InnerLoop {
     /// Finalize a [`FeedMessageSerializer`] and broadcast the result to all feeds
     async fn finalize_and_broadcast_to_all_feeds(&mut self, serializer: FeedMessageSerializer) {
         if let Some(bytes) = serializer.into_finalized() {
-            self.broadcast_to_all_feeds(ToFeedWebsocket::Bytes(bytes)).await;
+            self.broadcast_to_all_feeds(ToFeedWebsocket::Bytes(bytes))
+                .await;
         }
     }
 
@@ -537,14 +597,23 @@ impl InnerLoop {
     }
 
     /// Finalize a [`FeedMessageSerializer`] and broadcast the result to chain finality feeds
-    async fn finalize_and_broadcast_to_chain_finality_feeds(&mut self, genesis_hash: &BlockHash, serializer: FeedMessageSerializer) {
+    async fn finalize_and_broadcast_to_chain_finality_feeds(
+        &mut self,
+        genesis_hash: &BlockHash,
+        serializer: FeedMessageSerializer,
+    ) {
         if let Some(bytes) = serializer.into_finalized() {
-            self.broadcast_to_chain_finality_feeds(genesis_hash, ToFeedWebsocket::Bytes(bytes)).await;
+            self.broadcast_to_chain_finality_feeds(genesis_hash, ToFeedWebsocket::Bytes(bytes))
+                .await;
         }
     }
 
     /// Send a message to all chain finality feeds.
-    async fn broadcast_to_chain_finality_feeds(&mut self, genesis_hash: &BlockHash, message: ToFeedWebsocket) {
+    async fn broadcast_to_chain_finality_feeds(
+        &mut self,
+        genesis_hash: &BlockHash,
+        message: ToFeedWebsocket,
+    ) {
         if let Some(feeds) = self.chain_to_feed_conn_ids.get(genesis_hash) {
             // Get all feeds for the chain, but only broadcast to those feeds that
             // are also subscribed to receive finality updates.

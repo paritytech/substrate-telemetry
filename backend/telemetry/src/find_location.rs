@@ -1,11 +1,11 @@
 use std::net::Ipv4Addr;
 use std::sync::Arc;
 
+use futures::channel::mpsc;
+use futures::{Sink, SinkExt, StreamExt};
 use parking_lot::RwLock;
 use rustc_hash::FxHashMap;
 use serde::Deserialize;
-use futures::{Sink, SinkExt, StreamExt};
-use futures::channel::mpsc;
 
 use common::node_types::NodeLocation;
 use tokio::sync::Semaphore;
@@ -18,7 +18,7 @@ pub type Location = Option<Arc<NodeLocation>>;
 pub fn find_location<Id, R>(response_chan: R) -> mpsc::UnboundedSender<(Id, Ipv4Addr)>
 where
     R: Sink<(Id, Option<Arc<NodeLocation>>)> + Unpin + Send + Clone + 'static,
-    Id: Clone + Send + 'static
+    Id: Clone + Send + 'static,
 {
     let (tx, mut rx) = mpsc::unbounded();
 
@@ -40,14 +40,12 @@ where
 
     // Spawn a loop to handle location requests
     tokio::spawn(async move {
-
         // Allow 4 requests at a time. acquiring a token will block while the
         // number of concurrent location requests is more than this.
         let semaphore = Arc::new(Semaphore::new(4));
 
         loop {
             while let Some((id, ip_address)) = rx.next().await {
-
                 let permit = semaphore.clone().acquire_owned().await.unwrap();
                 let mut response_chan = response_chan.clone();
                 let locator = locator.clone();
@@ -57,8 +55,8 @@ where
                 tokio::spawn(async move {
                     match locator.locate(ip_address).await {
                         Ok(loc) => {
-                            let _ = response_chan.send((id,loc)).await;
-                        },
+                            let _ = response_chan.send((id, loc)).await;
+                        }
                         Err(e) => {
                             log::debug!("GET error for ip location: {:?}", e);
                         }
@@ -88,7 +86,7 @@ impl Locator {
 
         Locator {
             client,
-            cache: Arc::new(RwLock::new(cache))
+            cache: Arc::new(RwLock::new(cache)),
         }
     }
 
@@ -113,7 +111,10 @@ impl Locator {
         Ok(location)
     }
 
-    async fn iplocate_ipapi_co(&self, ip: Ipv4Addr) -> Result<Option<Arc<NodeLocation>>, reqwest::Error> {
+    async fn iplocate_ipapi_co(
+        &self,
+        ip: Ipv4Addr,
+    ) -> Result<Option<Arc<NodeLocation>>, reqwest::Error> {
         let location = self
             .query(&format!("https://ipapi.co/{}/json", ip))
             .await?
@@ -122,7 +123,10 @@ impl Locator {
         Ok(location)
     }
 
-    async fn iplocate_ipinfo_io(&self, ip: Ipv4Addr) -> Result<Option<Arc<NodeLocation>>, reqwest::Error> {
+    async fn iplocate_ipinfo_io(
+        &self,
+        ip: Ipv4Addr,
+    ) -> Result<Option<Arc<NodeLocation>>, reqwest::Error> {
         let location = self
             .query(&format!("https://ipinfo.io/{}/json", ip))
             .await?
@@ -132,7 +136,8 @@ impl Locator {
     }
 
     async fn query<T>(&self, url: &str) -> Result<Option<T>, reqwest::Error>
-    where for<'de> T: Deserialize<'de>
+    where
+        for<'de> T: Deserialize<'de>,
     {
         match self.client.get(url).send().await?.json::<T>().await {
             Ok(result) => Ok(Some(result)),

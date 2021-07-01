@@ -4,9 +4,9 @@
 //! compatibility with the input data when we make changes to our internal data
 //! structures (for example, to support bincode better).
 use super::hash::Hash;
-use serde::{Deserialize};
 use common::node_message as internal;
 use common::node_types;
+use serde::Deserialize;
 
 /// This struct represents a telemetry message sent from a node as
 /// a JSON payload. Since JSON is self describing, we can use attributes
@@ -36,11 +36,12 @@ pub enum NodeMessage {
 impl From<NodeMessage> for internal::NodeMessage {
     fn from(msg: NodeMessage) -> Self {
         match msg {
-            NodeMessage::V1 { payload } => {
-                internal::NodeMessage::V1 { payload: payload.into() }
+            NodeMessage::V1 { payload } => internal::NodeMessage::V1 {
+                payload: payload.into(),
             },
-            NodeMessage::V2 { id, payload } => {
-                internal::NodeMessage::V2 { id, payload: payload.into() }
+            NodeMessage::V2 { id, payload } => internal::NodeMessage::V2 {
+                id,
+                payload: payload.into(),
             },
         }
     }
@@ -80,45 +81,19 @@ pub enum Payload {
 impl From<Payload> for internal::Payload {
     fn from(msg: Payload) -> Self {
         match msg {
-            Payload::SystemConnected(m) => {
-                internal::Payload::SystemConnected(m.into())
-            },
-            Payload::SystemInterval(m) => {
-                internal::Payload::SystemInterval(m.into())
-            },
-            Payload::BlockImport(m) => {
-                internal::Payload::BlockImport(m.into())
-            },
-            Payload::NotifyFinalized(m) => {
-                internal::Payload::NotifyFinalized(m.into())
-            },
-            Payload::TxPoolImport => {
-                internal::Payload::TxPoolImport
-            },
-            Payload::AfgFinalized(m) => {
-                internal::Payload::AfgFinalized(m.into())
-            },
-            Payload::AfgReceivedPrecommit(m) => {
-                internal::Payload::AfgReceivedPrecommit(m.into())
-            },
-            Payload::AfgReceivedPrevote(m) => {
-                internal::Payload::AfgReceivedPrevote(m.into())
-            },
-            Payload::AfgReceivedCommit(m) => {
-                internal::Payload::AfgReceivedCommit(m.into())
-            },
-            Payload::AfgAuthoritySet(m) => {
-                internal::Payload::AfgAuthoritySet(m.into())
-            },
-            Payload::AfgFinalizedBlocksUpTo => {
-                internal::Payload::AfgFinalizedBlocksUpTo
-            },
-            Payload::AuraPreSealedBlock => {
-                internal::Payload::AuraPreSealedBlock
-            },
-            Payload::PreparedBlockForProposing => {
-                internal::Payload::PreparedBlockForProposing
-            },
+            Payload::SystemConnected(m) => internal::Payload::SystemConnected(m.into()),
+            Payload::SystemInterval(m) => internal::Payload::SystemInterval(m.into()),
+            Payload::BlockImport(m) => internal::Payload::BlockImport(m.into()),
+            Payload::NotifyFinalized(m) => internal::Payload::NotifyFinalized(m.into()),
+            Payload::TxPoolImport => internal::Payload::TxPoolImport,
+            Payload::AfgFinalized(m) => internal::Payload::AfgFinalized(m.into()),
+            Payload::AfgReceivedPrecommit(m) => internal::Payload::AfgReceivedPrecommit(m.into()),
+            Payload::AfgReceivedPrevote(m) => internal::Payload::AfgReceivedPrevote(m.into()),
+            Payload::AfgReceivedCommit(m) => internal::Payload::AfgReceivedCommit(m.into()),
+            Payload::AfgAuthoritySet(m) => internal::Payload::AfgAuthoritySet(m.into()),
+            Payload::AfgFinalizedBlocksUpTo => internal::Payload::AfgFinalizedBlocksUpTo,
+            Payload::AuraPreSealedBlock => internal::Payload::AuraPreSealedBlock,
+            Payload::PreparedBlockForProposing => internal::Payload::PreparedBlockForProposing,
         }
     }
 }
@@ -134,7 +109,7 @@ impl From<SystemConnected> for internal::SystemConnected {
     fn from(msg: SystemConnected) -> Self {
         internal::SystemConnected {
             genesis_hash: msg.genesis_hash.into(),
-            node: msg.node.into()
+            node: msg.node.into(),
         }
     }
 }
@@ -243,7 +218,7 @@ impl From<Block> for node_types::Block {
     fn from(block: Block) -> Self {
         node_types::Block {
             hash: block.hash.into(),
-            height: block.height
+            height: block.height,
         }
     }
 }

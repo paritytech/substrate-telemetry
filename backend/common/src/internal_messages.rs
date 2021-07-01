@@ -1,8 +1,8 @@
 use std::net::IpAddr;
 
-use crate::node_message::Payload;
-use crate::node_types::{NodeDetails, BlockHash};
 use crate::id_type;
+use crate::node_message::Payload;
+use crate::node_types::{BlockHash, NodeDetails};
 use serde::{Deserialize, Serialize};
 
 id_type! {
@@ -12,16 +12,15 @@ id_type! {
     pub ShardNodeId(usize);
 }
 
-
 /// Message sent from the shard to the backend core
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub enum FromShardAggregator {
     /// Get information about a new node, passing IPv4
     AddNode {
-    	ip: Option<IpAddr>,
-    	node: NodeDetails,
-    	local_id: ShardNodeId,
-        genesis_hash: BlockHash
+        ip: Option<IpAddr>,
+        node: NodeDetails,
+        local_id: ShardNodeId,
+        genesis_hash: BlockHash,
     },
     /// Send a message payload to update details for a node
     UpdateNode {
@@ -29,23 +28,21 @@ pub enum FromShardAggregator {
         payload: Payload,
     },
     /// Inform the core that a node has been removed
-    RemoveNode {
-        local_id: ShardNodeId
-    }
+    RemoveNode { local_id: ShardNodeId },
 }
 
 /// Message sent form the backend core to the shard
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub enum FromTelemetryCore {
-	Mute {
-		local_id: ShardNodeId,
-        reason: MuteReason
-	}
+    Mute {
+        local_id: ShardNodeId,
+        reason: MuteReason,
+    },
 }
 
 /// Why is the thing being muted?
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub enum MuteReason {
     Overquota,
-    ChainNotAllowed
+    ChainNotAllowed,
 }

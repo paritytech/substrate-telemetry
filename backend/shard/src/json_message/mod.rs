@@ -3,5 +3,5 @@
 mod hash;
 mod node_message;
 
-pub use node_message::*;
 pub use hash::Hash;
+pub use node_message::*;

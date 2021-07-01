@@ -1,10 +1,15 @@
-use common::{internal_messages::{self, ShardNodeId}, node_message, AssignId, node_types::BlockHash};
-use std::sync::Arc;
-use std::sync::atomic::AtomicU64;
+use crate::connection::{create_ws_connection, Message};
+use common::{
+    internal_messages::{self, ShardNodeId},
+    node_message,
+    node_types::BlockHash,
+    AssignId,
+};
 use futures::{channel::mpsc, future};
-use futures::{ Sink, SinkExt, StreamExt };
-use std::collections::{ HashSet };
-use crate::connection::{ create_ws_connection, Message };
+use futures::{Sink, SinkExt, StreamExt};
+use std::collections::HashSet;
+use std::sync::atomic::AtomicU64;
+use std::sync::Arc;
 
 /// A unique Id is assigned per websocket connection (or more accurately,
 /// per thing-that-subscribes-to-the-aggregator). That connection might send
@@ -16,18 +21,18 @@ type ConnId = u64;
 /// from the telemetry core. This can be private since the only
 /// external messages are via subscriptions that take
 /// [`FromWebsocket`] instances.
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 enum ToAggregator {
     DisconnectedFromTelemetryCore,
     ConnectedToTelemetryCore,
     FromWebsocket(ConnId, FromWebsocket),
-    FromTelemetryCore(internal_messages::FromTelemetryCore)
+    FromTelemetryCore(internal_messages::FromTelemetryCore),
 }
 
 /// An incoming socket connection can provide these messages.
 /// Until a node has been Added via [`FromWebsocket::Add`],
 /// messages from it will be ignored.
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 pub enum FromWebsocket {
     /// Fire this when the connection is established.
     Initialize {
@@ -35,22 +40,22 @@ pub enum FromWebsocket {
         /// the websocket connection and force the node to reconnect
         /// so that it sends its system info again incase the telemetry
         /// core has restarted.
-        close_connection: mpsc::Sender<()>
+        close_connection: mpsc::Sender<()>,
     },
     /// Tell the aggregator about a new node.
     Add {
         message_id: node_message::NodeMessageId,
         ip: Option<std::net::IpAddr>,
         node: common::node_types::NodeDetails,
-        genesis_hash: BlockHash
+        genesis_hash: BlockHash,
     },
     /// Update/pass through details about a node.
     Update {
         message_id: node_message::NodeMessageId,
-        payload: node_message::Payload
+        payload: node_message::Payload,
     },
     /// Make a note when the node disconnects.
-    Disconnected
+    Disconnected,
 }
 
 pub type FromAggregator = internal_messages::FromShardAggregator;
@@ -67,7 +72,7 @@ struct AggregatorInternal {
     /// Send messages to the aggregator from websockets via this. This is
     /// stored here so that anybody holding an `Aggregator` handle can
     /// make use of it.
-    tx_to_aggregator: mpsc::Sender<ToAggregator>
+    tx_to_aggregator: mpsc::Sender<ToAggregator>,
 }
 
 impl Aggregator {
@@ -77,21 +82,21 @@ impl Aggregator {
 
         // Map responses from our connection into messages that will be sent to the aggregator:
         let tx_from_connection = tx_to_aggregator.clone().with(|msg| {
-            future::ok::<_,mpsc::SendError>(match msg {
+            future::ok::<_, mpsc::SendError>(match msg {
                 Message::Connected => ToAggregator::ConnectedToTelemetryCore,
                 Message::Disconnected => ToAggregator::DisconnectedFromTelemetryCore,
-                Message::Data(data) => ToAggregator::FromTelemetryCore(data)
+                Message::Data(data) => ToAggregator::FromTelemetryCore(data),
             })
         });
 
         // Establish a resiliant connection to the core (this retries as needed):
-        let tx_to_telemetry_core = create_ws_connection(
-            tx_from_connection,
-            telemetry_uri
-        ).await;
+        let tx_to_telemetry_core = create_ws_connection(tx_from_connection, telemetry_uri).await;
 
         // Handle any incoming messages in our handler loop:
-        tokio::spawn(Aggregator::handle_messages(rx_from_external, tx_to_telemetry_core));
+        tokio::spawn(Aggregator::handle_messages(
+            rx_from_external,
+            tx_to_telemetry_core,
+        ));
 
         // Return a handle to our aggregator:
         Ok(Aggregator(Arc::new(AggregatorInternal {
@@ -103,8 +108,11 @@ impl Aggregator {
     // This is spawned into a separate task and handles any messages coming
     // in to the aggregator. If nobody is tolding the tx side of the channel
     // any more, this task will gracefully end.
-    async fn handle_messages(mut rx_from_external: mpsc::Receiver<ToAggregator>, mut tx_to_telemetry_core: mpsc::Sender<FromAggregator>) {
-        use internal_messages::{ FromShardAggregator, FromTelemetryCore };
+    async fn handle_messages(
+        mut rx_from_external: mpsc::Receiver<ToAggregator>,
+        mut tx_to_telemetry_core: mpsc::Sender<FromAggregator>,
+    ) {
+        use internal_messages::{FromShardAggregator, FromTelemetryCore};
 
         // Just as an optimisation, we can keep track of whether we're connected to the backend
         // or not, and ignore incoming messages while we aren't.
@@ -140,41 +148,64 @@ impl Aggregator {
 
                     connected_to_telemetry_core = true;
                     log::info!("Connected to telemetry core");
-                },
+                }
                 ToAggregator::DisconnectedFromTelemetryCore => {
                     connected_to_telemetry_core = false;
                     log::info!("Disconnected from telemetry core");
-                },
-                ToAggregator::FromWebsocket(_conn_id, FromWebsocket::Initialize { close_connection }) => {
+                }
+                ToAggregator::FromWebsocket(
+                    _conn_id,
+                    FromWebsocket::Initialize { close_connection },
+                ) => {
                     // We boot all connections on a reconnect-to-core to force new systemconnected
                     // messages to be sent. We could boot on muting, but need to be careful not to boot
                     // connections where we mute one set of messages it sends and not others.
                     close_connections.push(close_connection);
-                },
-                ToAggregator::FromWebsocket(conn_id, FromWebsocket::Add { message_id, ip, node, genesis_hash }) => {
+                }
+                ToAggregator::FromWebsocket(
+                    conn_id,
+                    FromWebsocket::Add {
+                        message_id,
+                        ip,
+                        node,
+                        genesis_hash,
+                    },
+                ) => {
                     // Don't bother doing anything else if we're disconnected, since we'll force the
                     // node to reconnect anyway when the backend does:
-                    if !connected_to_telemetry_core { continue }
+                    if !connected_to_telemetry_core {
+                        continue;
+                    }
 
                     // Generate a new "local ID" for messages from this connection:
                     let local_id = to_local_id.assign_id((conn_id, message_id));
 
                     // Send the message to the telemetry core with this local ID:
-                    let _ = tx_to_telemetry_core.send(FromShardAggregator::AddNode {
-                        ip,
-                        node,
-                        genesis_hash,
-                        local_id
-                    }).await;
-                },
-                ToAggregator::FromWebsocket(conn_id, FromWebsocket::Update { message_id, payload }) => {
+                    let _ = tx_to_telemetry_core
+                        .send(FromShardAggregator::AddNode {
+                            ip,
+                            node,
+                            genesis_hash,
+                            local_id,
+                        })
+                        .await;
+                }
+                ToAggregator::FromWebsocket(
+                    conn_id,
+                    FromWebsocket::Update {
+                        message_id,
+                        payload,
+                    },
+                ) => {
                     // Ignore incoming messages if we're not connected to the backend:
-                    if !connected_to_telemetry_core { continue }
+                    if !connected_to_telemetry_core {
+                        continue;
+                    }
 
                     // Get the local ID, ignoring the message if none match:
                     let local_id = match to_local_id.get_id(&(conn_id, message_id)) {
                         Some(id) => id,
-                        None => continue
+                        None => continue,
                     };
 
                     // ignore the message if this node has been muted:
@@ -183,28 +214,35 @@ impl Aggregator {
                     }
 
                     // Send the message to the telemetry core with this local ID:
-                    let _ = tx_to_telemetry_core.send(FromShardAggregator::UpdateNode {
-                        local_id,
-                        payload
-                    }).await;
-                },
+                    let _ = tx_to_telemetry_core
+                        .send(FromShardAggregator::UpdateNode { local_id, payload })
+                        .await;
+                }
                 ToAggregator::FromWebsocket(disconnected_conn_id, FromWebsocket::Disconnected) => {
                     // Find all of the local IDs corresponding to the disconnected connection ID and
                     // remove them, telling Telemetry Core about them too. This could be more efficient,
                     // but the mapping isn't currently cached and it's not a super frequent op.
-                    let local_ids_disconnected: Vec<_> = to_local_id.iter()
+                    let local_ids_disconnected: Vec<_> = to_local_id
+                        .iter()
                         .filter(|(_, &(conn_id, _))| disconnected_conn_id == conn_id)
                         .map(|(local_id, _)| local_id)
                         .collect();
 
                     for local_id in local_ids_disconnected {
                         to_local_id.remove_by_id(local_id);
-                        let _ = tx_to_telemetry_core.send(FromShardAggregator::RemoveNode { local_id }).await;
+                        let _ = tx_to_telemetry_core
+                            .send(FromShardAggregator::RemoveNode { local_id })
+                            .await;
                     }
-                },
-                ToAggregator::FromTelemetryCore(FromTelemetryCore::Mute { local_id, reason: _  }) => {
+                }
+                ToAggregator::FromTelemetryCore(FromTelemetryCore::Mute {
+                    local_id,
+                    reason: _,
+                }) => {
                     // Ignore incoming messages if we're not connected to the backend:
-                    if !connected_to_telemetry_core { continue }
+                    if !connected_to_telemetry_core {
+                        continue;
+                    }
 
                     // Mute the local ID we've been told to:
                     muted.insert(local_id);
@@ -217,13 +255,17 @@ impl Aggregator {
     pub fn subscribe_node(&self) -> impl Sink<FromWebsocket, Error = anyhow::Error> + Unpin {
         // Assign a unique aggregator-local ID to each connection that subscribes, and pass
         // that along with every message to the aggregator loop:
-        let conn_id: ConnId = self.0.conn_id.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let conn_id: ConnId = self
+            .0
+            .conn_id
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let tx_to_aggregator = self.0.tx_to_aggregator.clone();
 
         // Calling `send` on this Sink requires Unpin. There may be a nicer way than this,
         // but pinning by boxing is the easy solution for now:
-        Box::pin(tx_to_aggregator.with(move |msg| async move {
-            Ok(ToAggregator::FromWebsocket(conn_id, msg))
-        }))
+        Box::pin(
+            tx_to_aggregator
+                .with(move |msg| async move { Ok(ToAggregator::FromWebsocket(conn_id, msg)) }),
+        )
     }
 }

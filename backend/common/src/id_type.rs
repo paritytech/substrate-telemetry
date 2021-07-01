@@ -33,7 +33,7 @@ mod test {
 
     #[test]
     fn create_and_use_new_id_type() {
-        id_type!{
+        id_type! {
             Foo(usize)
         };
         let _ = Foo::new(123);
@@ -41,16 +41,15 @@ mod test {
         let _: usize = id.into();
 
         // Check that these don't lead to compile errors:
-        id_type!{
+        id_type! {
             Bar(usize);
         };
-        id_type!{
+        id_type! {
             pub Wibble(u64)
         };
-        id_type!{
+        id_type! {
             /// We can have doc strings, too
             pub(crate) Wobble(u16)
         };
     }
-
 }

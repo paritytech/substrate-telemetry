@@ -1,16 +1,16 @@
-use std::collections::{ HashSet };
-use common::node_types::{ BlockHash, BlockNumber };
-use common::node_types::{Block, Timestamp};
 use common::node_message::Payload;
-use common::{time, id_type, DenseMap, MostSeen, NumStats};
+use common::node_types::{Block, Timestamp};
+use common::node_types::{BlockHash, BlockNumber};
+use common::{id_type, time, DenseMap, MostSeen, NumStats};
 use once_cell::sync::Lazy;
+use std::collections::HashSet;
 
 use crate::feed_message::{self, FeedMessageSerializer};
 use crate::find_location;
 
 use super::node::Node;
 
-id_type!{
+id_type! {
     /// A Node ID that is unique to the chain it's in.
     pub ChainNodeId(usize)
 }
@@ -36,19 +36,19 @@ pub struct Chain {
     /// When the best block first arrived
     timestamp: Option<Timestamp>,
     /// Genesis hash of this chain
-    genesis_hash: BlockHash
+    genesis_hash: BlockHash,
 }
 
 pub enum AddNodeResult {
     Overquota,
     Added {
         id: ChainNodeId,
-        chain_renamed: bool
-    }
+        chain_renamed: bool,
+    },
 }
 
 pub struct RemoveNodeResult {
-    pub chain_renamed: bool
+    pub chain_renamed: bool,
 }
 
 /// Labels of chains we consider "first party". These chains allow any
@@ -76,7 +76,7 @@ impl Chain {
             block_times: NumStats::new(50),
             average_block_time: None,
             timestamp: None,
-            genesis_hash
+            genesis_hash,
         }
     }
 
@@ -90,7 +90,7 @@ impl Chain {
     /// Assign a node to this chain.
     pub fn add_node(&mut self, node: Node) -> AddNodeResult {
         if !self.can_add_node() {
-            return AddNodeResult::Overquota
+            return AddNodeResult::Overquota;
         }
 
         let node_chain_label = &node.details().chain;
@@ -99,7 +99,7 @@ impl Chain {
 
         AddNodeResult::Added {
             id: node_id,
-            chain_renamed: label_result.has_changed()
+            chain_renamed: label_result.has_changed(),
         }
     }
 
@@ -107,21 +107,29 @@ impl Chain {
     pub fn remove_node(&mut self, node_id: ChainNodeId) -> RemoveNodeResult {
         let node = match self.nodes.remove(node_id) {
             Some(node) => node,
-            None => return RemoveNodeResult { chain_renamed: false }
+            None => {
+                return RemoveNodeResult {
+                    chain_renamed: false,
+                }
+            }
         };
 
         let node_chain_label = &node.details().chain;
         let label_result = self.labels.remove(node_chain_label);
 
         RemoveNodeResult {
-            chain_renamed: label_result.has_changed()
+            chain_renamed: label_result.has_changed(),
         }
     }
 
     /// Attempt to update the best block seen in this chain.
     /// Returns a boolean which denotes whether the output is for finalization feeds (true) or not (false).
-    pub fn update_node(&mut self, nid: ChainNodeId, payload: Payload, feed: &mut FeedMessageSerializer) -> bool {
-
+    pub fn update_node(
+        &mut self,
+        nid: ChainNodeId,
+        payload: Payload,
+        feed: &mut FeedMessageSerializer,
+    ) -> bool {
         if let Some(block) = payload.best_block() {
             self.handle_block(block, nid, feed);
         }
@@ -159,9 +167,7 @@ impl Chain {
                     return true;
                 }
                 Payload::AfgReceivedPrecommit(precommit) => {
-                    if let Ok(finalized_number) =
-                        precommit.target_number.parse::<BlockNumber>()
-                    {
+                    if let Ok(finalized_number) = precommit.target_number.parse::<BlockNumber>() {
                         if let Some(addr) = node.details().validator.clone() {
                             let voter = precommit.voter.clone();
                             feed.push(feed_message::AfgReceivedPrecommit(
@@ -175,9 +181,7 @@ impl Chain {
                     return true;
                 }
                 Payload::AfgReceivedPrevote(prevote) => {
-                    if let Ok(finalized_number) =
-                        prevote.target_number.parse::<BlockNumber>()
-                    {
+                    if let Ok(finalized_number) = prevote.target_number.parse::<BlockNumber>() {
                         if let Some(addr) = node.details().validator.clone() {
                             let voter = prevote.voter.clone();
                             feed.push(feed_message::AfgReceivedPrevote(
@@ -204,7 +208,10 @@ impl Chain {
 
                     if finalized.height > self.finalized.height {
                         self.finalized = *finalized;
-                        feed.push(feed_message::BestFinalized(finalized.height, finalized.hash));
+                        feed.push(feed_message::BestFinalized(
+                            finalized.height,
+                            finalized.hash,
+                        ));
                     }
                 }
             }
@@ -261,7 +268,6 @@ impl Chain {
     /// Check if the chain is stale (has not received a new best block in a while).
     /// If so, find a new best block, ignoring any stale nodes and marking them as such.
     fn update_stale_nodes(&mut self, now: u64, feed: &mut FeedMessageSerializer) {
-
         let threshold = now - STALE_TIMEOUT;
         let timestamp = match self.timestamp {
             Some(ts) => ts,
@@ -303,11 +309,18 @@ impl Chain {
                 timestamp.unwrap_or(now),
                 None,
             ));
-            feed.push(feed_message::BestFinalized(finalized.height, finalized.hash));
+            feed.push(feed_message::BestFinalized(
+                finalized.height,
+                finalized.hash,
+            ));
         }
     }
 
-    pub fn update_node_location(&mut self, node_id: ChainNodeId, location: find_location::Location) -> bool {
+    pub fn update_node_location(
+        &mut self,
+        node_id: ChainNodeId,
+        location: find_location::Location,
+    ) -> bool {
         if let Some(node) = self.nodes.get_mut(node_id) {
             node.update_location(location);
             true
@@ -319,7 +332,7 @@ impl Chain {
     pub fn get_node(&self, id: ChainNodeId) -> Option<&Node> {
         self.nodes.get(id)
     }
-    pub fn iter_nodes(&self) -> impl Iterator<Item=(ChainNodeId, &Node)> {
+    pub fn iter_nodes(&self) -> impl Iterator<Item = (ChainNodeId, &Node)> {
         self.nodes.iter()
     }
     pub fn label(&self) -> &str {

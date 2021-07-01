@@ -1,19 +1,21 @@
 mod aggregator;
-mod state;
 mod feed_message;
 mod find_location;
+mod state;
 
 use std::net::SocketAddr;
 use std::str::FromStr;
 
+use aggregator::{
+    Aggregator, FromFeedWebsocket, FromShardWebsocket, ToFeedWebsocket, ToShardWebsocket,
+};
 use bincode::Options;
-use structopt::StructOpt;
+use common::{internal_messages, LogLevel};
+use futures::{channel::mpsc, SinkExt, StreamExt};
 use simple_logger::SimpleLogger;
-use futures::{StreamExt, SinkExt, channel::mpsc};
-use warp::Filter;
+use structopt::StructOpt;
 use warp::filters::ws;
-use common::{ internal_messages, LogLevel };
-use aggregator::{ Aggregator, FromFeedWebsocket, ToFeedWebsocket, FromShardWebsocket, ToShardWebsocket };
+use warp::Filter;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
@@ -27,26 +29,15 @@ struct Opts {
     /// This is the socket address that Telemetryis listening to. This is restricted to
     /// localhost (127.0.0.1) by default and should be fine for most use cases. If
     /// you are using Telemetry in a container, you likely want to set this to '0.0.0.0:8000'
-    #[structopt(
-        short = "l",
-        long = "listen",
-        default_value = "127.0.0.1:8000",
-    )]
+    #[structopt(short = "l", long = "listen", default_value = "127.0.0.1:8000")]
     socket: std::net::SocketAddr,
     /// The desired log level; one of 'error', 'warn', 'info', 'debug' or 'trace', where
     /// 'error' only logs errors and 'trace' logs everything.
-    #[structopt(
-        required = false,
-        long = "log",
-        default_value = "info",
-    )]
+    #[structopt(required = false, long = "log", default_value = "info")]
     log_level: LogLevel,
     /// Space delimited list of the names of chains that are not allowed to connect to
     /// telemetry. Case sensitive.
-    #[structopt(
-        required = false,
-        long = "denylist",
-    )]
+    #[structopt(required = false, long = "denylist")]
     denylist: Vec<String>,
 }
 
@@ -60,10 +51,7 @@ async fn main() {
         .init()
         .expect("Must be able to start a logger");
 
-    log::info!(
-        "Starting Telemetry Core version: {}",
-        VERSION
-    );
+    log::info!("Starting Telemetry Core version: {}", VERSION);
 
     if let Err(e) = start_server(opts).await {
         log::error!("Error starting server: {}", e);
@@ -72,42 +60,41 @@ async fn main() {
 
 /// Declare our routes and start the server.
 async fn start_server(opts: Opts) -> anyhow::Result<()> {
-
     let shard_aggregator = Aggregator::spawn(opts.denylist).await?;
     let feed_aggregator = shard_aggregator.clone();
 
     // Handle requests to /health by returning OK.
-    let health_route =
-        warp::path("health")
-        .map(|| "OK");
+    let health_route = warp::path("health").map(|| "OK");
 
     // Handle websocket requests from shards.
-    let ws_shard_submit_route =
-        warp::path("shard_submit")
+    let ws_shard_submit_route = warp::path("shard_submit")
         .and(warp::ws())
         .and(warp::filters::addr::remote())
         .map(move |ws: ws::Ws, addr: Option<SocketAddr>| {
             let tx_to_aggregator = shard_aggregator.subscribe_shard();
             log::info!("Opening /shard_submit connection from {:?}", addr);
             ws.on_upgrade(move |websocket| async move {
-                let (mut tx_to_aggregator, websocket) = handle_shard_websocket_connection(websocket, tx_to_aggregator).await;
+                let (mut tx_to_aggregator, websocket) =
+                    handle_shard_websocket_connection(websocket, tx_to_aggregator).await;
                 log::info!("Closing /shard_submit connection from {:?}", addr);
                 // Tell the aggregator that this connection has closed, so it can tidy up.
-                let _ = tx_to_aggregator.send(FromShardWebsocket::Disconnected).await;
+                let _ = tx_to_aggregator
+                    .send(FromShardWebsocket::Disconnected)
+                    .await;
                 let _ = websocket.close().await;
             })
         });
 
     // Handle websocket requests from frontends.
-    let ws_feed_route =
-        warp::path("feed")
+    let ws_feed_route = warp::path("feed")
         .and(warp::ws())
         .and(warp::filters::addr::remote())
         .map(move |ws: ws::Ws, addr: Option<SocketAddr>| {
             let tx_to_aggregator = feed_aggregator.subscribe_feed();
             log::info!("Opening /feed connection from {:?}", addr);
             ws.on_upgrade(move |websocket| async move {
-                let (mut tx_to_aggregator, websocket) = handle_feed_websocket_connection(websocket, tx_to_aggregator).await;
+                let (mut tx_to_aggregator, websocket) =
+                    handle_feed_websocket_connection(websocket, tx_to_aggregator).await;
                 log::info!("Closing /feed connection from {:?}", addr);
                 // Tell the aggregator that this connection has closed, so it can tidy up.
                 let _ = tx_to_aggregator.send(FromFeedWebsocket::Disconnected).await;
@@ -116,22 +103,24 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
         });
 
     // Merge the routes and start our server:
-    let routes = ws_shard_submit_route
-        .or(ws_feed_route)
-        .or(health_route);
+    let routes = ws_shard_submit_route.or(ws_feed_route).or(health_route);
     warp::serve(routes).run(opts.socket).await;
     Ok(())
 }
 
 /// This handles messages coming to/from a shard connection
-async fn handle_shard_websocket_connection<S>(mut websocket: ws::WebSocket, mut tx_to_aggregator: S) -> (S, ws::WebSocket)
-    where S: futures::Sink<FromShardWebsocket, Error = anyhow::Error> + Unpin
+async fn handle_shard_websocket_connection<S>(
+    mut websocket: ws::WebSocket,
+    mut tx_to_aggregator: S,
+) -> (S, ws::WebSocket)
+where
+    S: futures::Sink<FromShardWebsocket, Error = anyhow::Error> + Unpin,
 {
     let (tx_to_shard_conn, mut rx_from_aggregator) = mpsc::channel(10);
 
     // Tell the aggregator about this new connection, and give it a way to send messages to us:
     let init_msg = FromShardWebsocket::Initialize {
-        channel: tx_to_shard_conn
+        channel: tx_to_shard_conn,
     };
     if let Err(e) = tx_to_aggregator.send(init_msg).await {
         log::error!("Error sending message to aggregator: {}", e);
@@ -220,15 +209,19 @@ async fn handle_shard_websocket_connection<S>(mut websocket: ws::WebSocket, mut 
 }
 
 /// This handles messages coming from a feed connection
-async fn handle_feed_websocket_connection<S>(mut websocket: ws::WebSocket, mut tx_to_aggregator: S) -> (S, ws::WebSocket)
-    where S: futures::Sink<FromFeedWebsocket, Error = anyhow::Error> + Unpin
+async fn handle_feed_websocket_connection<S>(
+    mut websocket: ws::WebSocket,
+    mut tx_to_aggregator: S,
+) -> (S, ws::WebSocket)
+where
+    S: futures::Sink<FromFeedWebsocket, Error = anyhow::Error> + Unpin,
 {
     // unbounded channel so that slow feeds don't block aggregator progress:
     let (tx_to_feed_conn, mut rx_from_aggregator) = mpsc::unbounded();
 
     // Tell the aggregator about this new connection, and give it a way to send messages to us:
     let init_msg = FromFeedWebsocket::Initialize {
-        channel: tx_to_feed_conn
+        channel: tx_to_feed_conn,
     };
     if let Err(e) = tx_to_aggregator.send(init_msg).await {
         log::error!("Error sending message to aggregator: {}", e);

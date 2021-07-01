@@ -1,6 +1,6 @@
-use std::net::{ SocketAddr, IpAddr };
-use warp::filters::header;
+use std::net::{IpAddr, SocketAddr};
 use warp::filters::addr;
+use warp::filters::header;
 use warp::Filter;
 
 /**
@@ -24,7 +24,8 @@ If that _still_ doesn't work, fall back to the socket address of the connection.
 
 Return `None` if all of this fails to yield an address.
 */
-pub fn real_ip() -> impl warp::Filter<Extract = (Option<IpAddr>,), Error = warp::Rejection> + Clone {
+pub fn real_ip() -> impl warp::Filter<Extract = (Option<IpAddr>,), Error = warp::Rejection> + Clone
+{
     header::optional("forwarded")
         .and(header::optional("x-forwarded-for"))
         .and(header::optional("x-real-ip"))
@@ -40,12 +41,16 @@ fn pick_best_ip_from_options(
     // X-Real-IP header value (if present)
     real_ip: Option<String>,
     // socket address (if known)
-    addr: Option<SocketAddr>
+    addr: Option<SocketAddr>,
 ) -> Option<IpAddr> {
-    let realip = forwarded.as_ref().and_then(|val| get_first_addr_from_forwarded_header(val))
+    let realip = forwarded
+        .as_ref()
+        .and_then(|val| get_first_addr_from_forwarded_header(val))
         .or_else(|| {
             // fall back to X-Forwarded-For
-            forwarded_for.as_ref().and_then(|val| get_first_addr_from_x_forwarded_for_header(val))
+            forwarded_for
+                .as_ref()
+                .and_then(|val| get_first_addr_from_x_forwarded_for_header(val))
         })
         .or_else(|| {
             // fall back to X-Real-IP
@@ -54,7 +59,8 @@ fn pick_best_ip_from_options(
         .and_then(|ip| {
             // Try parsing assuming it may have a port first,
             // and then assuming it doesn't.
-            ip.parse::<SocketAddr>().map(|s| s.ip())
+            ip.parse::<SocketAddr>()
+                .map(|s| s.ip())
                 .or_else(|_| ip.parse::<IpAddr>())
                 .ok()
         })
@@ -110,7 +116,10 @@ mod test {
     fn get_addr_from_forwarded_rfc_examples() {
         let examples = vec![
             (r#"for="_gazonk""#, "_gazonk"),
-            (r#"For="[2001:db8:cafe::17]:4711""#, "[2001:db8:cafe::17]:4711"),
+            (
+                r#"For="[2001:db8:cafe::17]:4711""#,
+                "[2001:db8:cafe::17]:4711",
+            ),
             (r#"for=192.0.2.60;proto=http;by=203.0.113.43"#, "192.0.2.60"),
             (r#"for=192.0.2.43, for=198.51.100.17"#, "192.0.2.43"),
         ];
@@ -119,9 +128,9 @@ mod test {
             assert_eq!(
                 get_first_addr_from_forwarded_header(value),
                 Some(expected),
-                "Header value: {}", value
+                "Header value: {}",
+                value
             );
         }
     }
-
 }

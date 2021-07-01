@@ -1,7 +1,7 @@
+use serde::de::{self, Deserialize, Deserializer, SeqAccess, Unexpected, Visitor};
+use serde::ser::{Serialize, Serializer};
 use std::fmt::{self, Debug, Display};
 use std::str::FromStr;
-use serde::ser::{Serialize, Serializer};
-use serde::de::{self, Deserialize, Deserializer, Unexpected, Visitor, SeqAccess};
 
 const HASH_BYTES: usize = 32;
 
@@ -28,7 +28,9 @@ impl<'de> Visitor<'de> for HashVisitor {
     type Value = Hash;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("byte array of length 32, or hexidecimal string of 32 bytes beginning with 0x")
+        formatter.write_str(
+            "byte array of length 32, or hexidecimal string of 32 bytes beginning with 0x",
+        )
     }
 
     fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
@@ -65,7 +67,7 @@ impl<'de> Visitor<'de> for HashVisitor {
         for (i, byte) in hash.iter_mut().enumerate() {
             match seq.next_element()? {
                 Some(b) => *byte = b,
-                None => return Err(de::Error::invalid_length(i, &"an array of 32 bytes"))
+                None => return Err(de::Error::invalid_length(i, &"an array of 32 bytes")),
             }
         }
 
@@ -175,7 +177,6 @@ mod tests {
 
         assert_eq!(hash, DUMMY);
     }
-
 
     #[test]
     fn deserialize_json_array_too_short() {

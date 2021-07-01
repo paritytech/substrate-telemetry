@@ -14,11 +14,11 @@ impl std::str::FromStr for LogLevel {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "error" => Ok(LogLevel::Error),
-            "warn"  => Ok(LogLevel::Warn),
-            "info"  => Ok(LogLevel::Info),
+            "warn" => Ok(LogLevel::Warn),
+            "info" => Ok(LogLevel::Info),
             "debug" => Ok(LogLevel::Debug),
             "trace" => Ok(LogLevel::Trace),
-            _       => Err("expected 'error', 'warn', 'info', 'debug' or 'trace'")
+            _ => Err("expected 'error', 'warn', 'info', 'debug' or 'trace'"),
         }
     }
 }

@@ -4,19 +4,19 @@ pub struct DenseMap<Id, T> {
     /// All items
     items: Vec<Option<T>>,
     /// Our ID type
-    _id_type: std::marker::PhantomData<Id>
+    _id_type: std::marker::PhantomData<Id>,
 }
 
 impl<Id, T> DenseMap<Id, T>
 where
     Id: From<usize> + Copy,
-    usize: From<Id>
+    usize: From<Id>,
 {
     pub fn new() -> Self {
         DenseMap {
             retired: Vec::new(),
             items: Vec::new(),
-            _id_type: std::marker::PhantomData
+            _id_type: std::marker::PhantomData,
         }
     }
 
@@ -90,12 +90,8 @@ where
     /// Return the next Id that will be assigned.
     pub fn next_id(&self) -> usize {
         match self.retired.last() {
-            Some(id) => {
-                *id
-            }
-            None => {
-                self.items.len()
-            }
+            Some(id) => *id,
+            None => self.items.len(),
         }
     }
 }

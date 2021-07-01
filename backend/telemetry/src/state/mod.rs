@@ -1,5 +1,5 @@
-mod node;
 mod chain;
+mod node;
 
 mod state;
 

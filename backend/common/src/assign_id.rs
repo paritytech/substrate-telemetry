@@ -1,5 +1,5 @@
-use std::hash::Hash;
 use bimap::BiMap;
+use std::hash::Hash;
 
 /// A struct that allows you to assign an ID to an arbitrary set of
 /// details (so long as they are Eq+Hash+Clone), and then access
@@ -9,20 +9,20 @@ use bimap::BiMap;
 pub struct AssignId<Id, Details> {
     current_id: usize,
     mapping: BiMap<usize, Details>,
-    _id_type: std::marker::PhantomData<Id>
+    _id_type: std::marker::PhantomData<Id>,
 }
 
-impl <Id, Details> AssignId<Id, Details>
+impl<Id, Details> AssignId<Id, Details>
 where
     Details: Eq + Hash,
     Id: From<usize> + Copy,
-    usize: From<Id>
+    usize: From<Id>,
 {
     pub fn new() -> Self {
         Self {
             current_id: 0,
             mapping: BiMap::new(),
-            _id_type: std::marker::PhantomData
+            _id_type: std::marker::PhantomData,
         }
     }
 
@@ -42,11 +42,15 @@ where
     }
 
     pub fn remove_by_id(&mut self, id: Id) -> Option<Details> {
-        self.mapping.remove_by_left(&id.into()).map(|(_,details)| details)
+        self.mapping
+            .remove_by_left(&id.into())
+            .map(|(_, details)| details)
     }
 
     pub fn remove_by_details(&mut self, details: &Details) -> Option<Id> {
-        self.mapping.remove_by_right(&details).map(|(id,_)| id.into())
+        self.mapping
+            .remove_by_right(&details)
+            .map(|(id, _)| id.into())
     }
 
     pub fn clear(&mut self) {
@@ -54,6 +58,8 @@ where
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (Id, &Details)> {
-        self.mapping.iter().map(|(&id, details)| (id.into(), details))
+        self.mapping
+            .iter()
+            .map(|(&id, details)| (id.into(), details))
     }
 }
