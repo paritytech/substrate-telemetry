@@ -10,7 +10,7 @@ RUN cargo build --${PROFILE} --bins
 # MAIN IMAGE FOR PEOPLE TO PULL --- small one#
 FROM debian:buster-slim
 LABEL maintainer="Parity Technologies"
-LABEL description="Polkadot Telemetry backend, static build"
+LABEL description="Polkadot Telemetry backend core, static build"
 
 ARG PROFILE=release
 WORKDIR /usr/local/bin

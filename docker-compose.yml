@@ -11,9 +11,22 @@ services:
       - ./packages:/app/packages
     ports:
       - 3000:80
-  telemetry-backend:
+    expose:
+      - 3000
+  telemetry-backend-shard:
     build:
-      dockerfile: Dockerfile
+      dockerfile: shard.Dockerfile
+      context: ./backend/
+    environment:
+      - PORT=8001
+    command: ['--core', 'http://telemetry-backend-core:8000']
+    ports:
+      - 8001:8001
+    expose:
+      - 8001
+  telemetry-backend-core:
+    build:
+      dockerfile: telemetry.Dockerfile
       context: ./backend/
     environment:
       - PORT=8000
