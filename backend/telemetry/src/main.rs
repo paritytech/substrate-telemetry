@@ -217,7 +217,7 @@ where
 
 /// This handles messages coming from a feed connection
 async fn handle_feed_websocket_connection<S>(
-    mut websocket: ws::WebSocket,
+    websocket: ws::WebSocket,
     mut tx_to_aggregator: S,
 ) -> (S, ws::WebSocket)
 where
@@ -235,9 +235,23 @@ where
         return (tx_to_aggregator, websocket);
     }
 
+    // Split the socket so that we can poll for flushing and receiving messages simultaneously.
+    let (mut ws_sink, mut ws_stream) = websocket.split();
+
+    let mut needs_flush = false;
+
     // Loop, handling new messages from the shard or from the aggregator:
     loop {
         tokio::select! {
+
+            // AGGREGATOR -> FRONTEND (flush messages while waiting to recv/buffer new ones)
+            msg = ws_sink.flush(), if needs_flush => {
+                needs_flush = false;
+                if let Err(e) = msg {
+                    log::error!("Closing feed websocket due to error flushing data: {}", e);
+                    break;
+                }
+            }
 
             // AGGREGATOR -> FRONTEND (buffer messages to the UI)
             msg = rx_from_aggregator.next() => {
@@ -255,14 +269,23 @@ where
 
                 log::debug!("Message to feed: {}", std::str::from_utf8(&bytes).unwrap_or("INVALID UTF8"));
 
-                if let Err(e) = websocket.send(ws::Message::binary(bytes)).await {
-                    log::warn!("Closing feed websocket due to error: {}", e);
+                // `start_send` internally calls tungstenite's `write_message`, which returns an error if the
+                // message buffer is full. If we awaited on a flush here, then a slow client would cause backpressure
+                // which would fill the unbounded channel to the aggregator.
+                //
+                // Normally we should call `poll_ready` first to confirm that we can send a thing to the Sink, but
+                // in this case it just calls tungstenite's `write_pending` to try flush the buffer, and we deliberately
+                // _don't_ want to try and drain the buffer here. Instead, we attempt to flush concurrently in this select
+                // loop, and if the buffer fills we get an error back here and just close the socket
+                if let Err(e) = ws_sink.start_send_unpin(ws::Message::binary(bytes)) {
+                    log::warn!("Closing feed websocket due to error buffering message: {}", e);
                     break;
                 }
+                needs_flush = true;
             }
 
             // FRONTEND -> AGGREGATOR (relay messages to the aggregator)
-            msg = websocket.next() => {
+            msg = ws_stream.next() => {
                 // End the loop when connection from feed ends:
                 let msg = match msg {
                     Some(msg) => msg,
@@ -305,6 +328,7 @@ where
         }
     }
 
+    let websocket = ws_sink.reunite(ws_stream).expect("Reunite should always succeed");
     // loop ended; give socket back to parent:
     (tx_to_aggregator, websocket)
 }
