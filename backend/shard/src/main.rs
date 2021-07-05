@@ -131,12 +131,37 @@ where
                     None => { log::warn!("Websocket connection from {:?} closed", addr); break }
                 };
 
-                let node_message = match deserialize_ws_message(msg) {
-                    Ok(Some(msg)) => msg,
-                    Ok(None) => continue,
-                    Err(e) => { log::error!("{}", e); break }
+                // If we see any errors, log them and end our loop:
+                let msg = match msg {
+                    Err(e) => { log::error!("Error in node websocket connection: {}", e); break },
+                    Ok(msg) => msg,
                 };
 
+                // Close message? Break to close connection.
+                if msg.is_close() {
+                    break;
+                }
+
+                // If the message isn't something we want to handle, just ignore it.
+                // This includes system messages like "pings" and such, so don't log anything.
+                if !msg.is_binary() && !msg.is_text() {
+                    continue;
+                }
+
+                // Deserialize from JSON, warning if deserialization fails:
+                let bytes = msg.as_bytes();
+                let node_message: json_message::NodeMessage = match serde_json::from_slice(bytes) {
+                    Ok(node_message) => node_message,
+                    Err(_e) => {
+                        // let bytes: &[u8] = bytes.get(..512).unwrap_or_else(|| &bytes);
+                        // let msg_start = std::str::from_utf8(bytes).unwrap_or_else(|_| "INVALID UTF8");
+                        // log::warn!("Failed to parse node message ({}): {}", msg_start, e);
+                        continue;
+                    }
+                };
+
+                // Pull relevant details from the message:
+                let node_message: node_message::NodeMessage = node_message.into();
                 let message_id = node_message.id();
                 let payload = node_message.into_payload();
 
@@ -163,41 +188,4 @@ where
 
     // Return what we need to close the connection gracefully:
     (tx_to_aggregator, websocket)
-}
-
-/// Deserialize an incoming websocket message, returning an error if something
-/// fatal went wrong, [`Some`] message if all went well, and [`None`] if a non-fatal
-/// issue was encountered and the message should simply be ignored.
-fn deserialize_ws_message(
-    msg: Result<ws::Message, warp::Error>,
-) -> anyhow::Result<Option<node_message::NodeMessage>> {
-    // If we see any errors, log them and end our loop:
-    let msg = match msg {
-        Err(e) => {
-            return Err(anyhow::anyhow!("Error in node websocket connection: {}", e));
-        }
-        Ok(msg) => msg,
-    };
-
-    // If the message isn't something we want to handle, just ignore it.
-    // This includes system messages like "pings" and such, so don't log anything.
-    if !msg.is_binary() && !msg.is_text() {
-        return Ok(None);
-    }
-
-    // Deserialize from JSON, warning if deserialization fails:
-    let bytes = msg.as_bytes();
-    let node_message: json_message::NodeMessage = match serde_json::from_slice(bytes) {
-        Ok(node_message) => node_message,
-        Err(_e) => {
-            // let bytes: &[u8] = bytes.get(..512).unwrap_or_else(|| &bytes);
-            // let msg_start = std::str::from_utf8(bytes).unwrap_or_else(|_| "INVALID UTF8");
-            // log::warn!("Failed to parse node message ({}): {}", msg_start, e);
-            return Ok(None);
-        }
-    };
-
-    // Pull relevant details from the message:
-    let node_message: node_message::NodeMessage = node_message.into();
-    Ok(Some(node_message))
 }

@@ -91,7 +91,10 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
         .map(move |ws: ws::Ws, addr: Option<SocketAddr>| {
             let tx_to_aggregator = feed_aggregator.subscribe_feed();
             log::info!("Opening /feed connection from {:?}", addr);
-            ws.on_upgrade(move |websocket| async move {
+
+            // We can decide how many messages can be buffered to be sent, but not specifically how
+            // large those messages are cumulatively allowed to be:
+            ws.max_send_queue(1_000 ).on_upgrade(move |websocket| async move {
                 let (mut tx_to_aggregator, websocket) =
                     handle_feed_websocket_connection(websocket, tx_to_aggregator).await;
                 log::info!("Closing /feed connection from {:?}", addr);
@@ -168,6 +171,11 @@ where
                     Ok(msg) => msg
                 };
 
+                // Close message? Break and allow connection to be dropped.
+                if msg.is_close() {
+                    break;
+                }
+
                 // If the message isn't something we want to handle, just ignore it.
                 // This includes system messages like "pings" and such, so don't log anything.
                 if !msg.is_binary() && !msg.is_text() {
@@ -230,7 +238,8 @@ where
     // Loop, handling new messages from the shard or from the aggregator:
     loop {
         tokio::select! {
-            // AGGREGATOR -> FRONTEND
+
+            // AGGREGATOR -> FRONTEND (buffer messages to the UI)
             msg = rx_from_aggregator.next() => {
                 // End the loop when connection from aggregator ends:
                 let msg = match msg {
@@ -240,14 +249,19 @@ where
 
                 // Send messages to the client (currently the only message is
                 // pre-serialized bytes that we send as binary):
-                match msg {
-                    ToFeedWebsocket::Bytes(bytes) => {
-                        log::debug!("Message to feed: {}", std::str::from_utf8(&bytes).unwrap_or("INVALID UTF8"));
-                        let _ = websocket.send(ws::Message::binary(bytes)).await;
-                    }
+                let bytes = match msg {
+                    ToFeedWebsocket::Bytes(bytes) => bytes
+                };
+
+                log::debug!("Message to feed: {}", std::str::from_utf8(&bytes).unwrap_or("INVALID UTF8"));
+
+                if let Err(e) = websocket.send(ws::Message::binary(bytes)).await {
+                    log::warn!("Closing feed websocket due to error: {}", e);
+                    break;
                 }
             }
-            // FRONTEND -> AGGREGATOR
+
+            // FRONTEND -> AGGREGATOR (relay messages to the aggregator)
             msg = websocket.next() => {
                 // End the loop when connection from feed ends:
                 let msg = match msg {
@@ -263,6 +277,11 @@ where
                     },
                     Ok(msg) => msg
                 };
+
+                // Close message? Break and allow connection to be dropped.
+                if msg.is_close() {
+                    break;
+                }
 
                 // We ignore all but text messages from the frontend:
                 let text = match msg.to_str() {
