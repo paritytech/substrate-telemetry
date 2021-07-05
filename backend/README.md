@@ -15,4 +15,4 @@ As we move to a sharded version of this telemetry server, this set of architectu
 
 # Deployment
 
-A `shard.Dockerfile` and `telemetry.Dockerfile` exist to build the Shard and Telemetry Core binaries into docker containers. A `socker-compose.yaml` in the root of the repository can serve as an example of these services, along with the UI, running together.
+A `shard.Dockerfile` and `telemetry.Dockerfile` exist to build the Shard and Telemetry Core binaries into docker containers. A `docker-compose.yaml` in the root of the repository can serve as an example of these services, along with the UI, running together.
