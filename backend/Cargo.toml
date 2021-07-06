@@ -2,7 +2,8 @@
 members = [
     "common",
     "telemetry",
-    "shard"
+    "shard",
+    "test_utils"
 ]
 
 [profile.dev]
