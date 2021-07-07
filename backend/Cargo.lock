@@ -1260,29 +1260,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "shard"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bincode",
- "common",
- "futures",
- "hex",
- "http",
- "log",
- "primitive-types",
- "serde",
- "serde_json",
- "simple_logger",
- "soketto",
- "structopt",
- "thiserror",
- "tokio",
- "tokio-util",
- "warp",
-]
-
-[[package]]
 name = "signal-hook-registry"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1395,7 +1372,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
 
 [[package]]
-name = "telemetry"
+name = "telemetry_core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -1424,6 +1401,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "telemetry_shard"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bincode",
+ "common",
+ "futures",
+ "hex",
+ "http",
+ "log",
+ "primitive-types",
+ "serde",
+ "serde_json",
+ "simple_logger",
+ "soketto",
+ "structopt",
+ "thiserror",
+ "tokio",
+ "tokio-util",
+ "warp",
+]
+
+[[package]]
 name = "tempfile"
 version = "3.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1441,6 +1441,7 @@ dependencies = [
 name = "test_utils"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "futures",
  "http",
  "log",

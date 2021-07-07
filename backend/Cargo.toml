@@ -1,8 +1,8 @@
 [workspace]
 members = [
     "common",
-    "telemetry",
-    "shard",
+    "telemetry_core",
+    "telemetry_shard",
     "test_utils"
 ]
 
