@@ -308,3 +308,17 @@ where
     // loop ended; give socket back to parent:
     (tx_to_aggregator, websocket)
 }
+
+#[cfg(test)]
+pub mod test {
+
+    use test_utils::test_simple;
+
+    #[test]
+    fn test_feed_connection () {
+
+
+
+    }
+
+}
