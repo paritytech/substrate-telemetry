@@ -47,7 +47,9 @@ pub struct Receiver {
 #[derive(thiserror::Error, Debug)]
 pub enum RecvError {
     #[error("Text message contains invalid UTF8: {0}")]
-    InvalidUtf8(#[from] std::string::FromUtf8Error)
+    InvalidUtf8(#[from] std::string::FromUtf8Error),
+    #[error("Stream finished")]
+    StreamFinished
 }
 
 impl Stream for Receiver {
