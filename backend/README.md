@@ -2,8 +2,8 @@
 
 This folder contains the rust crates and documentation specific to the telemetry backend. A description of the folders:
 
-- [telemetry](./telemetry): The Telemetry Core. This aggregates data received from shards and allows UI feeds to connect and receive this information.
-- [shard](./shard): A Shard. It's expected that multiple of these will run. Nodes will connect to Shard instances and send JSON telemetry to them, and Shard instances will each connect to the Telemetry Core and relay on relevant data to it.
+- [telemetry_core](./telemetry_core): The Telemetry Core. This aggregates data received from shards and allows UI feeds to connect and receive this information.
+- [telemetry_shard](./telemetry_shard): A Shard. It's expected that multiple of these will run. Nodes will connect to Shard instances and send JSON telemetry to them, and Shard instances will each connect to the Telemetry Core and relay on relevant data to it.
 - [common](./common): common code shared between the telemetry shard and core
 - [docs](./docs): Material supporting the documentation lives here
 

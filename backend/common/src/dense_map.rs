@@ -88,6 +88,13 @@ where
             .filter_map(|(id, item)| Some((id.into(), item.as_mut()?)))
     }
 
+    pub fn into_iter(self) -> impl Iterator<Item = (Id, T)> {
+        self.items
+            .into_iter()
+            .enumerate()
+            .filter_map(|(id, item)| Some((id.into(), item?)))
+    }
+
     pub fn len(&self) -> usize {
         self.items.len() - self.retired.len()
     }
