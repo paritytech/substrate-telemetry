@@ -15,9 +15,10 @@ services:
       - 3000
   telemetry-backend-shard:
     build:
-      dockerfile: shard.Dockerfile
+      dockerfile: Dockerfile
       context: ./backend/
     command: [
+      'telemetry_shard',
       '--listen', '0.0.0.0:8001',
       '--core', 'http://telemetry-backend-core:8000/shard_submit'
     ]
@@ -27,9 +28,10 @@ services:
       - 8001
   telemetry-backend-core:
     build:
-      dockerfile: telemetry.Dockerfile
+      dockerfile: Dockerfile
       context: ./backend/
     command: [
+      'telemetry_core',
       '--listen', '0.0.0.0:8000'
     ]
     ports:

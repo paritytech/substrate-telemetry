@@ -25,11 +25,11 @@ jobs:
 
     - name: Build, release and call telemetry executable
       working-directory: ./backend
-      run: cargo run --bin telemetry --release -- --help
+      run: cargo run --bin telemetry_core --release -- --help
 
     - name: Build, release and call shard executable
       working-directory: ./backend
-      run: cargo run --bin shard --release -- --help
+      run: cargo run --bin telemetry_shard --release -- --help
 
     - name: Login to Dockerhub
       uses: docker/login-action@v1
