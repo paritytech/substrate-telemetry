@@ -17,9 +17,10 @@ services:
     build:
       dockerfile: shard.Dockerfile
       context: ./backend/
-    environment:
-      - PORT=8001
-    command: ['--core', 'http://telemetry-backend-core:8000']
+    command: [
+      '--listen', '0.0.0.0:8001',
+      '--core', 'http://telemetry-backend-core:8000/shard_submit'
+    ]
     ports:
       - 8001:8001
     expose:
@@ -28,8 +29,9 @@ services:
     build:
       dockerfile: telemetry.Dockerfile
       context: ./backend/
-    environment:
-      - PORT=8000
+    command: [
+      '--listen', '0.0.0.0:8000'
+    ]
     ports:
       - 8000:8000
     expose:
