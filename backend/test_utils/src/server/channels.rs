@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::ws_client;
 use futures::{Sink, SinkExt, Stream, StreamExt};
 use crate::feed_message_de::FeedMessage;
@@ -7,6 +9,13 @@ pub struct ShardSender(ws_client::Sender);
 
 impl From<ws_client::Sender> for ShardSender {
     fn from(c: ws_client::Sender) -> Self { ShardSender(c) }
+}
+
+impl ShardSender {
+    /// Close this connection
+    pub async fn close(&mut self) -> Result<(),ws_client::SendError> {
+        self.0.close().await
+    }
 }
 
 impl Sink<ws_client::Message> for ShardSender {
@@ -97,7 +106,11 @@ impl Stream for FeedReceiver {
 impl FeedReceiver {
     /// Wait for the next set of feed messages to arrive. Returns an error if the connection
     /// is closed, or the messages that come back cannot be properly decoded.
-    pub async fn recv_feed_messages(&mut self) -> Result<Vec<FeedMessage>, anyhow::Error> {
+    ///
+    /// Prefer [`FeedReceiver::recv_feed_messages`]; tests should generally be
+    /// robust in assuming that messages may not all be delivered at once (unless we are
+    /// specifically testing which messages are buffered together).
+    pub async fn recv_feed_messages_once(&mut self) -> Result<Vec<FeedMessage>, anyhow::Error> {
         let msg = self.0
             .next()
             .await
@@ -111,6 +124,30 @@ impl FeedReceiver {
             ws_client::Message::Text(text) => {
                 let messages = FeedMessage::from_bytes(text.as_bytes())?;
                 Ok(messages)
+            }
+        }
+    }
+
+    /// Wait for feed messages to be sent back, building up a list of output messages until
+    /// the channel goes quiet for a short while.
+    pub async fn recv_feed_messages(&mut self) -> Result<Vec<FeedMessage>, anyhow::Error> {
+        // Block as long as needed for messages to start coming in:
+        let mut feed_messages = self.recv_feed_messages_once().await?;
+        // Then, loop a little to make sure we catch any additional messages that are sent soon after:
+        loop {
+            match tokio::time::timeout(Duration::from_millis(250), self.recv_feed_messages_once()).await {
+                // Timeout elapsed; return the messages we have so far
+                Err(_) => {
+                    break Ok(feed_messages);
+                },
+                // Append messages that come back to our vec
+                Ok(Ok(mut msgs)) => {
+                    feed_messages.append(&mut msgs);
+                },
+                // Error came back receiving messages; return it
+                Ok(Err(e)) => {
+                    break Err(e)
+                }
             }
         }
     }

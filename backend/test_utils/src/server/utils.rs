@@ -8,19 +8,34 @@ use anyhow::{ anyhow, Context };
 /// with the side benefit that we'll wait for it to start listening before returning. We do this
 /// because we want to allow the kernel to assign ports and so don't specify a port as an arg.
 pub async fn get_port<R: AsyncRead + Unpin>(reader: R) -> Result<u16, anyhow::Error> {
+    let expected_text = "listening on http://127.0.0.1:";
+    wait_for_line_containing(reader, expected_text, Duration::from_secs(30))
+        .await
+        .and_then(|line| {
+            let (_, port_str) = line.rsplit_once(expected_text).unwrap();
+            port_str
+                .trim()
+                .parse()
+                .with_context(|| format!("Could not parse output to port: {}", port_str))
+        })
+}
+
+/// Wait for a line of output containing the text given. Also provide a timeout,
+/// such that if we don't see a new line of output within the timeout we bail out
+/// and return an error.
+pub async fn wait_for_line_containing<R: AsyncRead + Unpin>(reader: R, text: &str, max_wait_between_lines: Duration) -> Result<String, anyhow::Error> {
     let reader = BufReader::new(reader);
     let mut reader_lines = reader.lines();
 
     loop {
         let line = tokio::time::timeout(
-            // This has to accomodate pauses during compilation if the cmd is "cargo run --":
-            Duration::from_secs(30),
+            max_wait_between_lines,
             reader_lines.next_line()
         ).await;
 
         let line = match line {
             // timeout expired; couldn't get port:
-            Err(e) => return Err(anyhow!("Timeout expired waiting to discover port: {}", e)),
+            Err(_) => return Err(anyhow!("Timeout expired waiting for output containing: {}", text)),
             // Something went wrong reading line; bail:
             Ok(Err(e)) => return Err(anyhow!("Could not read line from stdout: {}", e)),
             // No more output; process ended? bail:
@@ -29,15 +44,9 @@ pub async fn get_port<R: AsyncRead + Unpin>(reader: R) -> Result<u16, anyhow::Er
             Ok(Ok(Some(line))) => line
         };
 
-        let (_, port_str) = match line.rsplit_once("listening on http://127.0.0.1:") {
-            Some(m) => m,
-            None => continue
-        };
-
-        return port_str
-            .trim()
-            .parse()
-            .with_context(|| format!("Could not parse output to port: {}", port_str));
+        if line.contains(text) {
+            return Ok(line);
+        }
     }
 }
 

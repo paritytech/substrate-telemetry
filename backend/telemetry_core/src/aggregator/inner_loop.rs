@@ -265,7 +265,6 @@ impl InnerLoop {
                             &genesis_hash,
                             feed_messages_for_chain,
                         );
-
                         // Tell everybody about the new node count and potential rename:
                         let mut feed_messages_for_all = FeedMessageSerializer::new();
                         if has_chain_label_changed {
@@ -376,7 +375,7 @@ impl InnerLoop {
                 let mut feed_serializer = FeedMessageSerializer::new();
                 feed_serializer.push(feed_message::Pong(&value));
                 if let Some(bytes) = feed_serializer.into_finalized() {
-                    let _ = feed_channel.send(ToFeedWebsocket::Bytes(bytes)).await;
+                    let _ = feed_channel.unbounded_send(ToFeedWebsocket::Bytes(bytes));
                 }
             }
             FromFeedWebsocket::Subscribe { chain } => {
@@ -430,7 +429,7 @@ impl InnerLoop {
                     // and continue sending batches of 32 nodes a time over the wire subsequently
                     if idx % 32 == 0 {
                         if let Some(bytes) = feed_serializer.finalize() {
-                            let _ = feed_channel.send(ToFeedWebsocket::Bytes(bytes)).await;
+                            let _ = feed_channel.unbounded_send(ToFeedWebsocket::Bytes(bytes));
                         }
                     }
                     feed_serializer.push(feed_message::AddedNode(chain_node_id, node));
@@ -444,7 +443,7 @@ impl InnerLoop {
                     }
                 }
                 if let Some(bytes) = feed_serializer.into_finalized() {
-                    let _ = feed_channel.send(ToFeedWebsocket::Bytes(bytes)).await;
+                    let _ = feed_channel.unbounded_send(ToFeedWebsocket::Bytes(bytes));
                 }
 
                 // Actually make a note of the new chain subsciption:

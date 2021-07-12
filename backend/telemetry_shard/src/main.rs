@@ -74,7 +74,7 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
             log::info!("Opening /submit connection from {:?}", addr);
             ws.on_upgrade(move |websocket| async move {
                 let (mut tx_to_aggregator, websocket) =
-                    handle_websocket_connection(websocket, tx_to_aggregator, addr).await;
+                    handle_node_websocket_connection(websocket, tx_to_aggregator, addr).await;
                 log::info!("Closing /submit connection from {:?}", addr);
                 // Tell the aggregator that this connection has closed, so it can tidy up.
                 let _ = tx_to_aggregator.send(FromWebsocket::Disconnected).await;
@@ -92,7 +92,7 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
 }
 
 /// This takes care of handling messages from an established socket connection.
-async fn handle_websocket_connection<S>(
+async fn handle_node_websocket_connection<S>(
     mut websocket: ws::WebSocket,
     mut tx_to_aggregator: S,
     addr: Option<IpAddr>,
@@ -147,7 +147,6 @@ where
                 if !msg.is_binary() && !msg.is_text() {
                     continue;
                 }
-
                 // Deserialize from JSON, warning if deserialization fails:
                 let bytes = msg.as_bytes();
                 let node_message: json_message::NodeMessage = match serde_json::from_slice(bytes) {

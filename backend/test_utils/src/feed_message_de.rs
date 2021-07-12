@@ -121,7 +121,7 @@ impl FeedMessage {
         let v: Vec<&RawValue> = serde_json::from_slice(bytes)?;
 
         let mut feed_messages = vec![];
-        for raw_keyval in v.windows(2) {
+        for raw_keyval in v.chunks(2) {
             let raw_key = raw_keyval[0];
             let raw_val = raw_keyval[1];
             feed_messages.push(FeedMessage::decode(raw_key, raw_val)?);
@@ -274,4 +274,36 @@ impl FeedMessage {
 
         Ok(feed_message)
     }
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn decode_remove_node_msg() {
+        // "remove chain ''":
+        let msg = r#"[12,""]"#;
+
+        assert_eq!(
+            FeedMessage::from_bytes(msg.as_bytes()).unwrap(),
+            vec![FeedMessage::RemovedChain { name: "".to_owned() }]
+        );
+    }
+
+    #[test]
+    fn decode_remove_then_add_node_msg() {
+        // "remove chain '', then add chain 'Local Testnet' with 1 node":
+        let msg = r#"[12,"",11,["Local Testnet",1]]"#;
+
+        assert_eq!(
+            FeedMessage::from_bytes(msg.as_bytes()).unwrap(),
+            vec![
+                FeedMessage::RemovedChain { name: "".to_owned() },
+                FeedMessage::AddedChain { name: "Local Testnet".to_owned(), node_count: 1 },
+            ]
+        );
+    }
+
 }

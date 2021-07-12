@@ -140,9 +140,19 @@ impl Server {
             .await
             .map_err(|e| Error::ErrorObtainingPort(e))?;
 
+        // Attempt to wait until we've received word that the shard is connected to the
+        // core before continuing. If we don't wait for this, the connection may happen
+        // after we've attempted to connect node sockets, and they would be booted and
+        // made to reconnect, which we don't want to deal with in general.
+        let _ = utils::wait_for_line_containing(
+            &mut child_stdout,
+            "Connected to telemetry core",
+            std::time::Duration::from_secs(5)
+        ).await;
+
         // Since we're piping stdout from the child process, we need somewhere for it to go
         // else the process will get stuck when it tries to produce output:
-        utils::drain(child_stdout, tokio::io::stdout());
+        utils::drain(child_stdout, tokio::io::sink());
 
         let shard_uri = format!("http://127.0.0.1:{}/submit", shard_port)
             .parse()
@@ -189,7 +199,7 @@ impl Server {
 
         // Since we're piping stdout from the child process, we need somewhere for it to go
         // else the process will get stuck when it tries to produce output:
-        utils::drain(child_stdout, tokio::io::stdout());
+        utils::drain(child_stdout, tokio::io::sink());
 
         // URI for feeds to connect to the core:
         let feed_uri = format!("http://127.0.0.1:{}/feed", core_port)
