@@ -1,3 +1,5 @@
+#![cfg(feature = "e2e")]
+
 use test_utils::{feed_message_de::FeedMessage, server::Server};
 // use serde_json::json;
 
