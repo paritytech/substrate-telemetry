@@ -8,3 +8,8 @@ pub mod feed_message_de;
 /// A wrapper around soketto to simplify the process of establishing connections
 /// and sending messages. Provides cancel-safe message channels.
 pub mod ws_client;
+
+/// A couple of macros to make it easier to test for the presense of things (mainly, feed messages)
+/// in an iterable container.
+#[macro_use]
+pub mod contains_matches;

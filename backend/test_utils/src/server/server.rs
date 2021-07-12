@@ -51,8 +51,9 @@ pub enum Error {
     CannotAddShardNoHandle,
 }
 
-/// This provides back connections (or groups of connections) that are
-/// hooked up to the running processes and ready to send/receive messages.
+/// This represents a telemetry core process and zero or more connected shards.
+/// From this, you can add/remove shards, establish node/feed connections, and
+/// send/receive relevant messages from each.
 pub struct Server {
     /// URI to connect a shard to core:
     core_shard_submit_uri: Option<http::Uri>,
