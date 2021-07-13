@@ -96,7 +96,8 @@ impl Aggregator {
         });
 
         // Establish a resiliant connection to the core (this retries as needed):
-        let tx_to_telemetry_core = create_ws_connection_to_core(tx_from_connection, telemetry_uri).await;
+        let tx_to_telemetry_core =
+            create_ws_connection_to_core(tx_from_connection, telemetry_uri).await;
 
         // Handle any incoming messages in our handler loop:
         tokio::spawn(Aggregator::handle_messages(

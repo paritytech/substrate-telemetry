@@ -1,9 +1,9 @@
+use super::{channels, utils};
+use crate::ws_client;
+use common::{id_type, DenseMap};
 use std::ffi::OsString;
 use std::marker::PhantomData;
-use crate::ws_client;
-use tokio::process::{ self, Command as TokioCommand };
-use super::{ channels, utils };
-use common::{ id_type, DenseMap };
+use tokio::process::{self, Command as TokioCommand};
 
 id_type! {
     /// The ID of a running process. Cannot be constructed externally.
@@ -16,7 +16,7 @@ pub struct StartOpts {
     pub shard_command: Command,
     /// Command to run to start a telemetry core process.
     /// The `--listen` and `--log` arguments will be appended within and shouldn't be provided.
-    pub core_command: Command
+    pub core_command: Command,
 }
 
 pub struct ConnectToExistingOpts {
@@ -38,7 +38,9 @@ pub enum Error {
     ErrorObtainingPort(anyhow::Error),
     #[error("Whoops; attempt to kill a process we didn't start (and so have no handle to)")]
     CannotKillNoHandle,
-    #[error("Whoops; attempt to add a shard to a server we didn't start (and so have no handle to)")]
+    #[error(
+        "Whoops; attempt to add a shard to a server we didn't start (and so have no handle to)"
+    )]
     CannotAddShardNoHandle,
 }
 
@@ -68,20 +70,21 @@ impl Server {
     }
 
     pub fn iter_shards(&self) -> impl Iterator<Item = &ShardProcess> {
-        self.shards.iter().map(|(_,v)| v)
+        self.shards.iter().map(|(_, v)| v)
     }
 
     pub async fn kill_shard(&mut self, id: ProcessId) -> bool {
         let shard = match self.shards.remove(id) {
             Some(shard) => shard,
-            None => return false
+            None => return false,
         };
 
         // With this, killing will complete even if the promise returned is cancelled
         // (it should regardless, but just to play it safe..)
         let _ = tokio::spawn(async move {
             let _ = shard.kill().await;
-        }).await;
+        })
+        .await;
 
         true
     }
@@ -91,14 +94,9 @@ impl Server {
         // Spawn so we don't need to await cleanup if we don't care.
         // Run all kill futs simultaneously.
         let handle = tokio::spawn(async move {
-            let shard_kill_futs = self.shards
-                .into_iter()
-                .map(|(_,s)| s.kill());
+            let shard_kill_futs = self.shards.into_iter().map(|(_, s)| s.kill());
 
-            let _ = tokio::join!(
-                futures::future::join_all(shard_kill_futs),
-                self.core.kill()
-            );
+            let _ = tokio::join!(futures::future::join_all(shard_kill_futs), self.core.kill());
         });
 
         // You can wait for cleanup but aren't obliged to:
@@ -109,10 +107,11 @@ impl Server {
     pub async fn add_shard(&mut self) -> Result<ProcessId, Error> {
         let core_uri = match &self.core_shard_submit_uri {
             Some(uri) => uri,
-            None => return Err(Error::CannotAddShardNoHandle)
+            None => return Err(Error::CannotAddShardNoHandle),
         };
 
-        let mut shard_cmd: TokioCommand = self.shard_command
+        let mut shard_cmd: TokioCommand = self
+            .shard_command
             .clone()
             .ok_or_else(|| Error::CannotAddShardNoHandle)?
             .into();
@@ -141,8 +140,9 @@ impl Server {
         let _ = utils::wait_for_line_containing(
             &mut child_stdout,
             "Connected to telemetry core",
-            std::time::Duration::from_secs(5)
-        ).await;
+            std::time::Duration::from_secs(5),
+        )
+        .await;
 
         // Since we're piping stdout from the child process, we need somewhere for it to go
         // else the process will get stuck when it tries to produce output:
@@ -156,7 +156,7 @@ impl Server {
             id,
             handle: Some(shard_process),
             uri: shard_uri,
-            _channel_type: PhantomData
+            _channel_type: PhantomData,
         });
 
         Ok(pid)
@@ -164,7 +164,6 @@ impl Server {
 
     /// Start a telemetry_core process. From here, we can add/remove shards as needed.
     pub async fn start(opts: StartOpts) -> Result<Server, Error> {
-
         let mut core_cmd: TokioCommand = opts.core_command.into();
 
         let mut child = core_cmd
@@ -194,16 +193,18 @@ impl Server {
 
         Ok(Server {
             shard_command: Some(opts.shard_command),
-            core_shard_submit_uri: Some(format!("http://127.0.0.1:{}/shard_submit", core_port)
-                .parse()
-                .expect("valid shard_submit URI")),
+            core_shard_submit_uri: Some(
+                format!("http://127.0.0.1:{}/shard_submit", core_port)
+                    .parse()
+                    .expect("valid shard_submit URI"),
+            ),
             shards: DenseMap::new(),
             core: Process {
                 id: ProcessId(0),
                 handle: Some(child),
                 uri: feed_uri,
                 _channel_type: PhantomData,
-            }
+            },
         })
     }
 
@@ -229,11 +230,10 @@ impl Server {
                 uri: opts.feed_uri,
                 handle: None,
                 _channel_type: PhantomData,
-            }
+            },
         }
     }
 }
-
 
 /// This represents a running process that we can connect to, which
 /// may be either a `telemetry_shard` or `telemetry_core`.
@@ -245,7 +245,7 @@ pub struct Process<Channel> {
     /// The URI that we can use to connect to the process socket.
     uri: http::Uri,
     /// The kind of the process (lets us add methods specific to shard/core).
-    _channel_type: PhantomData<Channel>
+    _channel_type: PhantomData<Channel>,
 }
 
 /// A shard process with shard-specific methods.
@@ -254,7 +254,7 @@ pub type ShardProcess = Process<(channels::ShardSender, channels::ShardReceiver)
 /// A core process with core-specific methods.
 pub type CoreProcess = Process<(channels::FeedSender, channels::FeedReceiver)>;
 
-impl <Channel> Process<Channel> {
+impl<Channel> Process<Channel> {
     /// Get the ID of this process
     pub fn id(&self) -> ProcessId {
         self.id
@@ -265,25 +265,28 @@ impl <Channel> Process<Channel> {
     async fn kill(self) -> Result<(), Error> {
         match self.handle {
             Some(mut handle) => Ok(handle.kill().await?),
-            None => Err(Error::CannotKillNoHandle)
+            None => Err(Error::CannotKillNoHandle),
         }
     }
 }
 
-impl <Send: From<ws_client::Sender>, Recv: From<ws_client::Receiver>> Process<(Send, Recv)> {
+impl<Send: From<ws_client::Sender>, Recv: From<ws_client::Receiver>> Process<(Send, Recv)> {
     /// Establish a connection to the process
     pub async fn connect(&self) -> Result<(Send, Recv), Error> {
         ws_client::connect(&self.uri)
             .await
-            .map(|(s,r)| (s.into(), r.into()))
+            .map(|(s, r)| (s.into(), r.into()))
             .map_err(|e| e.into())
     }
 
     /// Establish multiple connections to the process
-    pub async fn connect_multiple(&self, num_connections: usize) -> Result<Vec<(Send, Recv)>, Error> {
+    pub async fn connect_multiple(
+        &self,
+        num_connections: usize,
+    ) -> Result<Vec<(Send, Recv)>, Error> {
         utils::connect_multiple_to_uri(&self.uri, num_connections)
             .await
-            .map(|v| v.into_iter().map(|(s,r)| (s.into(), r.into())).collect())
+            .map(|v| v.into_iter().map(|(s, r)| (s.into(), r.into())).collect())
             .map_err(|e| e.into())
     }
 }
@@ -294,14 +297,14 @@ impl <Send: From<ws_client::Sender>, Recv: From<ws_client::Receiver>> Process<(S
 #[derive(Clone, Debug)]
 pub struct Command {
     command: OsString,
-    args: Vec<OsString>
+    args: Vec<OsString>,
 }
 
 impl Command {
     pub fn new<S: Into<OsString>>(command: S) -> Command {
         Command {
             command: command.into(),
-            args: Vec::new()
+            args: Vec::new(),
         }
     }
 

@@ -22,7 +22,6 @@ pub struct NodeDetails {
     pub startup_time: Option<Box<str>>,
 }
 
-
 ///
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct NodeStats {
@@ -42,7 +41,7 @@ impl Serialize for NodeStats {
     }
 }
 
-impl <'de> Deserialize<'de> for NodeStats {
+impl<'de> Deserialize<'de> for NodeStats {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -51,7 +50,6 @@ impl <'de> Deserialize<'de> for NodeStats {
         Ok(NodeStats { peers, txcount })
     }
 }
-
 
 ///
 #[derive(Default)]
@@ -71,7 +69,6 @@ impl Serialize for NodeIO {
     }
 }
 
-
 ///
 #[derive(Deserialize, Serialize, Debug, Clone, Copy, PartialEq)]
 pub struct Block {
@@ -87,7 +84,6 @@ impl Block {
         }
     }
 }
-
 
 ///
 #[derive(Default)]
@@ -114,7 +110,6 @@ impl Serialize for NodeHardware {
     }
 }
 
-
 ///
 #[derive(Debug, Clone, PartialEq)]
 pub struct NodeLocation {
@@ -136,16 +131,19 @@ impl Serialize for NodeLocation {
     }
 }
 
-impl <'de> Deserialize<'de> for NodeLocation {
+impl<'de> Deserialize<'de> for NodeLocation {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
         let (latitude, longitude, city) = <(f32, f32, Box<str>)>::deserialize(deserializer)?;
-        Ok(NodeLocation { latitude, longitude, city })
+        Ok(NodeLocation {
+            latitude,
+            longitude,
+            city,
+        })
     }
 }
-
 
 ///
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -182,18 +180,20 @@ impl Serialize for BlockDetails {
     }
 }
 
-impl <'de> Deserialize<'de> for BlockDetails {
+impl<'de> Deserialize<'de> for BlockDetails {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
         let tup = <(u64, BlockHash, u64, u64, Option<u64>)>::deserialize(deserializer)?;
         Ok(BlockDetails {
-            block: Block { height: tup.0, hash: tup.1 },
+            block: Block {
+                height: tup.0,
+                hash: tup.1,
+            },
             block_time: tup.2,
             block_timestamp: tup.3,
-            propagation_time: tup.4
+            propagation_time: tup.4,
         })
     }
 }
-

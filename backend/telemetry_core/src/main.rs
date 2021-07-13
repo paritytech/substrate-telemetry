@@ -94,14 +94,15 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
 
             // We can decide how many messages can be buffered to be sent, but not specifically how
             // large those messages are cumulatively allowed to be:
-            ws.max_send_queue(1_000 ).on_upgrade(move |websocket| async move {
-                let (mut tx_to_aggregator, websocket) =
-                    handle_feed_websocket_connection(websocket, tx_to_aggregator).await;
-                log::info!("Closing /feed connection from {:?}", addr);
-                // Tell the aggregator that this connection has closed, so it can tidy up.
-                let _ = tx_to_aggregator.send(FromFeedWebsocket::Disconnected).await;
-                let _ = websocket.close().await;
-            })
+            ws.max_send_queue(1_000)
+                .on_upgrade(move |websocket| async move {
+                    let (mut tx_to_aggregator, websocket) =
+                        handle_feed_websocket_connection(websocket, tx_to_aggregator).await;
+                    log::info!("Closing /feed connection from {:?}", addr);
+                    // Tell the aggregator that this connection has closed, so it can tidy up.
+                    let _ = tx_to_aggregator.send(FromFeedWebsocket::Disconnected).await;
+                    let _ = websocket.close().await;
+                })
         });
 
     // Merge the routes and start our server:

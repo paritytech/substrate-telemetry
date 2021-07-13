@@ -340,7 +340,8 @@ impl InnerLoop {
                     .collect();
 
                 // ... and remove them:
-                self.remove_nodes_and_broadcast_result(node_ids_to_remove).await;
+                self.remove_nodes_and_broadcast_result(node_ids_to_remove)
+                    .await;
             }
         }
     }
@@ -557,11 +558,7 @@ impl InnerLoop {
     }
 
     /// Send a message to all chain feeds.
-    fn broadcast_to_chain_feeds(
-        &mut self,
-        genesis_hash: &BlockHash,
-        message: ToFeedWebsocket,
-    ) {
+    fn broadcast_to_chain_feeds(&mut self, genesis_hash: &BlockHash, message: ToFeedWebsocket) {
         if let Some(feeds) = self.chain_to_feed_conn_ids.get(genesis_hash) {
             for &feed_id in feeds {
                 if let Some(chan) = self.feed_channels.get_mut(&feed_id) {

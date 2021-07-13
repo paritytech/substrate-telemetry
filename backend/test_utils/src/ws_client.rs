@@ -1,17 +1,17 @@
-use futures::channel::{ mpsc };
-use soketto::handshake::{Client, ServerResponse};
-use tokio_util::compat::{ TokioAsyncReadCompatExt };
-use tokio::net::TcpStream;
+use futures::channel::mpsc;
 use futures::{Sink, SinkExt, Stream, StreamExt};
+use soketto::handshake::{Client, ServerResponse};
+use tokio::net::TcpStream;
+use tokio_util::compat::TokioAsyncReadCompatExt;
 
 /// Send messages into the connection
 #[derive(Clone)]
 pub struct Sender {
-    inner: mpsc::UnboundedSender<SentMessage>
+    inner: mpsc::UnboundedSender<SentMessage>,
 }
 
 impl Sender {
-    pub async fn close(&mut self) -> Result<(),SendError> {
+    pub async fn close(&mut self) -> Result<(), SendError> {
         self.inner.send(SentMessage::Close).await?;
         Ok(())
     }
@@ -20,28 +20,39 @@ impl Sender {
 #[derive(thiserror::Error, Debug, Clone)]
 pub enum SendError {
     #[error("Failed to send message: {0}")]
-    ChannelError(#[from] mpsc::SendError)
+    ChannelError(#[from] mpsc::SendError),
 }
 
 impl Sink<Message> for Sender {
     type Error = SendError;
-    fn poll_ready(mut self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> std::task::Poll<Result<(), Self::Error>> {
+    fn poll_ready(
+        mut self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Result<(), Self::Error>> {
         self.inner.poll_ready_unpin(cx).map_err(|e| e.into())
     }
     fn start_send(mut self: std::pin::Pin<&mut Self>, item: Message) -> Result<(), Self::Error> {
-        self.inner.start_send_unpin(SentMessage::Message(item)).map_err(|e| e.into())
+        self.inner
+            .start_send_unpin(SentMessage::Message(item))
+            .map_err(|e| e.into())
     }
-    fn poll_flush(mut self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> std::task::Poll<Result<(), Self::Error>> {
+    fn poll_flush(
+        mut self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Result<(), Self::Error>> {
         self.inner.poll_flush_unpin(cx).map_err(|e| e.into())
     }
-    fn poll_close(mut self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> std::task::Poll<Result<(), Self::Error>> {
+    fn poll_close(
+        mut self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Result<(), Self::Error>> {
         self.inner.poll_close_unpin(cx).map_err(|e| e.into())
     }
 }
 
 /// Receive messages out of a connection
 pub struct Receiver {
-    inner: mpsc::UnboundedReceiver<Result<Message,RecvError>>
+    inner: mpsc::UnboundedReceiver<Result<Message, RecvError>>,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -49,12 +60,15 @@ pub enum RecvError {
     #[error("Text message contains invalid UTF8: {0}")]
     InvalidUtf8(#[from] std::string::FromUtf8Error),
     #[error("Stream finished")]
-    StreamFinished
+    StreamFinished,
 }
 
 impl Stream for Receiver {
     type Item = Result<Message, RecvError>;
-    fn poll_next(mut self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> std::task::Poll<Option<Self::Item>> {
+    fn poll_next(
+        mut self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Option<Self::Item>> {
         self.inner.poll_next_unpin(cx).map_err(|e| e.into())
     }
 }
@@ -62,13 +76,13 @@ impl Stream for Receiver {
 /// A message type that can be sent or received from the connection
 pub enum Message {
     Text(String),
-    Binary(Vec<u8>)
+    Binary(Vec<u8>),
 }
 
 /// Sent messages can be anything publically visible, or a close message.
 enum SentMessage {
     Message(Message),
-    Close
+    Close,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -98,12 +112,10 @@ pub async fn connect(uri: &http::Uri) -> Result<(Sender, Receiver), ConnectError
     // Establish a WS connection:
     let mut client = Client::new(socket.compat(), host, &path);
     let (mut ws_to_connection, mut ws_from_connection) = match client.handshake().await? {
-        ServerResponse::Accepted { .. } => {
-            client.into_builder().finish()
-        },
+        ServerResponse::Accepted { .. } => client.into_builder().finish(),
         ServerResponse::Redirect { status_code, .. } => {
             return Err(ConnectError::ConnectionFailedRedirect { status_code })
-        },
+        }
         ServerResponse::Rejected { status_code } => {
             return Err(ConnectError::ConnectionFailedRejected { status_code })
         }
@@ -124,23 +136,20 @@ pub async fn connect(uri: &http::Uri) -> Result<(Sender, Receiver), ConnectError
                 Err(e) => {
                     // Couldn't receive data may mean all senders are gone, so log
                     // the error and shut this down:
-                    log::error!("Shutting down websocket connection: Failed to receive data: {}", e);
+                    log::error!(
+                        "Shutting down websocket connection: Failed to receive data: {}",
+                        e
+                    );
                     break;
-                },
-                Ok(data) => {
-                    data
                 }
+                Ok(data) => data,
             };
 
             let msg = match message_data {
-                soketto::Data::Text(_) => {
-                    Ok(Message::Binary(data))
-                },
-                soketto::Data::Binary(_) => {
-                    String::from_utf8(data)
-                        .map(|s| Message::Text(s))
-                        .map_err(|e| e.into())
-                },
+                soketto::Data::Text(_) => Ok(Message::Binary(data)),
+                soketto::Data::Binary(_) => String::from_utf8(data)
+                    .map(|s| Message::Text(s))
+                    .map_err(|e| e.into()),
             };
 
             data = Vec::with_capacity(128);
@@ -148,7 +157,10 @@ pub async fn connect(uri: &http::Uri) -> Result<(Sender, Receiver), ConnectError
             if let Err(e) = tx_to_external.send(msg).await {
                 // Failure to send likely means that the recv has been dropped,
                 // so let's drop this loop too.
-                log::error!("Shutting down websocket connection: Failed to send data out: {}", e);
+                log::error!(
+                    "Shutting down websocket connection: Failed to send data out: {}",
+                    e
+                );
                 break;
             }
         }
@@ -161,16 +173,22 @@ pub async fn connect(uri: &http::Uri) -> Result<(Sender, Receiver), ConnectError
             match msg {
                 SentMessage::Message(Message::Text(s)) => {
                     if let Err(e) = ws_to_connection.send_text_owned(s).await {
-                        log::error!("Shutting down websocket connection: Failed to send text data: {}", e);
+                        log::error!(
+                            "Shutting down websocket connection: Failed to send text data: {}",
+                            e
+                        );
                         break;
                     }
-                },
+                }
                 SentMessage::Message(Message::Binary(bytes)) => {
                     if let Err(e) = ws_to_connection.send_binary_mut(bytes).await {
-                        log::error!("Shutting down websocket connection: Failed to send binary data: {}", e);
+                        log::error!(
+                            "Shutting down websocket connection: Failed to send binary data: {}",
+                            e
+                        );
                         break;
                     }
-                },
+                }
                 SentMessage::Close => {
                     if let Err(e) = ws_to_connection.close().await {
                         log::error!("Error attempting to close connection: {}", e);
@@ -180,14 +198,14 @@ pub async fn connect(uri: &http::Uri) -> Result<(Sender, Receiver), ConnectError
             }
 
             if let Err(e) = ws_to_connection.flush().await {
-                log::error!("Shutting down websocket connection: Failed to flush data: {}", e);
+                log::error!(
+                    "Shutting down websocket connection: Failed to flush data: {}",
+                    e
+                );
                 break;
             }
         }
     });
 
-    Ok((
-        Sender { inner: tx_to_ws },
-        Receiver { inner: rx_from_ws }
-    ))
+    Ok((Sender { inner: tx_to_ws }, Receiver { inner: rx_from_ws }))
 }

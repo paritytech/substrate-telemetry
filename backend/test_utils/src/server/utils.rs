@@ -1,8 +1,8 @@
 use crate::ws_client;
+use anyhow::{anyhow, Context};
 use tokio::io::BufReader;
-use tokio::io::{ AsyncRead, AsyncWrite, AsyncBufReadExt };
+use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncWrite};
 use tokio::time::Duration;
-use anyhow::{ anyhow, Context };
 
 /// Reads from the stdout of the shard/core process to extract the port that was assigned to it,
 /// with the side benefit that we'll wait for it to start listening before returning. We do this
@@ -23,25 +23,35 @@ pub async fn get_port<R: AsyncRead + Unpin>(reader: R) -> Result<u16, anyhow::Er
 /// Wait for a line of output containing the text given. Also provide a timeout,
 /// such that if we don't see a new line of output within the timeout we bail out
 /// and return an error.
-pub async fn wait_for_line_containing<R: AsyncRead + Unpin>(reader: R, text: &str, max_wait_between_lines: Duration) -> Result<String, anyhow::Error> {
+pub async fn wait_for_line_containing<R: AsyncRead + Unpin>(
+    reader: R,
+    text: &str,
+    max_wait_between_lines: Duration,
+) -> Result<String, anyhow::Error> {
     let reader = BufReader::new(reader);
     let mut reader_lines = reader.lines();
 
     loop {
-        let line = tokio::time::timeout(
-            max_wait_between_lines,
-            reader_lines.next_line()
-        ).await;
+        let line = tokio::time::timeout(max_wait_between_lines, reader_lines.next_line()).await;
 
         let line = match line {
             // timeout expired; couldn't get port:
-            Err(_) => return Err(anyhow!("Timeout expired waiting for output containing: {}", text)),
+            Err(_) => {
+                return Err(anyhow!(
+                    "Timeout expired waiting for output containing: {}",
+                    text
+                ))
+            }
             // Something went wrong reading line; bail:
             Ok(Err(e)) => return Err(anyhow!("Could not read line from stdout: {}", e)),
             // No more output; process ended? bail:
-            Ok(Ok(None)) => return Err(anyhow!("No more output from stdout; has the process ended?")),
+            Ok(Ok(None)) => {
+                return Err(anyhow!(
+                    "No more output from stdout; has the process ended?"
+                ))
+            }
             // All OK, and a line is given back; phew!
-            Ok(Ok(Some(line))) => line
+            Ok(Ok(Some(line))) => line,
         };
 
         if line.contains(text) {
@@ -51,10 +61,12 @@ pub async fn wait_for_line_containing<R: AsyncRead + Unpin>(reader: R, text: &st
 }
 
 /// Establish multiple connections to a URI and return them all.
-pub async fn connect_multiple_to_uri(uri: &http::Uri, num_connections: usize) -> Result<Vec<(ws_client::Sender, ws_client::Receiver)>, ws_client::ConnectError> {
-    let connect_futs = (0..num_connections)
-        .map(|_| ws_client::connect(uri));
-    let sockets: Result<Vec<_>,_> = futures::future::join_all(connect_futs)
+pub async fn connect_multiple_to_uri(
+    uri: &http::Uri,
+    num_connections: usize,
+) -> Result<Vec<(ws_client::Sender, ws_client::Receiver)>, ws_client::ConnectError> {
+    let connect_futs = (0..num_connections).map(|_| ws_client::connect(uri));
+    let sockets: Result<Vec<_>, _> = futures::future::join_all(connect_futs)
         .await
         .into_iter()
         .collect();
@@ -66,7 +78,7 @@ pub async fn connect_multiple_to_uri(uri: &http::Uri, num_connections: usize) ->
 pub fn drain<R, W>(mut reader: R, mut writer: W)
 where
     R: AsyncRead + Unpin + Send + 'static,
-    W: AsyncWrite + Unpin + Send + 'static
+    W: AsyncWrite + Unpin + Send + 'static,
 {
     tokio::spawn(async move {
         let _ = tokio::io::copy(&mut reader, &mut writer).await;
