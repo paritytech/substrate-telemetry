@@ -1,6 +1,6 @@
 //! These only run when the "e2e" feature is set (eg `cargo test --features e2e`).
 //! The rust IDE plugins may behave better if you comment out this line during development:
-#![cfg(feature = "e2e")]
+//#![cfg(feature = "e2e")]
 
 use test_utils::{feed_message_de::{ FeedMessage, NodeDetails }, server::Server, assert_contains_matches};
 use serde_json::json;
@@ -149,8 +149,6 @@ async fn feed_add_and_remove_shard() {
         shards.push((shard_id, node_tx));
     }
 
-    let shard1 = shards.remove(0);
-
     // Connect a feed.
     let (_feed_tx, mut feed_rx) = server.get_core().connect().await.unwrap();
 
@@ -170,7 +168,7 @@ async fn feed_add_and_remove_shard() {
     ));
 
     // Disconnect the first shard:
-    server.kill_shard(shard1.0).await;
+    server.kill_shard(shards[0].0).await;
 
     // We should be told about the node connected to that shard disconnecting:
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
