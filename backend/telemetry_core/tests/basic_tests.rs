@@ -1,6 +1,6 @@
 //! These only run when the "e2e" feature is set (eg `cargo test --features e2e`).
 //! The rust IDE plugins may behave better if you comment out this line during development:
-//#![cfg(feature = "e2e")]
+#![cfg(feature = "e2e")]
 
 use test_utils::{feed_message_de::{ FeedMessage, NodeDetails }, server::Server, assert_contains_matches};
 use serde_json::json;
