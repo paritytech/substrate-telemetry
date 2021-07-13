@@ -179,7 +179,7 @@ async fn feed_add_and_remove_shard() {
             name: "Local Testnet 1".to_owned(),
         }
     ));
-    assert!(!feed_messages.contains(
+    assert!(!feed_messages.contains( // Spot the "!"; this chain was not removed.
         &FeedMessage::RemovedChain {
             name: "Local Testnet 2".to_owned(),
         }
