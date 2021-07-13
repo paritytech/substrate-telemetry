@@ -10,11 +10,15 @@ pub enum Message<Out> {
     Data(Out),
 }
 
-/// Connect to a websocket server, retrying the connection if we're disconnected.
-/// - Sends messages when disconnected, reconnected or data received from the connection.
+/// Connect to the telemetry core, retrying the connection if we're disconnected.
+/// - Sends `Message::Connected` and `Message::Disconnected` when the connection goes up/down.
 /// - Returns a channel that allows you to send messages to the connection.
-/// - Messages all encoded/decoded from bincode.
-pub async fn create_ws_connection<In, Out, S, E>(
+/// - Messages are all encoded/decoded to/from bincode, and so need to support being (de)serialized from
+///   a non self-describing encoding.
+///
+/// Note: have a look at [`common::internal_messages`] to see the different message types exchanged
+/// between aggregator and core.
+pub async fn create_ws_connection_to_core<In, Out, S, E>(
     mut tx_to_external: S,
     telemetry_uri: http::Uri,
 ) -> mpsc::Sender<In>
@@ -33,7 +37,8 @@ where
 
         loop {
             // Throw away any pending messages from the incoming channel so that it
-            // doesn't get blocked up while we're looping and waiting for a reconnection.
+            // doesn't get filled up and begin blocking while we're looping and waiting
+            // for a reconnection.
             while let Ok(Some(_)) = rx_from_external_proxy.try_next() {}
 
             // The connection will pass messages back to this.
@@ -54,7 +59,7 @@ where
                     while let Some(msg) = rx_from_external_proxy.next().await {
                         if let Err(e) = tx_to_connection.send(msg).await {
                             // Issue forwarding a message to the telemetry core?
-                            // Give up and try to reconnect on the next loop iteration.
+                            // Give up and try to reconnect on the next outer loop iteration.
                             log::error!(
                                 "Error sending message to websocker server (will reconnect): {}",
                                 e
@@ -88,7 +93,7 @@ where
 }
 
 /// This spawns a connection to a websocket server, serializing/deserialziing
-/// from bincode as messages are sent or received.
+/// to/from bincode as messages are sent or received.
 async fn create_ws_connection_no_retry<In, Out, S, E>(
     mut tx_to_external: S,
     telemetry_uri: http::Uri,
@@ -107,9 +112,9 @@ where
     let path = telemetry_uri.path();
 
     let socket = TcpStream::connect((host, port)).await?;
-    socket.set_nodelay(true).unwrap();
+    socket.set_nodelay(true).expect("socket set_nodelay failed");
 
-    // Open a websocket connection with the relemetry core:
+    // Open a websocket connection with the telemetry core:
     let mut client = Client::new(socket.compat(), host, &path);
     let (mut ws_to_connection, mut ws_from_connection) = match client.handshake().await? {
         ServerResponse::Accepted { .. } => client.into_builder().finish(),
@@ -124,12 +129,10 @@ where
     };
 
     // This task reads data sent from the telemetry core and
-    // forwards it on to our aggregator loop:
+    // forwards it to our aggregator loop:
     tokio::spawn(async move {
-        let mut data = Vec::with_capacity(128);
         loop {
-            // Clear the buffer and wait for the next message to arrive:
-            data.clear();
+            let mut data = Vec::new();
             if let Err(e) = ws_from_connection.receive_data(&mut data).await {
                 // Couldn't receive data may mean all senders are gone, so log
                 // the error and shut this down:

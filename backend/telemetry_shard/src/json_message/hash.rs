@@ -1,8 +1,13 @@
+//! A hash wrapper which can be deserialized from a hex string as well as from an array of bytes,
+//! so that it can deal with the sort of inputs we expect from substrate nodes.
+
 use serde::de::{self, Deserialize, Deserializer, SeqAccess, Unexpected, Visitor};
 use serde::ser::{Serialize, Serializer};
 use std::fmt::{self, Debug, Display};
 use std::str::FromStr;
 
+/// We assume that hashes are 32 bytes long, and in practise that's currently true,
+/// but in theory it doesn't need to be. We may need to be more dynamic here.
 const HASH_BYTES: usize = 32;
 
 /// Newtype wrapper for 32-byte hash values, implementing readable `Debug` and `serde::Deserialize`.
@@ -128,7 +133,7 @@ impl Display for Hash {
         hex::encode_to_slice(self.0, &mut ascii)
             .expect("Encoding 32 bytes into 64 bytes of ascii; qed");
 
-        f.write_str(std::str::from_utf8(&ascii).expect("ASCII hex encoded bytes canot fail; qed"))
+        f.write_str(std::str::from_utf8(&ascii).expect("ASCII hex encoded bytes can't fail; qed"))
     }
 }
 

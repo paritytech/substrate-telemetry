@@ -93,7 +93,7 @@ pub async fn connect(uri: &http::Uri) -> Result<(Sender, Receiver), ConnectError
     let path = uri.path();
 
     let socket = TcpStream::connect((host, port)).await?;
-    socket.set_nodelay(true).unwrap();
+    socket.set_nodelay(true).expect("socket set_nodelay failed");
 
     // Establish a WS connection:
     let mut client = Client::new(socket.compat(), host, &path);

@@ -1,4 +1,4 @@
-use crate::connection::{create_ws_connection, Message};
+use crate::connection::{create_ws_connection_to_core, Message};
 use common::{
     internal_messages::{self, ShardNodeId},
     node_message,
@@ -7,7 +7,7 @@ use common::{
 };
 use futures::{channel::mpsc, future};
 use futures::{Sink, SinkExt, StreamExt};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
 
@@ -23,9 +23,13 @@ type ConnId = u64;
 /// [`FromWebsocket`] instances.
 #[derive(Clone, Debug)]
 enum ToAggregator {
+    /// Sent when the telemetry core is disconnected.
     DisconnectedFromTelemetryCore,
+    /// Sent when the telemetry core (re)connects.
     ConnectedToTelemetryCore,
+    /// Sent when a message comes in from a substrate node.
     FromWebsocket(ConnId, FromWebsocket),
+    /// Send when a message comes in from the telemetry core.
     FromTelemetryCore(internal_messages::FromTelemetryCore),
 }
 
@@ -60,6 +64,8 @@ pub enum FromWebsocket {
 
 pub type FromAggregator = internal_messages::FromShardAggregator;
 
+/// The aggregator loop handles incoming messages from nodes, or from the telemetry core.
+/// this is where we decide what effect messages will have.
 #[derive(Clone)]
 pub struct Aggregator(Arc<AggregatorInternal>);
 
@@ -90,7 +96,7 @@ impl Aggregator {
         });
 
         // Establish a resiliant connection to the core (this retries as needed):
-        let tx_to_telemetry_core = create_ws_connection(tx_from_connection, telemetry_uri).await;
+        let tx_to_telemetry_core = create_ws_connection_to_core(tx_from_connection, telemetry_uri).await;
 
         // Handle any incoming messages in our handler loop:
         tokio::spawn(Aggregator::handle_messages(
@@ -106,7 +112,7 @@ impl Aggregator {
     }
 
     // This is spawned into a separate task and handles any messages coming
-    // in to the aggregator. If nobody is tolding the tx side of the channel
+    // in to the aggregator. If nobody is holding the tx side of the channel
     // any more, this task will gracefully end.
     async fn handle_messages(
         mut rx_from_external: mpsc::Receiver<ToAggregator>,
@@ -118,9 +124,9 @@ impl Aggregator {
         // or not, and ignore incoming messages while we aren't.
         let mut connected_to_telemetry_core = false;
 
-        // A list of close channels for the current connections. Send an empty tuple to
-        // these to ask the connections to be closed.
-        let mut close_connections: Vec<mpsc::Sender<()>> = vec![];
+        // A list of close channels for the currently connected substrate nodes. Send an empty
+        // tuple to these to ask the connections to be closed.
+        let mut close_connections: HashMap<ConnId, mpsc::Sender<()>> = HashMap::new();
 
         // Maintain mappings from the connection ID and node message ID to the "local ID" which we
         // broadcast to the telemetry core.
@@ -136,13 +142,13 @@ impl Aggregator {
                     // Take hold of the connection closers and run them all.
                     let closers = close_connections;
 
-                    for mut closer in closers {
+                    for (_, mut closer) in closers {
                         // if this fails, it probably means the connection has died already anyway.
                         let _ = closer.send(());
                     }
 
                     // We've told everything to disconnect. Now, reset our state:
-                    close_connections = vec![];
+                    close_connections = HashMap::new();
                     to_local_id.clear();
                     muted.clear();
 
@@ -154,13 +160,13 @@ impl Aggregator {
                     log::info!("Disconnected from telemetry core");
                 }
                 ToAggregator::FromWebsocket(
-                    _conn_id,
+                    conn_id,
                     FromWebsocket::Initialize { close_connection },
                 ) => {
                     // We boot all connections on a reconnect-to-core to force new systemconnected
                     // messages to be sent. We could boot on muting, but need to be careful not to boot
                     // connections where we mute one set of messages it sends and not others.
-                    close_connections.push(close_connection);
+                    close_connections.insert(conn_id, close_connection);
                 }
                 ToAggregator::FromWebsocket(
                     conn_id,
@@ -228,8 +234,11 @@ impl Aggregator {
                         .map(|(local_id, _)| local_id)
                         .collect();
 
+                    close_connections.remove(&disconnected_conn_id);
+
                     for local_id in local_ids_disconnected {
                         to_local_id.remove_by_id(local_id);
+                        muted.remove(&local_id);
                         let _ = tx_to_telemetry_core
                             .send(FromShardAggregator::RemoveNode { local_id })
                             .await;
@@ -239,11 +248,6 @@ impl Aggregator {
                     local_id,
                     reason: _,
                 }) => {
-                    // Ignore incoming messages if we're not connected to the backend:
-                    if !connected_to_telemetry_core {
-                        continue;
-                    }
-
                     // Mute the local ID we've been told to:
                     muted.insert(local_id);
                 }

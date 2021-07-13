@@ -147,14 +147,19 @@ where
                 if !msg.is_binary() && !msg.is_text() {
                     continue;
                 }
-                // Deserialize from JSON, warning if deserialization fails:
+                // Deserialize from JSON, warning in debug mode if deserialization fails:
                 let bytes = msg.as_bytes();
                 let node_message: json_message::NodeMessage = match serde_json::from_slice(bytes) {
                     Ok(node_message) => node_message,
-                    Err(_e) => {
-                        // let bytes: &[u8] = bytes.get(..512).unwrap_or_else(|| &bytes);
-                        // let msg_start = std::str::from_utf8(bytes).unwrap_or_else(|_| "INVALID UTF8");
-                        // log::warn!("Failed to parse node message ({}): {}", msg_start, e);
+                    #[cfg(debug)]
+                    Err(e) => {
+                        let bytes: &[u8] = bytes.get(..512).unwrap_or_else(|| &bytes);
+                        let msg_start = std::str::from_utf8(bytes).unwrap_or_else(|_| "INVALID UTF8");
+                        log::warn!("Failed to parse node message ({}): {}", msg_start, e);
+                        continue;
+                    },
+                    #[cfg(not(debug))]
+                    Err(_) => {
                         continue;
                     }
                 };

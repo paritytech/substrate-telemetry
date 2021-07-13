@@ -14,26 +14,27 @@ id_type! {
     pub struct ShardNodeId(usize);
 }
 
-/// Message sent from the shard to the backend core
+/// Message sent from a telemetry shard to the telemetry core
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub enum FromShardAggregator {
-    /// Get information about a new node, passing IPv4
+    /// Get information about a new node, including it's IP
+    /// address and chain genesis hash.
     AddNode {
         ip: Option<IpAddr>,
         node: NodeDetails,
         local_id: ShardNodeId,
         genesis_hash: BlockHash,
     },
-    /// Send a message payload to update details for a node
+    /// A message payload with updated details for a node
     UpdateNode {
         local_id: ShardNodeId,
         payload: Payload,
     },
-    /// Inform the core that a node has been removed
+    /// Inform the telemetry core that a node has been removed
     RemoveNode { local_id: ShardNodeId },
 }
 
-/// Message sent form the backend core to the shard
+/// Message sent form the telemetry core to a telemetry shard
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub enum FromTelemetryCore {
     Mute {
