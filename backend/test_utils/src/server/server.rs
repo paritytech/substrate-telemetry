@@ -11,21 +11,12 @@ id_type! {
 }
 
 pub struct StartOpts {
-    /// Optional command to run to start a shard (instead of `telemetry_shard`).
+    /// Command to run to start a shard.
     /// The `--listen` and `--log` arguments will be appended within and shouldn't be provided.
-    pub shard_command: Option<Command>,
-    /// Optional command to run to start a telemetry core process (instead of `telemetry_core`).
+    pub shard_command: Command,
+    /// Command to run to start a telemetry core process.
     /// The `--listen` and `--log` arguments will be appended within and shouldn't be provided.
-    pub core_command: Option<Command>
-}
-
-impl Default for StartOpts {
-    fn default() -> Self {
-        StartOpts {
-            shard_command: None,
-            core_command: None
-        }
-    }
+    pub core_command: Command
 }
 
 pub struct ConnectToExistingOpts {
@@ -57,7 +48,9 @@ pub enum Error {
 pub struct Server {
     /// URI to connect a shard to core:
     core_shard_submit_uri: Option<http::Uri>,
-    /// Command to run to start a new shard:
+    /// Command to run to start a new shard. Optional
+    /// because if we connect to running instances it'll
+    /// be unset.
     shard_command: Option<Command>,
     /// Shard processes that we can connect to
     shards: DenseMap<ProcessId, ShardProcess>,
@@ -119,10 +112,10 @@ impl Server {
             None => return Err(Error::CannotAddShardNoHandle)
         };
 
-        let mut shard_cmd: TokioCommand = match &self.shard_command {
-            Some(cmd) => cmd.clone(),
-            None => super::default_commands::default_telemetry_shard_command()?
-        }.into();
+        let mut shard_cmd: TokioCommand = self.shard_command
+            .clone()
+            .ok_or_else(|| Error::CannotAddShardNoHandle)?
+            .into();
 
         shard_cmd
             .arg("--listen")
@@ -169,18 +162,10 @@ impl Server {
         Ok(pid)
     }
 
-    /// Start a telemetry_core process with default opts. From here, we can add/remove shards as needed.
-    pub async fn start_default() -> Result<Server, Error> {
-        Server::start(StartOpts::default()).await
-    }
-
     /// Start a telemetry_core process. From here, we can add/remove shards as needed.
     pub async fn start(opts: StartOpts) -> Result<Server, Error> {
 
-        let mut core_cmd: TokioCommand = match opts.core_command {
-            Some(cmd) => cmd,
-            None => super::default_commands::default_telemetry_core_command()?
-        }.into();
+        let mut core_cmd: TokioCommand = opts.core_command.into();
 
         let mut child = core_cmd
             .arg("--listen")
@@ -208,7 +193,7 @@ impl Server {
             .expect("valid feed URI");
 
         Ok(Server {
-            shard_command: opts.shard_command,
+            shard_command: Some(opts.shard_command),
             core_shard_submit_uri: Some(format!("http://127.0.0.1:{}/shard_submit", core_port)
                 .parse()
                 .expect("valid shard_submit URI")),

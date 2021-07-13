@@ -21,7 +21,7 @@ jobs:
 
     - name: Run tests
       working-directory: ./backend
-      run: cargo test --verbose --features e2e
+      run: cargo test --verbose
 
     - name: Build, release and call telemetry executable
       working-directory: ./backend
