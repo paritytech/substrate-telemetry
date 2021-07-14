@@ -11,9 +11,14 @@ pub struct Sender {
 }
 
 impl Sender {
+    /// Ask the underlying Websocket connection to close.
     pub async fn close(&mut self) -> Result<(), SendError> {
         self.inner.send(SentMessage::Close).await?;
         Ok(())
+    }
+    /// Returns whether this channel is closed.
+    pub fn is_closed(&mut self) -> bool {
+        self.inner.is_closed()
     }
 }
 

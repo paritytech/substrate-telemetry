@@ -13,3 +13,6 @@ pub mod ws_client;
 /// in an iterable container.
 #[macro_use]
 pub mod contains_matches;
+
+/// Utilities to help with running tests from within this current workspace.
+pub mod workspace;

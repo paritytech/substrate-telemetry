@@ -4,21 +4,12 @@ use std::time::Duration;
 use test_utils::{
     assert_contains_matches,
     feed_message_de::{FeedMessage, NodeDetails},
-    server::{self, Server},
+    workspace::start_server_debug
 };
-
-async fn cargo_run_server() -> Server {
-    Server::start(server::StartOpts {
-        shard_command: server::cargo_run_commands::telemetry_shard().expect("valid shard command"),
-        core_command: server::cargo_run_commands::telemetry_core().expect("valid core command"),
-    })
-    .await
-    .unwrap()
-}
 
 #[tokio::test]
 async fn feed_sent_version_on_connect() {
-    let server = cargo_run_server().await;
+    let server = start_server_debug().await;
 
     // Connect a feed:
     let (_feed_tx, mut feed_rx) = server.get_core().connect().await.unwrap();
@@ -37,7 +28,7 @@ async fn feed_sent_version_on_connect() {
 
 #[tokio::test]
 async fn feed_ping_responded_to_with_pong() {
-    let server = cargo_run_server().await;
+    let server = start_server_debug().await;
 
     // Connect a feed:
     let (mut feed_tx, mut feed_rx) = server.get_core().connect().await.unwrap();
@@ -61,7 +52,7 @@ async fn feed_ping_responded_to_with_pong() {
 #[tokio::test]
 async fn feed_add_and_remove_node() {
     // Connect server and add shard
-    let mut server = cargo_run_server().await;
+    let mut server = start_server_debug().await;
     let shard_id = server.add_shard().await.unwrap();
 
     // Connect a node to the shard:
@@ -122,7 +113,7 @@ async fn feed_add_and_remove_node() {
 
 #[tokio::test]
 async fn feed_add_and_remove_shard() {
-    let mut server = cargo_run_server().await;
+    let mut server = start_server_debug().await;
 
     let mut shards = vec![];
     for id in 1..=2 {
@@ -202,7 +193,7 @@ async fn feed_can_subscribe_and_unsubscribe_from_chain() {
     use FeedMessage::*;
 
     // Start server, add shard, connect node:
-    let mut server = cargo_run_server().await;
+    let mut server = start_server_debug().await;
     let shard_id = server.add_shard().await.unwrap();
     let (mut node_tx, _node_rx) = server.get_shard(shard_id).unwrap().connect().await.unwrap();
 

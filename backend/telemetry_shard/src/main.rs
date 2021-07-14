@@ -1,3 +1,5 @@
+#[warn(missing_docs)]
+
 mod aggregator;
 mod connection;
 mod json_message;
