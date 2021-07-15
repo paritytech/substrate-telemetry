@@ -65,15 +65,15 @@ pub async fn connect_multiple_to_uri(
     uri: &http::Uri,
     num_connections: usize,
 ) -> Result<Vec<(ws_client::Sender, ws_client::Receiver)>, ws_client::ConnectError> {
-
-    // Batch connection establishing to groups of 100 at a time; I found while benchmarking that
-    // I'd run into "connection reset by peer" issues trying to establish more at once.
-    let connect_futs = (0..num_connections).map(|_| ws_client::connect(uri));
-    let sockets: Result<Vec<_>, _> = futures::future::join_all(connect_futs)
-        .await
-        .into_iter()
-        .collect();
-    sockets
+    // Previous versions of this used future::join_all to concurrently establish all of the
+    // connections we want. However, trying to do that with more than say ~130 connections on
+    // MacOS led to hitting "Connection reset by peer" errors, so let's do it one-at-a-time.
+    // (Side note: on Ubuntu the concurrency seemed to be no issue up to at least 10k connections).
+    let mut sockets = vec![];
+    for _ in 0..num_connections {
+        sockets.push(ws_client::connect(uri).await?);
+    }
+    Ok(sockets)
 }
 
 /// Drain output from a reader to stdout. After acquiring port details from spawned processes,

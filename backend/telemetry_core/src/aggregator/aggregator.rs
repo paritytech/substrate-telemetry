@@ -28,13 +28,13 @@ struct AggregatorInternal {
     /// Send messages in to the aggregator from the outside via this. This is
     /// stored here so that anybody holding an `Aggregator` handle can
     /// make use of it.
-    tx_to_aggregator: mpsc::Sender<inner_loop::ToAggregator>,
+    tx_to_aggregator: mpsc::UnboundedSender<inner_loop::ToAggregator>,
 }
 
 impl Aggregator {
     /// Spawn a new Aggregator. This connects to the telemetry backend
     pub async fn spawn(denylist: Vec<String>) -> anyhow::Result<Aggregator> {
-        let (tx_to_aggregator, rx_from_external) = mpsc::channel(10);
+        let (tx_to_aggregator, rx_from_external) = mpsc::unbounded();
 
         // Kick off a locator task to locate nodes, which hands back a channel to make location requests
         let tx_to_locator = find_location(tx_to_aggregator.clone().with(|(node_id, msg)| {
@@ -62,7 +62,7 @@ impl Aggregator {
     // in to the aggregator. If nobody is tolding the tx side of the channel
     // any more, this task will gracefully end.
     async fn handle_messages(
-        rx_from_external: mpsc::Receiver<inner_loop::ToAggregator>,
+        rx_from_external: mpsc::UnboundedReceiver<inner_loop::ToAggregator>,
         tx_to_aggregator: mpsc::UnboundedSender<(NodeId, Ipv4Addr)>,
         denylist: Vec<String>,
     ) {

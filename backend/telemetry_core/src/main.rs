@@ -119,7 +119,7 @@ async fn handle_shard_websocket_connection<S>(
 where
     S: futures::Sink<FromShardWebsocket, Error = anyhow::Error> + Unpin,
 {
-    let (tx_to_shard_conn, mut rx_from_aggregator) = mpsc::channel(10);
+    let (tx_to_shard_conn, mut rx_from_aggregator) = mpsc::unbounded();
 
     // Tell the aggregator about this new connection, and give it a way to send messages to us:
     let init_msg = FromShardWebsocket::Initialize {

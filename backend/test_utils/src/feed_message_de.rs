@@ -1,3 +1,4 @@
+use anyhow::Context;
 use common::node_types::{
     BlockDetails, BlockHash, BlockNumber, NodeLocation, NodeStats, Timestamp,
 };
@@ -22,7 +23,7 @@ pub enum FeedMessage {
         // io: NodeIO, // can't losslessly deserialize
         // hardware: NodeHardware, // can't losslessly deserialize
         block_details: BlockDetails,
-        location: NodeLocation,
+        location: Option<NodeLocation>,
         startup_time: Option<Timestamp>,
     },
     RemovedNode {
@@ -127,15 +128,18 @@ impl FeedMessage {
         for raw_keyval in v.chunks(2) {
             let raw_key = raw_keyval[0];
             let raw_val = raw_keyval[1];
-            feed_messages.push(FeedMessage::decode(raw_key, raw_val)?);
+            let action: u8 = serde_json::from_str(raw_key.get())?;
+            let msg = FeedMessage::decode(action, raw_val)
+                .with_context(|| format!("Failed to decode message with action {}", action))?;
+
+            feed_messages.push(msg);
         }
 
         Ok(feed_messages)
     }
 
     // Deserialize the feed message to a value based on the "action" key
-    fn decode(raw_key: &RawValue, raw_val: &RawValue) -> Result<FeedMessage, anyhow::Error> {
-        let action: u8 = serde_json::from_str(raw_key.get())?;
+    fn decode(action: u8, raw_val: &RawValue) -> Result<FeedMessage, anyhow::Error> {
         let feed_message = match action {
             // Version:
             0 => {

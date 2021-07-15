@@ -145,7 +145,7 @@ impl Aggregator {
 
                     for (_, mut closer) in closers {
                         // if this fails, it probably means the connection has died already anyway.
-                        let _ = closer.send(());
+                        let _ = closer.send(()).await;
                     }
 
                     // We've told everything to disconnect. Now, reset our state:

@@ -1,3 +1,6 @@
+use std::iter::FromIterator;
+
+use futures::StreamExt;
 use test_utils::workspace::start_server_release;
 use criterion::{criterion_group, criterion_main, Criterion};
 use tokio::runtime::Runtime;
@@ -39,27 +42,41 @@ pub fn benchmark_throughput_single_shard(c: &mut Criterion) {
                 }
             })).await.unwrap();
         }
-
+tokio::time::sleep(std::time::Duration::from_millis(500)).await;
         // Start 1000 feeds:
         let mut feeds = server
             .get_core()
-            .connect_multiple(1000)
+            .connect_multiple(1)
             .await
             .expect("feeds can connect");
 
-        // Subscribe all feeds to the chain:
-        for (feed_tx, _) in feeds.iter_mut() {
-            feed_tx.send_command("subscribe", "Local Testnet").await.unwrap();
-        }
+        // // Subscribe all feeds to the chain:
+        // for (feed_tx, _) in feeds.iter_mut() {
+        //     feed_tx.send_command("subscribe", "Local Testnet").await.unwrap();
+        // }
 
-        // Consume any messages feeds have received so far:
-        let feed_consumers = feeds
-            .iter_mut()
-            .map(|(_,rx)| rx.recv_feed_messages());
-        futures::future::join_all(feed_consumers).await;
+println!("consuming feed");
+{
 
-        tokio::time::sleep(std::time::Duration::from_secs(100)).await;
+    let mut msgs = futures::stream::FuturesUnordered::from_iter(
+        feeds
+        .iter_mut()
+        .map(|(_,rx)| rx.recv_feed_messages())
+    );
 
+    let mut n = 0;
+    while let Some(Ok(msg)) = msgs.next().await {
+        n += 1;
+        println!("Message {}: {:?}", n, msg);
+    }
+}
+
+        // // Consume any messages feeds have received so far (every feed should havea few at least):
+        // let feed_consumers = feeds
+        //     .iter_mut()
+        //     .map(|(_,rx)| rx.next());
+        // futures::future::join_all(feed_consumers).await;
+println!("feed consumed");
         (nodes, feeds)
     });
 
