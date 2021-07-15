@@ -1,7 +1,8 @@
+//! General end-to-end tests
+
 use common::node_types::BlockHash;
-use futures::StreamExt;
 use serde_json::json;
-use std::{iter::FromIterator, time::Duration};
+use std::time::Duration;
 use test_utils::{
     assert_contains_matches,
     feed_message_de::{FeedMessage, NodeDetails},
@@ -39,7 +40,7 @@ async fn feed_ping_responded_to_with_pong() {
     let (mut feed_tx, mut feed_rx) = server.get_core().connect().await.unwrap();
 
     // Ping it:
-    feed_tx.send_command("ping", "hello!").await.unwrap();
+    feed_tx.send_command("ping", "hello!").unwrap();
 
     // Expect a pong response:
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
@@ -127,7 +128,7 @@ async fn lots_of_mute_messages_dont_cause_a_deadlock() {
                 "startup_time":"1625565542717",
                 "version":"2.0.0-07a1af348-aarch64-macos"
             }
-        })).await.unwrap();
+        })).unwrap();
     }
 
     // Wait a little time (just to let everything get deadlocked) before
@@ -191,7 +192,6 @@ async fn feed_add_and_remove_node() {
                 },
             }
         ))
-        .await
         .unwrap();
 
     // Wait a little for this message to propagate to the core
@@ -252,11 +252,11 @@ async fn feeds_told_about_chain_rename_and_stay_subscribed() {
     });
 
     // Subscribe a chain:
-    node_tx.send_json_text(node_init_msg(1, "Initial chain name", "Node 1")).await.unwrap();
+    node_tx.send_json_text(node_init_msg(1, "Initial chain name", "Node 1")).unwrap();
 
     // Connect a feed and subscribe to the above chain:
     let (mut feed_tx, mut feed_rx) = server.get_core().connect().await.unwrap();
-    feed_tx.send_command("subscribe", "Initial chain name").await.unwrap();
+    feed_tx.send_command("subscribe", "Initial chain name").unwrap();
 
     // Feed is told about the chain, and the node on this chain:
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
@@ -269,7 +269,7 @@ async fn feeds_told_about_chain_rename_and_stay_subscribed() {
 
     // Subscribe another node. The chain doesn't rename yet but we are told about the new node
     // count and the node that's been added.
-    node_tx.send_json_text(node_init_msg(2, "New chain name", "Node 2")).await.unwrap();
+    node_tx.send_json_text(node_init_msg(2, "New chain name", "Node 2")).unwrap();
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
     assert_contains_matches!(
         feed_messages,
@@ -279,7 +279,7 @@ async fn feeds_told_about_chain_rename_and_stay_subscribed() {
 
     // Subscribe a third node. The chain renames, so we're told about the new node but also
     // about the chain rename.
-    node_tx.send_json_text(node_init_msg(3, "New chain name", "Node 3")).await.unwrap();
+    node_tx.send_json_text(node_init_msg(3, "New chain name", "Node 3")).unwrap();
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
     assert_contains_matches!(
         feed_messages,
@@ -290,7 +290,7 @@ async fn feeds_told_about_chain_rename_and_stay_subscribed() {
 
     // Just to be sure, subscribing a fourth node on this chain will still lead to updates
     // to this feed.
-    node_tx.send_json_text(node_init_msg(4, "New chain name", "Node 4")).await.unwrap();
+    node_tx.send_json_text(node_init_msg(4, "New chain name", "Node 4")).unwrap();
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
     assert_contains_matches!(
         feed_messages,
@@ -338,7 +338,6 @@ async fn feed_add_and_remove_shard() {
                     "version":"2.0.0-07a1af348-aarch64-macos"
                 },
             }))
-            .await
             .unwrap();
 
         // Keep what we need to to keep connection alive and let us kill a shard:
@@ -410,7 +409,6 @@ async fn feed_can_subscribe_and_unsubscribe_from_chain() {
                     },
                 }
             ))
-            .await
             .unwrap();
     }
 
@@ -421,10 +419,7 @@ async fn feed_can_subscribe_and_unsubscribe_from_chain() {
     assert_contains_matches!(feed_messages, AddedChain { name, node_count: 1 } if name == "Local Testnet 1");
 
     // Subscribe it to a chain
-    feed_tx
-        .send_command("subscribe", "Local Testnet 1")
-        .await
-        .unwrap();
+    feed_tx.send_command("subscribe", "Local Testnet 1").unwrap();
 
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
     assert_contains_matches!(
@@ -440,7 +435,7 @@ async fn feed_can_subscribe_and_unsubscribe_from_chain() {
     // We receive updates relating to nodes on that chain:
     node_tx.send_json_text(json!(
         {"id":1, "payload":{ "bandwidth_download":576,"bandwidth_upload":576,"msg":"system.interval","peers":1},"ts":"2021-07-12T10:37:48.330433+01:00" }
-    )).await.unwrap();
+    )).unwrap();
 
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
     assert_ne!(feed_messages.len(), 0);
@@ -448,17 +443,14 @@ async fn feed_can_subscribe_and_unsubscribe_from_chain() {
     // We don't receive anything for updates to nodes on other chains (wait a sec to ensure no messages are sent):
     node_tx.send_json_text(json!(
         {"id":2, "payload":{ "bandwidth_download":576,"bandwidth_upload":576,"msg":"system.interval","peers":1},"ts":"2021-07-12T10:37:48.330433+01:00" }
-    )).await.unwrap();
+    )).unwrap();
 
     tokio::time::timeout(Duration::from_secs(1), feed_rx.recv_feed_messages())
         .await
         .expect_err("Timeout should elapse since no messages sent");
 
     // We can change our subscription:
-    feed_tx
-        .send_command("subscribe", "Local Testnet 2")
-        .await
-        .unwrap();
+    feed_tx.send_command("subscribe", "Local Testnet 2").unwrap();
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
 
     // We are told about the subscription change and given similar on-subscribe messages to above.
@@ -476,7 +468,7 @@ async fn feed_can_subscribe_and_unsubscribe_from_chain() {
     // We didn't get messages from this earlier, but we will now we've subscribed:
     node_tx.send_json_text(json!(
         {"id":2, "payload":{ "bandwidth_download":576,"bandwidth_upload":576,"msg":"system.interval","peers":1},"ts":"2021-07-12T10:38:48.330433+01:00" }
-    )).await.unwrap();
+    )).unwrap();
 
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
     assert_ne!(feed_messages.len(), 0);

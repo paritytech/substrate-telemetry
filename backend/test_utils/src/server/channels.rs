@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{ops::{Deref, DerefMut}, time::Duration};
 
 use crate::feed_message_de::FeedMessage;
 use crate::ws_client;
@@ -13,14 +13,7 @@ impl From<ws_client::Sender> for ShardSender {
     }
 }
 
-impl ShardSender {
-    /// Close this connection
-    pub async fn close(&mut self) -> Result<(), ws_client::SendError> {
-        self.0.close().await
-    }
-}
-
-impl Sink<ws_client::Message> for ShardSender {
+impl Sink<ws_client::SentMessage> for ShardSender {
     type Error = ws_client::SendError;
     fn poll_ready(
         mut self: std::pin::Pin<&mut Self>,
@@ -30,7 +23,7 @@ impl Sink<ws_client::Message> for ShardSender {
     }
     fn start_send(
         mut self: std::pin::Pin<&mut Self>,
-        item: ws_client::Message,
+        item: ws_client::SentMessage,
     ) -> Result<(), Self::Error> {
         self.0.start_send_unpin(item)
     }
@@ -49,19 +42,33 @@ impl Sink<ws_client::Message> for ShardSender {
 }
 
 impl ShardSender {
-    pub async fn send_json_binary(
+    /// Send JSON as a binary websocket message
+    pub fn send_json_binary(
         &mut self,
         json: serde_json::Value,
     ) -> Result<(), ws_client::SendError> {
         let bytes = serde_json::to_vec(&json).expect("valid bytes");
-        self.send(ws_client::Message::Binary(bytes)).await
+        self.unbounded_send(ws_client::SentMessage::Binary(bytes))
     }
-    pub async fn send_json_text(
+    /// Send JSON as a textual websocket message
+    pub fn send_json_text(
         &mut self,
         json: serde_json::Value,
     ) -> Result<(), ws_client::SendError> {
         let s = serde_json::to_string(&json).expect("valid string");
-        self.send(ws_client::Message::Text(s)).await
+        self.unbounded_send(ws_client::SentMessage::Text(s))
+    }
+}
+
+impl Deref for ShardSender {
+    type Target = ws_client::Sender;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl DerefMut for ShardSender {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
@@ -75,12 +82,24 @@ impl From<ws_client::Receiver> for ShardReceiver {
 }
 
 impl Stream for ShardReceiver {
-    type Item = Result<ws_client::Message, ws_client::RecvError>;
+    type Item = Result<ws_client::RecvMessage, ws_client::RecvError>;
     fn poll_next(
         mut self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Option<Self::Item>> {
         self.0.poll_next_unpin(cx)
+    }
+}
+
+impl Deref for ShardReceiver {
+    type Target = ws_client::Receiver;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl DerefMut for ShardReceiver {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
@@ -93,7 +112,7 @@ impl From<ws_client::Sender> for FeedSender {
     }
 }
 
-impl Sink<ws_client::Message> for FeedSender {
+impl Sink<ws_client::SentMessage> for FeedSender {
     type Error = ws_client::SendError;
     fn poll_ready(
         mut self: std::pin::Pin<&mut Self>,
@@ -103,7 +122,7 @@ impl Sink<ws_client::Message> for FeedSender {
     }
     fn start_send(
         mut self: std::pin::Pin<&mut Self>,
-        item: ws_client::Message,
+        item: ws_client::SentMessage,
     ) -> Result<(), Self::Error> {
         self.0.start_send_unpin(item)
     }
@@ -121,20 +140,35 @@ impl Sink<ws_client::Message> for FeedSender {
     }
 }
 
+impl Deref for FeedSender {
+    type Target = ws_client::Sender;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for FeedSender {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl FeedSender {
-    pub async fn send_command<S: AsRef<str>>(
+    /// Send a command into the feed. A command consists of a string
+    /// "command" part, and another string "parameter" part.
+    pub fn send_command<S: AsRef<str>>(
         &mut self,
         command: S,
         param: S,
     ) -> Result<(), ws_client::SendError> {
-        self.send(ws_client::Message::Text(format!(
+        self.unbounded_send(ws_client::SentMessage::Text(format!(
             "{}:{}",
             command.as_ref(),
             param.as_ref()
         )))
-        .await
     }
 }
+
 
 /// Wrap a `ws_client::Receiver` with convenient utility methods for feed connections
 pub struct FeedReceiver(ws_client::Receiver);
@@ -146,12 +180,24 @@ impl From<ws_client::Receiver> for FeedReceiver {
 }
 
 impl Stream for FeedReceiver {
-    type Item = Result<ws_client::Message, ws_client::RecvError>;
+    type Item = Result<ws_client::RecvMessage, ws_client::RecvError>;
     fn poll_next(
         mut self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Option<Self::Item>> {
         self.0.poll_next_unpin(cx).map_err(|e| e.into())
+    }
+}
+
+impl Deref for FeedReceiver {
+    type Target = ws_client::Receiver;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl DerefMut for FeedReceiver {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
@@ -170,14 +216,14 @@ impl FeedReceiver {
             .ok_or_else(|| anyhow::anyhow!("Stream closed: no more messages"))??;
 
         match msg {
-            ws_client::Message::Binary(data) => {
+            ws_client::RecvMessage::Binary(data) => {
                 let messages = FeedMessage::from_bytes(&data)?;
                 Ok(messages)
-            }
-            ws_client::Message::Text(text) => {
+            },
+            ws_client::RecvMessage::Text(text) => {
                 let messages = FeedMessage::from_bytes(text.as_bytes())?;
                 Ok(messages)
-            }
+            },
         }
     }
 

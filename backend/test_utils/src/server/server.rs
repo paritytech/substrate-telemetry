@@ -146,7 +146,7 @@ impl Server {
 
         // Since we're piping stdout from the child process, we need somewhere for it to go
         // else the process will get stuck when it tries to produce output:
-        utils::drain(child_stdout, tokio::io::sink());
+        utils::drain(child_stdout, tokio::io::stderr());
 
         let shard_uri = format!("http://127.0.0.1:{}/submit", shard_port)
             .parse()
@@ -184,7 +184,7 @@ impl Server {
 
         // Since we're piping stdout from the child process, we need somewhere for it to go
         // else the process will get stuck when it tries to produce output:
-        utils::drain(child_stdout, tokio::io::sink());
+        utils::drain(child_stdout, tokio::io::stderr());
 
         // URI for feeds to connect to the core:
         let feed_uri = format!("http://127.0.0.1:{}/feed", core_port)

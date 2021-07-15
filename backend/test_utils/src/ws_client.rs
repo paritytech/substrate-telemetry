@@ -7,28 +7,36 @@ use tokio_util::compat::TokioAsyncReadCompatExt;
 /// Send messages into the connection
 #[derive(Clone)]
 pub struct Sender {
-    inner: mpsc::UnboundedSender<SentMessage>,
+    inner: mpsc::UnboundedSender<SentMessageInternal>,
 }
 
 impl Sender {
     /// Ask the underlying Websocket connection to close.
     pub async fn close(&mut self) -> Result<(), SendError> {
-        self.inner.send(SentMessage::Close).await?;
+        self.inner.send(SentMessageInternal::Close).await?;
         Ok(())
     }
     /// Returns whether this channel is closed.
     pub fn is_closed(&mut self) -> bool {
         self.inner.is_closed()
     }
+    /// Unbounded send will always queue the message and doesn't
+    /// need to be awaited.
+    pub fn unbounded_send(&self, msg: SentMessage) -> Result<(), SendError> {
+        self.inner
+            .unbounded_send(SentMessageInternal::Message(msg))
+            .map_err(|e| e.into_send_error())?;
+        Ok(())
+    }
 }
 
 #[derive(thiserror::Error, Debug, Clone)]
 pub enum SendError {
     #[error("Failed to send message: {0}")]
-    ChannelError(#[from] mpsc::SendError),
+    ChannelError(#[from] mpsc::SendError)
 }
 
-impl Sink<Message> for Sender {
+impl Sink<SentMessage> for Sender {
     type Error = SendError;
     fn poll_ready(
         mut self: std::pin::Pin<&mut Self>,
@@ -36,9 +44,9 @@ impl Sink<Message> for Sender {
     ) -> std::task::Poll<Result<(), Self::Error>> {
         self.inner.poll_ready_unpin(cx).map_err(|e| e.into())
     }
-    fn start_send(mut self: std::pin::Pin<&mut Self>, item: Message) -> Result<(), Self::Error> {
+    fn start_send(mut self: std::pin::Pin<&mut Self>, item: SentMessage) -> Result<(), Self::Error> {
         self.inner
-            .start_send_unpin(SentMessage::Message(item))
+            .start_send_unpin(SentMessageInternal::Message(item))
             .map_err(|e| e.into())
     }
     fn poll_flush(
@@ -57,7 +65,7 @@ impl Sink<Message> for Sender {
 
 /// Receive messages out of a connection
 pub struct Receiver {
-    inner: mpsc::UnboundedReceiver<Result<Message, RecvError>>,
+    inner: mpsc::UnboundedReceiver<Result<RecvMessage, RecvError>>,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -69,7 +77,7 @@ pub enum RecvError {
 }
 
 impl Stream for Receiver {
-    type Item = Result<Message, RecvError>;
+    type Item = Result<RecvMessage, RecvError>;
     fn poll_next(
         mut self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
@@ -78,15 +86,47 @@ impl Stream for Receiver {
     }
 }
 
-/// A message type that can be sent or received from the connection
-pub enum Message {
+/// A message that can be received from the connection
+#[derive(Debug, Clone)]
+pub enum RecvMessage {
+    /// Send an owned string into the socket.
     Text(String),
+    /// Send owned bytes into the socket.
+    Binary(Vec<u8>),
+}
+
+impl RecvMessage {
+    pub fn len(&self) -> usize {
+        match self {
+            RecvMessage::Binary(b) => b.len(),
+            RecvMessage::Text(s) => s.len(),
+        }
+    }
+}
+
+/// A message that can be sent into the connection
+#[derive(Debug, Clone)]
+pub enum SentMessage {
+    /// Being able to send static text is primarily useful for benchmarking,
+    /// so that we can avoid cloning an owned string and pass a static reference
+    /// (one such option here is using [`Box::leak`] to generate strings with
+    /// static lifetimes).
+    StaticText(&'static str),
+    /// Being able to send static bytes is primarily useful for benchmarking,
+    /// so that we can avoid cloning an owned string and pass a static reference
+    /// (one such option here is using [`Box::leak`] to generate bytes with
+    /// static lifetimes).
+    StaticBinary(&'static [u8]),
+    /// Send an owned string into the socket.
+    Text(String),
+    /// Send owned bytes into the socket.
     Binary(Vec<u8>),
 }
 
 /// Sent messages can be anything publically visible, or a close message.
-enum SentMessage {
-    Message(Message),
+#[derive(Debug, Clone)]
+enum SentMessageInternal {
+    Message(SentMessage),
     Close,
 }
 
@@ -151,9 +191,9 @@ pub async fn connect(uri: &http::Uri) -> Result<(Sender, Receiver), ConnectError
             };
 
             let msg = match message_data {
-                soketto::Data::Text(_) => Ok(Message::Binary(data)),
+                soketto::Data::Text(_) => Ok(RecvMessage::Binary(data)),
                 soketto::Data::Binary(_) => String::from_utf8(data)
-                    .map(|s| Message::Text(s))
+                    .map(|s| RecvMessage::Text(s))
                     .map_err(|e| e.into()),
             };
 
@@ -176,7 +216,7 @@ pub async fn connect(uri: &http::Uri) -> Result<(Sender, Receiver), ConnectError
     tokio::spawn(async move {
         while let Some(msg) = rx_from_external.next().await {
             match msg {
-                SentMessage::Message(Message::Text(s)) => {
+                SentMessageInternal::Message(SentMessage::Text(s)) => {
                     if let Err(e) = ws_to_connection.send_text_owned(s).await {
                         log::error!(
                             "Shutting down websocket connection: Failed to send text data: {}",
@@ -185,7 +225,7 @@ pub async fn connect(uri: &http::Uri) -> Result<(Sender, Receiver), ConnectError
                         break;
                     }
                 }
-                SentMessage::Message(Message::Binary(bytes)) => {
+                SentMessageInternal::Message(SentMessage::Binary(bytes)) => {
                     if let Err(e) = ws_to_connection.send_binary_mut(bytes).await {
                         log::error!(
                             "Shutting down websocket connection: Failed to send binary data: {}",
@@ -193,8 +233,26 @@ pub async fn connect(uri: &http::Uri) -> Result<(Sender, Receiver), ConnectError
                         );
                         break;
                     }
+                },
+                SentMessageInternal::Message(SentMessage::StaticText(s)) => {
+                    if let Err(e) = ws_to_connection.send_text(s).await {
+                        log::error!(
+                            "Shutting down websocket connection: Failed to send text data: {}",
+                            e
+                        );
+                        break;
+                    }
                 }
-                SentMessage::Close => {
+                SentMessageInternal::Message(SentMessage::StaticBinary(bytes)) => {
+                    if let Err(e) = ws_to_connection.send_binary(bytes).await {
+                        log::error!(
+                            "Shutting down websocket connection: Failed to send binary data: {}",
+                            e
+                        );
+                        break;
+                    }
+                },
+                SentMessageInternal::Close => {
                     if let Err(e) = ws_to_connection.close().await {
                         log::error!("Error attempting to close connection: {}", e);
                         break;

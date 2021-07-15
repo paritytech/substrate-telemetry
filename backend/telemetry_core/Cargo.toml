@@ -32,6 +32,7 @@ warp = "0.3.1"
 
 [dev-dependencies]
 criterion = { version = "0.3.4", features = ["async", "async_tokio"] }
+shellwords = "1.1.0"
 test_utils = { path = "../test_utils" }
 
 [[bench]]

@@ -8,6 +8,7 @@ use serde_json::json;
 use common::node_types::BlockHash;
 
 pub fn benchmark_throughput_single_shard(c: &mut Criterion) {
+    /*
     let rt = Runtime::new().expect("tokio runtime should start");
 
     // Setup our server and node/feed connections first:
@@ -90,6 +91,7 @@ println!("feed consumed");
 
         })
     );
+    */
 }
 
 criterion_group!(benches, benchmark_throughput_single_shard);
