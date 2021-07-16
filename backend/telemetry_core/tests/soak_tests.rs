@@ -11,7 +11,11 @@ sudo sysctl -w kern.maxfiles=50000
 sudo sysctl -w kern.maxfilesperproc=50000
 ulimit -n 50000
 sudo sysctl -w kern.ipc.somaxconn=50000
+sudo sysctl -w kern.ipc.maxsockbuf=16777216
 ```
+
+In general, if you run into issues, it may be better to run this on a linux
+box; MacOS seems to hit limits quicker in general.
 */
 
 use futures::{ StreamExt };
@@ -30,8 +34,15 @@ use common::node_types::BlockHash;
 /// ```sh
 /// SOAK_TEST_ARGS='--feeds 10 --nodes 100 --shards 4' cargo test -- soak_test --ignored --nocapture
 /// ```
+///
+/// You can also run this test against the pre-sharding actix binary like so:
+/// ```sh
+/// TELEMETRY_BIN=~/old_telemetry_binary SOAK_TEST_ARGS='--feeds 100 --nodes 100 --shards 4' cargo test -- soak_test --ignored --nocapture
+/// ```
+///
+/// Both will establish the same total number of connections and same the same messages.
 #[ignore]
-#[tokio::test]
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 pub async fn soak_test() {
     let opts = get_soak_test_opts();
     run_soak_test(opts).await;
@@ -54,7 +65,7 @@ async fn run_soak_test(opts: SoakTestOpts) {
         let mut conns = server
             .get_shard(shard_id)
             .unwrap()
-            .connect_multiple(opts.nodes)
+            .connect_multiple_nodes(opts.nodes)
             .await
             .expect("node connections failed");
         nodes.append(&mut conns);
@@ -83,7 +94,7 @@ async fn run_soak_test(opts: SoakTestOpts) {
     // Connect feeds to the core:
     let mut feeds = server
         .get_core()
-        .connect_multiple(opts.feeds)
+        .connect_multiple_feeds(opts.feeds)
         .await
         .expect("feed connections failed");
 
@@ -93,33 +104,42 @@ async fn run_soak_test(opts: SoakTestOpts) {
     }
 
     // Start sending "update" messages from nodes at time intervals.
+    let bytes_in = Arc::new(AtomicUsize::new(0));
+    let bytes_in2 = Arc::clone(&bytes_in);
     let send_handle = tokio::task::spawn(async move {
+        let msg = json!({
+            "id":1,
+            "payload":{
+                "bandwidth_download":576,
+                "bandwidth_upload":576,
+                "msg":"system.interval",
+                "peers":1
+            },
+            "ts":"2021-07-12T10:37:48.330433+01:00"
+        });
+        let msg_bytes: &'static [u8] = Box::new(serde_json::to_vec(&msg).unwrap()).leak();
+
         loop {
-            let msg = json!({
-                "id":1,
-                "payload":{
-                    "bandwidth_download":576,
-                    "bandwidth_upload":576,
-                    "msg":"system.interval",
-                    "peers":1
-                },
-                "ts":"2021-07-12T10:37:48.330433+01:00"
-            });
-            let msg_bytes = serde_json::to_vec(&msg).unwrap();
-            for (node_tx, _) in &mut nodes {
-                node_tx.unbounded_send(SentMessage::Binary(msg_bytes.clone())).unwrap();
+            // every ~1second we aim to have sent messages from all of the nodes. So we cycle through
+            // the node IDs and send a message from each at roughly 1s / number_of_nodes.
+            let mut interval = tokio::time::interval(Duration::from_secs_f64(1.0 / nodes.len() as f64));
+
+            for node_id in (0..nodes.len()).cycle() {
+                interval.tick().await;
+                let node_tx = &mut nodes[node_id].0;
+                node_tx.unbounded_send(SentMessage::StaticBinary(msg_bytes)).unwrap();
+                bytes_in2.fetch_add(msg_bytes.len(), Ordering::Relaxed);
             }
-            tokio::time::sleep(Duration::from_millis(500)).await;
         }
     });
 
     // Also start receiving messages, counting the bytes received so far.
     let bytes_out = Arc::new(AtomicUsize::new(0));
     for (_, mut feed_rx) in feeds {
-        let bytes_out = bytes_out.clone();
+        let bytes_out = Arc::clone(&bytes_out);
         tokio::task::spawn(async move {
             while let Some(msg) = feed_rx.next().await {
-                let msg = msg.expect("message coule be received");
+                let msg = msg.expect("message could be received");
                 let num_bytes = msg.len();
                 bytes_out.fetch_add(num_bytes, Ordering::Relaxed);
             }
@@ -128,20 +148,26 @@ async fn run_soak_test(opts: SoakTestOpts) {
 
     // Periodically report on bytes out
     tokio::task::spawn(async move {
-        let mut last_bytes = 0;
-        let mut last_now = std::time::Instant::now();
+        let one_mb = 1024.0 * 1024.0;
+        let mut last_bytes_in = 0;
+        let mut last_bytes_out = 0;
+        let mut n = 1;
         loop {
-            tokio::time::sleep(Duration::from_secs(5)).await;
+            tokio::time::sleep(Duration::from_secs(1)).await;
+            let bytes_in_val = bytes_in.load(Ordering::Relaxed);
+            let bytes_out_val = bytes_out.load(Ordering::Relaxed);
 
-            let curr_now = std::time::Instant::now();
-            let curr_bytes_out = bytes_out.load(Ordering::Relaxed);
-            let secs_elapsed = (curr_now - last_now).as_secs_f64();
-            let kbps: f64 = (curr_bytes_out - last_bytes) as f64 / 1024.0 / secs_elapsed;
+            println!("#{}: MB in/out per measurement: {:.4} / {:.4}, total bytes in/out: {} / {})",
+                n,
+                (bytes_in_val - last_bytes_in) as f64 / one_mb,
+                (bytes_out_val - last_bytes_out) as f64 / one_mb,
+                bytes_in_val,
+                bytes_out_val
+            );
 
-            println!("output kbps: ~{}", kbps);
-
-            last_bytes = curr_bytes_out;
-            last_now = curr_now;
+            n += 1;
+            last_bytes_in = bytes_in_val;
+            last_bytes_out = bytes_out_val;
         }
     });
 

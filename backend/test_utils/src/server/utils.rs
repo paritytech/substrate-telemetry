@@ -8,11 +8,20 @@ use tokio::time::Duration;
 /// with the side benefit that we'll wait for it to start listening before returning. We do this
 /// because we want to allow the kernel to assign ports and so don't specify a port as an arg.
 pub async fn get_port<R: AsyncRead + Unpin>(reader: R) -> Result<u16, anyhow::Error> {
-    let expected_text = "listening on http://127.0.0.1:";
-    wait_for_line_containing(reader, expected_text, Duration::from_secs(240))
+    // For the new service:
+    let new_expected_text = "listening on http://127.0.0.1:";
+    // For the older non-sharded actix based service:
+    let old_expected_text = "service on 127.0.0.1:";
+
+    let is_text = |s: &str| s.contains(new_expected_text) || s.contains(old_expected_text);
+    wait_for_line_containing(reader, is_text, Duration::from_secs(240))
         .await
         .and_then(|line| {
-            let (_, port_str) = line.rsplit_once(expected_text).unwrap();
+            // The line must match one of our expected strings:
+            let (_, port_str) = line
+                .rsplit_once(new_expected_text)
+                .unwrap_or_else(|| line.rsplit_once(old_expected_text).unwrap());
+            // Grab the port after the string:
             port_str
                 .trim()
                 .parse()
@@ -23,9 +32,9 @@ pub async fn get_port<R: AsyncRead + Unpin>(reader: R) -> Result<u16, anyhow::Er
 /// Wait for a line of output containing the text given. Also provide a timeout,
 /// such that if we don't see a new line of output within the timeout we bail out
 /// and return an error.
-pub async fn wait_for_line_containing<R: AsyncRead + Unpin>(
+pub async fn wait_for_line_containing<R: AsyncRead + Unpin, F: Fn(&str) -> bool>(
     reader: R,
-    text: &str,
+    is_match: F,
     max_wait_between_lines: Duration,
 ) -> Result<String, anyhow::Error> {
     let reader = BufReader::new(reader);
@@ -37,13 +46,12 @@ pub async fn wait_for_line_containing<R: AsyncRead + Unpin>(
         let line = match line {
             // timeout expired; couldn't get port:
             Err(_) => {
-                return Err(anyhow!(
-                    "Timeout expired waiting for output containing: {}",
-                    text
-                ))
+                return Err(anyhow!("Timeout elapsed waiting for text match"))
             }
             // Something went wrong reading line; bail:
-            Ok(Err(e)) => return Err(anyhow!("Could not read line from stdout: {}", e)),
+            Ok(Err(e)) => {
+                return Err(anyhow!("Could not read line from stdout: {}", e))
+            },
             // No more output; process ended? bail:
             Ok(Ok(None)) => {
                 return Err(anyhow!(
@@ -54,7 +62,7 @@ pub async fn wait_for_line_containing<R: AsyncRead + Unpin>(
             Ok(Ok(Some(line))) => line,
         };
 
-        if line.contains(text) {
+        if is_match(&line) {
             return Ok(line);
         }
     }

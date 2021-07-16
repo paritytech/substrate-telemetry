@@ -16,7 +16,7 @@ async fn feed_sent_version_on_connect() {
     let server = start_server_debug().await;
 
     // Connect a feed:
-    let (_feed_tx, mut feed_rx) = server.get_core().connect().await.unwrap();
+    let (_feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
 
     // Expect a version response of 31:
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
@@ -37,7 +37,7 @@ async fn feed_ping_responded_to_with_pong() {
     let server = start_server_debug().await;
 
     // Connect a feed:
-    let (mut feed_tx, mut feed_rx) = server.get_core().connect().await.unwrap();
+    let (mut feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
 
     // Ping it:
     feed_tx.send_command("ping", "hello!").unwrap();
@@ -65,7 +65,7 @@ async fn multiple_feeds_sent_version_on_connect() {
     // Connect a bunch of feeds:
     let mut feeds = server
         .get_core()
-        .connect_multiple(1000)
+        .connect_multiple_feeds(1000)
         .await
         .unwrap();
 
@@ -107,7 +107,7 @@ async fn lots_of_mute_messages_dont_cause_a_deadlock() {
     let mut nodes = server
         .get_shard(shard_id)
         .unwrap()
-        .connect_multiple(2000) // 1500 of these will be overquota.
+        .connect_multiple_nodes(2000) // 1500 of these will be overquota.
         .await
         .expect("nodes can connect");
 
@@ -139,7 +139,7 @@ async fn lots_of_mute_messages_dont_cause_a_deadlock() {
     // receive any messages back.
     let mut feeds = server
         .get_core()
-        .connect_multiple(1)
+        .connect_multiple_feeds(1)
         .await
         .expect("feeds can connect");
 
@@ -168,7 +168,7 @@ async fn feed_add_and_remove_node() {
     let (mut node_tx, _node_rx) = server
         .get_shard(shard_id)
         .unwrap()
-        .connect()
+        .connect_node()
         .await
         .expect("can connect to shard");
 
@@ -199,7 +199,7 @@ async fn feed_add_and_remove_node() {
     tokio::time::sleep(Duration::from_millis(500)).await;
 
     // Connect a feed.
-    let (_feed_tx, mut feed_rx) = server.get_core().connect().await.unwrap();
+    let (_feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
 
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
     assert!(feed_messages.contains(&FeedMessage::AddedChain {
@@ -230,7 +230,7 @@ async fn feeds_told_about_chain_rename_and_stay_subscribed() {
     let (mut node_tx, _node_rx) = server
         .get_shard(shard_id)
         .unwrap()
-        .connect()
+        .connect_node()
         .await
         .expect("can connect to shard");
 
@@ -255,7 +255,7 @@ async fn feeds_told_about_chain_rename_and_stay_subscribed() {
     node_tx.send_json_text(node_init_msg(1, "Initial chain name", "Node 1")).unwrap();
 
     // Connect a feed and subscribe to the above chain:
-    let (mut feed_tx, mut feed_rx) = server.get_core().connect().await.unwrap();
+    let (mut feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
     feed_tx.send_command("subscribe", "Initial chain name").unwrap();
 
     // Feed is told about the chain, and the node on this chain:
@@ -316,7 +316,7 @@ async fn feed_add_and_remove_shard() {
         let (mut node_tx, _node_rx) = server
             .get_shard(shard_id)
             .unwrap()
-            .connect()
+            .connect_node()
             .await
             .expect("can connect to shard");
 
@@ -345,7 +345,7 @@ async fn feed_add_and_remove_shard() {
     }
 
     // Connect a feed.
-    let (_feed_tx, mut feed_rx) = server.get_core().connect().await.unwrap();
+    let (_feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
 
     // The feed should be told about both of the chains that we've sent info about:
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
@@ -386,7 +386,7 @@ async fn feed_can_subscribe_and_unsubscribe_from_chain() {
     // Start server, add shard, connect node:
     let mut server = start_server_debug().await;
     let shard_id = server.add_shard().await.unwrap();
-    let (mut node_tx, _node_rx) = server.get_shard(shard_id).unwrap().connect().await.unwrap();
+    let (mut node_tx, _node_rx) = server.get_shard(shard_id).unwrap().connect_node().await.unwrap();
 
     // Send a "system connected" message for a few nodes/chains:
     for id in 1..=3 {
@@ -413,7 +413,7 @@ async fn feed_can_subscribe_and_unsubscribe_from_chain() {
     }
 
     // Connect a feed
-    let (mut feed_tx, mut feed_rx) = server.get_core().connect().await.unwrap();
+    let (mut feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
 
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
     assert_contains_matches!(feed_messages, AddedChain { name, node_count: 1 } if name == "Local Testnet 1");
