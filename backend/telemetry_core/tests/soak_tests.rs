@@ -78,7 +78,7 @@ async fn run_soak_test(opts: SoakTestOpts) {
             "ts":"2021-07-12T10:37:47.714666+01:00",
             "payload": {
                 "authority":true,
-                "chain": "Test Chain",
+                "chain": "Polkadot", // <- so that we don't go over quota with lots of nodes.
                 "config":"",
                 "genesis_hash": BlockHash::from_low_u64_ne(1),
                 "implementation":"Substrate Node",
@@ -100,7 +100,7 @@ async fn run_soak_test(opts: SoakTestOpts) {
 
     // Every feed subscribes to the chain above to recv messages about it:
     for (feed_tx, _) in &mut feeds {
-        feed_tx.send_command("subscribe", "Test Chain").unwrap();
+        feed_tx.send_command("subscribe", "Polkadot").unwrap();
     }
 
     // Start sending "update" messages from nodes at time intervals.
