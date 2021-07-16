@@ -9,7 +9,7 @@ use tokio::time::Duration;
 /// because we want to allow the kernel to assign ports and so don't specify a port as an arg.
 pub async fn get_port<R: AsyncRead + Unpin>(reader: R) -> Result<u16, anyhow::Error> {
     let expected_text = "listening on http://127.0.0.1:";
-    wait_for_line_containing(reader, expected_text, Duration::from_secs(60))
+    wait_for_line_containing(reader, expected_text, Duration::from_secs(240))
         .await
         .and_then(|line| {
             let (_, port_str) = line.rsplit_once(expected_text).unwrap();
