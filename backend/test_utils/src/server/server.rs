@@ -58,6 +58,11 @@ pub enum Server {
         core: CoreProcess,
     },
     ConnectToExistingMode {
+        /// The hosts that we can connect to to submit things.
+        submit_hosts: Vec<String>,
+        /// Which host do we use next (we'll cycle around them
+        /// as shards are "added").
+        next_submit_host_idx: usize,
         /// Shard processes that we can connect to.
         shards: DenseMap<ProcessId, ShardProcess>,
         /// Core process that we can connect to.
@@ -151,13 +156,27 @@ impl Server {
     /// Connect a new shard and return a process that you can interact with:
     pub async fn add_shard(&mut self) -> Result<ProcessId, Error> {
         match self {
-            // Always get back the same "shard" in virtual mode; it's just the core anyway.
+            // Always get back the same "virtual" shard; we're always just talking to the core anyway.
             Server::SingleProcessMode { virtual_shard, .. } => {
                 Ok(virtual_shard.id)
             },
-            // We're connecting to existing things; nothing sane to hand back.
-            Server::ConnectToExistingMode { .. } => {
-                Err(Error::CannotAddShard)
+            // We're connecting to an existing process. Find the next host we've been told about
+            // round-robin style and use that as our new virtual shard.
+            Server::ConnectToExistingMode { submit_hosts, next_submit_host_idx, shards, .. } => {
+                let host = match submit_hosts.get(*next_submit_host_idx % submit_hosts.len()) {
+                    Some(host) => host,
+                    None => return Err(Error::CannotAddShard)
+                };
+                *next_submit_host_idx += 1;
+
+                let pid = shards.add_with(|id| Process {
+                    id,
+                    host: format!("{}", host),
+                    handle: None,
+                    _channel_type: PhantomData,
+                });
+
+                Ok(pid)
             },
             // Start a new process and return that.
             Server::ShardAndCoreMode { shard_command, shards, core } => {
@@ -234,18 +253,10 @@ impl Server {
                 }
             },
             StartOpts::ConnectToExisting { feed_host, submit_hosts } => {
-                let mut shards = DenseMap::new();
-                for host in submit_hosts {
-                    shards.add_with(|id| Process {
-                        id,
-                        host,
-                        handle: None,
-                        _channel_type: PhantomData,
-                    });
-                }
-
                 Server::ConnectToExistingMode {
-                    shards,
+                    submit_hosts,
+                    next_submit_host_idx: 0,
+                    shards: DenseMap::new(),
                     core: Process {
                         id: ProcessId(0),
                         host: feed_host,

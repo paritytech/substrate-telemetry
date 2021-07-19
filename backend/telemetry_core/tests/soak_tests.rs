@@ -16,6 +16,38 @@ sudo sysctl -w kern.ipc.maxsockbuf=16777216
 
 In general, if you run into issues, it may be better to run this on a linux
 box; MacOS seems to hit limits quicker in general.
+
+We can profile execution using cargo-flamegraph to learn more about how long
+we spend in each function.
+
+The main thing to do is install it:
+
+```sh
+cargo install flamegraph
+```
+
+Now, start processes running ourselves (so that we can use flamegraph on them):
+
+In one terminal (in the `backend` folder of this repo):
+
+```sh
+sudo cargo flamegraph -o telemetry_core.svg --bin telemetry_core
+```
+
+And in another:
+
+```sh
+sudo cargo flamegraph -o telemetry_shard.svg --bin telemetry_shard
+```
+
+And then, in a third terminal, we can run our general soak test against these:
+
+```sh
+SOAK_TEST_ARGS='--feeds 100 --nodes 100 --shards 4' \
+TELEMETRY_SUBMIT_HOSTS='127.0.0.1:8001' \
+TELEMETRY_FEED_HOST='127.0.0.1:8000' \
+cargo test -- soak_test --ignored --nocapture
+```
 */
 
 use futures::{ StreamExt };
