@@ -21,7 +21,7 @@ fn telemetry_command(bin: &'static str, release_mode: bool) -> Result<Command, s
     let mut workspace_dir = try_find_workspace_dir()?;
     workspace_dir.push("Cargo.toml");
 
-    let mut cmd = Command::new("cargo").arg("flamegraph");
+    let mut cmd = Command::new("cargo").arg("run");
 
     // Release mode?
     if release_mode {
