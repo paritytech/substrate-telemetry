@@ -5,7 +5,7 @@ use common::{
     node_types::BlockHash,
     AssignId,
 };
-use futures::{channel::mpsc, future};
+use futures::{channel::mpsc};
 use futures::{Sink, SinkExt, StreamExt};
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::AtomicU64;
@@ -86,26 +86,33 @@ impl Aggregator {
     pub async fn spawn(telemetry_uri: http::Uri) -> anyhow::Result<Aggregator> {
         let (tx_to_aggregator, rx_from_external) = mpsc::channel(10);
 
-        // Map responses from our connection into messages that will be sent to the aggregator:
-        let tx_from_connection = tx_to_aggregator.clone().with(|msg| {
-            future::ok::<_, mpsc::SendError>(match msg {
-                Message::Connected => ToAggregator::ConnectedToTelemetryCore,
-                Message::Disconnected => ToAggregator::DisconnectedFromTelemetryCore,
-                Message::Data(data) => ToAggregator::FromTelemetryCore(data),
-            })
+        // Establish a resiliant connection to the core (this retries as needed):
+        let (tx_to_telemetry_core, mut rx_from_telemetry_core) =
+            create_ws_connection_to_core(telemetry_uri).await;
+
+        // Forward messages from the telemetry core into the aggregator:
+        let mut tx_to_aggregator2 = tx_to_aggregator.clone();
+        tokio::spawn(async move {
+            while let Some(msg) = rx_from_telemetry_core.next().await {
+                let msg_to_aggregator = match msg {
+                    Message::Connected => ToAggregator::ConnectedToTelemetryCore,
+                    Message::Disconnected => ToAggregator::DisconnectedFromTelemetryCore,
+                    Message::Data(data) => ToAggregator::FromTelemetryCore(data),
+                };
+                if let Err(_) = tx_to_aggregator2.send(msg_to_aggregator).await {
+                    // This will close the ws channels, which themselves log messages.
+                    break
+                }
+            }
         });
 
-        // Establish a resiliant connection to the core (this retries as needed):
-        let tx_to_telemetry_core =
-            create_ws_connection_to_core(tx_from_connection, telemetry_uri).await;
-
-        // Handle any incoming messages in our handler loop:
+        // Start our aggregator loop, handling any incoming messages:
         tokio::spawn(Aggregator::handle_messages(
             rx_from_external,
             tx_to_telemetry_core,
         ));
 
-        // Return a handle to our aggregator:
+        // Return a handle to our aggregator so that we can send in messages to it:
         Ok(Aggregator(Arc::new(AggregatorInternal {
             conn_id: AtomicU64::new(1),
             tx_to_aggregator,

@@ -21,7 +21,7 @@ box; MacOS seems to hit limits quicker in general.
 use futures::{ StreamExt };
 use structopt::StructOpt;
 use test_utils::workspace::start_server_release;
-use test_utils::ws_client::{ SentMessage };
+use common::ws_client::{ SentMessage };
 use serde_json::json;
 use std::time::Duration;
 use std::sync::atomic::{ Ordering, AtomicUsize };

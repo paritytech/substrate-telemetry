@@ -68,7 +68,7 @@ impl FeedMessageSerializer {
 
     /// Return the bytes we've serialized so far and prepare a new buffer. If you're
     /// finished serializing data, prefer [`FeedMessageSerializer::into_finalized`]
-    pub fn finalize(&mut self) -> Option<Vec<u8>> {
+    pub fn finalize(&mut self) -> Option<bytes::Bytes> {
         if self.buffer.is_empty() {
             return None;
         }
@@ -77,17 +77,17 @@ impl FeedMessageSerializer {
 
         let bytes = mem::replace(&mut self.buffer, Vec::with_capacity(BUFCAP));
 
-        Some(bytes)
+        Some(bytes.into())
     }
 
     /// Return the bytes that we've serialized so far, consuming the serializer.
-    pub fn into_finalized(mut self) -> Option<Vec<u8>> {
+    pub fn into_finalized(mut self) -> Option<bytes::Bytes> {
         if self.buffer.is_empty() {
             return None;
         }
 
         self.buffer.push(b']');
-        Some(self.buffer)
+        Some(self.buffer.into())
     }
 }
 

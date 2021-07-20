@@ -254,9 +254,7 @@ where
                     ToFeedWebsocket::Bytes(bytes) => bytes
                 };
 
-                log::debug!("Message to feed: {}", std::str::from_utf8(&bytes).unwrap_or("INVALID UTF8"));
-
-                if let Err(e) = websocket.send(ws::Message::binary(bytes)).await {
+                if let Err(e) = websocket.send(ws::Message::binary(&*bytes)).await {
                     log::warn!("Closing feed websocket due to error: {}", e);
                     break;
                 }

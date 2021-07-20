@@ -209,14 +209,19 @@ dependencies = [
  "bincode",
  "bytes",
  "fnv",
+ "futures",
  "hex",
+ "http",
  "log",
  "num-traits",
  "primitive-types",
  "rustc-hash",
  "serde",
  "serde_json",
+ "soketto",
  "thiserror",
+ "tokio",
+ "tokio-util",
 ]
 
 [[package]]
@@ -1677,6 +1682,7 @@ dependencies = [
  "anyhow",
  "bimap",
  "bincode",
+ "bytes",
  "common",
  "criterion",
  "futures",
@@ -1821,9 +1827,9 @@ checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 
 [[package]]
 name = "tokio"
-version = "1.8.0"
+version = "1.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "570c2eb13b3ab38208130eccd41be92520388791207fde783bda7c1e8ace28d4"
+checksum = "c2602b8af3767c285202012822834005f596c811042315fa7e9f5b12b2a43207"
 dependencies = [
  "autocfg",
  "bytes",

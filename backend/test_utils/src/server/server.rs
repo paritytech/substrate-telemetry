@@ -1,5 +1,5 @@
 use super::{channels, utils};
-use crate::ws_client;
+use common::ws_client;
 use common::{id_type, DenseMap};
 use std::ffi::OsString;
 use std::marker::PhantomData;

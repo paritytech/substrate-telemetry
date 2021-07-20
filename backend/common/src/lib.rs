@@ -3,6 +3,7 @@ pub mod internal_messages;
 pub mod node_message;
 pub mod node_types;
 pub mod time;
+pub mod ws_client;
 
 mod assign_id;
 mod dense_map;

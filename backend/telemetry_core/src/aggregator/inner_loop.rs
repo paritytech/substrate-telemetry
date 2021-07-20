@@ -105,7 +105,7 @@ impl FromStr for FromFeedWebsocket {
 /// The aggregator can these messages back to a feed connection.
 #[derive(Clone, Debug)]
 pub enum ToFeedWebsocket {
-    Bytes(Vec<u8>),
+    Bytes(bytes::Bytes),
 }
 
 /// Instances of this are responsible for handling incoming and

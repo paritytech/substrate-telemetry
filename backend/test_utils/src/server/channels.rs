@@ -1,7 +1,7 @@
 use std::{ops::{Deref, DerefMut}, time::Duration};
 
 use crate::feed_message_de::FeedMessage;
-use crate::ws_client;
+use common::ws_client;
 use futures::{Sink, SinkExt, Stream, StreamExt};
 
 /// Wrap a `ws_client::Sender` with convenient utility methods for shard connections

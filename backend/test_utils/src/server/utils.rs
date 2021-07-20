@@ -1,4 +1,4 @@
-use crate::ws_client;
+use common::ws_client;
 use anyhow::{anyhow, Context};
 use tokio::io::BufReader;
 use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncWrite};
