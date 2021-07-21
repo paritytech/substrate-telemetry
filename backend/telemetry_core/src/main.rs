@@ -244,9 +244,9 @@ where
         // has to wake up 100 times a second to poll things. If we have 1000 feeds, that's 100,000 waksups
         // per second. Even without any work in the loop, that uses a lot of CPU.
         //
-        // To combat this, we add a small wait to reduce how often the select loop can be woken up. We
+        // To combat this, we add a small wait to reduce how often the select loop will be woken up under high load. We
         // buffer messages to feeds so that we do as much work as possible during each wakeup, and if the
-        // wakeup lasts longer than 75ms we don't wait before polling again. This knocks ~80% CPU usage
+        // wakeup lasts longer than 75ms we don't wait before polling again. This knocks ~80% of a CPU worth of usage
         // off on my machine running a soak test with 500 feeds, 4 shards and 100 nodes, doesn't seem to impact
         // memory usage much, and still ensures that messages are delivered in a timely fashion.
         //
