@@ -11,6 +11,7 @@ use aggregator::{
 };
 use bincode::Options;
 use common::internal_messages;
+use common::ready_chunks_all::ReadyChunksAll;
 use futures::{channel::mpsc, SinkExt, StreamExt};
 use simple_logger::SimpleLogger;
 use structopt::StructOpt;
@@ -225,7 +226,8 @@ where
     S: futures::Sink<FromFeedWebsocket, Error = anyhow::Error> + Unpin,
 {
     // unbounded channel so that slow feeds don't block aggregator progress:
-    let (tx_to_feed_conn, mut rx_from_aggregator) = mpsc::unbounded();
+    let (tx_to_feed_conn, rx_from_aggregator) = mpsc::unbounded();
+    let mut rx_from_aggregator_chunks = ReadyChunksAll::new(rx_from_aggregator);
 
     // Tell the aggregator about this new connection, and give it a way to send messages to us:
     let init_msg = FromFeedWebsocket::Initialize {
@@ -238,23 +240,38 @@ where
 
     // Loop, handling new messages from the shard or from the aggregator:
     loop {
-        tokio::select! {
+        // Without any special handling, if messages come in every ~10ms to each feed, the select! loop
+        // has to wake up 100 times a second to poll things. If we have 1000 feeds, that's 100,000 waksups
+        // per second. Even without any work in the loop, that uses a lot of CPU.
+        //
+        // To combat this, we add a small wait to reduce how often the select loop can be woken up. We
+        // buffer messages to feeds so that we do as much work as possible during each wakeup, and if the
+        // wakeup lasts longer than 75ms we don't wait before polling again. This knocks ~80% CPU usage
+        // off on my machine running a soak test with 500 feeds, 4 shards and 100 nodes, doesn't seem to impact
+        // memory usage much, and still ensures that messages are delivered in a timely fashion.
+        //
+        // Increasing the wait to 100ms or more doesn't seem to have much more of a positive impact anyway.
+        let debounce = tokio::time::sleep_until(tokio::time::Instant::now() + std::time::Duration::from_millis(75));
 
+        tokio::select! {
             // AGGREGATOR -> FRONTEND (buffer messages to the UI)
-            msg = rx_from_aggregator.next() => {
+            msgs = rx_from_aggregator_chunks.next() => {
                 // End the loop when connection from aggregator ends:
-                let msg = match msg {
-                    Some(msg) => msg,
+                let msgs = match msgs {
+                    Some(msgs) => msgs,
                     None => break
                 };
 
-                // Send messages to the client (currently the only message is
-                // pre-serialized bytes that we send as binary):
-                let bytes = match msg {
-                    ToFeedWebsocket::Bytes(bytes) => bytes
-                };
+                // There is only one message type at the mo; bytes to send
+                // to the websocket. collect them all up to dispatch in one shot.
+                let all_ws_msgs = msgs.into_iter().map(|msg| {
+                    let bytes = match msg {
+                        ToFeedWebsocket::Bytes(bytes) => bytes
+                    };
+                    Ok(ws::Message::binary(&*bytes))
+                });
 
-                if let Err(e) = websocket.send(ws::Message::binary(&*bytes)).await {
+                if let Err(e) = websocket.send_all(&mut futures::stream::iter(all_ws_msgs)).await {
                     log::warn!("Closing feed websocket due to error: {}", e);
                     break;
                 }
@@ -302,6 +319,8 @@ where
                 }
             }
         }
+
+        debounce.await;
     }
 
     // loop ended; give socket back to parent:
