@@ -61,7 +61,6 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
     let aggregator = Aggregator::spawn(opts.denylist).await?;
     let server = http_utils::start_server(opts.socket, move |addr, req| {
         let aggregator = aggregator.clone();
-        println!("REQUEST: {:?}", (req.method(), req.uri().path()));
         async move {
             match (req.method(), req.uri().path().trim_end_matches('/')) {
                 // Check that the server is up and running:
