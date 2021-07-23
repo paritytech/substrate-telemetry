@@ -49,7 +49,7 @@ pub enum FromWebsocket {
     /// Tell the aggregator about a new node.
     Add {
         message_id: node_message::NodeMessageId,
-        ip: Option<std::net::IpAddr>,
+        ip: std::net::IpAddr,
         node: common::node_types::NodeDetails,
         genesis_hash: BlockHash,
     },

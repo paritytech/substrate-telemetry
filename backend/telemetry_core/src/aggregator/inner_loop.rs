@@ -36,7 +36,7 @@ pub enum FromShardWebsocket {
     /// Tell the aggregator about a new node.
     Add {
         local_id: ShardNodeId,
-        ip: Option<std::net::IpAddr>,
+        ip: std::net::IpAddr,
         node: common::node_types::NodeDetails,
         genesis_hash: common::node_types::BlockHash,
     },
@@ -277,7 +277,7 @@ impl InnerLoop {
 
                         // Ask for the grographical location of the node.
                         // Currently we only geographically locate IPV4 addresses so ignore IPV6.
-                        if let Some(IpAddr::V4(ip_v4)) = ip {
+                        if let IpAddr::V4(ip_v4) = ip {
                             let _ = self.tx_to_locator.unbounded_send((node_id, ip_v4));
                         }
                     }

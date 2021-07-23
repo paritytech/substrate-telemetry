@@ -20,7 +20,7 @@ pub enum FromShardAggregator {
     /// Get information about a new node, including it's IP
     /// address and chain genesis hash.
     AddNode {
-        ip: Option<IpAddr>,
+        ip: IpAddr,
         node: NodeDetails,
         local_id: ShardNodeId,
         genesis_hash: BlockHash,

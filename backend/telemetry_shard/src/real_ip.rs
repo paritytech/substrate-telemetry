@@ -1,10 +1,7 @@
 use std::net::{IpAddr, SocketAddr};
-use warp::filters::addr;
-use warp::filters::header;
-use warp::Filter;
 
 /**
-A warp filter to extract the "real" IP address of the connection by looking at headers
+Extract the "real" IP address of the connection by looking at headers
 set by proxies (this is inspired by Actix Web's implementation of the feature).
 
 First, check for the standardised "Forwarded" header. This looks something like:
@@ -21,28 +18,28 @@ appending one to the end. So, take the first of these if it exists.
 If still no luck, look for the X-Real-IP header, which we expect to contain a single IP address.
 
 If that _still_ doesn't work, fall back to the socket address of the connection.
-
-Return `None` if all of this fails to yield an address.
 */
-pub fn real_ip() -> impl warp::Filter<Extract = (Option<IpAddr>,), Error = warp::Rejection> + Clone
-{
-    header::optional("forwarded")
-        .and(header::optional("x-forwarded-for"))
-        .and(header::optional("x-real-ip"))
-        .and(addr::remote())
-        .map(pick_best_ip_from_options)
+pub fn real_ip(addr: SocketAddr, headers: &hyper::HeaderMap) -> IpAddr {
+    let forwarded = headers.get("forwarded").and_then(header_as_str);
+    let forwarded_for = headers.get("x-forwarded-for").and_then(header_as_str);
+    let real_ip = headers.get("x-real-ip").and_then(header_as_str);
+    pick_best_ip_from_options(forwarded, forwarded_for, real_ip, addr)
+}
+
+fn header_as_str(value: &hyper::header::HeaderValue) -> Option<&str> {
+    std::str::from_utf8(value.as_bytes()).ok()
 }
 
 fn pick_best_ip_from_options(
     // Forwarded header value (if present)
-    forwarded: Option<String>,
+    forwarded: Option<&str>,
     // X-Forwarded-For header value (if present)
-    forwarded_for: Option<String>,
+    forwarded_for: Option<&str>,
     // X-Real-IP header value (if present)
-    real_ip: Option<String>,
+    real_ip: Option<&str>,
     // socket address (if known)
-    addr: Option<SocketAddr>,
-) -> Option<IpAddr> {
+    addr: SocketAddr,
+) -> IpAddr {
     let realip = forwarded
         .as_ref()
         .and_then(|val| get_first_addr_from_forwarded_header(val))
@@ -65,7 +62,7 @@ fn pick_best_ip_from_options(
                 .ok()
         })
         // Fall back to local IP address if the above fails
-        .or(addr.map(|a| a.ip()));
+        .unwrap_or(addr.ip());
 
     realip
 }
