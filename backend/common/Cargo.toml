@@ -6,12 +6,15 @@ edition = "2018"
 license = "GPL-3.0"
 
 [dependencies]
+anyhow = "1.0.42"
+base64 = { default-features = false, features = ["alloc"], version = "0.13" }
 bimap = "0.6.1"
 bytes = "1.0.1"
 fnv = "1.0.7"
 futures = "0.3.15"
 hex = "0.4.3"
 http = "0.2.4"
+hyper = { version = "0.14.11", features = ["full"] }
 log = "0.4"
 num-traits = "0.2"
 pin-project-lite = "0.2.7"
@@ -19,6 +22,7 @@ primitive-types = { version = "0.9.0", features = ["serde"] }
 rustc-hash = "1.1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", features = ["raw_value"] }
+sha-1 = { default-features = false, version = "0.9" }
 soketto = "0.6.0"
 thiserror = "1.0.24"
 tokio = { version = "1.8.2", features = ["full"] }

@@ -5,6 +5,7 @@ pub mod node_types;
 pub mod time;
 pub mod ws_client;
 pub mod ready_chunks_all;
+pub mod http_utils;
 
 mod assign_id;
 mod dense_map;
