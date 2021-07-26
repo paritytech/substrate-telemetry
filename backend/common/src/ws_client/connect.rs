@@ -33,6 +33,11 @@ impl Connection {
     /// Get hold of send and receive channels for this connection.
     /// These channels are cancel-safe.
     ///
+    /// This spawns a couple of tasks for pulling/pushing messages onto the
+    /// connection, and so messages will be pushed onto the receiving channel
+    /// without any further polling. use [`Connection::into_raw`] if you need
+    /// more precise control over when messages are pulled from the socket.
+    ///
     /// # Panics
     ///
     /// This will panic if not called within the context of a tokio runtime.
