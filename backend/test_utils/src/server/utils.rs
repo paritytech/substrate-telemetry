@@ -79,7 +79,7 @@ pub async fn connect_multiple_to_uri(
     // (Side note: on Ubuntu the concurrency seemed to be no issue up to at least 10k connections).
     let mut sockets = vec![];
     for _ in 0..num_connections {
-        sockets.push(ws_client::connect(uri).await?);
+        sockets.push(ws_client::connect(uri).await?.into_channels());
     }
     Ok(sockets)
 }

@@ -41,7 +41,8 @@ where
             // to/from the core. If the external channels break, we end for good. If the internal
             // channels break, we loop around and try connecting again.
             match ws_client::connect(&telemetry_uri).await {
-                Ok((tx_to_core, mut rx_from_core)) => {
+                Ok(connection) => {
+                    let (tx_to_core, mut rx_from_core) = connection.into_channels();
                     is_connected = true;
                     let mut tx_out = tx_out.clone();
 

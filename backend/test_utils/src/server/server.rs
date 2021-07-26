@@ -339,18 +339,26 @@ impl<Channel> Process<Channel> {
     }
 }
 
+/// Establish a raw WebSocket connection (not cancel-safe)
+async fn connect_to_uri_raw(uri: &http::Uri) -> Result<(ws_client::RawSender, ws_client::RawReceiver), Error> {
+    ws_client::connect(uri)
+        .await
+        .map(|c| c.into_raw())
+        .map_err(|e| e.into())
+}
+
 impl<Send: From<ws_client::Sender>, Recv: From<ws_client::Receiver>> Process<(Send, Recv)> {
     /// Establish a connection to the process
-    async fn connect_to_uri(&self, uri: &http::Uri) -> Result<(Send, Recv), Error> {
+    async fn connect_to_uri(uri: &http::Uri) -> Result<(Send, Recv), Error> {
         ws_client::connect(uri)
             .await
+            .map(|c| c.into_channels())
             .map(|(s, r)| (s.into(), r.into()))
             .map_err(|e| e.into())
     }
 
     /// Establish multiple connections to the process
     async fn connect_multiple_to_uri(
-        &self,
         uri: &http::Uri,
         num_connections: usize,
     ) -> Result<Vec<(Send, Recv)>, Error> {
@@ -362,30 +370,42 @@ impl<Send: From<ws_client::Sender>, Recv: From<ws_client::Receiver>> Process<(Se
 }
 
 impl ShardProcess {
+    /// Establish a raw connection to the process
+    pub async fn connect_node_raw(&self) -> Result<(ws_client::RawSender, ws_client::RawReceiver), Error> {
+        let uri = format!("http://{}/submit", self.host).parse()?;
+        connect_to_uri_raw(&uri).await
+    }
+
     /// Establish a connection to the process
     pub async fn connect_node(&self) -> Result<(channels::ShardSender, channels::ShardReceiver), Error> {
         let uri = format!("http://{}/submit", self.host).parse()?;
-        self.connect_to_uri(&uri).await
+        Process::connect_to_uri(&uri).await
     }
 
     /// Establish multiple connections to the process
     pub async fn connect_multiple_nodes(&self, num_connections: usize) -> Result<Vec<(channels::ShardSender, channels::ShardReceiver)>, Error> {
         let uri = format!("http://{}/submit", self.host).parse()?;
-        self.connect_multiple_to_uri(&uri, num_connections).await
+        Process::connect_multiple_to_uri(&uri, num_connections).await
     }
 }
 
 impl CoreProcess {
+    /// Establish a raw connection to the process
+    pub async fn connect_feed_raw(&self) -> Result<(ws_client::RawSender, ws_client::RawReceiver), Error> {
+        let uri = format!("http://{}/feed", self.host).parse()?;
+        connect_to_uri_raw(&uri).await
+    }
+
     /// Establish a connection to the process
     pub async fn connect_feed(&self) -> Result<(channels::FeedSender, channels::FeedReceiver), Error> {
         let uri = format!("http://{}/feed", self.host).parse()?;
-        self.connect_to_uri(&uri).await
+        Process::connect_to_uri(&uri).await
     }
 
     /// Establish multiple connections to the process
     pub async fn connect_multiple_feeds(&self, num_connections: usize) -> Result<Vec<(channels::FeedSender, channels::FeedReceiver)>, Error> {
         let uri = format!("http://{}/feed", self.host).parse()?;
-        self.connect_multiple_to_uri(&uri, num_connections).await
+        Process::connect_multiple_to_uri(&uri, num_connections).await
     }
 }
 
