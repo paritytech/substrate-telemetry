@@ -67,8 +67,8 @@ impl Connection {
                 };
 
                 let msg = match message_data {
-                    soketto::Data::Text(_) => Ok(RecvMessage::Binary(data)),
-                    soketto::Data::Binary(_) => String::from_utf8(data)
+                    soketto::Data::Binary(_) => Ok(RecvMessage::Binary(data)),
+                    soketto::Data::Text(_) => String::from_utf8(data)
                         .map(|s| RecvMessage::Text(s))
                         .map_err(|e| e.into()),
                 };

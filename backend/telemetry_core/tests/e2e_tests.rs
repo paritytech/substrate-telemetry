@@ -6,7 +6,7 @@ use std::time::Duration;
 use test_utils::{
     assert_contains_matches,
     feed_message_de::{FeedMessage, NodeDetails},
-    workspace::start_server_debug
+    workspace::{ start_server, CoreOpts, start_server_debug }
 };
 
 /// The simplest test we can run; the main benefit of this test (since we check similar)
@@ -472,6 +472,67 @@ async fn feed_can_subscribe_and_unsubscribe_from_chain() {
 
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
     assert_ne!(feed_messages.len(), 0);
+
+    // Tidy up:
+    server.shutdown().await;
+}
+
+/// Feeds will be disconnected if they can't receive messages quickly enough.
+#[tokio::test]
+async fn slow_feeds_are_disconnected() {
+    // Start server in release mode with a 1s feed timeout (to make the test run faster):
+    let mut server = start_server(
+        true,
+        CoreOpts { feed_timeout: Some(1) }
+    ).await;
+
+    // Give us a shard to talk to:
+    let shard_id = server.add_shard().await.unwrap();
+    let (mut node_tx, _node_rx) = server.get_shard(shard_id).unwrap().connect_node().await.unwrap();
+
+    // Add a load of nodes from this shard so there's plenty of data to give to a feed.
+    // We want to exhaust any buffers between core and feed (eg BufWriters).
+    for n in 1..50_000 {
+        node_tx.send_json_text(json!({
+            "id":n,
+            "ts":"2021-07-12T10:37:47.714666+01:00",
+            "payload": {
+                "authority":true,
+                "chain":"Polkadot",
+                "config":"",
+                "genesis_hash": BlockHash::from_low_u64_ne(1),
+                "implementation":"Substrate Node",
+                "msg":"system.connected",
+                "name": format!("Alice {}", n),
+                "network_id":"12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp",
+                "startup_time":"1625565542717",
+                "version":"2.0.0-07a1af348-aarch64-macos"
+            }
+        })).unwrap();
+    }
+
+    // Connect a raw feed so that we can control how fast we consume data from the websocket
+    let (mut raw_feed_tx, mut raw_feed_rx) = server.get_core().connect_feed_raw().await.unwrap();
+
+    // Subscribe the feed:
+    raw_feed_tx.send_text("subscribe:Polkadot").await.unwrap();
+
+    // Wait a little.. the feed hasn't been receiving messages so it should
+    // be booted after ~a second.
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    let mut v = Vec::new();
+
+    // Drain anything out and expect to hit a "closed" error.
+    let res = loop {
+        if let Err(e) = raw_feed_rx.receive_data(&mut v).await {
+            break e
+        }
+    };
+    assert!(
+        matches!(res, soketto::connection::Error::Closed),
+        "Should be Closed error, but is {:?}", res
+    );
 
     // Tidy up:
     server.shutdown().await;
