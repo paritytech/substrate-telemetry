@@ -89,8 +89,8 @@ async fn multiple_feeds_sent_version_on_connect() {
     server.shutdown().await;
 }
 
-/// When a lot (> ~700 in this case) of nodes are added, the chain becomes overquota.
-/// this leads to a load of messages being sent back to the shard. If bounded channels
+/// When a lot of nodes are added, the chain becomes overquota.
+/// This leads to a load of messages being sent back to the shard. If bounded channels
 /// are used to send messages back to the shard, it's possible that we get into a situation
 /// where the shard is waiting trying to send the next "add node" message, while the
 /// telemetry core is waiting trying to send up to the shard the next "mute node" message,
@@ -134,22 +134,19 @@ async fn lots_of_mute_messages_dont_cause_a_deadlock() {
     // trying to have the aggregator send out feed messages.
     tokio::time::sleep(std::time::Duration::from_millis(500)).await;
 
-    // Start a bunch of feeds. If deadlock has happened, none of them will
-    // receive any messages back.
-    let mut feeds = server
+    // Start a feed. If deadlock has happened, it won't receive
+    // any messages.
+    let (_, mut feed_rx) = server
         .get_core()
-        .connect_multiple_feeds(1)
+        .connect_feed()
         .await
-        .expect("feeds can connect");
-
-    // Wait to see whether we get anything back:
-    let msgs_fut =
-        futures::future::join_all(feeds.iter_mut().map(|(_, rx)| rx.recv_feed_messages()));
+        .expect("feed can connect");
 
     // Give up after a timeout:
-    tokio::time::timeout(Duration::from_secs(10), msgs_fut)
+    tokio::time::timeout(Duration::from_secs(10), feed_rx.recv_feed_messages())
         .await
-        .expect("should not hit timeout waiting for messages (deadlock has happened)");
+        .expect("should not hit timeout waiting for messages (deadlock has happened)")
+        .expect("shouldn't run into error receiving messages");
 }
 
 /// If a node is added, a connecting feed should be told about the new chain.

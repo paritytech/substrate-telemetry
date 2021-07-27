@@ -233,8 +233,8 @@ impl FeedReceiver {
     /// Wait for the next set of feed messages to arrive.
     /// See `recv_feed_messages_once_timeout`.
     pub async fn recv_feed_messages_once(&mut self) -> Result<Vec<FeedMessage>, anyhow::Error> {
-        // Default to a timeout of 30 seconds, meaning that the test will eventually end,
-        self.recv_feed_messages_once_timeout(Duration::from_secs(30))
+        // This will never practically end; use the `timeout` version explciitly if you want that.
+        self.recv_feed_messages_once_timeout(Duration::from_secs(u64::MAX))
             .await
     }
 
@@ -277,8 +277,8 @@ impl FeedReceiver {
     /// Wait for feed messages until nothing else arrives in a timely fashion.
     /// See `recv_feed_messages_timeout`.
     pub async fn recv_feed_messages(&mut self) -> Result<Vec<FeedMessage>, anyhow::Error> {
-        // Default to a timeout of 30 seconds, meaning that the test will eventually end,
-        self.recv_feed_messages_timeout(Duration::from_secs(30))
+        // This will never practically end; use the `timeout` version explciitly if you want that.
+        self.recv_feed_messages_timeout(Duration::from_secs(u64::MAX))
             .await
     }
 }
