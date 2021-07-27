@@ -1,7 +1,8 @@
 variables:
   CONTAINER_REGISTRY:     "docker.io/parity"
+  CONTAINER_REPO:         "substrate-telemetry-backend"
   KUBE_NAMESPACE:         "substrate-telemetry"
-  IMAGE_FULL_NAME:        "${CONTAINER_REGISTRY}/${KUBE_NAMESPACE}:${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}"
+  IMAGE_FULL_NAME:        "${CONTAINER_REGISTRY}/${CONTAINER_REPO}:${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}"
 
 stages:
   - dockerize
@@ -24,7 +25,7 @@ stages:
     - helm --debug template 
         --create-namespace
         --namespace $KUBE_NAMESPACE
-        --set image.repository="${CONTAINER_REGISTRY}/${KUBE_NAMESPACE}"
+        --set image.repository="${CONTAINER_REGISTRY}/${CONTAINER_REPO}"
         --set image.tag="${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}"
         $KUBE_NAMESPACE ./helm/
     # install the chart into the relevant cluster
@@ -34,7 +35,7 @@ stages:
         --timeout 120s
         --create-namespace
         --namespace $KUBE_NAMESPACE
-        --set image.repository="${CONTAINER_REGISTRY}/${KUBE_NAMESPACE}"
+        --set image.repository="${CONTAINER_REGISTRY}/${CONTAINER_REPO}"
         --set image.tag="${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}"
         $KUBE_NAMESPACE ./helm/
   when:                   manual
@@ -50,7 +51,7 @@ dockerize:
       --format=docker
       --tag "$IMAGE_FULL_NAME" ./backend/
     - echo ${Docker_Hub_Pass_Parity} |
-        buildah login --username ${Docker_Hub_User_Parity} --password-stdin ${CONTAINER_REGISTRY}
+        buildah login --username ${Docker_Hub_User_Parity} --password-stdin docker.io
     - buildah push --format=v2s2 "$IMAGE_FULL_NAME"
   tags:
     - kubernetes-parity-build
