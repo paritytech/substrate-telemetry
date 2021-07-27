@@ -208,12 +208,13 @@ impl FeedReceiver {
     /// Prefer [`FeedReceiver::recv_feed_messages`]; tests should generally be
     /// robust in assuming that messages may not all be delivered at once (unless we are
     /// specifically testing which messages are buffered together).
-    pub async fn recv_feed_messages_once(&mut self) -> Result<Vec<FeedMessage>, anyhow::Error> {
-        let msg = self
-            .0
-            .next()
-            .await
-            .ok_or_else(|| anyhow::anyhow!("Stream closed: no more messages"))??;
+    pub async fn recv_feed_messages_once_timeout(&mut self, timeout: Duration) -> Result<Vec<FeedMessage>, anyhow::Error> {
+        let msg = match tokio::time::timeout(timeout, self.0.next()).await {
+            // Timeout elapsed; no messages back:
+            Err(_) => return Ok(Vec::new()),
+            // Something back; Complain if error no stream closed:
+            Ok(res) => res.ok_or_else(|| anyhow::anyhow!("Stream closed: no more messages"))??
+        };
 
         match msg {
             ws_client::RecvMessage::Binary(data) => {
@@ -227,11 +228,26 @@ impl FeedReceiver {
         }
     }
 
+    /// Wait for the next set of feed messages to arrive.
+    /// See `recv_feed_messages_once_timeout`.
+    pub async fn recv_feed_messages_once(&mut self) -> Result<Vec<FeedMessage>, anyhow::Error> {
+        // Default to a timeout of 30 seconds, meaning that the test will eventually end,
+        self.recv_feed_messages_once_timeout(Duration::from_secs(30)).await
+    }
+
     /// Wait for feed messages to be sent back, building up a list of output messages until
     /// the channel goes quiet for a short while.
-    pub async fn recv_feed_messages(&mut self) -> Result<Vec<FeedMessage>, anyhow::Error> {
+    ///
+    /// If no new messages are received within the timeout given, bail with whatever we have so far.
+    /// This differs from `recv_feed_messages` and `recv_feed_messages_once`, which will block indefinitely
+    /// waiting for something to arrive
+    pub async fn recv_feed_messages_timeout(&mut self, timeout: Duration) -> Result<Vec<FeedMessage>, anyhow::Error> {
         // Block as long as needed for messages to start coming in:
-        let mut feed_messages = self.recv_feed_messages_once().await?;
+        let mut feed_messages = match tokio::time::timeout(timeout, self.recv_feed_messages_once()).await {
+            Ok(msgs) => msgs?,
+            Err(_) => return Ok(Vec::new()),
+        };
+
         // Then, loop a little to make sure we catch any additional messages that are sent soon after:
         loop {
             match tokio::time::timeout(Duration::from_millis(250), self.recv_feed_messages_once())
@@ -249,5 +265,12 @@ impl FeedReceiver {
                 Ok(Err(e)) => break Err(e),
             }
         }
+    }
+
+    /// Wait for feed messages until nothing else arrives in a timely fashion.
+    /// See `recv_feed_messages_timeout`.
+    pub async fn recv_feed_messages(&mut self) -> Result<Vec<FeedMessage>, anyhow::Error> {
+        // Default to a timeout of 30 seconds, meaning that the test will eventually end,
+        self.recv_feed_messages_timeout(Duration::from_secs(30)).await
     }
 }

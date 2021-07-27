@@ -6,7 +6,7 @@ use std::time::Duration;
 use test_utils::{
     assert_contains_matches,
     feed_message_de::{FeedMessage, NodeDetails},
-    workspace::{ start_server, CoreOpts, start_server_debug }
+    workspace::{ start_server, CoreOpts, ShardOpts, start_server_debug }
 };
 
 /// The simplest test we can run; the main benefit of this test (since we check similar)
@@ -483,7 +483,10 @@ async fn slow_feeds_are_disconnected() {
     // Start server in release mode with a 1s feed timeout (to make the test run faster):
     let mut server = start_server(
         true,
-        CoreOpts { feed_timeout: Some(1) }
+        // Timeout faster so the test can be quicker:
+        CoreOpts { feed_timeout: Some(1) },
+        // Allow us to send more messages in more easily:
+        ShardOpts { max_nodes_per_connection: Some(100_000) }
     ).await;
 
     // Give us a shard to talk to:
@@ -491,7 +494,9 @@ async fn slow_feeds_are_disconnected() {
     let (mut node_tx, _node_rx) = server.get_shard(shard_id).unwrap().connect_node().await.unwrap();
 
     // Add a load of nodes from this shard so there's plenty of data to give to a feed.
-    // We want to exhaust any buffers between core and feed (eg BufWriters).
+    // We want to exhaust any buffers between core and feed (eg BufWriters). If the number
+    // is too low, data will happily be sent into a buffer and the connection won't need to
+    // be closed.
     for n in 1..50_000 {
         node_tx.send_json_text(json!({
             "id":n,
@@ -521,18 +526,117 @@ async fn slow_feeds_are_disconnected() {
     // be booted after ~a second.
     tokio::time::sleep(Duration::from_secs(2)).await;
 
-    let mut v = Vec::new();
+    // Drain anything out and expect to hit a "closed" error, rather than get stuck
+    // waiting to receive mroe data (or see some other error).
+    loop {
+        let mut v = Vec::new();
+        let data = tokio::time::timeout(
+            Duration::from_secs(1),
+            raw_feed_rx.receive_data(&mut v)
+        ).await;
 
-    // Drain anything out and expect to hit a "closed" error.
-    let res = loop {
-        if let Err(e) = raw_feed_rx.receive_data(&mut v).await {
-            break e
+        match data {
+            Ok(Ok(_)) => {
+                continue; // Drain data
+            }
+            Ok(Err(soketto::connection::Error::Closed)) => {
+                break; // End loop; success!
+            },
+            Ok(Err(e)) => {
+                panic!("recv should be closed but instead we saw this error: {}", e);
+            },
+            Err(_) => {
+                panic!("recv should be closed but seems to be happy waiting for more data");
+            },
         }
-    };
-    assert!(
-        matches!(res, soketto::connection::Error::Closed),
-        "Should be Closed error, but is {:?}", res
-    );
+    }
+
+    // Tidy up:
+    server.shutdown().await;
+}
+
+/// If something connects to the `/submit` endpoint, there is a limit to the number
+/// of different messags IDs it can send telemetry about, to prevent a malicious actor from
+/// spamming a load of message IDs and exhausting our memory.
+#[tokio::test]
+async fn max_nodes_per_connection_is_enforced() {
+    let mut server = start_server(
+        false,
+        CoreOpts::default(),
+        // Limit max nodes per connection to 2; any other msgs should be ignored.
+        ShardOpts { max_nodes_per_connection: Some(2) }
+    ).await;
+
+    // Connect to a shard
+    let shard_id = server.add_shard().await.unwrap();
+    let (mut node_tx, _node_rx) = server.get_shard(shard_id).unwrap().connect_node().await.unwrap();
+
+    // Connect a feed.
+    let (mut feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
+
+    // We'll send these messages from the node:
+    let json_msg = |n| json!({
+        "id":n,
+        "ts":"2021-07-12T10:37:47.714666+01:00",
+        "payload": {
+            "authority":true,
+            "chain":"Test Chain",
+            "config":"",
+            "genesis_hash": BlockHash::from_low_u64_ne(1),
+            "implementation":"Polkadot",
+            "msg":"system.connected",
+            "name": format!("Alice {}", n),
+            "network_id":"12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp",
+            "startup_time":"1625565542717",
+            "version":"2.0.0-07a1af348-aarch64-macos"
+        }
+    });
+
+    // First message ID should lead to feed messages:
+    node_tx.send_json_text(json_msg(1)).unwrap();
+    assert_ne!(feed_rx.recv_feed_messages_timeout(Duration::from_secs(1)).await.unwrap().len(), 0);
+
+    // Second message ID should lead to feed messages as well:
+    node_tx.send_json_text(json_msg(2)).unwrap();
+    assert_ne!(feed_rx.recv_feed_messages_timeout(Duration::from_secs(1)).await.unwrap().len(), 0);
+
+    // Third message ID should be ignored:
+    node_tx.send_json_text(json_msg(3)).unwrap();
+    assert_eq!(feed_rx.recv_feed_messages_timeout(Duration::from_secs(1)).await.unwrap().len(), 0);
+
+    // Forth message ID should be ignored as well:
+    node_tx.send_json_text(json_msg(4)).unwrap();
+    assert_eq!(feed_rx.recv_feed_messages_timeout(Duration::from_secs(1)).await.unwrap().len(), 0);
+
+    // (now that the chain "Test Chain" is known about, subscribe to it for update messages.
+    // This wasn't needed to receive messages re the above since everybody hears about node
+    // count changes)
+    feed_tx.send_command("subscribe", "Test Chain").unwrap();
+    feed_rx.recv_feed_messages().await.unwrap();
+
+    // Update about non-ignored IDs should still lead to feed output:
+
+    node_tx.send_json_text(json!(
+        {"id":1, "payload":{ "bandwidth_download":576,"bandwidth_upload":576,"msg":"system.interval","peers":1},"ts":"2021-07-12T10:38:48.330433+01:00" }
+    )).unwrap();
+    assert_ne!(feed_rx.recv_feed_messages_timeout(Duration::from_secs(1)).await.unwrap().len(), 0);
+
+    node_tx.send_json_text(json!(
+        {"id":2, "payload":{ "bandwidth_download":576,"bandwidth_upload":576,"msg":"system.interval","peers":1},"ts":"2021-07-12T10:38:48.330433+01:00" }
+    )).unwrap();
+    assert_ne!(feed_rx.recv_feed_messages_timeout(Duration::from_secs(1)).await.unwrap().len(), 0);
+
+    // Updates about ignored IDs are still ignored:
+
+    node_tx.send_json_text(json!(
+        {"id":3, "payload":{ "bandwidth_download":576,"bandwidth_upload":576,"msg":"system.interval","peers":1},"ts":"2021-07-12T10:38:48.330433+01:00" }
+    )).unwrap();
+    assert_eq!(feed_rx.recv_feed_messages_timeout(Duration::from_secs(1)).await.unwrap().len(), 0);
+
+    node_tx.send_json_text(json!(
+        {"id":4, "payload":{ "bandwidth_download":576,"bandwidth_upload":576,"msg":"system.interval","peers":1},"ts":"2021-07-12T10:38:48.330433+01:00" }
+    )).unwrap();
+    assert_eq!(feed_rx.recv_feed_messages_timeout(Duration::from_secs(1)).await.unwrap().len(), 0);
 
     // Tidy up:
     server.shutdown().await;
