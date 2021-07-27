@@ -28,7 +28,8 @@ fn telemetry_command(bin: &'static str, release_mode: bool) -> Result<Command, s
         cmd = cmd.arg("--release");
     }
 
-    cmd = cmd.arg("--bin")
+    cmd = cmd
+        .arg("--bin")
         .arg(bin)
         .arg("--manifest-path")
         .arg(workspace_dir)

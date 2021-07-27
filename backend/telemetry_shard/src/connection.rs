@@ -1,7 +1,7 @@
+use bincode::Options;
+use common::ws_client;
 use futures::channel::mpsc;
 use futures::{SinkExt, StreamExt};
-use common::ws_client;
-use bincode::Options;
 
 #[derive(Clone, Debug)]
 pub enum Message<Out> {
@@ -49,7 +49,7 @@ where
                     if let Err(e) = tx_out.send(Message::Connected).await {
                         // If receiving end is closed, bail now.
                         log::warn!("Aggregator is no longer receiving messages from core; disconnecting (permanently): {}", e);
-                        return
+                        return;
                     }
 
                     // Loop, forwarding messages to and from the core until something goes wrong.
@@ -103,7 +103,7 @@ where
                             }
                         };
                     }
-                },
+                }
                 Err(connect_err) => {
                     // Issue connecting? Wait and try again on the next loop iteration.
                     log::error!(

@@ -5,21 +5,22 @@ use tokio::net::TcpStream;
 use tokio_util::compat::TokioAsyncReadCompatExt;
 
 use super::{
-    sender::{ Sender, SentMessage, SentMessageInternal },
-    receiver::{ Receiver, RecvMessage }
+    receiver::{Receiver, RecvMessage},
+    sender::{Sender, SentMessage, SentMessageInternal},
 };
 
 /// The send side of a Soketto WebSocket connection
 pub type RawSender = soketto::connection::Sender<tokio_util::compat::Compat<tokio::net::TcpStream>>;
 
 /// The receive side of a Soketto WebSocket connection
-pub type RawReceiver = soketto::connection::Receiver<tokio_util::compat::Compat<tokio::net::TcpStream>>;
+pub type RawReceiver =
+    soketto::connection::Receiver<tokio_util::compat::Compat<tokio::net::TcpStream>>;
 
 /// A websocket connection. From this, we can either expose the raw connection
 /// or expose a cancel-safe interface to it.
 pub struct Connection {
     tx: soketto::connection::Sender<tokio_util::compat::Compat<tokio::net::TcpStream>>,
-    rx: soketto::connection::Receiver<tokio_util::compat::Compat<tokio::net::TcpStream>>
+    rx: soketto::connection::Receiver<tokio_util::compat::Compat<tokio::net::TcpStream>>,
 }
 
 impl Connection {
@@ -109,7 +110,7 @@ impl Connection {
                             );
                             break;
                         }
-                    },
+                    }
                     SentMessageInternal::Message(SentMessage::StaticText(s)) => {
                         if let Err(e) = ws_to_connection.send_text(s).await {
                             log::error!(
@@ -127,7 +128,7 @@ impl Connection {
                             );
                             break;
                         }
-                    },
+                    }
                     SentMessageInternal::Close => {
                         if let Err(e) = ws_to_connection.close().await {
                             log::error!("Error attempting to close connection: {}", e);
@@ -185,6 +186,6 @@ pub async fn connect(uri: &http::Uri) -> Result<Connection, ConnectError> {
 
     Ok(Connection {
         tx: ws_to_connection,
-        rx: ws_from_connection
+        rx: ws_from_connection,
     })
 }

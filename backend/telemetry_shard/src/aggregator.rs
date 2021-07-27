@@ -5,7 +5,7 @@ use common::{
     node_types::BlockHash,
     AssignId,
 };
-use futures::{channel::mpsc};
+use futures::channel::mpsc;
 use futures::{Sink, SinkExt, StreamExt};
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::AtomicU64;
@@ -101,7 +101,7 @@ impl Aggregator {
                 };
                 if let Err(_) = tx_to_aggregator2.send(msg_to_aggregator).await {
                     // This will close the ws channels, which themselves log messages.
-                    break
+                    break;
                 }
             }
         });

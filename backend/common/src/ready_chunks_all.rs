@@ -9,12 +9,12 @@
 //! Code is adapted from the futures implementation
 //! (see [ready_chunks.rs](https://docs.rs/futures-util/0.3.15/src/futures_util/stream/stream/ready_chunks.rs.html)).
 
-use futures::stream::Fuse;
-use futures::StreamExt;
 use core::mem;
 use core::pin::Pin;
+use futures::stream::Fuse;
 use futures::stream::{FusedStream, Stream};
 use futures::task::{Context, Poll};
+use futures::StreamExt;
 use pin_project_lite::pin_project;
 
 pin_project! {
@@ -37,7 +37,7 @@ where
     pub fn new(stream: St) -> Self {
         Self {
             stream: stream.fuse(),
-            items: Vec::new()
+            items: Vec::new(),
         }
     }
 }

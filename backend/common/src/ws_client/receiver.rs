@@ -3,7 +3,7 @@ use futures::{Stream, StreamExt};
 
 /// Receive messages out of a connection
 pub struct Receiver {
-    pub (super) inner: mpsc::UnboundedReceiver<Result<RecvMessage, RecvError>>,
+    pub(super) inner: mpsc::UnboundedReceiver<Result<RecvMessage, RecvError>>,
 }
 
 #[derive(thiserror::Error, Debug)]

@@ -1,5 +1,4 @@
 #[warn(missing_docs)]
-
 mod aggregator;
 mod connection;
 mod json_message;
@@ -8,13 +7,13 @@ mod real_ip;
 use std::{collections::HashSet, net::IpAddr};
 
 use aggregator::{Aggregator, FromWebsocket};
+use common::http_utils;
 use common::node_message;
 use futures::{channel::mpsc, SinkExt, StreamExt};
 use http::Uri;
+use hyper::{Method, Response};
 use simple_logger::SimpleLogger;
 use structopt::StructOpt;
-use hyper::{ Response, Method };
-use common::http_utils;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
@@ -47,7 +46,7 @@ struct Opts {
     /// This is important because without a limit, a single connection could exhaust
     /// RAM by suggesting that it accounts for billions of nodes.
     #[structopt(long, default_value = "20")]
-    max_nodes_per_connection: usize
+    max_nodes_per_connection: usize,
 }
 
 #[tokio::main]
@@ -77,29 +76,35 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
         async move {
             match (req.method(), req.uri().path().trim_end_matches('/')) {
                 // Check that the server is up and running:
-                (&Method::GET, "/health") => {
-                    Ok(Response::new("OK".into()))
-                },
+                (&Method::GET, "/health") => Ok(Response::new("OK".into())),
                 // Nodes send messages here:
                 (&Method::GET, "/submit") => {
                     let real_addr = real_ip::real_ip(addr, req.headers());
-                    Ok(http_utils::upgrade_to_websocket(req, move |ws_send, ws_recv| async move {
-                        let tx_to_aggregator = aggregator.subscribe_node();
-                        let (mut tx_to_aggregator, mut ws_send)
-                            = handle_node_websocket_connection(real_addr, ws_send, ws_recv, tx_to_aggregator, max_nodes_per_connection).await;
-                        log::info!("Closing /submit connection from {:?}", addr);
-                        // Tell the aggregator that this connection has closed, so it can tidy up.
-                        let _ = tx_to_aggregator.send(FromWebsocket::Disconnected).await;
-                        let _ = ws_send.close().await;
-                    }))
-                },
-                // 404 for anything else:
-                _ => {
-                    Ok(Response::builder()
-                        .status(404)
-                        .body("Not found".into())
-                        .unwrap())
+                    Ok(http_utils::upgrade_to_websocket(
+                        req,
+                        move |ws_send, ws_recv| async move {
+                            let tx_to_aggregator = aggregator.subscribe_node();
+                            let (mut tx_to_aggregator, mut ws_send) =
+                                handle_node_websocket_connection(
+                                    real_addr,
+                                    ws_send,
+                                    ws_recv,
+                                    tx_to_aggregator,
+                                    max_nodes_per_connection,
+                                )
+                                .await;
+                            log::info!("Closing /submit connection from {:?}", addr);
+                            // Tell the aggregator that this connection has closed, so it can tidy up.
+                            let _ = tx_to_aggregator.send(FromWebsocket::Disconnected).await;
+                            let _ = ws_send.close().await;
+                        },
+                    ))
                 }
+                // 404 for anything else:
+                _ => Ok(Response::builder()
+                    .status(404)
+                    .body("Not found".into())
+                    .unwrap()),
             }
         }
     });
@@ -114,7 +119,7 @@ async fn handle_node_websocket_connection<S>(
     ws_send: http_utils::WsSender,
     mut ws_recv: http_utils::WsReceiver,
     mut tx_to_aggregator: S,
-    max_nodes_per_connection: usize
+    max_nodes_per_connection: usize,
 ) -> (S, http_utils::WsSender)
 where
     S: futures::Sink<FromWebsocket, Error = anyhow::Error> + Unpin + Send + 'static,

@@ -18,15 +18,15 @@ In general, if you run into issues, it may be better to run this on a linux
 box; MacOS seems to hit limits quicker in general.
 */
 
-use futures::{ StreamExt };
+use common::node_types::BlockHash;
+use common::ws_client::SentMessage;
+use futures::StreamExt;
+use serde_json::json;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
+use std::time::Duration;
 use structopt::StructOpt;
 use test_utils::workspace::start_server_release;
-use common::ws_client::{ SentMessage };
-use serde_json::json;
-use std::time::Duration;
-use std::sync::atomic::{ Ordering, AtomicUsize };
-use std::sync::Arc;
-use common::node_types::BlockHash;
 
 /// A configurable soak_test runner. Configure by providing the expected args as
 /// an environment variable. One example to run this test is:
@@ -78,22 +78,24 @@ async fn run_soak_test(opts: SoakTestOpts) {
 
     // Each node tells the shard about itself:
     for (idx, (node_tx, _)) in nodes.iter_mut().enumerate() {
-        node_tx.send_json_binary(json!({
-            "id":1, // Only needs to be unique per node
-            "ts":"2021-07-12T10:37:47.714666+01:00",
-            "payload": {
-                "authority":true,
-                "chain": "Polkadot", // <- so that we don't go over quota with lots of nodes.
-                "config":"",
-                "genesis_hash": BlockHash::from_low_u64_ne(1),
-                "implementation":"Substrate Node",
-                "msg":"system.connected",
-                "name": format!("Node #{}", idx),
-                "network_id":"12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp",
-                "startup_time":"1625565542717",
-                "version":"2.0.0-07a1af348-aarch64-macos"
-            },
-        })).unwrap();
+        node_tx
+            .send_json_binary(json!({
+                "id":1, // Only needs to be unique per node
+                "ts":"2021-07-12T10:37:47.714666+01:00",
+                "payload": {
+                    "authority":true,
+                    "chain": "Polkadot", // <- so that we don't go over quota with lots of nodes.
+                    "config":"",
+                    "genesis_hash": BlockHash::from_low_u64_ne(1),
+                    "implementation":"Substrate Node",
+                    "msg":"system.connected",
+                    "name": format!("Node #{}", idx),
+                    "network_id":"12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp",
+                    "startup_time":"1625565542717",
+                    "version":"2.0.0-07a1af348-aarch64-macos"
+                },
+            }))
+            .unwrap();
     }
 
     // Connect feeds to the core:
@@ -127,12 +129,15 @@ async fn run_soak_test(opts: SoakTestOpts) {
         loop {
             // every ~1second we aim to have sent messages from all of the nodes. So we cycle through
             // the node IDs and send a message from each at roughly 1s / number_of_nodes.
-            let mut interval = tokio::time::interval(Duration::from_secs_f64(1.0 / nodes.len() as f64));
+            let mut interval =
+                tokio::time::interval(Duration::from_secs_f64(1.0 / nodes.len() as f64));
 
             for node_id in (0..nodes.len()).cycle() {
                 interval.tick().await;
                 let node_tx = &mut nodes[node_id].0;
-                node_tx.unbounded_send(SentMessage::StaticBinary(msg_bytes)).unwrap();
+                node_tx
+                    .unbounded_send(SentMessage::StaticBinary(msg_bytes))
+                    .unwrap();
                 bytes_in2.fetch_add(msg_bytes.len(), Ordering::Relaxed);
             }
         }
@@ -162,7 +167,8 @@ async fn run_soak_test(opts: SoakTestOpts) {
             let bytes_in_val = bytes_in.load(Ordering::Relaxed);
             let bytes_out_val = bytes_out.load(Ordering::Relaxed);
 
-            println!("#{}: MB in/out per measurement: {:.4} / {:.4}, total bytes in/out: {} / {})",
+            println!(
+                "#{}: MB in/out per measurement: {:.4} / {:.4}, total bytes in/out: {} / {})",
                 n,
                 (bytes_in_val - last_bytes_in) as f64 / one_mb,
                 (bytes_out_val - last_bytes_out) as f64 / one_mb,
@@ -193,19 +199,18 @@ struct SoakTestOpts {
     feeds: usize,
     /// The number of nodes to connect to each feed
     #[structopt(long)]
-    nodes: usize
+    nodes: usize,
 }
 
 /// Get soak test args from an envvar and parse them via structopt.
 fn get_soak_test_opts() -> SoakTestOpts {
     let arg_string = std::env::var("SOAK_TEST_ARGS")
         .expect("Expecting args to be provided in the env var SOAK_TEST_ARGS");
-    let args = shellwords::split(&arg_string)
-        .expect("Could not parse SOAK_TEST_ARGS as shell arguments");
+    let args =
+        shellwords::split(&arg_string).expect("Could not parse SOAK_TEST_ARGS as shell arguments");
 
     // The binary name is expected to be the first arg, so fake it:
-    let all_args = std::iter::once("soak_test".to_owned())
-        .chain(args.into_iter());
+    let all_args = std::iter::once("soak_test".to_owned()).chain(args.into_iter());
 
     SoakTestOpts::from_iter(all_args)
 }

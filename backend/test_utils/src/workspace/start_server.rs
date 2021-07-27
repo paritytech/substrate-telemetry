@@ -1,28 +1,26 @@
 use super::commands;
-use crate::server::{self, Server, Command};
+use crate::server::{self, Command, Server};
 
 /// Additional options to pass to the core command.
 pub struct CoreOpts {
-    pub feed_timeout: Option<u64>
+    pub feed_timeout: Option<u64>,
 }
 
 impl Default for CoreOpts {
     fn default() -> Self {
-        Self {
-            feed_timeout: None
-        }
+        Self { feed_timeout: None }
     }
 }
 
 /// Additional options to pass to the shard command.
 pub struct ShardOpts {
-    pub max_nodes_per_connection: Option<usize>
+    pub max_nodes_per_connection: Option<usize>,
 }
 
 impl Default for ShardOpts {
     fn default() -> Self {
         Self {
-            max_nodes_per_connection: None
+            max_nodes_per_connection: None,
         }
     }
 }
@@ -44,12 +42,18 @@ impl Default for ShardOpts {
 /// - `TELEMETRY_SUBMIT_HOSTS` - hosts (comma separated) to connect to for telemetry `/submit`s.
 /// - `TELEMETRY_FEED_HOST` - host to connect to for feeds (eg 127.0.0.1:3000)
 ///
-pub async fn start_server(release_mode: bool, core_opts: CoreOpts, shard_opts: ShardOpts) -> Server {
+pub async fn start_server(
+    release_mode: bool,
+    core_opts: CoreOpts,
+    shard_opts: ShardOpts,
+) -> Server {
     // Start to a single process:
     if let Ok(bin) = std::env::var("TELEMETRY_BIN") {
         return Server::start(server::StartOpts::SingleProcess {
-            command: Command::new(bin)
-        }).await.unwrap();
+            command: Command::new(bin),
+        })
+        .await
+        .unwrap();
     }
 
     // Connect to a running instance:
@@ -61,13 +65,18 @@ pub async fn start_server(release_mode: bool, core_opts: CoreOpts, shard_opts: S
         return Server::start(server::StartOpts::ConnectToExisting {
             feed_host,
             submit_hosts,
-        }).await.unwrap();
+        })
+        .await
+        .unwrap();
     }
 
     // Build the shard command
     let mut shard_command = std::env::var("TELEMETRY_SHARD_BIN")
         .map(|val| Command::new(val))
-        .unwrap_or_else(|_| commands::cargo_run_telemetry_shard(release_mode).expect("must be in rust workspace to run shard command"));
+        .unwrap_or_else(|_| {
+            commands::cargo_run_telemetry_shard(release_mode)
+                .expect("must be in rust workspace to run shard command")
+        });
 
     // Append additional opts to the shard command
     if let Some(max_nodes_per_connection) = shard_opts.max_nodes_per_connection {
@@ -79,7 +88,10 @@ pub async fn start_server(release_mode: bool, core_opts: CoreOpts, shard_opts: S
     // Build the core command
     let mut core_command = std::env::var("TELEMETRY_CORE_BIN")
         .map(|val| Command::new(val))
-        .unwrap_or_else(|_| commands::cargo_run_telemetry_core(release_mode).expect("must be in rust workspace to run core command"));
+        .unwrap_or_else(|_| {
+            commands::cargo_run_telemetry_core(release_mode)
+                .expect("must be in rust workspace to run core command")
+        });
 
     // Append additional opts to the core command
     if let Some(feed_timeout) = core_opts.feed_timeout {
@@ -91,8 +103,10 @@ pub async fn start_server(release_mode: bool, core_opts: CoreOpts, shard_opts: S
     // Star the server
     Server::start(server::StartOpts::ShardAndCore {
         shard_command,
-        core_command
-    }).await.unwrap()
+        core_command,
+    })
+    .await
+    .unwrap()
 }
 
 /// Start a telemetry core server in debug mode. see [`start_server`] for details.

@@ -179,11 +179,7 @@ impl InnerLoop {
     }
 
     /// Handle messages that come from the node geographical locator.
-    fn handle_from_find_location(
-        &mut self,
-        node_id: NodeId,
-        location: find_location::Location,
-    ) {
+    fn handle_from_find_location(&mut self, node_id: NodeId, location: find_location::Location) {
         self.node_state
             .update_node_location(node_id, location.clone());
 
@@ -227,20 +223,18 @@ impl InnerLoop {
                 match self.node_state.add_node(genesis_hash, node) {
                     state::AddNodeResult::ChainOnDenyList => {
                         if let Some(shard_conn) = self.shard_channels.get_mut(&shard_conn_id) {
-                            let _ = shard_conn
-                                .unbounded_send(ToShardWebsocket::Mute {
-                                    local_id,
-                                    reason: MuteReason::ChainNotAllowed,
-                                });
+                            let _ = shard_conn.unbounded_send(ToShardWebsocket::Mute {
+                                local_id,
+                                reason: MuteReason::ChainNotAllowed,
+                            });
                         }
                     }
                     state::AddNodeResult::ChainOverQuota => {
                         if let Some(shard_conn) = self.shard_channels.get_mut(&shard_conn_id) {
-                            let _ = shard_conn
-                                .unbounded_send(ToShardWebsocket::Mute {
-                                    local_id,
-                                    reason: MuteReason::Overquota,
-                                });
+                            let _ = shard_conn.unbounded_send(ToShardWebsocket::Mute {
+                                local_id,
+                                reason: MuteReason::Overquota,
+                            });
                         }
                     }
                     state::AddNodeResult::NodeAddedToChain(details) => {
@@ -473,10 +467,7 @@ impl InnerLoop {
     }
 
     /// Remove all of the node IDs provided and broadcast messages to feeds as needed.
-    fn remove_nodes_and_broadcast_result(
-        &mut self,
-        node_ids: impl IntoIterator<Item = NodeId>,
-    ) {
+    fn remove_nodes_and_broadcast_result(&mut self, node_ids: impl IntoIterator<Item = NodeId>) {
         // Group by chain to simplify the handling of feed messages:
         let mut node_ids_per_chain: HashMap<BlockHash, Vec<NodeId>> = HashMap::new();
         for node_id in node_ids.into_iter() {

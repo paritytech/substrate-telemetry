@@ -22,7 +22,7 @@ pub enum SentMessage {
 
 /// Messages sent into the channel interface can be anything publically visible, or a close message.
 #[derive(Debug, Clone)]
-pub (super) enum SentMessageInternal {
+pub(super) enum SentMessageInternal {
     Message(SentMessage),
     Close,
 }
@@ -30,7 +30,7 @@ pub (super) enum SentMessageInternal {
 /// Send messages into the connection
 #[derive(Clone)]
 pub struct Sender {
-    pub (super) inner: mpsc::UnboundedSender<SentMessageInternal>,
+    pub(super) inner: mpsc::UnboundedSender<SentMessageInternal>,
 }
 
 impl Sender {
@@ -56,7 +56,7 @@ impl Sender {
 #[derive(thiserror::Error, Debug, Clone)]
 pub enum SendError {
     #[error("Failed to send message: {0}")]
-    ChannelError(#[from] mpsc::SendError)
+    ChannelError(#[from] mpsc::SendError),
 }
 
 impl Sink<SentMessage> for Sender {
@@ -67,7 +67,10 @@ impl Sink<SentMessage> for Sender {
     ) -> std::task::Poll<Result<(), Self::Error>> {
         self.inner.poll_ready_unpin(cx).map_err(|e| e.into())
     }
-    fn start_send(mut self: std::pin::Pin<&mut Self>, item: SentMessage) -> Result<(), Self::Error> {
+    fn start_send(
+        mut self: std::pin::Pin<&mut Self>,
+        item: SentMessage,
+    ) -> Result<(), Self::Error> {
         self.inner
             .start_send_unpin(SentMessageInternal::Message(item))
             .map_err(|e| e.into())

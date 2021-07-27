@@ -3,19 +3,19 @@ mod feed_message;
 mod find_location;
 mod state;
 use std::str::FromStr;
-use tokio::time::{ Duration, Instant };
+use tokio::time::{Duration, Instant};
 
 use aggregator::{
     Aggregator, FromFeedWebsocket, FromShardWebsocket, ToFeedWebsocket, ToShardWebsocket,
 };
 use bincode::Options;
+use common::http_utils;
 use common::internal_messages;
 use common::ready_chunks_all::ReadyChunksAll;
 use futures::{channel::mpsc, SinkExt, StreamExt};
+use hyper::{Method, Response};
 use simple_logger::SimpleLogger;
 use structopt::StructOpt;
-use hyper::{ Response, Method };
-use common::http_utils;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
@@ -42,7 +42,7 @@ struct Opts {
     /// If it takes longer than this number of seconds to send the current batch of messages
     /// to a feed, the feed connection will be closed.
     #[structopt(long, default_value = "10")]
-    feed_timeout: u64
+    feed_timeout: u64,
 }
 
 #[tokio::main]
@@ -72,40 +72,55 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
         async move {
             match (req.method(), req.uri().path().trim_end_matches('/')) {
                 // Check that the server is up and running:
-                (&Method::GET, "/health") => {
-                    Ok(Response::new("OK".into()))
-                },
+                (&Method::GET, "/health") => Ok(Response::new("OK".into())),
                 // Subscribe to feed messages:
                 (&Method::GET, "/feed") => {
-                    Ok(http_utils::upgrade_to_websocket(req, move |ws_send, ws_recv| async move {
-                        let tx_to_aggregator = aggregator.subscribe_feed();
-                        let (mut tx_to_aggregator, mut ws_send)
-                            = handle_feed_websocket_connection(ws_send, ws_recv, tx_to_aggregator, feed_timeout).await;
-                        log::info!("Closing /feed connection from {:?}", addr);
-                        // Tell the aggregator that this connection has closed, so it can tidy up.
-                        let _ = tx_to_aggregator.send(FromFeedWebsocket::Disconnected).await;
-                        let _ = ws_send.close().await;
-                    }))
-                },
+                    Ok(http_utils::upgrade_to_websocket(
+                        req,
+                        move |ws_send, ws_recv| async move {
+                            let tx_to_aggregator = aggregator.subscribe_feed();
+                            let (mut tx_to_aggregator, mut ws_send) =
+                                handle_feed_websocket_connection(
+                                    ws_send,
+                                    ws_recv,
+                                    tx_to_aggregator,
+                                    feed_timeout,
+                                )
+                                .await;
+                            log::info!("Closing /feed connection from {:?}", addr);
+                            // Tell the aggregator that this connection has closed, so it can tidy up.
+                            let _ = tx_to_aggregator.send(FromFeedWebsocket::Disconnected).await;
+                            let _ = ws_send.close().await;
+                        },
+                    ))
+                }
                 // Subscribe to shard messages:
                 (&Method::GET, "/shard_submit") => {
-                    Ok(http_utils::upgrade_to_websocket(req, move |ws_send, ws_recv| async move {
-                        let tx_to_aggregator = aggregator.subscribe_shard();
-                        let (mut tx_to_aggregator, mut ws_send)
-                            = handle_shard_websocket_connection(ws_send, ws_recv, tx_to_aggregator).await;
-                        log::info!("Closing /shard_submit connection from {:?}", addr);
-                        // Tell the aggregator that this connection has closed, so it can tidy up.
-                        let _ = tx_to_aggregator.send(FromShardWebsocket::Disconnected).await;
-                        let _ = ws_send.close().await;
-                    }))
-                },
-                // 404 for anything else:
-                _ => {
-                    Ok(Response::builder()
-                        .status(404)
-                        .body("Not found".into())
-                        .unwrap())
+                    Ok(http_utils::upgrade_to_websocket(
+                        req,
+                        move |ws_send, ws_recv| async move {
+                            let tx_to_aggregator = aggregator.subscribe_shard();
+                            let (mut tx_to_aggregator, mut ws_send) =
+                                handle_shard_websocket_connection(
+                                    ws_send,
+                                    ws_recv,
+                                    tx_to_aggregator,
+                                )
+                                .await;
+                            log::info!("Closing /shard_submit connection from {:?}", addr);
+                            // Tell the aggregator that this connection has closed, so it can tidy up.
+                            let _ = tx_to_aggregator
+                                .send(FromShardWebsocket::Disconnected)
+                                .await;
+                            let _ = ws_send.close().await;
+                        },
+                    ))
                 }
+                // 404 for anything else:
+                _ => Ok(Response::builder()
+                    .status(404)
+                    .body("Not found".into())
+                    .unwrap()),
             }
         }
     });
@@ -156,29 +171,44 @@ where
                 break;
             }
             if let Err(e) = msg_info {
-                log::error!("Shutting down websocket connection: Failed to receive data: {}", e);
+                log::error!(
+                    "Shutting down websocket connection: Failed to receive data: {}",
+                    e
+                );
                 break;
             }
 
-            let msg: internal_messages::FromShardAggregator = match bincode::options().deserialize(&bytes) {
-                Ok(msg) => msg,
-                Err(e) => {
-                    log::error!("Failed to deserialize message from shard; booting it: {}", e);
-                    break;
-                }
-            };
+            let msg: internal_messages::FromShardAggregator =
+                match bincode::options().deserialize(&bytes) {
+                    Ok(msg) => msg,
+                    Err(e) => {
+                        log::error!(
+                            "Failed to deserialize message from shard; booting it: {}",
+                            e
+                        );
+                        break;
+                    }
+                };
 
             // Convert and send to the aggregator:
             let aggregator_msg = match msg {
-                internal_messages::FromShardAggregator::AddNode { ip, node, local_id, genesis_hash } => {
-                    FromShardWebsocket::Add { ip, node, genesis_hash, local_id }
+                internal_messages::FromShardAggregator::AddNode {
+                    ip,
+                    node,
+                    local_id,
+                    genesis_hash,
+                } => FromShardWebsocket::Add {
+                    ip,
+                    node,
+                    genesis_hash,
+                    local_id,
                 },
                 internal_messages::FromShardAggregator::UpdateNode { payload, local_id } => {
                     FromShardWebsocket::Update { local_id, payload }
-                },
+                }
                 internal_messages::FromShardAggregator::RemoveNode { local_id } => {
                     FromShardWebsocket::Remove { local_id }
-                },
+                }
             };
 
             if let Err(e) = tx_to_aggregator.send(aggregator_msg).await {
@@ -201,7 +231,7 @@ where
 
             let msg = match msg {
                 Some(msg) => msg,
-                None => break
+                None => break,
             };
 
             let internal_msg = match msg {
@@ -218,9 +248,11 @@ where
                 log::error!("Failed to send message to aggregator; closing shard: {}", e)
             }
             if let Err(e) = ws_send.flush().await {
-                log::error!("Failed to flush message to aggregator; closing shard: {}", e)
+                log::error!(
+                    "Failed to flush message to aggregator; closing shard: {}",
+                    e
+                )
             }
-
         }
 
         drop(recv_closer_tx); // Kill the recv task if this send task ends
@@ -241,7 +273,7 @@ async fn handle_feed_websocket_connection<S>(
     mut ws_send: http_utils::WsSender,
     mut ws_recv: http_utils::WsReceiver,
     mut tx_to_aggregator: S,
-    feed_timeout: u64
+    feed_timeout: u64,
 ) -> (S, http_utils::WsSender)
 where
     S: futures::Sink<FromFeedWebsocket, Error = anyhow::Error> + Unpin + Send + 'static,
@@ -281,29 +313,35 @@ where
                 break;
             }
             if let Err(e) = msg_info {
-                log::error!("Shutting down websocket connection: Failed to receive data: {}", e);
+                log::error!(
+                    "Shutting down websocket connection: Failed to receive data: {}",
+                    e
+                );
                 break;
             }
 
             // We ignore all but valid UTF8 text messages from the frontend:
             let text = match String::from_utf8(bytes) {
                 Ok(s) => s,
-                Err(_) => continue
+                Err(_) => continue,
             };
 
             // Parse the message into a command we understand and send it to the aggregator:
             let cmd = match FromFeedWebsocket::from_str(&text) {
                 Ok(cmd) => cmd,
                 Err(e) => {
-                    log::warn!("Ignoring invalid command '{}' from the frontend: {}", text, e);
-                    continue
+                    log::warn!(
+                        "Ignoring invalid command '{}' from the frontend: {}",
+                        text,
+                        e
+                    );
+                    continue;
                 }
             };
             if let Err(e) = tx_to_aggregator.send(cmd).await {
                 log::error!("Failed to send message to aggregator; closing feed: {}", e);
                 break;
             }
-
         }
 
         drop(send_closer_tx); // Kill the send task if this recv task ends
@@ -323,15 +361,13 @@ where
             // End the loop when connection from aggregator ends:
             let msgs = match msgs {
                 Some(msgs) => msgs,
-                None => break
+                None => break,
             };
 
             // There is only one message type at the mo; bytes to send
             // to the websocket. collect them all up to dispatch in one shot.
-            let all_msg_bytes = msgs.into_iter().map(|msg| {
-                match msg {
-                    ToFeedWebsocket::Bytes(bytes) => bytes
-                }
+            let all_msg_bytes = msgs.into_iter().map(|msg| match msg {
+                ToFeedWebsocket::Bytes(bytes) => bytes,
             });
 
             // We have a deadline to send and flush messages. If the client isn't keeping up with our
@@ -340,7 +376,9 @@ where
             let message_send_deadline = Instant::now() + Duration::from_secs(feed_timeout);
 
             for bytes in all_msg_bytes {
-                match tokio::time::timeout_at(message_send_deadline, ws_send.send_binary(&bytes)).await {
+                match tokio::time::timeout_at(message_send_deadline, ws_send.send_binary(&bytes))
+                    .await
+                {
                     Err(_) => {
                         log::warn!("Closing feed websocket that was too slow to keep up (1)");
                         break 'outer;
@@ -355,7 +393,7 @@ where
             match tokio::time::timeout_at(message_send_deadline, ws_send.flush()).await {
                 Err(_) => {
                     log::warn!("Closing feed websocket that was too slow to keep up (2)");
-                    break
+                    break;
                 }
                 Ok(Err(e)) => {
                     log::warn!("Closing feed websocket due to error flushing data: {}", e);

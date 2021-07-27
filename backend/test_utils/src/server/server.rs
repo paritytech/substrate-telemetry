@@ -36,7 +36,7 @@ pub enum StartOpts {
         /// Where is the process that we can subscribe to the `/feed` of?
         /// Eg: `127.0.0.1:3000`
         feed_host: String,
-    }
+    },
 }
 
 /// This represents a telemetry server. It can be in different modes
@@ -47,7 +47,7 @@ pub enum Server {
         /// A virtual shard that we can hand out.
         virtual_shard: ShardProcess,
         /// Core process that we can connect to.
-        core: CoreProcess
+        core: CoreProcess,
     },
     ShardAndCoreMode {
         /// Command to run to start a new shard.
@@ -67,9 +67,8 @@ pub enum Server {
         shards: DenseMap<ProcessId, ShardProcess>,
         /// Core process that we can connect to.
         core: CoreProcess,
-    }
+    },
 }
-
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -88,23 +87,23 @@ pub enum Error {
     )]
     CannotAddShard,
     #[error("The URI provided was invalid: {0}")]
-    InvalidUri(#[from] http::uri::InvalidUri)
+    InvalidUri(#[from] http::uri::InvalidUri),
 }
 
 impl Server {
     pub fn get_core(&self) -> &CoreProcess {
         match self {
             Server::SingleProcessMode { core, .. } => core,
-            Server::ShardAndCoreMode { core, ..} => core,
-            Server::ConnectToExistingMode { core, .. } => core
+            Server::ShardAndCoreMode { core, .. } => core,
+            Server::ConnectToExistingMode { core, .. } => core,
         }
     }
 
     pub fn get_shard(&self, id: ProcessId) -> Option<&ShardProcess> {
         match self {
             Server::SingleProcessMode { virtual_shard, .. } => Some(virtual_shard),
-            Server::ShardAndCoreMode { shards, ..} => shards.get(id),
-            Server::ConnectToExistingMode { shards, .. } => shards.get(id)
+            Server::ShardAndCoreMode { shards, .. } => shards.get(id),
+            Server::ConnectToExistingMode { shards, .. } => shards.get(id),
         }
     }
 
@@ -112,8 +111,8 @@ impl Server {
         let shard = match self {
             // Can't remove the pretend shard:
             Server::SingleProcessMode { .. } => return false,
-            Server::ShardAndCoreMode { shards, ..} => shards.remove(id),
-            Server::ConnectToExistingMode { shards, .. } => shards.remove(id)
+            Server::ShardAndCoreMode { shards, .. } => shards.remove(id),
+            Server::ConnectToExistingMode { shards, .. } => shards.remove(id),
         };
 
         let shard = match shard {
@@ -137,12 +136,9 @@ impl Server {
         // Run all kill futs simultaneously.
         let handle = tokio::spawn(async move {
             let (core, shards) = match self {
-                Server::SingleProcessMode { core, .. }
-                    => (core, DenseMap::new()),
-                Server::ShardAndCoreMode { core, shards, ..}
-                    => (core, shards),
-                Server::ConnectToExistingMode { core, shards, .. }
-                    => (core, shards)
+                Server::SingleProcessMode { core, .. } => (core, DenseMap::new()),
+                Server::ShardAndCoreMode { core, shards, .. } => (core, shards),
+                Server::ConnectToExistingMode { core, shards, .. } => (core, shards),
             };
 
             let shard_kill_futs = shards.into_iter().map(|(_, s)| s.kill());
@@ -157,15 +153,18 @@ impl Server {
     pub async fn add_shard(&mut self) -> Result<ProcessId, Error> {
         match self {
             // Always get back the same "virtual" shard; we're always just talking to the core anyway.
-            Server::SingleProcessMode { virtual_shard, .. } => {
-                Ok(virtual_shard.id)
-            },
+            Server::SingleProcessMode { virtual_shard, .. } => Ok(virtual_shard.id),
             // We're connecting to an existing process. Find the next host we've been told about
             // round-robin style and use that as our new virtual shard.
-            Server::ConnectToExistingMode { submit_hosts, next_submit_host_idx, shards, .. } => {
+            Server::ConnectToExistingMode {
+                submit_hosts,
+                next_submit_host_idx,
+                shards,
+                ..
+            } => {
                 let host = match submit_hosts.get(*next_submit_host_idx % submit_hosts.len()) {
                     Some(host) => host,
-                    None => return Err(Error::CannotAddShard)
+                    None => return Err(Error::CannotAddShard),
                 };
                 *next_submit_host_idx += 1;
 
@@ -177,9 +176,13 @@ impl Server {
                 });
 
                 Ok(pid)
-            },
+            }
             // Start a new process and return that.
-            Server::ShardAndCoreMode { shard_command, shards, core } => {
+            Server::ShardAndCoreMode {
+                shard_command,
+                shards,
+                core,
+            } => {
                 // Where is the URI we'll want to submit things to?
                 let core_shard_submit_uri = format!("http://{}/shard_submit", core.host);
 
@@ -224,7 +227,7 @@ impl Server {
                 });
 
                 Ok(pid)
-            },
+            }
         }
     }
 
@@ -240,31 +243,35 @@ impl Server {
                         id: ProcessId(0),
                         host: virtual_shard_host,
                         handle: None,
-                        _channel_type: PhantomData
-                    }
-                }
-            },
-            StartOpts::ShardAndCore { core_command, shard_command } => {
-                let core_process = Server::start_core(core_command).await?;
-                Server::ShardAndCoreMode {
-                    core: core_process,
-                    shard_command,
-                    shards: DenseMap::new()
-                }
-            },
-            StartOpts::ConnectToExisting { feed_host, submit_hosts } => {
-                Server::ConnectToExistingMode {
-                    submit_hosts,
-                    next_submit_host_idx: 0,
-                    shards: DenseMap::new(),
-                    core: Process {
-                        id: ProcessId(0),
-                        host: feed_host,
-                        handle: None,
                         _channel_type: PhantomData,
                     },
                 }
             }
+            StartOpts::ShardAndCore {
+                core_command,
+                shard_command,
+            } => {
+                let core_process = Server::start_core(core_command).await?;
+                Server::ShardAndCoreMode {
+                    core: core_process,
+                    shard_command,
+                    shards: DenseMap::new(),
+                }
+            }
+            StartOpts::ConnectToExisting {
+                feed_host,
+                submit_hosts,
+            } => Server::ConnectToExistingMode {
+                submit_hosts,
+                next_submit_host_idx: 0,
+                shards: DenseMap::new(),
+                core: Process {
+                    id: ProcessId(0),
+                    host: feed_host,
+                    handle: None,
+                    _channel_type: PhantomData,
+                },
+            },
         };
 
         Ok(server)
@@ -340,7 +347,9 @@ impl<Channel> Process<Channel> {
 }
 
 /// Establish a raw WebSocket connection (not cancel-safe)
-async fn connect_to_uri_raw(uri: &http::Uri) -> Result<(ws_client::RawSender, ws_client::RawReceiver), Error> {
+async fn connect_to_uri_raw(
+    uri: &http::Uri,
+) -> Result<(ws_client::RawSender, ws_client::RawReceiver), Error> {
     ws_client::connect(uri)
         .await
         .map(|c| c.into_raw())
@@ -371,19 +380,26 @@ impl<Send: From<ws_client::Sender>, Recv: From<ws_client::Receiver>> Process<(Se
 
 impl ShardProcess {
     /// Establish a raw connection to the process
-    pub async fn connect_node_raw(&self) -> Result<(ws_client::RawSender, ws_client::RawReceiver), Error> {
+    pub async fn connect_node_raw(
+        &self,
+    ) -> Result<(ws_client::RawSender, ws_client::RawReceiver), Error> {
         let uri = format!("http://{}/submit", self.host).parse()?;
         connect_to_uri_raw(&uri).await
     }
 
     /// Establish a connection to the process
-    pub async fn connect_node(&self) -> Result<(channels::ShardSender, channels::ShardReceiver), Error> {
+    pub async fn connect_node(
+        &self,
+    ) -> Result<(channels::ShardSender, channels::ShardReceiver), Error> {
         let uri = format!("http://{}/submit", self.host).parse()?;
         Process::connect_to_uri(&uri).await
     }
 
     /// Establish multiple connections to the process
-    pub async fn connect_multiple_nodes(&self, num_connections: usize) -> Result<Vec<(channels::ShardSender, channels::ShardReceiver)>, Error> {
+    pub async fn connect_multiple_nodes(
+        &self,
+        num_connections: usize,
+    ) -> Result<Vec<(channels::ShardSender, channels::ShardReceiver)>, Error> {
         let uri = format!("http://{}/submit", self.host).parse()?;
         Process::connect_multiple_to_uri(&uri, num_connections).await
     }
@@ -391,19 +407,26 @@ impl ShardProcess {
 
 impl CoreProcess {
     /// Establish a raw connection to the process
-    pub async fn connect_feed_raw(&self) -> Result<(ws_client::RawSender, ws_client::RawReceiver), Error> {
+    pub async fn connect_feed_raw(
+        &self,
+    ) -> Result<(ws_client::RawSender, ws_client::RawReceiver), Error> {
         let uri = format!("http://{}/feed", self.host).parse()?;
         connect_to_uri_raw(&uri).await
     }
 
     /// Establish a connection to the process
-    pub async fn connect_feed(&self) -> Result<(channels::FeedSender, channels::FeedReceiver), Error> {
+    pub async fn connect_feed(
+        &self,
+    ) -> Result<(channels::FeedSender, channels::FeedReceiver), Error> {
         let uri = format!("http://{}/feed", self.host).parse()?;
         Process::connect_to_uri(&uri).await
     }
 
     /// Establish multiple connections to the process
-    pub async fn connect_multiple_feeds(&self, num_connections: usize) -> Result<Vec<(channels::FeedSender, channels::FeedReceiver)>, Error> {
+    pub async fn connect_multiple_feeds(
+        &self,
+        num_connections: usize,
+    ) -> Result<Vec<(channels::FeedSender, channels::FeedReceiver)>, Error> {
         let uri = format!("http://{}/feed", self.host).parse()?;
         Process::connect_multiple_to_uri(&uri, num_connections).await
     }

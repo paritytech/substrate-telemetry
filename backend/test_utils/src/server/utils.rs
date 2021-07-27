@@ -1,5 +1,5 @@
-use common::ws_client;
 use anyhow::{anyhow, Context};
+use common::ws_client;
 use tokio::io::BufReader;
 use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncWrite};
 use tokio::time::Duration;
@@ -45,13 +45,9 @@ pub async fn wait_for_line_containing<R: AsyncRead + Unpin, F: Fn(&str) -> bool>
 
         let line = match line {
             // timeout expired; couldn't get port:
-            Err(_) => {
-                return Err(anyhow!("Timeout elapsed waiting for text match"))
-            }
+            Err(_) => return Err(anyhow!("Timeout elapsed waiting for text match")),
             // Something went wrong reading line; bail:
-            Ok(Err(e)) => {
-                return Err(anyhow!("Could not read line from stdout: {}", e))
-            },
+            Ok(Err(e)) => return Err(anyhow!("Could not read line from stdout: {}", e)),
             // No more output; process ended? bail:
             Ok(Ok(None)) => {
                 return Err(anyhow!(

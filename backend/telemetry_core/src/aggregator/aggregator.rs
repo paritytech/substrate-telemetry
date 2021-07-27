@@ -74,7 +74,8 @@ impl Aggregator {
     /// Return a sink that a shard can send messages into to be handled by the aggregator.
     pub fn subscribe_shard(
         &self,
-    ) -> impl Sink<inner_loop::FromShardWebsocket, Error = anyhow::Error> + Send + Sync + Unpin + 'static  {
+    ) -> impl Sink<inner_loop::FromShardWebsocket, Error = anyhow::Error> + Send + Sync + Unpin + 'static
+    {
         // Assign a unique aggregator-local ID to each connection that subscribes, and pass
         // that along with every message to the aggregator loop:
         let shard_conn_id = self
@@ -96,7 +97,8 @@ impl Aggregator {
     /// Return a sink that a feed can send messages into to be handled by the aggregator.
     pub fn subscribe_feed(
         &self,
-    ) -> impl Sink<inner_loop::FromFeedWebsocket, Error = anyhow::Error> + Send + Sync + Unpin + 'static {
+    ) -> impl Sink<inner_loop::FromFeedWebsocket, Error = anyhow::Error> + Send + Sync + Unpin + 'static
+    {
         // Assign a unique aggregator-local ID to each connection that subscribes, and pass
         // that along with every message to the aggregator loop:
         let feed_conn_id = self

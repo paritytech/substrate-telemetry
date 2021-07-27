@@ -6,7 +6,7 @@ use std::time::Duration;
 use test_utils::{
     assert_contains_matches,
     feed_message_de::{FeedMessage, NodeDetails},
-    workspace::{ start_server, CoreOpts, ShardOpts, start_server_debug }
+    workspace::{start_server, start_server_debug, CoreOpts, ShardOpts},
 };
 
 /// The simplest test we can run; the main benefit of this test (since we check similar)
@@ -55,7 +55,6 @@ async fn feed_ping_responded_to_with_pong() {
     server.shutdown().await;
 }
 
-
 /// As a prelude to `lots_of_mute_messages_dont_cause_a_deadlock`, we can check that
 /// a lot of nodes can simultaneously subscribe and are all sent the expected response.
 #[tokio::test]
@@ -70,10 +69,8 @@ async fn multiple_feeds_sent_version_on_connect() {
         .unwrap();
 
     // Wait for responses all at once:
-    let responses = futures::future::join_all(
-        feeds.iter_mut()
-        .map(|(_, rx)| rx.recv_feed_messages())
-    );
+    let responses =
+        futures::future::join_all(feeds.iter_mut().map(|(_, rx)| rx.recv_feed_messages()));
 
     let responses = tokio::time::timeout(Duration::from_secs(10), responses)
         .await
@@ -113,22 +110,24 @@ async fn lots_of_mute_messages_dont_cause_a_deadlock() {
 
     // Every node announces itself on the same chain:
     for (idx, (node_tx, _)) in nodes.iter_mut().enumerate() {
-        node_tx.send_json_text(json!({
-            "id":1, // message ID, not node ID. Can be the same for all.
-            "ts":"2021-07-12T10:37:47.714666+01:00",
-            "payload": {
-                "authority":true,
-                "chain":"Local Testnet",
-                "config":"",
-                "genesis_hash": BlockHash::from_low_u64_ne(1),
-                "implementation":"Substrate Node",
-                "msg":"system.connected",
-                "name": format!("Alice {}", idx),
-                "network_id":"12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp",
-                "startup_time":"1625565542717",
-                "version":"2.0.0-07a1af348-aarch64-macos"
-            }
-        })).unwrap();
+        node_tx
+            .send_json_text(json!({
+                "id":1, // message ID, not node ID. Can be the same for all.
+                "ts":"2021-07-12T10:37:47.714666+01:00",
+                "payload": {
+                    "authority":true,
+                    "chain":"Local Testnet",
+                    "config":"",
+                    "genesis_hash": BlockHash::from_low_u64_ne(1),
+                    "implementation":"Substrate Node",
+                    "msg":"system.connected",
+                    "name": format!("Alice {}", idx),
+                    "network_id":"12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp",
+                    "startup_time":"1625565542717",
+                    "version":"2.0.0-07a1af348-aarch64-macos"
+                }
+            }))
+            .unwrap();
     }
 
     // Wait a little time (just to let everything get deadlocked) before
@@ -144,11 +143,8 @@ async fn lots_of_mute_messages_dont_cause_a_deadlock() {
         .expect("feeds can connect");
 
     // Wait to see whether we get anything back:
-    let msgs_fut = futures::future::join_all(
-        feeds
-            .iter_mut()
-            .map(|(_,rx)| rx.recv_feed_messages())
-    );
+    let msgs_fut =
+        futures::future::join_all(feeds.iter_mut().map(|(_, rx)| rx.recv_feed_messages()));
 
     // Give up after a timeout:
     tokio::time::timeout(Duration::from_secs(10), msgs_fut)
@@ -234,29 +230,35 @@ async fn feeds_told_about_chain_rename_and_stay_subscribed() {
         .await
         .expect("can connect to shard");
 
-    let node_init_msg = |id, chain_name: &str, node_name: &str| json!({
-        "id":id,
-        "ts":"2021-07-12T10:37:47.714666+01:00",
-        "payload": {
-            "authority":true,
-            "chain": chain_name,
-            "config":"",
-            "genesis_hash": BlockHash::from_low_u64_ne(1),
-            "implementation":"Substrate Node",
-            "msg":"system.connected",
-            "name": node_name,
-            "network_id":"12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp",
-            "startup_time":"1625565542717",
-            "version":"2.0.0-07a1af348-aarch64-macos"
-        },
-    });
+    let node_init_msg = |id, chain_name: &str, node_name: &str| {
+        json!({
+            "id":id,
+            "ts":"2021-07-12T10:37:47.714666+01:00",
+            "payload": {
+                "authority":true,
+                "chain": chain_name,
+                "config":"",
+                "genesis_hash": BlockHash::from_low_u64_ne(1),
+                "implementation":"Substrate Node",
+                "msg":"system.connected",
+                "name": node_name,
+                "network_id":"12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp",
+                "startup_time":"1625565542717",
+                "version":"2.0.0-07a1af348-aarch64-macos"
+            },
+        })
+    };
 
     // Subscribe a chain:
-    node_tx.send_json_text(node_init_msg(1, "Initial chain name", "Node 1")).unwrap();
+    node_tx
+        .send_json_text(node_init_msg(1, "Initial chain name", "Node 1"))
+        .unwrap();
 
     // Connect a feed and subscribe to the above chain:
     let (mut feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
-    feed_tx.send_command("subscribe", "Initial chain name").unwrap();
+    feed_tx
+        .send_command("subscribe", "Initial chain name")
+        .unwrap();
 
     // Feed is told about the chain, and the node on this chain:
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
@@ -269,7 +271,9 @@ async fn feeds_told_about_chain_rename_and_stay_subscribed() {
 
     // Subscribe another node. The chain doesn't rename yet but we are told about the new node
     // count and the node that's been added.
-    node_tx.send_json_text(node_init_msg(2, "New chain name", "Node 2")).unwrap();
+    node_tx
+        .send_json_text(node_init_msg(2, "New chain name", "Node 2"))
+        .unwrap();
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
     assert_contains_matches!(
         feed_messages,
@@ -279,7 +283,9 @@ async fn feeds_told_about_chain_rename_and_stay_subscribed() {
 
     // Subscribe a third node. The chain renames, so we're told about the new node but also
     // about the chain rename.
-    node_tx.send_json_text(node_init_msg(3, "New chain name", "Node 3")).unwrap();
+    node_tx
+        .send_json_text(node_init_msg(3, "New chain name", "Node 3"))
+        .unwrap();
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
     assert_contains_matches!(
         feed_messages,
@@ -290,14 +296,15 @@ async fn feeds_told_about_chain_rename_and_stay_subscribed() {
 
     // Just to be sure, subscribing a fourth node on this chain will still lead to updates
     // to this feed.
-    node_tx.send_json_text(node_init_msg(4, "New chain name", "Node 4")).unwrap();
+    node_tx
+        .send_json_text(node_init_msg(4, "New chain name", "Node 4"))
+        .unwrap();
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
     assert_contains_matches!(
         feed_messages,
         FeedMessage::AddedNode { node: NodeDetails { name: node_name, .. }, ..} if node_name == "Node 4",
         FeedMessage::AddedChain { name, node_count: 4 } if name == "New chain name",
     );
-
 }
 
 /// If we add a couple of shards and a node for each, all feeds should be
@@ -386,7 +393,12 @@ async fn feed_can_subscribe_and_unsubscribe_from_chain() {
     // Start server, add shard, connect node:
     let mut server = start_server_debug().await;
     let shard_id = server.add_shard().await.unwrap();
-    let (mut node_tx, _node_rx) = server.get_shard(shard_id).unwrap().connect_node().await.unwrap();
+    let (mut node_tx, _node_rx) = server
+        .get_shard(shard_id)
+        .unwrap()
+        .connect_node()
+        .await
+        .unwrap();
 
     // Send a "system connected" message for a few nodes/chains:
     for id in 1..=3 {
@@ -419,7 +431,9 @@ async fn feed_can_subscribe_and_unsubscribe_from_chain() {
     assert_contains_matches!(feed_messages, AddedChain { name, node_count: 1 } if name == "Local Testnet 1");
 
     // Subscribe it to a chain
-    feed_tx.send_command("subscribe", "Local Testnet 1").unwrap();
+    feed_tx
+        .send_command("subscribe", "Local Testnet 1")
+        .unwrap();
 
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
     assert_contains_matches!(
@@ -450,7 +464,9 @@ async fn feed_can_subscribe_and_unsubscribe_from_chain() {
         .expect_err("Timeout should elapse since no messages sent");
 
     // We can change our subscription:
-    feed_tx.send_command("subscribe", "Local Testnet 2").unwrap();
+    feed_tx
+        .send_command("subscribe", "Local Testnet 2")
+        .unwrap();
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
 
     // We are told about the subscription change and given similar on-subscribe messages to above.
@@ -484,36 +500,48 @@ async fn slow_feeds_are_disconnected() {
     let mut server = start_server(
         true,
         // Timeout faster so the test can be quicker:
-        CoreOpts { feed_timeout: Some(1) },
+        CoreOpts {
+            feed_timeout: Some(1),
+        },
         // Allow us to send more messages in more easily:
-        ShardOpts { max_nodes_per_connection: Some(100_000) }
-    ).await;
+        ShardOpts {
+            max_nodes_per_connection: Some(100_000),
+        },
+    )
+    .await;
 
     // Give us a shard to talk to:
     let shard_id = server.add_shard().await.unwrap();
-    let (mut node_tx, _node_rx) = server.get_shard(shard_id).unwrap().connect_node().await.unwrap();
+    let (mut node_tx, _node_rx) = server
+        .get_shard(shard_id)
+        .unwrap()
+        .connect_node()
+        .await
+        .unwrap();
 
     // Add a load of nodes from this shard so there's plenty of data to give to a feed.
     // We want to exhaust any buffers between core and feed (eg BufWriters). If the number
     // is too low, data will happily be sent into a buffer and the connection won't need to
     // be closed.
     for n in 1..50_000 {
-        node_tx.send_json_text(json!({
-            "id":n,
-            "ts":"2021-07-12T10:37:47.714666+01:00",
-            "payload": {
-                "authority":true,
-                "chain":"Polkadot",
-                "config":"",
-                "genesis_hash": BlockHash::from_low_u64_ne(1),
-                "implementation":"Substrate Node",
-                "msg":"system.connected",
-                "name": format!("Alice {}", n),
-                "network_id":"12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp",
-                "startup_time":"1625565542717",
-                "version":"2.0.0-07a1af348-aarch64-macos"
-            }
-        })).unwrap();
+        node_tx
+            .send_json_text(json!({
+                "id":n,
+                "ts":"2021-07-12T10:37:47.714666+01:00",
+                "payload": {
+                    "authority":true,
+                    "chain":"Polkadot",
+                    "config":"",
+                    "genesis_hash": BlockHash::from_low_u64_ne(1),
+                    "implementation":"Substrate Node",
+                    "msg":"system.connected",
+                    "name": format!("Alice {}", n),
+                    "network_id":"12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp",
+                    "startup_time":"1625565542717",
+                    "version":"2.0.0-07a1af348-aarch64-macos"
+                }
+            }))
+            .unwrap();
     }
 
     // Connect a raw feed so that we can control how fast we consume data from the websocket
@@ -530,10 +558,8 @@ async fn slow_feeds_are_disconnected() {
     // waiting to receive mroe data (or see some other error).
     loop {
         let mut v = Vec::new();
-        let data = tokio::time::timeout(
-            Duration::from_secs(1),
-            raw_feed_rx.receive_data(&mut v)
-        ).await;
+        let data =
+            tokio::time::timeout(Duration::from_secs(1), raw_feed_rx.receive_data(&mut v)).await;
 
         match data {
             Ok(Ok(_)) => {
@@ -541,13 +567,13 @@ async fn slow_feeds_are_disconnected() {
             }
             Ok(Err(soketto::connection::Error::Closed)) => {
                 break; // End loop; success!
-            },
+            }
             Ok(Err(e)) => {
                 panic!("recv should be closed but instead we saw this error: {}", e);
-            },
+            }
             Err(_) => {
                 panic!("recv should be closed but seems to be happy waiting for more data");
-            },
+            }
         }
     }
 
@@ -564,49 +590,87 @@ async fn max_nodes_per_connection_is_enforced() {
         false,
         CoreOpts::default(),
         // Limit max nodes per connection to 2; any other msgs should be ignored.
-        ShardOpts { max_nodes_per_connection: Some(2) }
-    ).await;
+        ShardOpts {
+            max_nodes_per_connection: Some(2),
+        },
+    )
+    .await;
 
     // Connect to a shard
     let shard_id = server.add_shard().await.unwrap();
-    let (mut node_tx, _node_rx) = server.get_shard(shard_id).unwrap().connect_node().await.unwrap();
+    let (mut node_tx, _node_rx) = server
+        .get_shard(shard_id)
+        .unwrap()
+        .connect_node()
+        .await
+        .unwrap();
 
     // Connect a feed.
     let (mut feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
 
     // We'll send these messages from the node:
-    let json_msg = |n| json!({
-        "id":n,
-        "ts":"2021-07-12T10:37:47.714666+01:00",
-        "payload": {
-            "authority":true,
-            "chain":"Test Chain",
-            "config":"",
-            "genesis_hash": BlockHash::from_low_u64_ne(1),
-            "implementation":"Polkadot",
-            "msg":"system.connected",
-            "name": format!("Alice {}", n),
-            "network_id":"12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp",
-            "startup_time":"1625565542717",
-            "version":"2.0.0-07a1af348-aarch64-macos"
-        }
-    });
+    let json_msg = |n| {
+        json!({
+            "id":n,
+            "ts":"2021-07-12T10:37:47.714666+01:00",
+            "payload": {
+                "authority":true,
+                "chain":"Test Chain",
+                "config":"",
+                "genesis_hash": BlockHash::from_low_u64_ne(1),
+                "implementation":"Polkadot",
+                "msg":"system.connected",
+                "name": format!("Alice {}", n),
+                "network_id":"12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp",
+                "startup_time":"1625565542717",
+                "version":"2.0.0-07a1af348-aarch64-macos"
+            }
+        })
+    };
 
     // First message ID should lead to feed messages:
     node_tx.send_json_text(json_msg(1)).unwrap();
-    assert_ne!(feed_rx.recv_feed_messages_timeout(Duration::from_secs(1)).await.unwrap().len(), 0);
+    assert_ne!(
+        feed_rx
+            .recv_feed_messages_timeout(Duration::from_secs(1))
+            .await
+            .unwrap()
+            .len(),
+        0
+    );
 
     // Second message ID should lead to feed messages as well:
     node_tx.send_json_text(json_msg(2)).unwrap();
-    assert_ne!(feed_rx.recv_feed_messages_timeout(Duration::from_secs(1)).await.unwrap().len(), 0);
+    assert_ne!(
+        feed_rx
+            .recv_feed_messages_timeout(Duration::from_secs(1))
+            .await
+            .unwrap()
+            .len(),
+        0
+    );
 
     // Third message ID should be ignored:
     node_tx.send_json_text(json_msg(3)).unwrap();
-    assert_eq!(feed_rx.recv_feed_messages_timeout(Duration::from_secs(1)).await.unwrap().len(), 0);
+    assert_eq!(
+        feed_rx
+            .recv_feed_messages_timeout(Duration::from_secs(1))
+            .await
+            .unwrap()
+            .len(),
+        0
+    );
 
     // Forth message ID should be ignored as well:
     node_tx.send_json_text(json_msg(4)).unwrap();
-    assert_eq!(feed_rx.recv_feed_messages_timeout(Duration::from_secs(1)).await.unwrap().len(), 0);
+    assert_eq!(
+        feed_rx
+            .recv_feed_messages_timeout(Duration::from_secs(1))
+            .await
+            .unwrap()
+            .len(),
+        0
+    );
 
     // (now that the chain "Test Chain" is known about, subscribe to it for update messages.
     // This wasn't needed to receive messages re the above since everybody hears about node
@@ -619,24 +683,52 @@ async fn max_nodes_per_connection_is_enforced() {
     node_tx.send_json_text(json!(
         {"id":1, "payload":{ "bandwidth_download":576,"bandwidth_upload":576,"msg":"system.interval","peers":1},"ts":"2021-07-12T10:38:48.330433+01:00" }
     )).unwrap();
-    assert_ne!(feed_rx.recv_feed_messages_timeout(Duration::from_secs(1)).await.unwrap().len(), 0);
+    assert_ne!(
+        feed_rx
+            .recv_feed_messages_timeout(Duration::from_secs(1))
+            .await
+            .unwrap()
+            .len(),
+        0
+    );
 
     node_tx.send_json_text(json!(
         {"id":2, "payload":{ "bandwidth_download":576,"bandwidth_upload":576,"msg":"system.interval","peers":1},"ts":"2021-07-12T10:38:48.330433+01:00" }
     )).unwrap();
-    assert_ne!(feed_rx.recv_feed_messages_timeout(Duration::from_secs(1)).await.unwrap().len(), 0);
+    assert_ne!(
+        feed_rx
+            .recv_feed_messages_timeout(Duration::from_secs(1))
+            .await
+            .unwrap()
+            .len(),
+        0
+    );
 
     // Updates about ignored IDs are still ignored:
 
     node_tx.send_json_text(json!(
         {"id":3, "payload":{ "bandwidth_download":576,"bandwidth_upload":576,"msg":"system.interval","peers":1},"ts":"2021-07-12T10:38:48.330433+01:00" }
     )).unwrap();
-    assert_eq!(feed_rx.recv_feed_messages_timeout(Duration::from_secs(1)).await.unwrap().len(), 0);
+    assert_eq!(
+        feed_rx
+            .recv_feed_messages_timeout(Duration::from_secs(1))
+            .await
+            .unwrap()
+            .len(),
+        0
+    );
 
     node_tx.send_json_text(json!(
         {"id":4, "payload":{ "bandwidth_download":576,"bandwidth_upload":576,"msg":"system.interval","peers":1},"ts":"2021-07-12T10:38:48.330433+01:00" }
     )).unwrap();
-    assert_eq!(feed_rx.recv_feed_messages_timeout(Duration::from_secs(1)).await.unwrap().len(), 0);
+    assert_eq!(
+        feed_rx
+            .recv_feed_messages_timeout(Duration::from_secs(1))
+            .await
+            .unwrap()
+            .len(),
+        0
+    );
 
     // Tidy up:
     server.shutdown().await;
