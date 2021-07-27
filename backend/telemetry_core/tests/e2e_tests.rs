@@ -496,9 +496,8 @@ async fn feed_can_subscribe_and_unsubscribe_from_chain() {
 /// Feeds will be disconnected if they can't receive messages quickly enough.
 #[tokio::test]
 async fn slow_feeds_are_disconnected() {
-    // Start server in release mode with a 1s feed timeout (to make the test run faster):
     let mut server = start_server(
-        true,
+        false,
         // Timeout faster so the test can be quicker:
         CoreOpts {
             feed_timeout: Some(1),

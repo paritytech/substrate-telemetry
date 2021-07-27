@@ -32,10 +32,5 @@ tokio = { version = "1.7.0", features = ["full"] }
 tokio-util = { version = "0.6", features = ["compat"] }
 
 [dev-dependencies]
-criterion = { version = "0.3.4", features = ["async", "async_tokio"] }
 shellwords = "1.1.0"
 test_utils = { path = "../test_utils" }
-
-[[bench]]
-name = "throughput"
-harness = false
