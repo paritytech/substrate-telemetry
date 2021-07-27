@@ -60,5 +60,6 @@ deploy-parity-stg:
   <<:                     *deploy-k8s
   environment:
     name:                 parity-stg
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "master"'
+#  rules:
+#    - if: '$CI_COMMIT_BRANCH == "master"'
+
