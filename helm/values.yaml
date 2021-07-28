@@ -100,7 +100,7 @@ affinity:
         - key: cloud.google.com/gke-nodepool
           operator: In
           values:
-          - substrate-telemetry
+          - substrate-telemetry-pool
 
 tolerations:
 - key: "app"
