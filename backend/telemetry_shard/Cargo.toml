@@ -1,0 +1,25 @@
+[package]
+name = "telemetry_shard"
+version = "0.1.0"
+authors = ["Parity Technologies Ltd. <admin@parity.io>"]
+edition = "2018"
+license = "GPL-3.0"
+
+[dependencies]
+anyhow = "1.0.41"
+bincode = "1.3.3"
+common = { path = "../common" }
+futures = "0.3.15"
+hex = "0.4.3"
+http = "0.2.4"
+log = "0.4.14"
+primitive-types = { version = "0.9.0", features = ["serde"] }
+serde = { version = "1.0.126", features = ["derive"] }
+serde_json = "1.0.64"
+simple_logger = "1.11.0"
+soketto = "0.6.0"
+structopt = "0.3.21"
+thiserror = "1.0.25"
+tokio = { version = "1.7.0", features = ["full"] }
+tokio-util = { version = "0.6", features = ["compat"] }
+warp = "0.3.1"

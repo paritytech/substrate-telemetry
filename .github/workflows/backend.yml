@@ -14,21 +14,30 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Build
+
+    - name: Build telemetry executables (in debug mode)
       working-directory: ./backend
-      run: cargo build --verbose
+      run: cargo build --bins --verbose
+
     - name: Run tests
       working-directory: ./backend
       run: cargo test --verbose
-    - name: Build release and call executable
+
+    - name: Build, release and call telemetry executable
       working-directory: ./backend
-      run: cargo run --release -- --help
+      run: cargo run --bin telemetry_core --release -- --help
+
+    - name: Build, release and call shard executable
+      working-directory: ./backend
+      run: cargo run --bin telemetry_shard --release -- --help
+
     - name: Login to Dockerhub
       uses: docker/login-action@v1
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-    - name: Build and Push template image
+
+    - name: Build and push template image for tagged commit
       uses: docker/build-push-action@v2 # https://github.com/docker/build-push-action
       with:
         context: './backend'
