@@ -7,9 +7,9 @@ mod real_ip;
 use std::{collections::HashSet, net::IpAddr, time::Duration};
 
 use aggregator::{Aggregator, FromWebsocket};
+use common::byte_size::ByteSize;
 use common::http_utils;
 use common::node_message;
-use common::byte_size::ByteSize;
 use common::rolling_total::RollingTotalBuilder;
 use futures::{channel::mpsc, SinkExt, StreamExt};
 use http::Uri;
@@ -54,7 +54,7 @@ struct Opts {
     /// rolling window of 10 seconds, and so spikes beyond this limit are allowed as long as
     /// the average traffic in the last 10 seconds falls below this value.
     #[structopt(long, default_value = "512k")]
-    max_node_data_per_second: ByteSize
+    max_node_data_per_second: ByteSize,
 }
 
 #[tokio::main]
@@ -100,7 +100,7 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
                                     ws_recv,
                                     tx_to_aggregator,
                                     max_nodes_per_connection,
-                                    bytes_per_second
+                                    bytes_per_second,
                                 )
                                 .await;
                             log::info!("Closing /submit connection from {:?}", addr);
@@ -130,7 +130,7 @@ async fn handle_node_websocket_connection<S>(
     mut ws_recv: http_utils::WsReceiver,
     mut tx_to_aggregator: S,
     max_nodes_per_connection: usize,
-    bytes_per_second: ByteSize
+    bytes_per_second: ByteSize,
 ) -> (S, http_utils::WsSender)
 where
     S: futures::Sink<FromWebsocket, Error = anyhow::Error> + Unpin + Send + 'static,

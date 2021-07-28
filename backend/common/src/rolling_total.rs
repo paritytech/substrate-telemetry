@@ -1,6 +1,6 @@
-use std::time::{ Duration, Instant };
-use num_traits::{ Zero, SaturatingAdd, SaturatingSub };
+use num_traits::{SaturatingAdd, SaturatingSub, Zero};
 use std::collections::VecDeque;
+use std::time::{Duration, Instant};
 
 /// Build an object responsible for keeping track of a rolling total.
 /// It does this in constant time and using memory proportional to the
@@ -8,7 +8,7 @@ use std::collections::VecDeque;
 pub struct RollingTotalBuilder<Time: TimeSource = SystemTimeSource> {
     window_size_multiple: usize,
     granularity: Duration,
-    time_source: Time
+    time_source: Time,
 }
 
 impl RollingTotalBuilder {
@@ -19,7 +19,7 @@ impl RollingTotalBuilder {
         Self {
             window_size_multiple: 10,
             granularity: Duration::from_secs(1),
-            time_source: SystemTimeSource
+            time_source: SystemTimeSource,
         }
     }
 
@@ -28,7 +28,7 @@ impl RollingTotalBuilder {
         RollingTotalBuilder {
             window_size_multiple: self.window_size_multiple,
             granularity: self.granularity,
-            time_source: val
+            time_source: val,
         }
     }
 
@@ -52,11 +52,12 @@ impl RollingTotalBuilder {
     }
 }
 
-impl <Time: TimeSource> RollingTotalBuilder<Time> {
+impl<Time: TimeSource> RollingTotalBuilder<Time> {
     /// Create a [`RollingTotal`] with these setings, starting from the
     /// instant provided.
     pub fn start<T>(self) -> RollingTotal<T, Time>
-    where T: Zero + SaturatingAdd + SaturatingSub
+    where
+        T: Zero + SaturatingAdd + SaturatingSub,
     {
         let mut averages = VecDeque::new();
         averages.push_back((self.time_source.now(), T::zero()));
@@ -66,7 +67,7 @@ impl <Time: TimeSource> RollingTotalBuilder<Time> {
             time_source: self.time_source,
             granularity: self.granularity,
             averages,
-            total: T::zero()
+            total: T::zero(),
         }
     }
 }
@@ -76,21 +77,18 @@ pub struct RollingTotal<Val, Time = SystemTimeSource> {
     time_source: Time,
     granularity: Duration,
     averages: VecDeque<(Instant, Val)>,
-    total: Val
+    total: Val,
 }
 
-impl <Val, Time: TimeSource> RollingTotal<Val, Time>
+impl<Val, Time: TimeSource> RollingTotal<Val, Time>
 where
     Val: SaturatingAdd + SaturatingSub + Copy + std::fmt::Debug,
-    Time: TimeSource
+    Time: TimeSource,
 {
-
     /// Add a new value at some time.
     pub fn push(&mut self, value: Val) {
         let time = self.time_source.now();
-        let (last_time, last_val) = self.averages
-            .back_mut()
-            .expect("always 1 value");
+        let (last_time, last_val) = self.averages.back_mut().expect("always 1 value");
 
         let since_last_nanos = time.duration_since(*last_time).as_nanos();
         let granularity_nanos = self.granularity.as_nanos();
@@ -105,14 +103,16 @@ where
             let steps = since_last_nanos / granularity_nanos;
 
             // Create a new time this number of jumps forward, and push it.
-            let new_time = *last_time + Duration::from_nanos(granularity_nanos as u64) * steps as u32;
+            let new_time =
+                *last_time + Duration::from_nanos(granularity_nanos as u64) * steps as u32;
             self.total = self.total.saturating_add(&value);
             self.averages.push_back((new_time, value));
 
             // Remove any old times/values no longer within our window size. If window_size_multiple
             // is 1, then we only keep the just-pushed time, hence the "-1". Remember to keep our
             // cached total up to date if we remove things.
-            let oldest_time_in_window = new_time - (self.granularity * (self.window_size_multiple - 1) as u32);
+            let oldest_time_in_window =
+                new_time - (self.granularity * (self.window_size_multiple - 1) as u32);
             while self.averages.front().expect("always 1 value").0 < oldest_time_in_window {
                 let value = self.averages.pop_front().expect("always 1 value").1;
                 self.total = self.total.saturating_sub(&value);
@@ -123,7 +123,6 @@ where
             *last_val = last_val.saturating_add(&value);
             self.total = self.total.saturating_add(&value);
         }
-
     }
 
     /// Fetch the current rolling total that we've accumulated. Note that this
@@ -191,13 +190,19 @@ mod test {
             .time_source(UserTimeSource(start_time))
             .start();
 
-        rolling_total.time_source().increment_by(Duration::from_millis(300));
+        rolling_total
+            .time_source()
+            .increment_by(Duration::from_millis(300));
         rolling_total.push(1);
 
-        rolling_total.time_source().increment_by(Duration::from_millis(300));
+        rolling_total
+            .time_source()
+            .increment_by(Duration::from_millis(300));
         rolling_total.push(10);
 
-        rolling_total.time_source().increment_by(Duration::from_millis(300));
+        rolling_total
+            .time_source()
+            .increment_by(Duration::from_millis(300));
         rolling_total.push(-5);
 
         assert_eq!(rolling_total.total(), 6);
@@ -218,13 +223,17 @@ mod test {
         assert_eq!(rolling_total.averages().len(), 1);
         assert_eq!(rolling_total.total(), 4);
 
-        rolling_total.time_source().increment_by(Duration::from_secs(3));
+        rolling_total
+            .time_source()
+            .increment_by(Duration::from_secs(3));
         rolling_total.push(1);
 
         assert_eq!(rolling_total.averages().len(), 2);
         assert_eq!(rolling_total.total(), 5);
 
-        rolling_total.time_source().increment_by(Duration::from_secs(1));
+        rolling_total
+            .time_source()
+            .increment_by(Duration::from_secs(1));
         rolling_total.push(10);
 
         assert_eq!(rolling_total.averages().len(), 3);
@@ -233,25 +242,30 @@ mod test {
         // Jump precisely to the end of the window. Now, pushing a
         // value will displace the first one (4). Note: if no value
         // is pushed, this time change will have no effect.
-        rolling_total.time_source().increment_by(Duration::from_secs(8));
+        rolling_total
+            .time_source()
+            .increment_by(Duration::from_secs(8));
         rolling_total.push(20);
 
         assert_eq!(rolling_total.averages().len(), 3);
         assert_eq!(rolling_total.total(), 15 + 20 - 4);
 
         // Jump so that only the last value is still within the window:
-        rolling_total.time_source().increment_by(Duration::from_secs(9));
+        rolling_total
+            .time_source()
+            .increment_by(Duration::from_secs(9));
         rolling_total.push(1);
 
         assert_eq!(rolling_total.averages().len(), 2);
         assert_eq!(rolling_total.total(), 21);
 
         // Jump so that everything is out of scope (just about!):
-        rolling_total.time_source().increment_by(Duration::from_secs(10));
+        rolling_total
+            .time_source()
+            .increment_by(Duration::from_secs(10));
         rolling_total.push(1);
 
         assert_eq!(rolling_total.averages().len(), 1);
         assert_eq!(rolling_total.total(), 1);
     }
-
 }

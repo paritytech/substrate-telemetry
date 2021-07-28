@@ -1,6 +1,6 @@
-use anyhow::{ anyhow, Error };
+use anyhow::{anyhow, Error};
 
-#[derive(Copy,Clone,Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct ByteSize(usize);
 
 impl ByteSize {
@@ -38,9 +38,14 @@ impl std::str::FromStr for ByteSize {
                     "KiB" | "Ki" => n * 1024,
                     "MiB" | "Mi" => n * 1024 * 1024,
                     "GiB" | "Gi" => n * 1024 * 1024 * 1024,
-                    _ => return Err(anyhow!("\
+                    _ => {
+                        return Err(anyhow!(
+                            "\
                         Cannot parse into bytes; suffix is '{}', but expecting one of \
-                        B,b, kB,K,k, MB,M,m, GB,G,g, KiB,Ki, MiB,Mi, GiB,Gi", suffix))
+                        B,b, kB,K,k, MB,M,m, GB,G,g, KiB,Ki, MiB,Mi, GiB,Gi",
+                            suffix
+                        ))
+                    }
                 };
                 Ok(ByteSize(n))
             }
@@ -52,34 +57,27 @@ impl std::str::FromStr for ByteSize {
 mod test {
     use crate::byte_size::ByteSize;
 
-
     #[test]
     fn can_parse_valid_strings() {
         let cases = vec![
             ("100", 100),
             ("100B", 100),
             ("100b", 100),
-
             ("20kB", 20 * 1000),
             ("20 kB", 20 * 1000),
             ("20K", 20 * 1000),
             (" 20k", 20 * 1000),
-
             ("1MB", 1 * 1000 * 1000),
             ("1M", 1 * 1000 * 1000),
             ("1m", 1 * 1000 * 1000),
             ("1 m", 1 * 1000 * 1000),
-
             ("1GB", 1 * 1000 * 1000 * 1000),
             ("1G", 1 * 1000 * 1000 * 1000),
             ("1g", 1 * 1000 * 1000 * 1000),
-
             ("1KiB", 1 * 1024),
             ("1Ki", 1 * 1024),
-
             ("1MiB", 1 * 1024 * 1024),
             ("1Mi", 1 * 1024 * 1024),
-
             ("1GiB", 1 * 1024 * 1024 * 1024),
             ("1Gi", 1 * 1024 * 1024 * 1024),
             (" 1 Gi ", 1 * 1024 * 1024 * 1024),
@@ -90,5 +88,4 @@ mod test {
             assert_eq!(b.into_bytes(), expected);
         }
     }
-
 }
