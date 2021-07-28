@@ -3,6 +3,7 @@ mod aggregator;
 mod connection;
 mod json_message;
 mod real_ip;
+mod blocked_addrs;
 
 use std::{collections::HashSet, net::IpAddr, time::Duration};
 
@@ -16,6 +17,7 @@ use http::Uri;
 use hyper::{Method, Response};
 use simple_logger::SimpleLogger;
 use structopt::StructOpt;
+use blocked_addrs::BlockedAddrs;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
@@ -55,6 +57,10 @@ struct Opts {
     /// the average traffic in the last 10 seconds falls below this value.
     #[structopt(long, default_value = "512k")]
     max_node_data_per_second: ByteSize,
+    /// How many seconds is a "/feed" connection that violates the '--max-node-data-per-second'
+    /// value prevented from reconnecting to this shard for, in seconds.
+    #[structopt(long, default_value = "600")]
+    node_block_seconds: u64
 }
 
 #[tokio::main]
@@ -75,6 +81,7 @@ async fn main() {
 
 /// Declare our routes and start the server.
 async fn start_server(opts: Opts) -> anyhow::Result<()> {
+    let block_list = BlockedAddrs::new(Duration::from_secs(opts.node_block_seconds));
     let aggregator = Aggregator::spawn(opts.core_url).await?;
     let socket_addr = opts.socket;
     let max_nodes_per_connection = opts.max_nodes_per_connection;
@@ -82,6 +89,7 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
 
     let server = http_utils::start_server(socket_addr, move |addr, req| {
         let aggregator = aggregator.clone();
+        let block_list = block_list.clone();
         async move {
             match (req.method(), req.uri().path().trim_end_matches('/')) {
                 // Check that the server is up and running:
@@ -89,6 +97,14 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
                 // Nodes send messages here:
                 (&Method::GET, "/submit") => {
                     let real_addr = real_ip::real_ip(addr, req.headers());
+
+                    if let Some(reason) = block_list.blocked_reason(&real_addr) {
+                        return Ok(Response::builder()
+                            .status(403)
+                            .body(reason.into())
+                            .unwrap())
+                    }
+
                     Ok(http_utils::upgrade_to_websocket(
                         req,
                         move |ws_send, ws_recv| async move {
@@ -101,6 +117,7 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
                                     tx_to_aggregator,
                                     max_nodes_per_connection,
                                     bytes_per_second,
+                                    block_list
                                 )
                                 .await;
                             log::info!("Closing /submit connection from {:?}", addr);
@@ -131,6 +148,7 @@ async fn handle_node_websocket_connection<S>(
     mut tx_to_aggregator: S,
     max_nodes_per_connection: usize,
     bytes_per_second: ByteSize,
+    block_list: BlockedAddrs
 ) -> (S, http_utils::WsSender)
 where
     S: futures::Sink<FromWebsocket, Error = anyhow::Error> + Unpin + Send + 'static,
@@ -188,6 +206,7 @@ where
                 rolling_total_bytes.push(bytes.len());
                 let this_bytes_per_second = rolling_total_bytes.total() / 10;
                 if this_bytes_per_second > bytes_per_second {
+                    block_list.block_addr(real_addr, "Too much traffic");
                     log::error!("Shutting down websocket connection: Too much traffic ({}bps)", this_bytes_per_second);
                     break;
                 }
