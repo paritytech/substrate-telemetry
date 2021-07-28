@@ -2,7 +2,7 @@ variables:
   CONTAINER_REGISTRY:     "docker.io/parity"
   CONTAINER_REPO:         "substrate-telemetry-backend"
   KUBE_NAMESPACE:         "substrate-telemetry"
-  IMAGE_FULL_NAME:        "${CONTAINER_REGISTRY}/${CONTAINER_REPO}:${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}"
+  IMAGE_FULL_NAME:        "${CONTAINER_REGISTRY}/${CONTAINER_REPO}:${CI_COMMIT_SHORT_SHA}"
 
 stages:
   - dockerize
@@ -26,7 +26,7 @@ stages:
         --create-namespace
         --namespace $KUBE_NAMESPACE
         --set image.repository="${CONTAINER_REGISTRY}/${CONTAINER_REPO}"
-        --set image.tag="${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}"
+        --set image.tag="${CI_COMMIT_SHORT_SHA}"
         $KUBE_NAMESPACE ./helm/
     # install the chart into the relevant cluster
     - helm --debug upgrade
@@ -36,7 +36,7 @@ stages:
         --create-namespace
         --namespace $KUBE_NAMESPACE
         --set image.repository="${CONTAINER_REGISTRY}/${CONTAINER_REPO}"
-        --set image.tag="${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}"
+        --set image.tag="${CI_COMMIT_SHORT_SHA}"
         $KUBE_NAMESPACE ./helm/
   rules:
     - if: '$CI_COMMIT_BRANCH == "jsdw-sharding"'
