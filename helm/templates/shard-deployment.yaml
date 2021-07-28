@@ -1,12 +1,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "substrate-telemetry.fullname" . }}
+  name: telemetry-shard
   labels:
     {{- include "substrate-telemetry.labels" . | nindent 4 }}
+    telemetry-component: shard
 spec:
   {{- if not .Values.autoscaling.enabled }}
-  replicas: {{ .Values.replicaCount }}
+  replicas: {{ .Values.replicaCount.shard }}
   {{- end }}
   selector:
     matchLabels:
@@ -19,6 +20,7 @@ spec:
       {{- end }}
       labels:
         {{- include "substrate-telemetry.selectorLabels" . | nindent 8 }}
+        telemetry-component: shard
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -33,9 +35,16 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - "telemetry_shard"
+          args:
+            - "--listen"
+            - "0.0.0.0:8000"
+            - "--core"
+            - "http://telemetry-core/shard_submit"
           ports:
             - name: http
-              containerPort: {{ .Values.service.targetPort }}
+              containerPort: {{ .Values.service.shard.targetPort }}
               protocol: TCP
           #livenessProbe:
           #  httpGet:

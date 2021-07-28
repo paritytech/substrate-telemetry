@@ -2,7 +2,9 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 3
+replicaCount:
+  shard: 3
+  core: 1
 
 image:
   repository: parity/substrate-telemetry-backend
@@ -37,9 +39,20 @@ securityContext: {}
   # runAsUser: 1000
 
 service:
-  type: LoadBalancer
-  port: 80
-  targetPort: 3000
+  shard:
+    type: LoadBalancer
+    port: 80
+    targetPort: 8000
+    annotations:
+      cloud.google.com/load-balancer-type: Internal
+      networking.gke.io/internal-load-balancer-allow-global-access: "true"
+      external-dns.alpha.kubernetes.io/hostname: substrate-telemetry.parity-stg.parity.io.
+  core:
+    type: ClusterIP
+    port: 80
+    targetPort: 8000
+    annotations: {}
+
 
 ingress:
   enabled: false
