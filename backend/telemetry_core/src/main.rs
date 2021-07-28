@@ -26,7 +26,7 @@ const ABOUT: &str = "This is the Telemetry Backend Core that receives telemetry 
 #[derive(StructOpt, Debug)]
 #[structopt(name = NAME, version = VERSION, author = AUTHORS, about = ABOUT)]
 struct Opts {
-    /// This is the socket address that Telemetryis listening to. This is restricted to
+    /// This is the socket address that Telemetry is listening to. This is restricted to
     /// localhost (127.0.0.1) by default and should be fine for most use cases. If
     /// you are using Telemetry in a container, you likely want to set this to '0.0.0.0:8000'
     #[structopt(short = "l", long = "listen", default_value = "127.0.0.1:8000")]

@@ -6,6 +6,8 @@ pub mod node_types;
 pub mod ready_chunks_all;
 pub mod time;
 pub mod ws_client;
+pub mod rolling_total;
+pub mod byte_size;
 
 mod assign_id;
 mod dense_map;
