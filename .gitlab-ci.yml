@@ -38,7 +38,9 @@ stages:
         --set image.repository="${CONTAINER_REGISTRY}/${CONTAINER_REPO}"
         --set image.tag="${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}"
         $KUBE_NAMESPACE ./helm/
-  when:                   manual
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "jsdw-sharding"'
+      when: manual
   tags:
     - kubernetes-parity-build
 
@@ -61,6 +63,3 @@ deploy-parity-stg:
   <<:                     *deploy-k8s
   environment:
     name:                 parity-stg
-#  rules:
-#    - if: '$CI_COMMIT_BRANCH == "master"'
-
