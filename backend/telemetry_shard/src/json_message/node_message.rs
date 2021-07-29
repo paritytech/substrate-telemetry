@@ -1,3 +1,19 @@
+// Source code for the Substrate Telemetry Server.
+// Copyright (C) 2021 Parity Technologies (UK) Ltd.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
+
 //! The structs and enums defined in this module are largely identical to those
 //! we'll use elsewhere internally, but are kept separate so that the JSON structure
 //! is defined (almost) from just this file, and we don't have to worry about breaking
