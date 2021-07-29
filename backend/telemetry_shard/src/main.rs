@@ -207,7 +207,7 @@ where
                 let this_bytes_per_second = rolling_total_bytes.total() / 10;
                 if this_bytes_per_second > bytes_per_second {
                     block_list.block_addr(real_addr, "Too much traffic");
-                    log::error!("Shutting down websocket connection: Too much traffic ({}bps)", this_bytes_per_second);
+                    log::error!("Shutting down websocket connection: Too much traffic ({}bps averaged over last 10s)", this_bytes_per_second);
                     break;
                 }
 
