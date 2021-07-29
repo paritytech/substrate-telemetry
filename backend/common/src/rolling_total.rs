@@ -182,6 +182,52 @@ mod test {
     use super::*;
 
     #[test]
+    fn times_grouped_by_granularity_spacing() {
+        let start_time = Instant::now();
+        let granularity = Duration::from_secs(1);
+        let mut rolling_total = RollingTotalBuilder::new()
+            .granularity(granularity)
+            .window_size_multiple(10)
+            .time_source(UserTimeSource(start_time))
+            .start();
+
+        rolling_total.push(1);
+
+        rolling_total
+            .time_source()
+            .increment_by(Duration::from_millis(1210)); // 1210; bucket 1
+        rolling_total.push(2);
+
+        rolling_total
+            .time_source()
+            .increment_by(Duration::from_millis(2500)); // 3710: bucket 3
+        rolling_total.push(3);
+
+        rolling_total
+            .time_source()
+            .increment_by(Duration::from_millis(1100)); // 4810: bucket 4
+        rolling_total.push(4);
+
+        rolling_total
+            .time_source()
+            .increment_by(Duration::from_millis(190)); // 5000: bucket 5
+        rolling_total.push(5);
+
+        // Regardless of the exact time that's elapsed, we'll end up with buckets that
+        // are exactly granularity spacing (or multiples of) apart.
+        assert_eq!(
+            rolling_total.averages().into_iter().copied().collect::<Vec<_>>(),
+            vec![
+                (start_time, 1),
+                (start_time + granularity, 2),
+                (start_time + granularity * 3, 3),
+                (start_time + granularity * 4, 4),
+                (start_time + granularity * 5, 5),
+            ]
+        )
+    }
+
+    #[test]
     fn gets_correct_total_within_granularity() {
         let start_time = Instant::now();
         let mut rolling_total = RollingTotalBuilder::new()
