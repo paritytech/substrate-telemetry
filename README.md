@@ -46,10 +46,10 @@ yarn start
 
 ### Terminal 3 - Node
 
-Follow up installation instructions from the [Polkadot repo](https://github.com/paritytech/polkadot)
+Follow up installation instructions from the [Substrate Node Template repo](https://github.com/substrate-developer-hub/substrate-node-template)
 
 ```sh
-polkadot --dev --telemetry-url ws://localhost:8000/submit
+./target/release/node-template --dev --telemetry-url 'ws://localhost:8000/submit 0' 
 ```
 
 ## Docker
