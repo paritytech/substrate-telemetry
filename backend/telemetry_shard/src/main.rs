@@ -71,7 +71,10 @@ struct Opts {
     /// node is allowed to send to a shard before it gets booted. This is averaged over a
     /// rolling window of 10 seconds, and so spikes beyond this limit are allowed as long as
     /// the average traffic in the last 10 seconds falls below this value.
-    #[structopt(long, default_value = "512k")]
+    ///
+    /// As a reference point, syncing a new Polkadot node leads to a maximum of about 25k of
+    /// traffic on average (at least initially).
+    #[structopt(long, default_value = "256k")]
     max_node_data_per_second: ByteSize,
     /// How many seconds is a "/feed" connection that violates the '--max-node-data-per-second'
     /// value prevented from reconnecting to this shard for, in seconds.
