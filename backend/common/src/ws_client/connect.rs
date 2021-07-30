@@ -71,14 +71,10 @@ impl Connection {
                 data.clear();
                 let message_data = match ws_from_connection.receive_data(&mut data).await {
                     Err(e) => {
-                        // Couldn't receive data means some issue with the connection. Log
-                        // the error, and close the other half of the connection too,
-                        // so the associated channels close gracefully.
                         log::error!(
                             "Shutting down websocket connection: Failed to receive data: {}",
                             e
                         );
-                        let _ = tx_has_closed.send(());
                         break;
                     }
                     Ok(data) => data,
@@ -94,15 +90,19 @@ impl Connection {
                 data = Vec::with_capacity(128);
 
                 if let Err(e) = tx_to_external.send(msg).await {
-                    // Failure to send likely means that the recv has been dropped,
-                    // so let's drop this loop too. An issue with the channel doesn't
-                    // mean that our socket connection has failed though, so we make no
-                    // attempt to close the other half of our connection here (we may
-                    // still be happily sending messages even if we dropped the receiver)
-                    log::error!("Failed to send data out: {}", e);
+                    log::error!(
+                        "Shutting down websocket connection: Failed to send data out: {}",
+                        e
+                    );
                     break;
                 }
             }
+
+            // If the receive loop ends, make sure the other half closes and let the socket
+            // connection be dropped. While we might want to drop half of the channel and keep
+            // the connection open, we need to keep receiving from it in order to ackknowledge
+            // control messages, so if this loops ends, we had better just shut it all down.
+            let _ = tx_has_closed.send(());
         });
 
         // Receive messages externally to send to the socket.
