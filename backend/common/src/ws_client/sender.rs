@@ -47,6 +47,18 @@ pub(super) enum SentMessageInternal {
 #[derive(Clone)]
 pub struct Sender {
     pub(super) inner: mpsc::UnboundedSender<SentMessageInternal>,
+    pub(super) closer: tokio::sync::broadcast::Sender<()>,
+    pub(super) count: std::sync::Arc<()>,
+}
+
+impl Drop for Sender {
+    fn drop(&mut self) {
+        // Close the socket connection if this is the last half
+        // of the channel (ie the receiver has been dropped already).
+        if std::sync::Arc::strong_count(&self.count) == 1 {
+            let _ = self.closer.send(());
+        }
+    }
 }
 
 impl Sender {
