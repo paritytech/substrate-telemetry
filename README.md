@@ -5,7 +5,7 @@
 
 ## Overview
 
-This repository contains both the backend ingestion server for Substrate Telemetry as well as the Frontend you typically see running at [telemetry.polkadot.io](https://telemetry.polkadot.io/).
+This repository contains the backend ingestion server for Substrate Telemetry (which itself is comprised of two binaries; `telemetry_shard` and `telemetry_core`) as well as the Frontend you typically see running at [telemetry.polkadot.io](https://telemetry.polkadot.io/).
 
 The backend is a Rust project and the frontend is React/Typescript project.
 
@@ -20,23 +20,32 @@ nvm install stable
 yarn
 ```
 
-### Terminal 1 - Backend
+### Terminal 1 & 2 - Backend
+
+Build the backend binaries by running the following:
 
 ```
 cd backend
 cargo build --release
-./target/release/telemetry --help
 ```
 
-By default, telemetry will listen on the local interface only (127.0.0.1) on port 8000. You may change both those values with the `--listen` flag as shown below:
+And then, in two different terminals, run:
 
 ```
-telemetry --listen 0.0.0.0:8888
+./target/release/telemetry_core
 ```
 
-This example listen on all interfaces and on port :8888
+and
 
-### Terminal 2 - Frontend
+```
+./target/release/telemetry_shard
+```
+
+Use `--help` on either binary to see the available options.
+
+By default, `telemetry_core` will listen on 127.0.0.1:8000, and `telemetry_shard` will listen on 127.0.0.1:8001, and expect the `telemetry_core` to be listening on its default address. To listen on different addresses, use the `--listen` option on either binary, for example `--listen 0.0.0.0:8000`. The `telemetry_shard` also needs to be told where the core is, so if the core is configured with `--listen 127.0.0.1:9090`, remember to pass `--core 127.0.0.1:9090` to the shard, too.
+
+### Terminal 3 - Frontend
 
 ```sh
 cd frontend
@@ -44,68 +53,97 @@ yarn install
 yarn start
 ```
 
-### Terminal 3 - Node
+Once this is running, you'll be able to navigate to [http://localhost:3000](http://localhost:3000) to view the UI.
+
+### Terminal 4 - Node
 
 Follow up installation instructions from the [Polkadot repo](https://github.com/paritytech/polkadot)
 
+If you started the backend binaries with their default arguments, you can connect a node to the shard by running:
+
 ```sh
-polkadot --dev --telemetry-url ws://localhost:8000/submit
+polkadot --dev --telemetry-url 'ws://localhost:8001/submit 1'
 ```
 
 ## Docker
 
-*Pre-built docker images are available at `parity/substrate-telemetry-frontend` and `parity/substrate-telemetry-backend`.*
+### Building images
 
-### Run the backend and frontend
+To build the backend docker image, navigate into the `backend` folder of this repository and run:
 
-Obviously, the frontend need to be aware of the backend. In a similar way, your node will need to connect to the backend.
-For the sake of brevity below, I will name the containers `backend` and `frontend`. In a complex environment, you will want to use names such as `telemetry-backend` for instance to avoid conflicts with other `backend` containers.
-
-Let's start the backend first. We will be using the published [chevdor](https://hub.docker.com/u/chevdor) images here, feel free to replace with your own image.
-
-```sh
-docker run --rm -i --name backend -p 8000:8000 \
-  chevdor/substrate-telemetry-backend -l 0.0.0.0:8000
+```
+docker build -t substrate-telemetry-backend .
 ```
 
-Let's now start the frontend:
+The backend image contains both the `telemetry_core` and `telemetry_shard` binaries.
 
-```sh
-docker run --rm -i --name frontend --link backend -p 80:80 \
-  -e SUBSTRATE_TELEMETRY_URL=ws://localhost:8000/feed \
-  chevdor/substrate-telemetry-frontend
+To build the frontend docker image, navigate into the `frontend` folder and run:
+
+```
+docker build -t substrate-telemetry-frontend .
 ```
 
-WARNING: Do not forget the `/feed` part of the URL...
+### Run the backend and frontend using `docker-compose`
 
-NOTE: Here we used `SUBSTRATE_TELEMETRY_URL=ws://localhost:8000/feed`. This will work if you test with everything running locally on your machine but NOT if your backend runs on a remote server. Keep in mind that the frontend docker image is serving a static site running your browser. The `SUBSTRATE_TELEMETRY_URL` is the WebSocket url that your browser will use to reach the backend. Say your backend runs on a remore server at `192.168.0.100`, you will need to set the IP/url accordingly in `SUBSTRATE_TELEMETRY_URL`.
+The easiest way to run the backend and frontend images is to use `docker-compose`. To do this, run `docker-compose up` in the root of this repository to build and run the images. Once running, you can view the UI by navigating a browser to `http://localhost:3000`.
 
-At that point, you can already open your browser at [http://localhost](http://localhost/) and see that telemetry is waiting for data.
+To connect a substrate node and have it send telemetry to this running instance, you have to tell it where to send telemetry by appending the argument `--telemetry-url 'ws://localhost:8001/submit 1'` (see "Terminal 4 - Node" above).
 
-Let's bring some data in with  a node:
+### Run the backend and frontend using `docker`
+
+If you'd like to get things runing manually using docker, you can do the following:
+
+1. Create a new shared network so that the various containers can communicate with eachother:
+
+   ```
+   docker network create telemetry
+   ```
+
+2. Start up the backend core process. We expose port 8000 so that a UI running in a host browser can connect to the `/feed` endpoint.
+
+   ```
+   docker run --rm -it --network=telemetry \
+       --name backend-core \
+       -p 8000:8000 \
+       substrate-telemetry-backend \
+       telemetry_core -l 0.0.0.0:8000
+   ```
+
+3. In another terminal, start up the backend shard process. We tell it where it can reach the core to send messages (possible because it has been started on the same network), and we listen on and expose port 8001 so that nodes running in the host can connect and send telemetry to it.
+
+   ```
+   docker run --rm -it --network=telemetry \
+       --name backend-shard \
+       -p 8001:8001 \
+       substrate-telemetry-backend \
+       telemetry_shard -l 0.0.0.0:8001 -c http://backend-core:8000/shard_submit
+   ```
+
+4. In another terminal, start up the frontend server. We pass a `SUBSTRATE_TELEMETRY_URL` env var to tell the UI how to connect to the core process to receive telemetry. This is relative to the host machine, since that is where the browser and UI will be running.
+
+   ```
+   docker run --rm -it --network=telemetry \
+       --name frontend \
+       -p 3000:80 \
+       -e SUBSTRATE_TELEMETRY_URL=ws://localhost:8000/feed \
+       substrate-telemetry-frontend
+   ```
+
+   **NOTE:** Here we used `SUBSTRATE_TELEMETRY_URL=ws://localhost:8000/feed`. This will work if you test with everything running locally on your machine but NOT if your backend runs on a remote server. Keep in mind that the frontend docker image is serving a static site running your browser. The `SUBSTRATE_TELEMETRY_URL` is the WebSocket url that your browser will use to reach the backend. Say your backend runs on a remore server at `192.168.0.100`, you will need to set the IP/url accordingly in `SUBSTRATE_TELEMETRY_URL`.
+
+With these running, you'll be able to navigate to [http://localhost:3000](http://localhost:3000) to view the UI. If you'd like to connect a node and have it send telemetry to your running shard, you can run the following:
 
 ```sh
-docker run --rm -i --name substrate --link backend -p 9944:9944 \
-  chevdor/substrate substrate --dev --telemetry-url 'ws://backend:8000/submit 0'
+docker run --rm -it --network=telemetry \
+  --name substrate \
+  -p 9944:9944 \
+  chevdor/substrate \
+  substrate --dev --telemetry-url 'ws://backend-shard:8001/submit 0'
 ```
 
-You should now see your node showing up in your local [telemetry frontend](http://localhost/):
+You should now see your node showing up in your local [telemetry frontend](http://localhost:3000/):
+
 ![image](doc/screenshot01.png)
-
-### Run via docker-compose
-
-To run via docker make sure that you have Docker Desktop.
-If you don't you can download for you OS here [Docker Desktop](https://www.docker.com/products/docker-desktop)
-
-```sh
-docker-compose up --build -d
-```
-
-- `-d` stands for detach, if you would like to see logs I recommend using [Kitmatic](https://kitematic.com/) or don't use the `-d`
-- `--build` will build the images and rebuild, but this is not required every time
-- If you want to makes UI changes, there is no need to rebuild the image as the files are being copied in via volumes.
-
-Now navigate to [http://localhost:3000](http://localhost:3000/) in your browser to view the app.
 
 ### Build & Publish the Frontend docker image
 
