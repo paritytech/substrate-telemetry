@@ -63,20 +63,22 @@ impl Connection {
 
         // Receive messages from the socket and post them out:
         let (mut tx_to_external, rx_from_ws) = mpsc::unbounded();
+        let (tx_has_closed, mut rx_has_closed) = futures::channel::oneshot::channel();
         tokio::spawn(async move {
             let mut data = Vec::with_capacity(128);
             loop {
                 // Clear the buffer and wait for the next message to arrive:
                 data.clear();
-
                 let message_data = match ws_from_connection.receive_data(&mut data).await {
                     Err(e) => {
-                        // Couldn't receive data may mean all senders are gone, so log
-                        // the error and shut this down:
+                        // Couldn't receive data means some issue with the connection. Log
+                        // the error, and close the other half of the connection too,
+                        // so the associated channels close gracefully.
                         log::error!(
                             "Shutting down websocket connection: Failed to receive data: {}",
                             e
                         );
+                        let _ = tx_has_closed.send(());
                         break;
                     }
                     Ok(data) => data,
@@ -93,11 +95,11 @@ impl Connection {
 
                 if let Err(e) = tx_to_external.send(msg).await {
                     // Failure to send likely means that the recv has been dropped,
-                    // so let's drop this loop too.
-                    log::error!(
-                        "Shutting down websocket connection: Failed to send data out: {}",
-                        e
-                    );
+                    // so let's drop this loop too. An issue with the channel doesn't
+                    // mean that our socket connection has failed though, so we make no
+                    // attempt to close the other half of our connection here (we may
+                    // still be happily sending messages even if we dropped the receiver)
+                    log::error!("Failed to send data out: {}", e);
                     break;
                 }
             }
@@ -106,7 +108,18 @@ impl Connection {
         // Receive messages externally to send to the socket.
         let (tx_to_ws, mut rx_from_external) = mpsc::unbounded();
         tokio::spawn(async move {
-            while let Some(msg) = rx_from_external.next().await {
+            loop {
+                let msg = tokio::select! {
+                    msg = rx_from_external.next() => { msg },
+                    // Websocket connection closed? Don't wait for incoming message; break immediately.
+                    _ = &mut rx_has_closed => { break },
+                };
+
+                let msg = match msg {
+                    None => break,
+                    Some(msg) => msg,
+                };
+
                 match msg {
                     SentMessageInternal::Message(SentMessage::Text(s)) => {
                         if let Err(e) = ws_to_connection.send_text_owned(s).await {

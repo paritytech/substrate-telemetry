@@ -56,7 +56,7 @@ impl Sender {
         Ok(())
     }
     /// Returns whether this channel is closed.
-    pub fn is_closed(&mut self) -> bool {
+    pub fn is_closed(&self) -> bool {
         self.inner.is_closed()
     }
     /// Unbounded send will always queue the message and doesn't

@@ -16,14 +16,15 @@
 
 #[warn(missing_docs)]
 mod aggregator;
+mod blocked_addrs;
 mod connection;
 mod json_message;
 mod real_ip;
-mod blocked_addrs;
 
 use std::{collections::HashSet, net::IpAddr, time::Duration};
 
 use aggregator::{Aggregator, FromWebsocket};
+use blocked_addrs::BlockedAddrs;
 use common::byte_size::ByteSize;
 use common::http_utils;
 use common::node_message;
@@ -33,7 +34,6 @@ use http::Uri;
 use hyper::{Method, Response};
 use simple_logger::SimpleLogger;
 use structopt::StructOpt;
-use blocked_addrs::BlockedAddrs;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
@@ -79,7 +79,7 @@ struct Opts {
     /// How many seconds is a "/feed" connection that violates the '--max-node-data-per-second'
     /// value prevented from reconnecting to this shard for, in seconds.
     #[structopt(long, default_value = "600")]
-    node_block_seconds: u64
+    node_block_seconds: u64,
 }
 
 #[tokio::main]
@@ -118,10 +118,7 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
                     let real_addr = real_ip::real_ip(addr, req.headers());
 
                     if let Some(reason) = block_list.blocked_reason(&real_addr) {
-                        return Ok(Response::builder()
-                            .status(403)
-                            .body(reason.into())
-                            .unwrap())
+                        return Ok(Response::builder().status(403).body(reason.into()).unwrap());
                     }
 
                     Ok(http_utils::upgrade_to_websocket(
@@ -136,7 +133,7 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
                                     tx_to_aggregator,
                                     max_nodes_per_connection,
                                     bytes_per_second,
-                                    block_list
+                                    block_list,
                                 )
                                 .await;
                             log::info!("Closing /submit connection from {:?}", addr);
@@ -167,7 +164,7 @@ async fn handle_node_websocket_connection<S>(
     mut tx_to_aggregator: S,
     max_nodes_per_connection: usize,
     bytes_per_second: ByteSize,
-    block_list: BlockedAddrs
+    block_list: BlockedAddrs,
 ) -> (S, http_utils::WsSender)
 where
     S: futures::Sink<FromWebsocket, Error = anyhow::Error> + Unpin + Send + 'static,

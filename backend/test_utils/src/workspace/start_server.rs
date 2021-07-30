@@ -40,7 +40,7 @@ impl Default for ShardOpts {
         Self {
             max_nodes_per_connection: None,
             max_node_data_per_second: None,
-            node_block_seconds: None
+            node_block_seconds: None,
         }
     }
 }
@@ -125,9 +125,7 @@ pub async fn start_server(
 
     // Append additional opts to the core command
     if let Some(val) = core_opts.feed_timeout {
-        core_command = core_command
-            .arg("--feed-timeout")
-            .arg(val.to_string());
+        core_command = core_command.arg("--feed-timeout").arg(val.to_string());
     }
 
     // Star the server

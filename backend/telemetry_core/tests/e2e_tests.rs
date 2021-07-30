@@ -14,9 +14,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-//! General end-to-end tests
+/*!
+General end-to-end tests
+
+Note that on MacOS inparticular, you may need to increase some limits to be
+able to open a large number of connections and run some of the tests.
+Try running these:
+
+```sh
+sudo sysctl -w kern.maxfiles=50000
+sudo sysctl -w kern.maxfilesperproc=50000
+ulimit -n 50000
+sudo sysctl -w kern.ipc.somaxconn=50000
+sudo sysctl -w kern.ipc.maxsockbuf=16777216
+```
+*/
 
 use common::node_types::BlockHash;
+use common::ws_client::SentMessage;
 use serde_json::json;
 use std::time::Duration;
 use test_utils::{
@@ -504,6 +519,57 @@ async fn feed_can_subscribe_and_unsubscribe_from_chain() {
 
     // Tidy up:
     server.shutdown().await;
+}
+
+/// If a node sends more than some rolling average amount of data, it'll be booted.
+#[tokio::test]
+async fn node_banned_if_it_sends_too_much_data() {
+    async fn try_send_data(max_bytes: usize, send_msgs: usize, bytes_per_msg: usize) -> bool {
+        let mut server = start_server(
+            false,
+            CoreOpts::default(),
+            ShardOpts {
+                // Remember, this is (currently) averaged over the last 10 seconds,
+                // so we need to send 10x this amount of data for an imemdiate ban:
+                max_node_data_per_second: Some(max_bytes),
+                ..Default::default()
+            },
+        )
+        .await;
+
+        // Give us a shard to talk to:
+        let shard_id = server.add_shard().await.unwrap();
+        let (node_tx, _node_rx) = server
+            .get_shard(shard_id)
+            .unwrap()
+            .connect_node()
+            .await
+            .unwrap();
+
+        // Send the data requested to the shard:
+        for _ in 0..send_msgs {
+            node_tx
+                .unbounded_send(SentMessage::Binary(vec![1; bytes_per_msg]))
+                .unwrap();
+        }
+
+        // Wait a little for the shard to react and cut off the connection (or not):
+        tokio::time::sleep(Duration::from_millis(250)).await;
+
+        // Has the connection been closed?
+        node_tx.is_closed()
+    }
+
+    assert_eq!(
+        try_send_data(1000, 10, 1000).await,
+        false,
+        "shouldn't be closed; we didn't exceed 10x threshold"
+    );
+    assert_eq!(
+        try_send_data(999, 10, 1000).await,
+        true,
+        "should be closed; we sent just over 10x the block threshold"
+    );
 }
 
 /// Feeds will be disconnected if they can't receive messages quickly enough.

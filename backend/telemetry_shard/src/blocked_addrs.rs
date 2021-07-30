@@ -15,9 +15,9 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use std::collections::HashMap;
-use std::time::{Duration, Instant};
 use std::net::IpAddr;
-use std::sync::{ Mutex, Arc };
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 /// Keep track of nodes that have been blocked.
 #[derive(Debug, Clone)]
@@ -26,7 +26,7 @@ pub struct BlockedAddrs(Arc<BlockAddrsInner>);
 #[derive(Debug)]
 struct BlockAddrsInner {
     block_duration: Duration,
-    inner: Mutex<HashMap<IpAddr, (&'static str, Instant)>>
+    inner: Mutex<HashMap<IpAddr, (&'static str, Instant)>>,
 }
 
 impl BlockedAddrs {
@@ -35,7 +35,7 @@ impl BlockedAddrs {
     pub fn new(block_duration: Duration) -> BlockedAddrs {
         BlockedAddrs(Arc::new(BlockAddrsInner {
             block_duration,
-            inner: Mutex::new(HashMap::new())
+            inner: Mutex::new(HashMap::new()),
         }))
     }
 
@@ -52,8 +52,8 @@ impl BlockedAddrs {
         let mut map = self.0.inner.lock().unwrap();
 
         let (reason, time) = match map.get(addr) {
-            Some(&(reason,time)) => (reason, time),
-            None => return None
+            Some(&(reason, time)) => (reason, time),
+            None => return None,
         };
 
         if time + self.0.block_duration < Instant::now() {
