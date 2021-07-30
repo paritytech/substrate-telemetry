@@ -91,7 +91,7 @@ To connect a substrate node and have it send telemetry to this running instance,
 
 ### Run the backend and frontend using `docker`
 
-If you'd like to get things runing manually using docker, you can do the following:
+If you'd like to get things runing manually using Docker, you can do the following. This assumes that you've built the images as per the above, and have two images named `substrate-telemetry-backend` and `substrate-telemetry-frontend`.
 
 1. Create a new shared network so that the various containers can communicate with eachother:
 
