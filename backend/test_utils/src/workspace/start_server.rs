@@ -31,12 +31,16 @@ impl Default for CoreOpts {
 /// Additional options to pass to the shard command.
 pub struct ShardOpts {
     pub max_nodes_per_connection: Option<usize>,
+    pub max_node_data_per_second: Option<usize>,
+    pub node_block_seconds: Option<u64>,
 }
 
 impl Default for ShardOpts {
     fn default() -> Self {
         Self {
             max_nodes_per_connection: None,
+            max_node_data_per_second: None,
+            node_block_seconds: None
         }
     }
 }
@@ -95,10 +99,20 @@ pub async fn start_server(
         });
 
     // Append additional opts to the shard command
-    if let Some(max_nodes_per_connection) = shard_opts.max_nodes_per_connection {
+    if let Some(val) = shard_opts.max_nodes_per_connection {
         shard_command = shard_command
             .arg("--max-nodes-per-connection")
-            .arg(max_nodes_per_connection.to_string());
+            .arg(val.to_string());
+    }
+    if let Some(val) = shard_opts.max_node_data_per_second {
+        shard_command = shard_command
+            .arg("--max-node-data-per-second")
+            .arg(val.to_string());
+    }
+    if let Some(val) = shard_opts.node_block_seconds {
+        shard_command = shard_command
+            .arg("--node-block-seconds")
+            .arg(val.to_string());
     }
 
     // Build the core command
@@ -110,10 +124,10 @@ pub async fn start_server(
         });
 
     // Append additional opts to the core command
-    if let Some(feed_timeout) = core_opts.feed_timeout {
+    if let Some(val) = core_opts.feed_timeout {
         core_command = core_command
             .arg("--feed-timeout")
-            .arg(feed_timeout.to_string());
+            .arg(val.to_string());
     }
 
     // Star the server

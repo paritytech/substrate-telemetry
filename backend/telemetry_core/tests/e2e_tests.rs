@@ -518,6 +518,9 @@ async fn slow_feeds_are_disconnected() {
         // Allow us to send more messages in more easily:
         ShardOpts {
             max_nodes_per_connection: Some(100_000),
+            // Prevent the shard being being banned when it sends a load of data at once:
+            max_node_data_per_second: Some(100_000_000),
+            ..Default::default()
         },
     )
     .await;
@@ -604,6 +607,7 @@ async fn max_nodes_per_connection_is_enforced() {
         // Limit max nodes per connection to 2; any other msgs should be ignored.
         ShardOpts {
             max_nodes_per_connection: Some(2),
+            ..Default::default()
         },
     )
     .await;
