@@ -16,22 +16,13 @@
 
 use futures::channel::mpsc;
 use futures::{Stream, StreamExt};
+use std::sync::Arc;
+use super::on_close::OnClose;
 
 /// Receive messages out of a connection
 pub struct Receiver {
     pub(super) inner: mpsc::UnboundedReceiver<Result<RecvMessage, RecvError>>,
-    pub(super) closer: tokio::sync::broadcast::Sender<()>,
-    pub(super) count: std::sync::Arc<()>,
-}
-
-impl Drop for Receiver {
-    fn drop(&mut self) {
-        // Close the socket connection if this is the last half
-        // of the channel (ie the sender has been dropped already).
-        if std::sync::Arc::strong_count(&self.count) == 1 {
-            let _ = self.closer.send(());
-        }
-    }
+    pub(super) _closer: Arc<OnClose>,
 }
 
 #[derive(thiserror::Error, Debug)]

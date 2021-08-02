@@ -14,15 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-/// Functionality to establish a connection
-mod connect;
-/// The channel based receive interface
-mod receiver;
-/// The channel based send interface
-mod sender;
-/// A close helper that we use in sender/receiver.
-mod on_close;
+use tokio::sync::broadcast;
 
-pub use connect::{connect, ConnectError, Connection, RawReceiver, RawSender};
-pub use receiver::{Receiver, RecvError, RecvMessage};
-pub use sender::{SendError, Sender, SentMessage};
+/// A small helper to fire the "close" channel when it's dropped.
+pub struct OnClose(pub broadcast::Sender<()>);
+
+impl Drop for OnClose {
+    fn drop(&mut self) {
+        let _ = self.0.send(());
+    }
+}

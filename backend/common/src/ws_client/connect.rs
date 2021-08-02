@@ -19,6 +19,7 @@ use soketto::handshake::{Client, ServerResponse};
 use tokio::net::TcpStream;
 use tokio_util::compat::TokioAsyncReadCompatExt;
 use std::sync::Arc;
+use super::on_close::OnClose;
 
 use super::{
     receiver::{Receiver, RecvMessage},
@@ -67,10 +68,9 @@ impl Connection {
         // and recv channels that we hand out are dropped. Notably, we allow either recv or
         // send alone to be dropped and still keep the socket open (we may only care about
         // one way communication).
-        let (tx_closed, mut rx_closed1) = tokio::sync::broadcast::channel::<()>(1);
-        let tx_closed1 = tx_closed.clone();
-        let tx_closed2 = tx_closed.clone();
-        let mut rx_closed2 = tx_closed.subscribe();
+        let (tx_closed1, mut rx_closed1) = tokio::sync::broadcast::channel::<()>(1);
+        let tx_closed2 = tx_closed1.clone();
+        let mut rx_closed2 = tx_closed1.subscribe();
 
         // Receive messages from the socket and post them out:
         let (mut tx_to_external, rx_from_ws) = mpsc::unbounded();
@@ -90,7 +90,7 @@ impl Connection {
                         // The socket had an error, so notify interested parties that we should
                         // shut the connection down and bail out of this receive loop.
                         log::error!("Shutting down websocket connection: Failed to receive data: {}", e);
-                        let _ = tx_closed.send(());
+                        let _ = tx_closed1.send(());
                         break;
                     }
                     Ok(data) => data,
@@ -193,18 +193,16 @@ impl Connection {
         });
 
         // Keep track of whether one of sender or received have
-        // been dropped. If both have, close the socket connection.
-        let counter = Arc::new(());
+        // been dropped. If both have, we close the socket connection.
+        let on_close = Arc::new(OnClose(tx_closed2));
 
         (Sender {
             inner: tx_to_ws,
-            closer: tx_closed1,
-            count: Arc::clone(&counter),
+            closer: Arc::clone(&on_close),
         },
         Receiver {
-            inner: rx_from_ws ,
-            closer: tx_closed2,
-            count: counter,
+            inner: rx_from_ws,
+            _closer: on_close,
         })
     }
 }

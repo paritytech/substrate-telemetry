@@ -16,6 +16,8 @@
 
 use futures::channel::mpsc;
 use futures::{Sink, SinkExt};
+use std::sync::Arc;
+use super::on_close::OnClose;
 
 /// A message that can be sent into the channel interface
 #[derive(Debug, Clone)]
@@ -47,24 +49,16 @@ pub(super) enum SentMessageInternal {
 #[derive(Clone)]
 pub struct Sender {
     pub(super) inner: mpsc::UnboundedSender<SentMessageInternal>,
-    pub(super) closer: tokio::sync::broadcast::Sender<()>,
-    pub(super) count: std::sync::Arc<()>,
-}
-
-impl Drop for Sender {
-    fn drop(&mut self) {
-        // Close the socket connection if this is the last half
-        // of the channel (ie the receiver has been dropped already).
-        if std::sync::Arc::strong_count(&self.count) == 1 {
-            let _ = self.closer.send(());
-        }
-    }
+    pub(super) closer: Arc<OnClose>,
 }
 
 impl Sender {
     /// Ask the underlying Websocket connection to close.
     pub async fn close(&mut self) -> Result<(), SendError> {
         self.inner.send(SentMessageInternal::Close).await?;
+        // fire the "proper" close handler (this shouldn't really be necessary
+        // since the above will cascade closing to both sides anyway).
+        let _ = self.closer.0.send(());
         Ok(())
     }
     /// Returns whether this channel is closed.
