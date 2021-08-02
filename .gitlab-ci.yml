@@ -1,0 +1,68 @@
+variables:
+  CONTAINER_REGISTRY:     "docker.io/parity"
+  CONTAINER_REPO:         "substrate-telemetry-backend"
+  KUBE_NAMESPACE:         "substrate-telemetry"
+  IMAGE_FULL_NAME:        "${CONTAINER_REGISTRY}/${CONTAINER_REPO}:${CI_COMMIT_SHORT_SHA}"
+
+stages:
+  - dockerize
+  - staging
+
+#.delete_deployment:       &delete_deployment    
+#  - helm uninstall -n "$KUBE_NAMESPACE" "$KUBE_NAMESPACE"
+
+.deploy-k8s:              &deploy-k8s
+  image:                  paritytech/kubetools:3.5.3
+  script:
+    - echo "Deploying using image $IMAGE_FULL_NAME"
+    - echo "Using Helm `helm version --short`"
+    - export KUBERNETES_VERSION_TAG="$CI_PIPELINE_ID"
+    - |-
+      sed -i "s/version:.*/version: $KUBERNETES_VERSION_TAG/" ./helm/Chart.yaml
+    - |-
+      sed -i "s/appVersion:.*/appVersion: $KUBERNETES_VERSION_TAG/" ./helm/Chart.yaml
+    # validate the chart
+    - helm --debug template 
+        --create-namespace
+        --namespace $KUBE_NAMESPACE
+        --set image.repository="${CONTAINER_REGISTRY}/${CONTAINER_REPO}"
+        --set image.tag="${CI_COMMIT_SHORT_SHA}"
+        $KUBE_NAMESPACE ./helm/
+    # install the chart into the relevant cluster
+    - helm --debug upgrade
+        --install
+        --atomic
+        --timeout 120s
+        --create-namespace
+        --namespace $KUBE_NAMESPACE
+        --set image.repository="${CONTAINER_REGISTRY}/${CONTAINER_REPO}"
+        --set image.tag="${CI_COMMIT_SHORT_SHA}"
+        $KUBE_NAMESPACE ./helm/
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "jsdw-sharding"'
+      when: manual
+  tags:
+    - kubernetes-parity-build
+
+dockerize:
+  stage:                  dockerize
+  image:                  quay.io/buildah/stable
+  script:
+    - echo "Building image $IMAGE_FULL_NAME"
+    - buildah bud
+      --format=docker
+      --tag "$IMAGE_FULL_NAME" ./backend/
+    - echo ${Docker_Hub_Pass_Parity} |
+        buildah login --username ${Docker_Hub_User_Parity} --password-stdin docker.io
+    - buildah push --format=v2s2 "$IMAGE_FULL_NAME"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "jsdw-sharding"'
+      when: manual
+  tags:
+    - kubernetes-parity-build
+
+deploy-parity-stg:
+  stage:                  staging
+  <<:                     *deploy-k8s
+  environment:
+    name:                 parity-stg

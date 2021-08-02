@@ -1,0 +1,121 @@
+# Default values for substrate-telemtry.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount:
+  shard: 3
+  core: 1
+
+image:
+  repository: docker.io/parity/substrate-telemetry-backend
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: master-b4117d3a
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  shard:
+    type: LoadBalancer
+    port: 80
+    targetPort: 8000
+    annotations:
+      cloud.google.com/load-balancer-type: Internal
+      networking.gke.io/internal-load-balancer-allow-global-access: "true"
+      external-dns.alpha.kubernetes.io/hostname: substrate-telemetry.parity-stg.parity.io.
+  core:
+    type: LoadBalancer
+    port: 80
+    targetPort: 8000
+    annotations:
+      cloud.google.com/load-balancer-type: Internal
+      networking.gke.io/internal-load-balancer-allow-global-access: "true"
+      external-dns.alpha.kubernetes.io/hostname: substrate-telemetry-core.parity-stg.parity.io.
+
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  shard:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+  # telemetry-core is not scalable atm.
+  core:
+    enabled: false
+    minReplicas: 3
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: cloud.google.com/gke-nodepool
+          operator: In
+          values:
+          - substrate-telemetry-pool
+
+tolerations:
+- key: "app"
+  operator: "Equal"
+  value: "substrate-telemetry"
+  effect: "NoExecute"
+

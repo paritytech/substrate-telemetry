@@ -1,4 +1,4 @@
-FROM paritytech/ci-linux:production as builder
+FROM docker.io/paritytech/ci-linux:production as builder
 
 ARG PROFILE=release
 WORKDIR /app
@@ -8,7 +8,7 @@ COPY . .
 RUN cargo build --${PROFILE} --bins
 
 # MAIN IMAGE FOR PEOPLE TO PULL --- small one#
-FROM debian:buster-slim
+FROM docker.io/debian:buster-slim
 LABEL maintainer="Parity Technologies"
 LABEL description="Polkadot Telemetry backend shard/core binaries, static build"
 
