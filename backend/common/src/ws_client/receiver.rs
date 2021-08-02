@@ -22,7 +22,7 @@ use super::on_close::OnClose;
 /// Receive messages out of a connection
 pub struct Receiver {
     pub(super) inner: mpsc::UnboundedReceiver<Result<RecvMessage, RecvError>>,
-    pub(super) _closer: Arc<OnClose>,
+    pub(super) closer: Arc<OnClose>,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -31,6 +31,16 @@ pub enum RecvError {
     InvalidUtf8(#[from] std::string::FromUtf8Error),
     #[error("Stream finished")]
     StreamFinished,
+    #[error("Failed to send close message")]
+    CloseError
+}
+
+impl Receiver {
+    /// Ask the underlying Websocket connection to close.
+    pub async fn close(&mut self) -> Result<(), RecvError> {
+        self.closer.0.send(()).map_err(|_| RecvError::CloseError)?;
+        Ok(())
+    }
 }
 
 impl Stream for Receiver {

@@ -23,7 +23,7 @@ use super::on_close::OnClose;
 
 use super::{
     receiver::{Receiver, RecvMessage},
-    sender::{Sender, SentMessage, SentMessageInternal},
+    sender::{Sender, SentMessage},
 };
 
 /// The send side of a Soketto WebSocket connection
@@ -72,7 +72,7 @@ impl Connection {
         let tx_closed2 = tx_closed1.clone();
         let mut rx_closed2 = tx_closed1.subscribe();
 
-        // Receive messages from the socket and post them out:
+        // Receive messages from the socket:
         let (mut tx_to_external, rx_from_ws) = mpsc::unbounded();
         tokio::spawn(async move {
             let mut send_to_external = true;
@@ -113,32 +113,37 @@ impl Connection {
                     // Our external channel may have closed or errored, but the socket hasn't
                     // been closed, so keep receiving in order to allow the socket to continue to
                     // function properly (we may be happy just sending messages to it), but stop
-                    // trying to send messages out,
+                    // trying to hand back messages we've received from the socket.
                     log::warn!("Failed to send data out: {}", e);
                     send_to_external = false;
                 }
             }
         });
 
-        // Receive messages externally to send to the socket.
+        // Send messages to the socket:
         let (tx_to_ws, mut rx_from_external) = mpsc::unbounded();
         tokio::spawn(async move {
             loop {
                 // Wait for messages, or bail entirely if asked to close.
                 let msg = tokio::select! {
                     msg = rx_from_external.next() => { msg },
-                    _ = rx_closed2.recv() => { break }
+                    _ = rx_closed2.recv() => {
+                        // attempt to gracefully end the connection.
+                        let _ = ws_to_connection.close().await;
+                        break
+                    }
                 };
 
-                // No more messages; channel closed. End this loop.
+                // No more messages; channel closed. End this loop. Unlike the recv side which
+                // needs to keep receiving data for the WS connection to stay open, there's no
+                // reason to keep this side of the loop open if our channel is closed.
                 let msg = match msg {
                     None => break,
                     Some(msg) => msg,
                 };
 
-                // Any errors we hit here will be hit faster in the `receive_data`
                 match msg {
-                    SentMessageInternal::Message(SentMessage::Text(s)) => {
+                    SentMessage::Text(s) => {
                         if let Err(e) = ws_to_connection.send_text_owned(s).await {
                             log::error!(
                                 "Shutting down websocket connection: Failed to send text data: {}",
@@ -147,7 +152,7 @@ impl Connection {
                             break;
                         }
                     }
-                    SentMessageInternal::Message(SentMessage::Binary(bytes)) => {
+                    SentMessage::Binary(bytes) => {
                         if let Err(e) = ws_to_connection.send_binary_mut(bytes).await {
                             log::error!(
                                 "Shutting down websocket connection: Failed to send binary data: {}",
@@ -156,7 +161,7 @@ impl Connection {
                             break;
                         }
                     }
-                    SentMessageInternal::Message(SentMessage::StaticText(s)) => {
+                    SentMessage::StaticText(s) => {
                         if let Err(e) = ws_to_connection.send_text(s).await {
                             log::error!(
                                 "Shutting down websocket connection: Failed to send text data: {}",
@@ -165,18 +170,12 @@ impl Connection {
                             break;
                         }
                     }
-                    SentMessageInternal::Message(SentMessage::StaticBinary(bytes)) => {
+                    SentMessage::StaticBinary(bytes) => {
                         if let Err(e) = ws_to_connection.send_binary(bytes).await {
                             log::error!(
                                 "Shutting down websocket connection: Failed to send binary data: {}",
                                 e
                             );
-                            break;
-                        }
-                    }
-                    SentMessageInternal::Close => {
-                        if let Err(e) = ws_to_connection.close().await {
-                            log::error!("Error attempting to close connection: {}", e);
                             break;
                         }
                     }
@@ -202,7 +201,7 @@ impl Connection {
         },
         Receiver {
             inner: rx_from_ws,
-            _closer: on_close,
+            closer: on_close,
         })
     }
 }

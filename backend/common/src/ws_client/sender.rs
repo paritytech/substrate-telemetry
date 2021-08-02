@@ -38,27 +38,17 @@ pub enum SentMessage {
     Binary(Vec<u8>),
 }
 
-/// Messages sent into the channel interface can be anything publically visible, or a close message.
-#[derive(Debug, Clone)]
-pub(super) enum SentMessageInternal {
-    Message(SentMessage),
-    Close,
-}
-
 /// Send messages into the connection
 #[derive(Clone)]
 pub struct Sender {
-    pub(super) inner: mpsc::UnboundedSender<SentMessageInternal>,
+    pub(super) inner: mpsc::UnboundedSender<SentMessage>,
     pub(super) closer: Arc<OnClose>,
 }
 
 impl Sender {
     /// Ask the underlying Websocket connection to close.
     pub async fn close(&mut self) -> Result<(), SendError> {
-        self.inner.send(SentMessageInternal::Close).await?;
-        // fire the "proper" close handler (this shouldn't really be necessary
-        // since the above will cascade closing to both sides anyway).
-        let _ = self.closer.0.send(());
+        self.closer.0.send(()).map_err(|_| SendError::CloseError)?;
         Ok(())
     }
     /// Returns whether this channel is closed.
@@ -69,7 +59,7 @@ impl Sender {
     /// need to be awaited.
     pub fn unbounded_send(&self, msg: SentMessage) -> Result<(), SendError> {
         self.inner
-            .unbounded_send(SentMessageInternal::Message(msg))
+            .unbounded_send(msg)
             .map_err(|e| e.into_send_error())?;
         Ok(())
     }
@@ -79,6 +69,8 @@ impl Sender {
 pub enum SendError {
     #[error("Failed to send message: {0}")]
     ChannelError(#[from] mpsc::SendError),
+    #[error("Failed to send close message")]
+    CloseError
 }
 
 impl Sink<SentMessage> for Sender {
@@ -94,7 +86,7 @@ impl Sink<SentMessage> for Sender {
         item: SentMessage,
     ) -> Result<(), Self::Error> {
         self.inner
-            .start_send_unpin(SentMessageInternal::Message(item))
+            .start_send_unpin(item)
             .map_err(|e| e.into())
     }
     fn poll_flush(
