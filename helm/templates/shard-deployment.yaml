@@ -39,9 +39,9 @@ spec:
             - "telemetry_shard"
           args:
             - "--listen"
-            - "0.0.0.0:8000"
+            - "0.0.0.0:{{ .Values.service.shard.targetPort }}"
             - "--core"
-            - "http://telemetry-core/shard_submit"
+            - "http://telemetry-core:{{ .Values.service.core.targetPort }}/shard_submit"
           ports:
             - name: http
               containerPort: {{ .Values.service.shard.targetPort }}

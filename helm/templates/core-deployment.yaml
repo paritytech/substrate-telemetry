@@ -39,7 +39,7 @@ spec:
             - "telemetry_core"
           args:
             - "--listen"
-            - "0.0.0.0:8000"
+            - "0.0.0.0:{{ .Values.service.core.targetPort }}"
           ports:
             - name: http
               containerPort: {{ .Values.service.core.targetPort }}

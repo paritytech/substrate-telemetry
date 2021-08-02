@@ -7,10 +7,10 @@ replicaCount:
   core: 1
 
 image:
-  repository: parity/substrate-telemetry-backend
+  repository: docker.io/parity/substrate-telemetry-backend
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: latest
+  tag: master-b4117d3a
 
 imagePullSecrets: []
 nameOverride: ""
@@ -48,10 +48,13 @@ service:
       networking.gke.io/internal-load-balancer-allow-global-access: "true"
       external-dns.alpha.kubernetes.io/hostname: substrate-telemetry.parity-stg.parity.io.
   core:
-    type: ClusterIP
+    type: LoadBalancer
     port: 80
     targetPort: 8000
-    annotations: {}
+    annotations:
+      cloud.google.com/load-balancer-type: Internal
+      networking.gke.io/internal-load-balancer-allow-global-access: "true"
+      external-dns.alpha.kubernetes.io/hostname: substrate-telemetry-core.parity-stg.parity.io.
 
 
 ingress:
@@ -83,11 +86,19 @@ resources: {}
   #   memory: 128Mi
 
 autoscaling:
-  enabled: false
-  minReplicas: 1
-  maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
+  shard:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+  # telemetry-core is not scalable atm.
+  core:
+    enabled: false
+    minReplicas: 3
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
 
 nodeSelector: {}
 
