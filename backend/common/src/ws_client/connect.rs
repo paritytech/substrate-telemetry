@@ -142,6 +142,9 @@ impl Connection {
                     Some(msg) => msg,
                 };
 
+                // We don't explicitly shut down the channel if we hit send errors. Why? Because the
+                // receive side of the channel will react to socket errors as well, and close things
+                // down from there.
                 match msg {
                     SentMessage::Text(s) => {
                         if let Err(e) = ws_to_connection.send_text_owned(s).await {
