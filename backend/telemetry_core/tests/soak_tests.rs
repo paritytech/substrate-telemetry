@@ -48,17 +48,17 @@ use test_utils::workspace::start_server_release;
 /// an environment variable. One example to run this test is:
 ///
 /// ```sh
-/// SOAK_TEST_ARGS='--feeds 10 --nodes 100 --shards 4' cargo test -- soak_test --ignored --nocapture
+/// SOAK_TEST_ARGS='--feeds 10 --nodes 100 --shards 4' cargo test --release -- soak_test --ignored --nocapture
 /// ```
 ///
 /// You can also run this test against the pre-sharding actix binary with something like this:
 /// ```sh
-/// TELEMETRY_BIN=~/old_telemetry_binary SOAK_TEST_ARGS='--feeds 100 --nodes 100 --shards 4' cargo test -- soak_test --ignored --nocapture
+/// TELEMETRY_BIN=~/old_telemetry_binary SOAK_TEST_ARGS='--feeds 100 --nodes 100 --shards 4' cargo test --release -- soak_test --ignored --nocapture
 /// ```
 ///
 /// Or, you can run it against existing processes with something like this:
 /// ```sh
-/// TELEMETRY_SUBMIT_HOSTS='127.0.0.1:8001' TELEMETRY_FEED_HOST='127.0.0.1:8000' SOAK_TEST_ARGS='--feeds 100 --nodes 100 --shards 4' cargo test -- soak_test --ignored --nocapture
+/// TELEMETRY_SUBMIT_HOSTS='127.0.0.1:8001' TELEMETRY_FEED_HOST='127.0.0.1:8000' SOAK_TEST_ARGS='--feeds 100 --nodes 100 --shards 4' cargo test --release -- soak_test --ignored --nocapture
 /// ```
 ///
 /// Each will establish the same total number of connections and send the same messages.
@@ -215,7 +215,24 @@ async fn run_soak_test(opts: SoakTestOpts) {
 
 /// Identical to `soak_test`, except that we try to send realistic messages from fake nodes.
 /// This means it's potentially less reproducable, but presents a more accurate picture of
-/// the load.
+/// the load, and lets us see the UI working more or less.
+///
+/// We can provide the same arguments as we would to `soak_test`:
+///
+/// ```sh
+/// SOAK_TEST_ARGS='--feeds 10 --nodes 100 --shards 4' cargo test --release -- realistic_soak_test --ignored --nocapture
+/// ```
+///
+/// You can also run this test against the pre-sharding actix binary with something like this:
+/// ```sh
+/// TELEMETRY_BIN=~/old_telemetry_binary SOAK_TEST_ARGS='--feeds 100 --nodes 100 --shards 4' cargo test --release -- realistic_soak_test --ignored --nocapture
+/// ```
+///
+/// Or, you can run it against existing processes with something like this:
+/// ```sh
+/// TELEMETRY_SUBMIT_HOSTS='127.0.0.1:8001' TELEMETRY_FEED_HOST='127.0.0.1:8000' SOAK_TEST_ARGS='--feeds 100 --nodes 100 --shards 4' cargo test --release -- realistic_soak_test --ignored --nocapture
+/// ```
+///
 #[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 pub async fn realistic_soak_test() {
