@@ -352,6 +352,11 @@ impl<Channel> Process<Channel> {
         self.id
     }
 
+    /// Get the host that this process is running on
+    pub fn host(&self) -> &str {
+        &self.host
+    }
+
     /// Kill the process and wait for this to complete
     /// Not public: Klling done via Server.
     async fn kill(self) -> Result<(), Error> {

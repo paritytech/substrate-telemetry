@@ -28,3 +28,6 @@ pub mod contains_matches;
 
 /// Utilities to help with running tests from within this current workspace.
 pub mod workspace;
+
+/// A utility to generate fake telemetry messages at realistic intervals.
+pub mod fake_telemetry;

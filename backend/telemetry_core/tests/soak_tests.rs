@@ -36,7 +36,7 @@ box; MacOS seems to hit limits quicker in general.
 
 use common::node_types::BlockHash;
 use common::ws_client::SentMessage;
-use futures::StreamExt;
+use futures::{StreamExt, future};
 use serde_json::json;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
@@ -69,9 +69,12 @@ pub async fn soak_test() {
     run_soak_test(opts).await;
 }
 
-/// The general soak test runner. This is called by tests.
+/// A general soak test runner.
+/// This test sends the same message over and over, and so
+/// the results should be pretty reproducible.
 async fn run_soak_test(opts: SoakTestOpts) {
     let mut server = start_server_release().await;
+    println!("Telemetry core running at {}", server.get_core().host());
 
     // Start up the shards we requested:
     let mut shard_ids = vec![];
@@ -161,13 +164,16 @@ async fn run_soak_test(opts: SoakTestOpts) {
 
     // Also start receiving messages, counting the bytes received so far.
     let bytes_out = Arc::new(AtomicUsize::new(0));
+    let msgs_out = Arc::new(AtomicUsize::new(0));
     for (_, mut feed_rx) in feeds {
         let bytes_out = Arc::clone(&bytes_out);
+        let msgs_out = Arc::clone(&msgs_out);
         tokio::task::spawn(async move {
             while let Some(msg) = feed_rx.next().await {
                 let msg = msg.expect("message could be received");
                 let num_bytes = msg.len();
                 bytes_out.fetch_add(num_bytes, Ordering::Relaxed);
+                msgs_out.fetch_add(1, Ordering::Relaxed);
             }
         });
     }
@@ -177,29 +183,160 @@ async fn run_soak_test(opts: SoakTestOpts) {
         let one_mb = 1024.0 * 1024.0;
         let mut last_bytes_in = 0;
         let mut last_bytes_out = 0;
+        let mut last_msgs_out = 0;
         let mut n = 1;
         loop {
             tokio::time::sleep(Duration::from_secs(1)).await;
             let bytes_in_val = bytes_in.load(Ordering::Relaxed);
             let bytes_out_val = bytes_out.load(Ordering::Relaxed);
+            let msgs_out_val = msgs_out.load(Ordering::Relaxed);
 
             println!(
-                "#{}: MB in/out per measurement: {:.4} / {:.4}, total bytes in/out: {} / {})",
+                "#{}: MB in/out per measurement: {:.4} / {:.4}, total bytes in/out: {} / {}, msgs out: {}, total msgs out: {})",
                 n,
                 (bytes_in_val - last_bytes_in) as f64 / one_mb,
                 (bytes_out_val - last_bytes_out) as f64 / one_mb,
                 bytes_in_val,
-                bytes_out_val
+                bytes_out_val,
+                (msgs_out_val - last_msgs_out),
+                msgs_out_val
             );
 
             n += 1;
             last_bytes_in = bytes_in_val;
             last_bytes_out = bytes_out_val;
+            last_msgs_out = msgs_out_val;
         }
     });
 
     // Wait for sending to finish before ending.
     send_handle.await.unwrap();
+}
+
+/// Identical to `soak_test`, except that we try to send realistic messages from fake nodes.
+/// This means it's potentially less reproducable, but presents a more accurate picture of
+/// the load.
+#[ignore]
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+pub async fn realistic_soak_test() {
+    let opts = get_soak_test_opts();
+    run_realistic_soak_test(opts).await;
+}
+
+/// A general soak test runner.
+/// This test sends realistic messages from connected nodes
+/// so that we can see how things react under more normal
+/// circumstances
+async fn run_realistic_soak_test(opts: SoakTestOpts) {
+    let mut server = start_server_release().await;
+    println!("Telemetry core running at {}", server.get_core().host());
+
+    // Start up the shards we requested:
+    let mut shard_ids = vec![];
+    for _ in 0..opts.shards {
+        let shard_id = server.add_shard().await.expect("shard can't be added");
+        shard_ids.push(shard_id);
+    }
+
+    // Connect nodes to each shard:
+    let mut nodes = vec![];
+    for &shard_id in &shard_ids {
+        let mut conns = server
+            .get_shard(shard_id)
+            .unwrap()
+            .connect_multiple_nodes(opts.nodes)
+            .await
+            .expect("node connections failed");
+        nodes.append(&mut conns);
+    }
+
+    // Start nodes talking to the shards:
+    let bytes_in = Arc::new(AtomicUsize::new(0));
+    for node in nodes.into_iter().enumerate() {
+        let bytes_in = Arc::clone(&bytes_in);
+        tokio::spawn(async move {
+            let (idx, (tx, _)) = node;
+
+            let telemetry = test_utils::fake_telemetry::FakeTelemetry::new(
+                Duration::from_secs(3),
+                format!("Node {}", idx + 1),
+                "Polkadot".to_owned(),
+                idx + 1
+            );
+
+            let res = telemetry.start(|msg| async {
+                bytes_in.fetch_add(msg.len(), Ordering::Relaxed);
+                tx.unbounded_send(SentMessage::Binary(msg))?;
+                Ok::<_, anyhow::Error>(())
+            }).await;
+
+            if let Err(e) = res {
+                log::error!("Telemetry Node #{} has died with error: {}", idx, e);
+            }
+        });
+    }
+
+    // Connect feeds to the core:
+    let mut feeds = server
+        .get_core()
+        .connect_multiple_feeds(opts.feeds)
+        .await
+        .expect("feed connections failed");
+
+    // Every feed subscribes to the chain above to recv messages about it:
+    for (feed_tx, _) in &mut feeds {
+        feed_tx.send_command("subscribe", "Polkadot").unwrap();
+    }
+
+    // Also start receiving messages, counting the bytes received so far.
+    let bytes_out = Arc::new(AtomicUsize::new(0));
+    let msgs_out = Arc::new(AtomicUsize::new(0));
+    for (_, mut feed_rx) in feeds {
+        let bytes_out = Arc::clone(&bytes_out);
+        let msgs_out = Arc::clone(&msgs_out);
+        tokio::task::spawn(async move {
+            while let Some(msg) = feed_rx.next().await {
+                let msg = msg.expect("message could be received");
+                let num_bytes = msg.len();
+                bytes_out.fetch_add(num_bytes, Ordering::Relaxed);
+                msgs_out.fetch_add(1, Ordering::Relaxed);
+            }
+        });
+    }
+
+    // Periodically report on bytes out
+    tokio::task::spawn(async move {
+        let one_mb = 1024.0 * 1024.0;
+        let mut last_bytes_in = 0;
+        let mut last_bytes_out = 0;
+        let mut last_msgs_out = 0;
+        let mut n = 1;
+        loop {
+            tokio::time::sleep(Duration::from_secs(1)).await;
+            let bytes_in_val = bytes_in.load(Ordering::Relaxed);
+            let bytes_out_val = bytes_out.load(Ordering::Relaxed);
+            let msgs_out_val = msgs_out.load(Ordering::Relaxed);
+
+            println!(
+                "#{}: MB in/out per measurement: {:.4} / {:.4}, total bytes in/out: {} / {}, msgs out: {}, total msgs out: {})",
+                n,
+                (bytes_in_val - last_bytes_in) as f64 / one_mb,
+                (bytes_out_val - last_bytes_out) as f64 / one_mb,
+                bytes_in_val,
+                bytes_out_val,
+                (msgs_out_val - last_msgs_out),
+                msgs_out_val
+            );
+
+            n += 1;
+            last_bytes_in = bytes_in_val;
+            last_bytes_out = bytes_out_val;
+            last_msgs_out = msgs_out_val;
+        }
+    });
+
+    // Wait forever.
+    future::pending().await
 }
 
 /// General arguments that are used to start a soak test. Run `soak_test` as
