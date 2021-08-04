@@ -132,7 +132,7 @@ async fn run_soak_test(opts: SoakTestOpts) {
     // Start sending "update" messages from nodes at time intervals.
     let bytes_in = Arc::new(AtomicUsize::new(0));
     let bytes_in2 = Arc::clone(&bytes_in);
-    let send_handle = tokio::task::spawn(async move {
+    tokio::task::spawn(async move {
         let msg = json!({
             "id":1,
             "payload":{
@@ -175,6 +175,7 @@ async fn run_soak_test(opts: SoakTestOpts) {
                 bytes_out.fetch_add(num_bytes, Ordering::Relaxed);
                 msgs_out.fetch_add(1, Ordering::Relaxed);
             }
+            eprintln!("Error: feed has been closed unexpectedly");
         });
     }
 
@@ -209,8 +210,8 @@ async fn run_soak_test(opts: SoakTestOpts) {
         }
     });
 
-    // Wait for sending to finish before ending.
-    send_handle.await.unwrap();
+    // Wait forever.
+    future::pending().await
 }
 
 /// Identical to `soak_test`, except that we try to send realistic messages from fake nodes.
@@ -318,6 +319,7 @@ async fn run_realistic_soak_test(opts: SoakTestOpts) {
                 bytes_out.fetch_add(num_bytes, Ordering::Relaxed);
                 msgs_out.fetch_add(1, Ordering::Relaxed);
             }
+            eprintln!("Error: feed has been closed unexpectedly");
         });
     }
 
