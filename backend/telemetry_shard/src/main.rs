@@ -80,10 +80,11 @@ struct Opts {
     /// value prevented from reconnecting to this shard for, in seconds.
     #[structopt(long, default_value = "600")]
     node_block_seconds: u64,
-    /// Number of worker threads to spawn. Defaults to the number of CPUs on the machine.
-    /// If "0" is given, use the number of CPUs available on the machine.
-    #[structopt(long)]
-    worker_threads: Option<usize>,
+    /// Number of worker threads to spawn. If "0" is given, use the number of CPUs available
+    /// on the machine. Note that the tokio runtime performance seems to degrade when this number
+    /// gets too high.
+    #[structopt(long, default_value = "4")]
+    worker_threads: usize,
 }
 
 fn main() {
@@ -96,9 +97,10 @@ fn main() {
 
     log::info!("Starting Telemetry Shard version: {}", VERSION);
 
-    let worker_threads = opts.worker_threads
-        .and_then(|n| if n == 0 { None } else { Some(n) })
-        .unwrap_or_else(|| num_cpus::get());
+    let worker_threads = match opts.worker_threads {
+        0 => num_cpus::get(),
+        n => n
+    };
 
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()
