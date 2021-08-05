@@ -400,15 +400,6 @@ where
                 None => break,
             };
 
-            // End the loop if we see more than 1k messages queued up to send out.
-            // This is either because the feed is being too slow to receive messages,
-            // or because the telemetry_core is under too much load and this task isn't
-            // getting enough time.
-            if msgs.len() > 1000 {
-                log::warn!("Closing feed websocket that was too slow to keep up (too many messages buffered)");
-                break 'outer;
-            }
-
             // There is only one message type at the mo; bytes to send
             // to the websocket. collect them all up to dispatch in one shot.
             let all_msg_bytes = msgs.into_iter().map(|msg| match msg {
