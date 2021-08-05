@@ -20,14 +20,14 @@ use crate::server::{self, Command, Server};
 /// Additional options to pass to the core command.
 pub struct CoreOpts {
     pub feed_timeout: Option<u64>,
-    pub num_cpus: Option<usize>,
+    pub worker_threads: Option<usize>,
 }
 
 impl Default for CoreOpts {
     fn default() -> Self {
         Self {
             feed_timeout: None,
-            num_cpus: None
+            worker_threads: None
         }
     }
 }
@@ -37,7 +37,7 @@ pub struct ShardOpts {
     pub max_nodes_per_connection: Option<usize>,
     pub max_node_data_per_second: Option<usize>,
     pub node_block_seconds: Option<u64>,
-    pub num_cpus: Option<usize>,
+    pub worker_threads: Option<usize>,
 }
 
 impl Default for ShardOpts {
@@ -46,7 +46,7 @@ impl Default for ShardOpts {
             max_nodes_per_connection: None,
             max_node_data_per_second: None,
             node_block_seconds: None,
-            num_cpus: None
+            worker_threads: None
         }
     }
 }
@@ -120,9 +120,9 @@ pub async fn start_server(
             .arg("--node-block-seconds")
             .arg(val.to_string());
     }
-    if let Some(val) = shard_opts.num_cpus {
+    if let Some(val) = shard_opts.worker_threads {
         shard_command = shard_command
-            .arg("--num-cpus")
+            .arg("--worker-threads")
             .arg(val.to_string());
     }
 
@@ -138,8 +138,8 @@ pub async fn start_server(
     if let Some(val) = core_opts.feed_timeout {
         core_command = core_command.arg("--feed-timeout").arg(val.to_string());
     }
-    if let Some(val) = core_opts.num_cpus {
-        core_command = core_command.arg("--num-cpus").arg(val.to_string());
+    if let Some(val) = core_opts.worker_threads {
+        core_command = core_command.arg("--worker-threads").arg(val.to_string());
     }
 
     // Star the server

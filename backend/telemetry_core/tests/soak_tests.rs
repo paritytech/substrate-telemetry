@@ -76,11 +76,11 @@ async fn run_soak_test(opts: SoakTestOpts) {
     let mut server = start_server(
         true,
         CoreOpts {
-            num_cpus: opts.num_core_cpus,
+            worker_threads: opts.core_worker_threads,
             ..Default::default()
         },
         ShardOpts {
-            num_cpus: opts.num_shard_cpus,
+            worker_threads: opts.shard_worker_threads,
             ..Default::default()
         },
     ).await;
@@ -259,11 +259,11 @@ async fn run_realistic_soak_test(opts: SoakTestOpts) {
     let mut server = start_server(
         true,
         CoreOpts {
-            num_cpus: opts.num_core_cpus,
+            worker_threads: opts.core_worker_threads,
             ..Default::default()
         },
         ShardOpts {
-            num_cpus: opts.num_shard_cpus,
+            worker_threads: opts.shard_worker_threads,
             ..Default::default()
         },
     ).await;
@@ -394,10 +394,10 @@ struct SoakTestOpts {
     nodes: usize,
     /// Number of worker threads the core will use
     #[structopt(long)]
-    num_core_cpus: Option<usize>,
+    core_worker_threads: Option<usize>,
     /// Number of worker threads each shard will use
     #[structopt(long)]
-    num_shard_cpus: Option<usize>,
+    shard_worker_threads: Option<usize>,
 }
 
 /// Get soak test args from an envvar and parse them via structopt.

@@ -83,7 +83,7 @@ struct Opts {
     /// Number of worker threads to spawn. Defaults to the number of CPUs on the machine.
     /// If "0" is given, use the number of CPUs available on the machine.
     #[structopt(long)]
-    num_cpus: Option<usize>,
+    worker_threads: Option<usize>,
 }
 
 fn main() {
@@ -96,13 +96,13 @@ fn main() {
 
     log::info!("Starting Telemetry Shard version: {}", VERSION);
 
-    let num_cpus_to_use = opts.num_cpus
+    let worker_threads = opts.worker_threads
         .and_then(|n| if n == 0 { None } else { Some(n) })
         .unwrap_or_else(|| num_cpus::get());
 
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()
-        .worker_threads(num_cpus_to_use)
+        .worker_threads(worker_threads)
         .build()
         .unwrap()
         .block_on(async {
