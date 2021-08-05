@@ -23,10 +23,10 @@ Note that on MacOS inparticular, you may need to increase some limits to be
 able to open a large number of connections. Try commands like:
 
 ```sh
-sudo sysctl -w kern.maxfiles=50000
-sudo sysctl -w kern.maxfilesperproc=50000
-ulimit -n 50000
-sudo sysctl -w kern.ipc.somaxconn=50000
+sudo sysctl -w kern.maxfiles=100000
+sudo sysctl -w kern.maxfilesperproc=100000
+ulimit -n 100000
+sudo sysctl -w kern.ipc.somaxconn=100000
 sudo sysctl -w kern.ipc.maxsockbuf=16777216
 ```
 
