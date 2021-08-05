@@ -224,8 +224,6 @@ impl InnerLoop {
 
     /// Handle messages coming from shards.
     fn handle_from_shard(&mut self, shard_conn_id: ConnId, msg: FromShardWebsocket) {
-        log::debug!("Message from shard ({:?}): {:?}", shard_conn_id, msg);
-
         match msg {
             FromShardWebsocket::Initialize { channel } => {
                 self.shard_channels.insert(shard_conn_id, channel);
@@ -357,7 +355,6 @@ impl InnerLoop {
 
     /// Handle messages coming from feeds.
     fn handle_from_feed(&mut self, feed_conn_id: ConnId, msg: FromFeedWebsocket) {
-        log::debug!("Message from feed ({:?}): {:?}", feed_conn_id, msg);
         match msg {
             FromFeedWebsocket::Initialize { channel } => {
                 self.feed_channels.insert(feed_conn_id, channel.clone());

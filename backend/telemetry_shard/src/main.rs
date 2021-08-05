@@ -138,6 +138,7 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
                     Ok(http_utils::upgrade_to_websocket(
                         req,
                         move |ws_send, ws_recv| async move {
+                            log::info!("Opening /submit connection from {:?}", addr);
                             let tx_to_aggregator = aggregator.subscribe_node();
                             let (mut tx_to_aggregator, mut ws_send) =
                                 handle_node_websocket_connection(

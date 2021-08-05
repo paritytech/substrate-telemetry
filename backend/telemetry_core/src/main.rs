@@ -105,6 +105,7 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
                 (&Method::GET, "/health") => Ok(Response::new("OK".into())),
                 // Subscribe to feed messages:
                 (&Method::GET, "/feed") => {
+                    log::info!("Opening /feed connection from {:?}", addr);
                     Ok(http_utils::upgrade_to_websocket(
                         req,
                         move |ws_send, ws_recv| async move {
@@ -130,6 +131,7 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
                     Ok(http_utils::upgrade_to_websocket(
                         req,
                         move |ws_send, ws_recv| async move {
+                            log::info!("Opening /shard_submit connection from {:?}", addr);
                             let tx_to_aggregator = aggregator.subscribe_shard();
                             let (mut tx_to_aggregator, mut ws_send) =
                                 handle_shard_websocket_connection(
@@ -399,10 +401,6 @@ let mut i: u64 = 0;
 if feed_id == 1 {
     i += 1;
     println!("FEED #{}, msgs: {}", i, msgs.len());
-    if i > 1000 {
-        log::error!("TESTING: close feed");
-        break
-    }
 }
             // End the loop when there are more than 10k messages queued up.
             // This number is just picked as a fairly high limit that should account
