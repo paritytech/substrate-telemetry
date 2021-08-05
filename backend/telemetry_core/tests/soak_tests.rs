@@ -42,7 +42,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use structopt::StructOpt;
-use test_utils::workspace::start_server_release;
+use test_utils::workspace::{start_server, CoreOpts, ShardOpts};
 
 /// A configurable soak_test runner. Configure by providing the expected args as
 /// an environment variable. One example to run this test is:
@@ -73,7 +73,17 @@ pub async fn soak_test() {
 /// This test sends the same message over and over, and so
 /// the results should be pretty reproducible.
 async fn run_soak_test(opts: SoakTestOpts) {
-    let mut server = start_server_release().await;
+    let mut server = start_server(
+        true,
+        CoreOpts {
+            num_cpus: opts.num_core_cpus,
+            ..Default::default()
+        },
+        ShardOpts {
+            num_cpus: opts.num_shard_cpus,
+            ..Default::default()
+        },
+    ).await;
     println!("Telemetry core running at {}", server.get_core().host());
 
     // Start up the shards we requested:
@@ -246,7 +256,17 @@ pub async fn realistic_soak_test() {
 /// so that we can see how things react under more normal
 /// circumstances
 async fn run_realistic_soak_test(opts: SoakTestOpts) {
-    let mut server = start_server_release().await;
+    let mut server = start_server(
+        true,
+        CoreOpts {
+            num_cpus: opts.num_core_cpus,
+            ..Default::default()
+        },
+        ShardOpts {
+            num_cpus: opts.num_shard_cpus,
+            ..Default::default()
+        },
+    ).await;
     println!("Telemetry core running at {}", server.get_core().host());
 
     // Start up the shards we requested:
@@ -372,6 +392,12 @@ struct SoakTestOpts {
     /// The number of nodes to connect to each feed
     #[structopt(long)]
     nodes: usize,
+    /// Number of worker threads the core will use
+    #[structopt(long)]
+    num_core_cpus: Option<usize>,
+    /// Number of worker threads each shard will use
+    #[structopt(long)]
+    num_shard_cpus: Option<usize>,
 }
 
 /// Get soak test args from an envvar and parse them via structopt.
