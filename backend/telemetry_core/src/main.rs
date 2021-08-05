@@ -19,7 +19,6 @@ mod feed_message;
 mod find_location;
 mod state;
 use std::str::FromStr;
-use std::sync::atomic::AtomicUsize;
 use tokio::time::{Duration, Instant};
 
 use aggregator::{
@@ -60,10 +59,13 @@ struct Opts {
     /// to a feed, the feed connection will be closed.
     #[structopt(long, default_value = "10")]
     feed_timeout: u64,
+    /// Number of worker threads to spawn. Defaults to the number of CPUs on the machine.
+    /// If "0" is given, use the number of CPUs available on the machine.
+    #[structopt(long)]
+    num_cpus: Option<usize>,
 }
 
-#[tokio::main]
-async fn main() {
+fn main() {
     let opts = Opts::from_args();
 
     SimpleLogger::new()
@@ -73,9 +75,20 @@ async fn main() {
 
     log::info!("Starting Telemetry Core version: {}", VERSION);
 
-    if let Err(e) = start_server(opts).await {
-        log::error!("Error starting server: {}", e);
-    }
+    let num_cpus_to_use = opts.num_cpus
+        .and_then(|n| if n == 0 { None } else { Some(n) })
+        .unwrap_or_else(|| num_cpus::get());
+
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .worker_threads(num_cpus_to_use)
+        .build()
+        .unwrap()
+        .block_on(async {
+            if let Err(e) = start_server(opts).await {
+                log::error!("Error starting server: {}", e);
+            }
+        });
 }
 
 /// Declare our routes and start the server.
@@ -95,13 +108,14 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
                     Ok(http_utils::upgrade_to_websocket(
                         req,
                         move |ws_send, ws_recv| async move {
-                            let tx_to_aggregator = aggregator.subscribe_feed();
+                            let (feed_id, tx_to_aggregator) = aggregator.subscribe_feed();
                             let (mut tx_to_aggregator, mut ws_send) =
                                 handle_feed_websocket_connection(
                                     ws_send,
                                     ws_recv,
                                     tx_to_aggregator,
                                     feed_timeout,
+                                    feed_id,
                                 )
                                 .await;
                             log::info!("Closing /feed connection from {:?}", addr);
@@ -291,6 +305,7 @@ async fn handle_feed_websocket_connection<S>(
     mut ws_recv: http_utils::WsReceiver,
     mut tx_to_aggregator: S,
     feed_timeout: u64,
+    feed_id: u64
 ) -> (S, http_utils::WsSender)
 where
     S: futures::Sink<FromFeedWebsocket, Error = anyhow::Error> + Unpin + Send + 'static,
@@ -364,34 +379,48 @@ where
         drop(send_closer_tx); // Kill the send task if this recv task ends
         tx_to_aggregator
     });
-
+let mut i: u64 = 0;
     // Send messages to the feed:
     let send_handle = tokio::spawn(async move {
         'outer: loop {
+            let debounce = tokio::time::sleep_until(Instant::now() + Duration::from_millis(75));
+
             let msgs = tokio::select! {
                 msgs = rx_from_aggregator_chunks.next() => msgs,
                 _ = &mut send_closer_rx => { break }
             };
+
             // End the loop when connection from aggregator ends:
             let msgs = match msgs {
                 Some(msgs) => msgs,
                 None => break,
             };
 
-let total_val = unsafe { total.load(std::sync::atomic::Ordering::Relaxed) };
-if msgs.len() > total_val {
-    unsafe { total.compare_exchange(total_val, msgs.len(), std::sync::atomic::Ordering::Relaxed, std::sync::atomic::Ordering::Relaxed); };
-    println!("Max msgs: {}", msgs.len());
+if feed_id == 1 {
+    i += 1;
+    println!("FEED #{}, msgs: {}", i, msgs.len());
+    if i > 1000 {
+        log::error!("TESTING: close feed");
+        break
+    }
 }
+            // End the loop when there are more than 10k messages queued up.
+            // This number is just picked as a fairly high limit that should account
+            // for many thousands of nodes on a chain. The higher this number is, the
+            // larger our channel storage and memory usage is liable to grow before the feed
+            // is dropped.
+            if msgs.len() > 100_000 {
+                log::warn!("Closing feed websocket that was too slow to keep up (too many messages buffered)");
+                break 'outer;
+            }
+
             // There is only one message type at the mo; bytes to send
             // to the websocket. collect them all up to dispatch in one shot.
             let all_msg_bytes = msgs.into_iter().map(|msg| match msg {
                 ToFeedWebsocket::Bytes(bytes) => bytes,
             });
 
-            // We have a deadline to send and flush messages. If the client isn't keeping up with our
-            // messages, the number we obtain from `ReadyChunksAll` will gradually increase and eventually
-            // we'll hit this deadline and the client will be booted.
+            // If the feed is too slow to receive the current batch of messages, we'll drop it.
             let message_send_deadline = Instant::now() + Duration::from_secs(feed_timeout);
 
             for bytes in all_msg_bytes {
@@ -399,7 +428,7 @@ if msgs.len() > total_val {
                     .await
                 {
                     Err(_) => {
-                        log::warn!("Closing feed websocket that was too slow to keep up (1)");
+                        log::warn!("Closing feed websocket that was too slow to keep up (too slow to send messages)");
                         break 'outer;
                     }
                     Ok(Err(e)) => {
@@ -411,7 +440,7 @@ if msgs.len() > total_val {
             }
             match tokio::time::timeout_at(message_send_deadline, ws_send.flush()).await {
                 Err(_) => {
-                    log::warn!("Closing feed websocket that was too slow to keep up (2)");
+                    log::warn!("Closing feed websocket that was too slow to keep up (too slow to flush messages)");
                     break;
                 }
                 Ok(Err(e)) => {
@@ -420,6 +449,8 @@ if msgs.len() > total_val {
                 }
                 Ok(_) => {}
             }
+
+            debounce.await;
         }
 
         drop(recv_closer_tx); // Kill the recv task if this send task ends
@@ -434,5 +465,3 @@ if msgs.len() > total_val {
     // loop ended; give socket back to parent:
     (tx_to_aggregator, ws_send)
 }
-
-static mut total: std::sync::atomic::AtomicUsize = AtomicUsize::new(0);

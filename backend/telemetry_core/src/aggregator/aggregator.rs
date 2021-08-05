@@ -113,7 +113,7 @@ impl Aggregator {
     /// Return a sink that a feed can send messages into to be handled by the aggregator.
     pub fn subscribe_feed(
         &self,
-    ) -> impl Sink<inner_loop::FromFeedWebsocket, Error = anyhow::Error> + Send + Sync + Unpin + 'static
+    ) -> (u64, impl Sink<inner_loop::FromFeedWebsocket, Error = anyhow::Error> + Send + Sync + Unpin + 'static)
     {
         // Assign a unique aggregator-local ID to each connection that subscribes, and pass
         // that along with every message to the aggregator loop:
@@ -125,11 +125,11 @@ impl Aggregator {
 
         // Calling `send` on this Sink requires Unpin. There may be a nicer way than this,
         // but pinning by boxing is the easy solution for now:
-        Box::pin(tx_to_aggregator.with(move |msg| async move {
+        (feed_conn_id, Box::pin(tx_to_aggregator.with(move |msg| async move {
             Ok(inner_loop::ToAggregator::FromFeedWebsocket(
                 feed_conn_id.into(),
                 msg,
             ))
-        }))
+        })))
     }
 }

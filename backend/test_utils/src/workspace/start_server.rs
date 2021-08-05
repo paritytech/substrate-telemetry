@@ -20,11 +20,15 @@ use crate::server::{self, Command, Server};
 /// Additional options to pass to the core command.
 pub struct CoreOpts {
     pub feed_timeout: Option<u64>,
+    pub num_cpus: Option<usize>,
 }
 
 impl Default for CoreOpts {
     fn default() -> Self {
-        Self { feed_timeout: None }
+        Self {
+            feed_timeout: None,
+            num_cpus: None
+        }
     }
 }
 
@@ -33,6 +37,7 @@ pub struct ShardOpts {
     pub max_nodes_per_connection: Option<usize>,
     pub max_node_data_per_second: Option<usize>,
     pub node_block_seconds: Option<u64>,
+    pub num_cpus: Option<usize>,
 }
 
 impl Default for ShardOpts {
@@ -41,6 +46,7 @@ impl Default for ShardOpts {
             max_nodes_per_connection: None,
             max_node_data_per_second: None,
             node_block_seconds: None,
+            num_cpus: None
         }
     }
 }
@@ -114,6 +120,11 @@ pub async fn start_server(
             .arg("--node-block-seconds")
             .arg(val.to_string());
     }
+    if let Some(val) = shard_opts.num_cpus {
+        shard_command = shard_command
+            .arg("--num-cpus")
+            .arg(val.to_string());
+    }
 
     // Build the core command
     let mut core_command = std::env::var("TELEMETRY_CORE_BIN")
@@ -126,6 +137,9 @@ pub async fn start_server(
     // Append additional opts to the core command
     if let Some(val) = core_opts.feed_timeout {
         core_command = core_command.arg("--feed-timeout").arg(val.to_string());
+    }
+    if let Some(val) = core_opts.num_cpus {
+        core_command = core_command.arg("--num-cpus").arg(val.to_string());
     }
 
     // Star the server

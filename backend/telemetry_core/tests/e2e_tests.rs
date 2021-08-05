@@ -22,10 +22,10 @@ able to open a large number of connections and run some of the tests.
 Try running these:
 
 ```sh
-sudo sysctl -w kern.maxfiles=50000
-sudo sysctl -w kern.maxfilesperproc=50000
-ulimit -n 50000
-sudo sysctl -w kern.ipc.somaxconn=50000
+sudo sysctl -w kern.maxfiles=100000
+sudo sysctl -w kern.maxfilesperproc=100000
+ulimit -n 100000
+sudo sysctl -w kern.ipc.somaxconn=100000
 sudo sysctl -w kern.ipc.maxsockbuf=16777216
 ```
 */
@@ -580,6 +580,7 @@ async fn slow_feeds_are_disconnected() {
         // Timeout faster so the test can be quicker:
         CoreOpts {
             feed_timeout: Some(1),
+            ..Default::default()
         },
         // Allow us to send more messages in more easily:
         ShardOpts {

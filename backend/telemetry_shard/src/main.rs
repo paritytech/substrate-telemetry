@@ -80,10 +80,13 @@ struct Opts {
     /// value prevented from reconnecting to this shard for, in seconds.
     #[structopt(long, default_value = "600")]
     node_block_seconds: u64,
+    /// Number of worker threads to spawn. Defaults to the number of CPUs on the machine.
+    /// If "0" is given, use the number of CPUs available on the machine.
+    #[structopt(long)]
+    num_cpus: Option<usize>,
 }
 
-#[tokio::main]
-async fn main() {
+fn main() {
     let opts = Opts::from_args();
 
     SimpleLogger::new()
@@ -93,9 +96,20 @@ async fn main() {
 
     log::info!("Starting Telemetry Shard version: {}", VERSION);
 
-    if let Err(e) = start_server(opts).await {
-        log::error!("Error starting server: {}", e);
-    }
+    let num_cpus_to_use = opts.num_cpus
+        .and_then(|n| if n == 0 { None } else { Some(n) })
+        .unwrap_or_else(|| num_cpus::get());
+
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .worker_threads(num_cpus_to_use)
+        .build()
+        .unwrap()
+        .block_on(async {
+            if let Err(e) = start_server(opts).await {
+                log::error!("Error starting server: {}", e);
+            }
+        });
 }
 
 /// Declare our routes and start the server.
