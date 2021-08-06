@@ -77,7 +77,7 @@ fn main() {
 
     let worker_threads = match opts.worker_threads {
         0 => num_cpus::get(),
-        n => n
+        n => n,
     };
 
     tokio::runtime::Builder::new_multi_thread()
@@ -308,7 +308,7 @@ async fn handle_feed_websocket_connection<S>(
     mut ws_recv: http_utils::WsReceiver,
     mut tx_to_aggregator: S,
     feed_timeout: u64,
-    _feed_id: u64 // <- can be useful for debugging purposes.
+    _feed_id: u64, // <- can be useful for debugging purposes.
 ) -> (S, http_utils::WsSender)
 where
     S: futures::Sink<FromFeedWebsocket, Error = anyhow::Error> + Unpin + Send + 'static,

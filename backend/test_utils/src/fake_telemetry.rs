@@ -1,9 +1,9 @@
-use std::time::Duration;
-use std::future::Future;
-use serde_json::json;
+use ::time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use common::node_types::BlockHash;
+use serde_json::json;
+use std::future::Future;
+use std::time::Duration;
 use tokio::time::{self, MissedTickBehavior};
-use ::time::{ OffsetDateTime, format_description::well_known::Rfc3339 };
 
 /// This emits fake but realistic looking telemetry messages.
 /// Can be connected to a telemetry server to emit realistic messages.
@@ -11,7 +11,7 @@ pub struct FakeTelemetry {
     block_time: Duration,
     node_name: String,
     chain: String,
-    message_id: usize
+    message_id: usize,
 }
 
 impl FakeTelemetry {
@@ -20,7 +20,7 @@ impl FakeTelemetry {
             block_time,
             node_name,
             chain,
-            message_id
+            message_id,
         }
     }
 
@@ -33,9 +33,8 @@ impl FakeTelemetry {
     where
         Func: Send + FnMut(Vec<u8>) -> Fut,
         Fut: Future<Output = Result<(), E>>,
-        E: Into<anyhow::Error>
+        E: Into<anyhow::Error>,
     {
-
         let id = self.message_id;
         let name = self.node_name;
         let chain = self.chain;
@@ -94,10 +93,12 @@ impl FakeTelemetry {
         let mut new_block_every = time::interval_at(now + block_time, block_time);
         new_block_every.set_missed_tick_behavior(MissedTickBehavior::Burst);
 
-        let mut system_interval_every = time::interval_at(now + Duration::from_secs(2), block_time * 2);
+        let mut system_interval_every =
+            time::interval_at(now + Duration::from_secs(2), block_time * 2);
         new_block_every.set_missed_tick_behavior(MissedTickBehavior::Burst);
 
-        let mut finalised_every = time::interval_at(now + Duration::from_secs(1) + block_time * 3, block_time);
+        let mut finalised_every =
+            time::interval_at(now + Duration::from_secs(1) + block_time * 3, block_time);
         new_block_every.set_missed_tick_behavior(MissedTickBehavior::Burst);
 
         // Send messages every interval:
@@ -192,6 +193,6 @@ fn now_iso() -> String {
 /// Spread the u64 across the resulting u256 hash so that it's
 /// more visible in the UI.
 fn block_hash(n: u64) -> BlockHash {
-    let a: [u8; 32] = unsafe { std::mem::transmute([n,n,n,n]) };
+    let a: [u8; 32] = unsafe { std::mem::transmute([n, n, n, n]) };
     BlockHash::from(a)
 }

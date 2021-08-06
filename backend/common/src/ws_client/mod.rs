@@ -16,12 +16,12 @@
 
 /// Functionality to establish a connection
 mod connect;
+/// A close helper that we use in sender/receiver.
+mod on_close;
 /// The channel based receive interface
 mod receiver;
 /// The channel based send interface
 mod sender;
-/// A close helper that we use in sender/receiver.
-mod on_close;
 
 pub use connect::{connect, ConnectError, Connection, RawReceiver, RawSender};
 pub use receiver::{Receiver, RecvError, RecvMessage};

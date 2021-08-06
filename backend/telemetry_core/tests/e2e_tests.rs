@@ -37,7 +37,7 @@ use std::time::Duration;
 use test_utils::{
     assert_contains_matches,
     feed_message_de::{FeedMessage, NodeDetails},
-    workspace::{start_server, start_server_debug, ServerOpts, CoreOpts, ShardOpts},
+    workspace::{start_server, start_server_debug, CoreOpts, ServerOpts, ShardOpts},
 };
 
 /// The simplest test we can run; the main benefit of this test (since we check similar)

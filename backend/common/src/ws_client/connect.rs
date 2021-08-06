@@ -13,13 +13,13 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
+use super::on_close::OnClose;
 use futures::channel::mpsc;
 use futures::{SinkExt, StreamExt};
 use soketto::handshake::{Client, ServerResponse};
+use std::sync::Arc;
 use tokio::net::TcpStream;
 use tokio_util::compat::TokioAsyncReadCompatExt;
-use std::sync::Arc;
-use super::on_close::OnClose;
 
 use super::{
     receiver::{Receiver, RecvMessage},
@@ -89,7 +89,10 @@ impl Connection {
                     Err(e) => {
                         // The socket had an error, so notify interested parties that we should
                         // shut the connection down and bail out of this receive loop.
-                        log::error!("Shutting down websocket connection: Failed to receive data: {}", e);
+                        log::error!(
+                            "Shutting down websocket connection: Failed to receive data: {}",
+                            e
+                        );
                         let _ = tx_closed1.send(());
                         break;
                     }
@@ -198,14 +201,16 @@ impl Connection {
         // been dropped. If both have, we close the socket connection.
         let on_close = Arc::new(OnClose(tx_closed2));
 
-        (Sender {
-            inner: tx_to_ws,
-            closer: Arc::clone(&on_close),
-        },
-        Receiver {
-            inner: rx_from_ws,
-            closer: on_close,
-        })
+        (
+            Sender {
+                inner: tx_to_ws,
+                closer: Arc::clone(&on_close),
+            },
+            Receiver {
+                inner: rx_from_ws,
+                closer: on_close,
+            },
+        )
     }
 }
 

@@ -98,7 +98,7 @@ fn main() {
 
     let worker_threads = match opts.worker_threads {
         0 => num_cpus::get(),
-        n => n
+        n => n,
     };
 
     tokio::runtime::Builder::new_multi_thread()

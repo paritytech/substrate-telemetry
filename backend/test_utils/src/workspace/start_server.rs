@@ -20,14 +20,14 @@ use crate::server::{self, Command, Server};
 /// Options for the server
 pub struct ServerOpts {
     pub release_mode: bool,
-    pub log_output: bool
+    pub log_output: bool,
 }
 
 impl Default for ServerOpts {
     fn default() -> Self {
         Self {
             release_mode: false,
-            log_output: true,
+            log_output: false,
         }
     }
 }
@@ -42,7 +42,7 @@ impl Default for CoreOpts {
     fn default() -> Self {
         Self {
             feed_timeout: None,
-            worker_threads: None
+            worker_threads: None,
         }
     }
 }
@@ -61,7 +61,7 @@ impl Default for ShardOpts {
             max_nodes_per_connection: None,
             max_node_data_per_second: None,
             node_block_seconds: None,
-            worker_threads: None
+            worker_threads: None,
         }
     }
 }
@@ -92,7 +92,7 @@ pub async fn start_server(
     if let Ok(bin) = std::env::var("TELEMETRY_BIN") {
         return Server::start(server::StartOpts::SingleProcess {
             command: Command::new(bin),
-            log_output: server_opts.log_output
+            log_output: server_opts.log_output,
         })
         .await
         .unwrap();
@@ -107,7 +107,7 @@ pub async fn start_server(
         return Server::start(server::StartOpts::ConnectToExisting {
             feed_host,
             submit_hosts,
-            log_output: server_opts.log_output
+            log_output: server_opts.log_output,
         })
         .await
         .unwrap();
@@ -138,9 +138,7 @@ pub async fn start_server(
             .arg(val.to_string());
     }
     if let Some(val) = shard_opts.worker_threads {
-        shard_command = shard_command
-            .arg("--worker-threads")
-            .arg(val.to_string());
+        shard_command = shard_command.arg("--worker-threads").arg(val.to_string());
     }
 
     // Build the core command
@@ -163,7 +161,7 @@ pub async fn start_server(
     Server::start(server::StartOpts::ShardAndCore {
         shard_command,
         core_command,
-        log_output: server_opts.log_output
+        log_output: server_opts.log_output,
     })
     .await
     .unwrap()
@@ -171,10 +169,20 @@ pub async fn start_server(
 
 /// Start a telemetry core server in debug mode. see [`start_server`] for details.
 pub async fn start_server_debug() -> Server {
-    start_server(ServerOpts::default(), CoreOpts::default(), ShardOpts::default()).await
+    start_server(
+        ServerOpts::default(),
+        CoreOpts::default(),
+        ShardOpts::default(),
+    )
+    .await
 }
 
 /// Start a telemetry core server in release mode. see [`start_server`] for details.
 pub async fn start_server_release() -> Server {
-    start_server(ServerOpts::default(), CoreOpts::default(), ShardOpts::default()).await
+    start_server(
+        ServerOpts::default(),
+        CoreOpts::default(),
+        ShardOpts::default(),
+    )
+    .await
 }

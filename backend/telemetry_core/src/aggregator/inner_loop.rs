@@ -447,7 +447,10 @@ impl InnerLoop {
                     .chunks(64)
                     .filter_map(|nodes| {
                         let mut feed_serializer = FeedMessageSerializer::new();
-                        for (node_id, node) in nodes.iter().filter_map(|&(idx, n)| n.as_ref().map(|n| (idx, n))) {
+                        for (node_id, node) in nodes
+                            .iter()
+                            .filter_map(|&(idx, n)| n.as_ref().map(|n| (idx, n)))
+                        {
                             feed_serializer.push(feed_message::AddedNode(node_id, node));
                             feed_serializer.push(feed_message::FinalizedBlock(
                                 node_id,

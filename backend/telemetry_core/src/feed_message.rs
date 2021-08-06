@@ -18,7 +18,6 @@
 //! send to subscribed feeds (browsers).
 
 use serde::Serialize;
-use std::mem;
 
 use crate::state::Node;
 use common::node_types::{
@@ -80,20 +79,6 @@ impl FeedMessageSerializer {
         S: Serialize,
     {
         let _ = to_writer(&mut self.buffer, value);
-    }
-
-    /// Return the bytes we've serialized so far and prepare a new buffer. If you're
-    /// finished serializing data, prefer [`FeedMessageSerializer::into_finalized`]
-    pub fn finalize(&mut self) -> Option<bytes::Bytes> {
-        if self.buffer.is_empty() {
-            return None;
-        }
-
-        self.buffer.push(b']');
-
-        let bytes = mem::replace(&mut self.buffer, Vec::with_capacity(BUFCAP));
-
-        Some(bytes.into())
     }
 
     /// Return the bytes that we've serialized so far, consuming the serializer.

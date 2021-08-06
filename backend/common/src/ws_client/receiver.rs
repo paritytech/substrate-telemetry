@@ -14,10 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+use super::on_close::OnClose;
 use futures::channel::mpsc;
 use futures::{Stream, StreamExt};
 use std::sync::Arc;
-use super::on_close::OnClose;
 
 /// Receive messages out of a connection
 pub struct Receiver {
@@ -32,7 +32,7 @@ pub enum RecvError {
     #[error("Stream finished")]
     StreamFinished,
     #[error("Failed to send close message")]
-    CloseError
+    CloseError,
 }
 
 impl Receiver {

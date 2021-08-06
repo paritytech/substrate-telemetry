@@ -14,10 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+use super::on_close::OnClose;
 use futures::channel::mpsc;
 use futures::{Sink, SinkExt};
 use std::sync::Arc;
-use super::on_close::OnClose;
 
 /// A message that can be sent into the channel interface
 #[derive(Debug, Clone)]
@@ -70,7 +70,7 @@ pub enum SendError {
     #[error("Failed to send message: {0}")]
     ChannelError(#[from] mpsc::SendError),
     #[error("Failed to send close message")]
-    CloseError
+    CloseError,
 }
 
 impl Sink<SentMessage> for Sender {
@@ -85,9 +85,7 @@ impl Sink<SentMessage> for Sender {
         mut self: std::pin::Pin<&mut Self>,
         item: SentMessage,
     ) -> Result<(), Self::Error> {
-        self.inner
-            .start_send_unpin(item)
-            .map_err(|e| e.into())
+        self.inner.start_send_unpin(item).map_err(|e| e.into())
     }
     fn poll_flush(
         mut self: std::pin::Pin<&mut Self>,

@@ -70,7 +70,7 @@ pub struct Server {
     /// Core process that we can connect to.
     core: CoreProcess,
     /// Things that vary based on the mode we are in.
-    mode: ServerMode
+    mode: ServerMode,
 }
 pub enum ServerMode {
     SingleProcessMode {
@@ -258,7 +258,10 @@ impl Server {
     /// Start a server.
     pub async fn start(opts: StartOpts) -> Result<Server, Error> {
         let server = match opts {
-            StartOpts::SingleProcess { command, log_output } => {
+            StartOpts::SingleProcess {
+                command,
+                log_output,
+            } => {
                 let core_process = Server::start_core(log_output, command).await?;
                 let virtual_shard_host = core_process.host.clone();
                 Server {
@@ -271,13 +274,13 @@ impl Server {
                             handle: None,
                             _channel_type: PhantomData,
                         },
-                    }
+                    },
                 }
             }
             StartOpts::ShardAndCore {
                 core_command,
                 shard_command,
-                log_output
+                log_output,
             } => {
                 let core_process = Server::start_core(log_output, core_command).await?;
                 Server {
@@ -286,13 +289,13 @@ impl Server {
                     mode: ServerMode::ShardAndCoreMode {
                         shard_command,
                         shards: DenseMap::new(),
-                    }
+                    },
                 }
             }
             StartOpts::ConnectToExisting {
                 feed_host,
                 submit_hosts,
-                log_output
+                log_output,
             } => Server {
                 log_output,
                 core: Process {
@@ -305,7 +308,7 @@ impl Server {
                     submit_hosts,
                     next_submit_host_idx: 0,
                     shards: DenseMap::new(),
-                }
+                },
             },
         };
 

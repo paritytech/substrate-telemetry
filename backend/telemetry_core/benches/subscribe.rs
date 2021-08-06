@@ -1,10 +1,10 @@
 use common::node_types::BlockHash;
 use criterion::{criterion_group, criterion_main, Criterion};
 use serde_json::json;
-use test_utils::workspace::{ start_server, ServerOpts, CoreOpts, ShardOpts };
-use test_utils::feed_message_de::FeedMessage;
-use tokio::runtime::Runtime;
 use std::time::{Duration, Instant};
+use test_utils::feed_message_de::FeedMessage;
+use test_utils::workspace::{start_server, CoreOpts, ServerOpts, ShardOpts};
+use tokio::runtime::Runtime;
 
 /// This benchmark roughly times the subscribe function. Note that there's a lot of
 /// overhead in other areas, so even with the entire subscribe function commented out
@@ -19,10 +19,8 @@ pub fn benchmark_subscribe_speed(c: &mut Criterion) {
 
     let rt = Runtime::new().expect("tokio runtime should start");
 
-    c.bench_function(
-        "subscribe speed: time till pong",
-        move |b| b.to_async(&rt).iter_custom(|iters| async move {
-
+    c.bench_function("subscribe speed: time till pong", move |b| {
+        b.to_async(&rt).iter_custom(|iters| async move {
             // Start a server:
             let mut server = start_server(
                 ServerOpts {
@@ -38,8 +36,9 @@ pub fn benchmark_subscribe_speed(c: &mut Criterion) {
                     max_node_data_per_second: Some(usize::MAX),
                     worker_threads: Some(2),
                     ..Default::default()
-                }
-            ).await;
+                },
+            )
+            .await;
             let shard_id = server.add_shard().await.unwrap();
 
             // Connect a shard:
@@ -52,22 +51,24 @@ pub fn benchmark_subscribe_speed(c: &mut Criterion) {
 
             // Add a bunch of actual nodes on the same chain:
             for n in 0..NUMBER_OF_NODES {
-                node_tx.send_json_text(json!({
-                    "id":n,
-                    "ts":"2021-07-12T10:37:47.714666+01:00",
-                    "payload": {
-                        "authority":true,
-                        "chain":"Polkadot", // No limit to #nodes on this network.
-                        "config":"",
-                        "genesis_hash": BlockHash::from_low_u64_ne(1),
-                        "implementation":"Substrate Node",
-                        "msg":"system.connected",
-                        "name": format!("Node {}", n),
-                        "network_id":"12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp",
-                        "startup_time":"1625565542717",
-                        "version":"2.0.0-07a1af348-aarch64-macos"
-                    }
-                })).unwrap();
+                node_tx
+                    .send_json_text(json!({
+                        "id":n,
+                        "ts":"2021-07-12T10:37:47.714666+01:00",
+                        "payload": {
+                            "authority":true,
+                            "chain":"Polkadot", // No limit to #nodes on this network.
+                            "config":"",
+                            "genesis_hash": BlockHash::from_low_u64_ne(1),
+                            "implementation":"Substrate Node",
+                            "msg":"system.connected",
+                            "name": format!("Node {}", n),
+                            "network_id":"12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp",
+                            "startup_time":"1625565542717",
+                            "version":"2.0.0-07a1af348-aarch64-macos"
+                        }
+                    }))
+                    .unwrap();
             }
 
             // Give those messages a chance to be handled. This, of course,
@@ -79,7 +80,6 @@ pub fn benchmark_subscribe_speed(c: &mut Criterion) {
             // iters performed here, but a lot of the time that number is "1".
             let mut total_time = Duration::ZERO;
             for _n in 0..iters {
-
                 // Start a bunch of feeds:
                 let mut feeds = server
                     .get_core()
@@ -94,7 +94,9 @@ pub fn benchmark_subscribe_speed(c: &mut Criterion) {
 
                 // Then, Ping a feed:
                 feeds[0].0.send_command("ping", "Finished!").unwrap();
-                let finished = FeedMessage::Pong { msg: "Finished!".to_owned() };
+                let finished = FeedMessage::Pong {
+                    msg: "Finished!".to_owned(),
+                };
 
                 // Wait and see how long it takes to get a pong back:
                 let start = Instant::now();
@@ -115,7 +117,7 @@ pub fn benchmark_subscribe_speed(c: &mut Criterion) {
             // The total time spent waiting for subscribes:
             total_time
         })
-    );
+    });
 }
 
 criterion_group!(benches, benchmark_subscribe_speed);

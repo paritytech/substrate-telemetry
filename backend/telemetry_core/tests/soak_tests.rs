@@ -36,13 +36,13 @@ box; MacOS seems to hit limits quicker in general.
 
 use common::node_types::BlockHash;
 use common::ws_client::SentMessage;
-use futures::{StreamExt, future};
+use futures::{future, StreamExt};
 use serde_json::json;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use structopt::StructOpt;
-use test_utils::workspace::{start_server, ServerOpts, CoreOpts, ShardOpts};
+use test_utils::workspace::{start_server, CoreOpts, ServerOpts, ShardOpts};
 
 /// A configurable soak_test runner. Configure by providing the expected args as
 /// an environment variable. One example to run this test is:
@@ -87,7 +87,8 @@ async fn run_soak_test(opts: SoakTestOpts) {
             worker_threads: opts.shard_worker_threads,
             ..Default::default()
         },
-    ).await;
+    )
+    .await;
     println!("Telemetry core running at {}", server.get_core().host());
 
     // Start up the shards we requested:
@@ -274,7 +275,8 @@ async fn run_realistic_soak_test(opts: SoakTestOpts) {
             worker_threads: opts.shard_worker_threads,
             ..Default::default()
         },
-    ).await;
+    )
+    .await;
     println!("Telemetry core running at {}", server.get_core().host());
 
     // Start up the shards we requested:
@@ -307,14 +309,16 @@ async fn run_realistic_soak_test(opts: SoakTestOpts) {
                 Duration::from_secs(3),
                 format!("Node {}", idx + 1),
                 "Polkadot".to_owned(),
-                idx + 1
+                idx + 1,
             );
 
-            let res = telemetry.start(|msg| async {
-                bytes_in.fetch_add(msg.len(), Ordering::Relaxed);
-                tx.unbounded_send(SentMessage::Binary(msg))?;
-                Ok::<_, anyhow::Error>(())
-            }).await;
+            let res = telemetry
+                .start(|msg| async {
+                    bytes_in.fetch_add(msg.len(), Ordering::Relaxed);
+                    tx.unbounded_send(SentMessage::Binary(msg))?;
+                    Ok::<_, anyhow::Error>(())
+                })
+                .await;
 
             if let Err(e) = res {
                 log::error!("Telemetry Node #{} has died with error: {}", idx, e);
@@ -408,7 +412,7 @@ struct SoakTestOpts {
     shard_worker_threads: Option<usize>,
     /// Should we log output from the core/shards to stdout?
     #[structopt(long)]
-    log_output: bool
+    log_output: bool,
 }
 
 /// Get soak test args from an envvar and parse them via structopt.
