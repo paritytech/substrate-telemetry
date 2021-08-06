@@ -101,7 +101,7 @@ fn main() {
         Some(n) => n,
         // By default, use a max of 4 worker threads, as we don't
         // expect to need a lot of parallelism in shards.
-        None => usize::min(num_cpus::get(), 4)
+        None => usize::min(num_cpus::get(), 4),
     };
 
     tokio::runtime::Builder::new_multi_thread()
