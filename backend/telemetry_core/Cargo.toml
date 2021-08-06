@@ -35,3 +35,8 @@ tokio-util = { version = "0.6", features = ["compat"] }
 [dev-dependencies]
 shellwords = "1.1.0"
 test_utils = { path = "../test_utils" }
+criterion = { version = "0.3.4", features = ["async", "async_tokio"] }
+
+[[bench]]
+name = "subscribe"
+harness = false

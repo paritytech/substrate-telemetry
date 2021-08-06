@@ -173,7 +173,7 @@ impl FeedSender {
     /// Send a command into the feed. A command consists of a string
     /// "command" part, and another string "parameter" part.
     pub fn send_command<S: AsRef<str>>(
-        &mut self,
+        &self,
         command: S,
         param: S,
     ) -> Result<(), ws_client::SendError> {

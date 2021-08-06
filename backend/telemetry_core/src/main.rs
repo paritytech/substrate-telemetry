@@ -60,9 +60,8 @@ struct Opts {
     #[structopt(long, default_value = "10")]
     feed_timeout: u64,
     /// Number of worker threads to spawn. If "0" is given, use the number of CPUs available
-    /// on the machine. Note that the tokio runtime performance seems to degrade when this number
-    /// gets too high.
-    #[structopt(long, default_value = "8")]
+    /// on the machine.
+    #[structopt(long, default_value = "0")]
     worker_threads: usize,
 }
 

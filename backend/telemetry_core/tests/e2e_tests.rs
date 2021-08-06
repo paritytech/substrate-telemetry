@@ -37,7 +37,7 @@ use std::time::Duration;
 use test_utils::{
     assert_contains_matches,
     feed_message_de::{FeedMessage, NodeDetails},
-    workspace::{start_server, start_server_debug, CoreOpts, ShardOpts},
+    workspace::{start_server, start_server_debug, ServerOpts, CoreOpts, ShardOpts},
 };
 
 /// The simplest test we can run; the main benefit of this test (since we check similar)
@@ -68,7 +68,7 @@ async fn feed_ping_responded_to_with_pong() {
     let server = start_server_debug().await;
 
     // Connect a feed:
-    let (mut feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
+    let (feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
 
     // Ping it:
     feed_tx.send_command("ping", "hello!").unwrap();
@@ -283,7 +283,7 @@ async fn feeds_told_about_chain_rename_and_stay_subscribed() {
         .unwrap();
 
     // Connect a feed and subscribe to the above chain:
-    let (mut feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
+    let (feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
     feed_tx
         .send_command("subscribe", "Initial chain name")
         .unwrap();
@@ -453,7 +453,7 @@ async fn feed_can_subscribe_and_unsubscribe_from_chain() {
     }
 
     // Connect a feed
-    let (mut feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
+    let (feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
 
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
     assert_contains_matches!(feed_messages, AddedChain { name, node_count: 1 } if name == "Local Testnet 1");
@@ -526,7 +526,7 @@ async fn feed_can_subscribe_and_unsubscribe_from_chain() {
 async fn node_banned_if_it_sends_too_much_data() {
     async fn try_send_data(max_bytes: usize, send_msgs: usize, bytes_per_msg: usize) -> bool {
         let mut server = start_server(
-            false,
+            ServerOpts::default(),
             CoreOpts::default(),
             ShardOpts {
                 // Remember, this is (currently) averaged over the last 10 seconds,
@@ -576,7 +576,7 @@ async fn node_banned_if_it_sends_too_much_data() {
 #[tokio::test]
 async fn slow_feeds_are_disconnected() {
     let mut server = start_server(
-        false,
+        ServerOpts::default(),
         // Timeout faster so the test can be quicker:
         CoreOpts {
             feed_timeout: Some(1),
@@ -669,7 +669,7 @@ async fn slow_feeds_are_disconnected() {
 #[tokio::test]
 async fn max_nodes_per_connection_is_enforced() {
     let mut server = start_server(
-        false,
+        ServerOpts::default(),
         CoreOpts::default(),
         // Limit max nodes per connection to 2; any other msgs should be ignored.
         ShardOpts {
@@ -689,7 +689,7 @@ async fn max_nodes_per_connection_is_enforced() {
         .unwrap();
 
     // Connect a feed.
-    let (mut feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
+    let (feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
 
     // We'll send these messages from the node:
     let json_msg = |n| {

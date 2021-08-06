@@ -33,6 +33,8 @@ pub enum StartOpts {
         /// Command to run to start the process.
         /// The `--listen` and `--log` arguments will be appended within and shouldn't be provided.
         command: Command,
+        /// Log output from started processes to stderr?
+        log_output: bool,
     },
     /// Start a core process with a `/feed` andpoint as well as (optionally)
     /// multiple shard processes with `/submit` endpoints.
@@ -43,6 +45,8 @@ pub enum StartOpts {
         /// Command to run to start a telemetry core process.
         /// The `--listen` and `--log` arguments will be appended within and shouldn't be provided.
         core_command: Command,
+        /// Log output from started processes to stderr?
+        log_output: bool,
     },
     /// Connect to existing process(es).
     ConnectToExisting {
@@ -52,26 +56,32 @@ pub enum StartOpts {
         /// Where is the process that we can subscribe to the `/feed` of?
         /// Eg: `127.0.0.1:3000`
         feed_host: String,
+        /// Log output from started processes to stderr?
+        log_output: bool,
     },
 }
 
 /// This represents a telemetry server. It can be in different modes
 /// depending on how it was started, but the interface is similar in every case
 /// so that tests are somewhat compatible with multiple configurations.
-pub enum Server {
+pub struct Server {
+    /// Should we log output from the processes we start?
+    log_output: bool,
+    /// Core process that we can connect to.
+    core: CoreProcess,
+    /// Things that vary based on the mode we are in.
+    mode: ServerMode
+}
+pub enum ServerMode {
     SingleProcessMode {
         /// A virtual shard that we can hand out.
         virtual_shard: ShardProcess,
-        /// Core process that we can connect to.
-        core: CoreProcess,
     },
     ShardAndCoreMode {
         /// Command to run to start a new shard.
         shard_command: Command,
         /// Shard processes that we can connect to.
         shards: DenseMap<ProcessId, ShardProcess>,
-        /// Core process that we can connect to.
-        core: CoreProcess,
     },
     ConnectToExistingMode {
         /// The hosts that we can connect to to submit things.
@@ -81,8 +91,6 @@ pub enum Server {
         next_submit_host_idx: usize,
         /// Shard processes that we can connect to.
         shards: DenseMap<ProcessId, ShardProcess>,
-        /// Core process that we can connect to.
-        core: CoreProcess,
     },
 }
 
@@ -108,27 +116,23 @@ pub enum Error {
 
 impl Server {
     pub fn get_core(&self) -> &CoreProcess {
-        match self {
-            Server::SingleProcessMode { core, .. } => core,
-            Server::ShardAndCoreMode { core, .. } => core,
-            Server::ConnectToExistingMode { core, .. } => core,
-        }
+        &self.core
     }
 
     pub fn get_shard(&self, id: ProcessId) -> Option<&ShardProcess> {
-        match self {
-            Server::SingleProcessMode { virtual_shard, .. } => Some(virtual_shard),
-            Server::ShardAndCoreMode { shards, .. } => shards.get(id),
-            Server::ConnectToExistingMode { shards, .. } => shards.get(id),
+        match &self.mode {
+            ServerMode::SingleProcessMode { virtual_shard, .. } => Some(virtual_shard),
+            ServerMode::ShardAndCoreMode { shards, .. } => shards.get(id),
+            ServerMode::ConnectToExistingMode { shards, .. } => shards.get(id),
         }
     }
 
     pub async fn kill_shard(&mut self, id: ProcessId) -> bool {
-        let shard = match self {
+        let shard = match &mut self.mode {
             // Can't remove the pretend shard:
-            Server::SingleProcessMode { .. } => return false,
-            Server::ShardAndCoreMode { shards, .. } => shards.remove(id),
-            Server::ConnectToExistingMode { shards, .. } => shards.remove(id),
+            ServerMode::SingleProcessMode { .. } => return false,
+            ServerMode::ShardAndCoreMode { shards, .. } => shards.remove(id),
+            ServerMode::ConnectToExistingMode { shards, .. } => shards.remove(id),
         };
 
         let shard = match shard {
@@ -151,10 +155,11 @@ impl Server {
         // Spawn so we don't need to await cleanup if we don't care.
         // Run all kill futs simultaneously.
         let handle = tokio::spawn(async move {
-            let (core, shards) = match self {
-                Server::SingleProcessMode { core, .. } => (core, DenseMap::new()),
-                Server::ShardAndCoreMode { core, shards, .. } => (core, shards),
-                Server::ConnectToExistingMode { core, shards, .. } => (core, shards),
+            let core = self.core;
+            let shards = match self.mode {
+                ServerMode::SingleProcessMode { .. } => DenseMap::new(),
+                ServerMode::ShardAndCoreMode { shards, .. } => shards,
+                ServerMode::ConnectToExistingMode { shards, .. } => shards,
             };
 
             let shard_kill_futs = shards.into_iter().map(|(_, s)| s.kill());
@@ -167,12 +172,12 @@ impl Server {
 
     /// Connect a new shard and return a process that you can interact with:
     pub async fn add_shard(&mut self) -> Result<ProcessId, Error> {
-        match self {
+        match &mut self.mode {
             // Always get back the same "virtual" shard; we're always just talking to the core anyway.
-            Server::SingleProcessMode { virtual_shard, .. } => Ok(virtual_shard.id),
+            ServerMode::SingleProcessMode { virtual_shard, .. } => Ok(virtual_shard.id),
             // We're connecting to an existing process. Find the next host we've been told about
             // round-robin style and use that as our new virtual shard.
-            Server::ConnectToExistingMode {
+            ServerMode::ConnectToExistingMode {
                 submit_hosts,
                 next_submit_host_idx,
                 shards,
@@ -194,13 +199,12 @@ impl Server {
                 Ok(pid)
             }
             // Start a new process and return that.
-            Server::ShardAndCoreMode {
+            ServerMode::ShardAndCoreMode {
                 shard_command,
                 shards,
-                core,
             } => {
                 // Where is the URI we'll want to submit things to?
-                let core_shard_submit_uri = format!("http://{}/shard_submit", core.host);
+                let core_shard_submit_uri = format!("http://{}/shard_submit", self.core.host);
 
                 let mut shard_cmd: TokioCommand = shard_command.clone().into();
                 shard_cmd
@@ -233,7 +237,11 @@ impl Server {
 
                 // Since we're piping stdout from the child process, we need somewhere for it to go
                 // else the process will get stuck when it tries to produce output:
-                utils::drain(child_stdout, tokio::io::stderr());
+                if self.log_output {
+                    utils::drain(child_stdout, tokio::io::stderr());
+                } else {
+                    utils::drain(child_stdout, tokio::io::sink());
+                }
 
                 let pid = shards.add_with(|id| Process {
                     id,
@@ -250,43 +258,54 @@ impl Server {
     /// Start a server.
     pub async fn start(opts: StartOpts) -> Result<Server, Error> {
         let server = match opts {
-            StartOpts::SingleProcess { command } => {
-                let core_process = Server::start_core(command).await?;
+            StartOpts::SingleProcess { command, log_output } => {
+                let core_process = Server::start_core(log_output, command).await?;
                 let virtual_shard_host = core_process.host.clone();
-                Server::SingleProcessMode {
+                Server {
+                    log_output,
                     core: core_process,
-                    virtual_shard: Process {
-                        id: ProcessId(0),
-                        host: virtual_shard_host,
-                        handle: None,
-                        _channel_type: PhantomData,
-                    },
+                    mode: ServerMode::SingleProcessMode {
+                        virtual_shard: Process {
+                            id: ProcessId(0),
+                            host: virtual_shard_host,
+                            handle: None,
+                            _channel_type: PhantomData,
+                        },
+                    }
                 }
             }
             StartOpts::ShardAndCore {
                 core_command,
                 shard_command,
+                log_output
             } => {
-                let core_process = Server::start_core(core_command).await?;
-                Server::ShardAndCoreMode {
+                let core_process = Server::start_core(log_output, core_command).await?;
+                Server {
+                    log_output,
                     core: core_process,
-                    shard_command,
-                    shards: DenseMap::new(),
+                    mode: ServerMode::ShardAndCoreMode {
+                        shard_command,
+                        shards: DenseMap::new(),
+                    }
                 }
             }
             StartOpts::ConnectToExisting {
                 feed_host,
                 submit_hosts,
-            } => Server::ConnectToExistingMode {
-                submit_hosts,
-                next_submit_host_idx: 0,
-                shards: DenseMap::new(),
+                log_output
+            } => Server {
+                log_output,
                 core: Process {
                     id: ProcessId(0),
                     host: feed_host,
                     handle: None,
                     _channel_type: PhantomData,
                 },
+                mode: ServerMode::ConnectToExistingMode {
+                    submit_hosts,
+                    next_submit_host_idx: 0,
+                    shards: DenseMap::new(),
+                }
             },
         };
 
@@ -294,7 +313,7 @@ impl Server {
     }
 
     /// Start up a core process and return it.
-    async fn start_core(command: Command) -> Result<CoreProcess, Error> {
+    async fn start_core(log_output: bool, command: Command) -> Result<CoreProcess, Error> {
         let mut tokio_core_cmd: TokioCommand = command.into();
         let mut child = tokio_core_cmd
             .arg("--listen")
@@ -314,7 +333,11 @@ impl Server {
 
         // Since we're piping stdout from the child process, we need somewhere for it to go
         // else the process will get stuck when it tries to produce output:
-        utils::drain(child_stdout, tokio::io::stderr());
+        if log_output {
+            utils::drain(child_stdout, tokio::io::stderr());
+        } else {
+            utils::drain(child_stdout, tokio::io::sink());
+        }
 
         let core_process = Process {
             id: ProcessId(0),

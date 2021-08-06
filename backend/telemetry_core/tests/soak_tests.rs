@@ -42,7 +42,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use structopt::StructOpt;
-use test_utils::workspace::{start_server, CoreOpts, ShardOpts};
+use test_utils::workspace::{start_server, ServerOpts, CoreOpts, ShardOpts};
 
 /// A configurable soak_test runner. Configure by providing the expected args as
 /// an environment variable. One example to run this test is:
@@ -74,7 +74,10 @@ pub async fn soak_test() {
 /// the results should be pretty reproducible.
 async fn run_soak_test(opts: SoakTestOpts) {
     let mut server = start_server(
-        true,
+        ServerOpts {
+            release_mode: true,
+            ..Default::default()
+        },
         CoreOpts {
             worker_threads: opts.core_worker_threads,
             ..Default::default()
@@ -257,7 +260,10 @@ pub async fn realistic_soak_test() {
 /// circumstances
 async fn run_realistic_soak_test(opts: SoakTestOpts) {
     let mut server = start_server(
-        true,
+        ServerOpts {
+            release_mode: true,
+            ..Default::default()
+        },
         CoreOpts {
             worker_threads: opts.core_worker_threads,
             ..Default::default()

@@ -17,6 +17,21 @@
 use super::commands;
 use crate::server::{self, Command, Server};
 
+/// Options for the server
+pub struct ServerOpts {
+    pub release_mode: bool,
+    pub log_output: bool
+}
+
+impl Default for ServerOpts {
+    fn default() -> Self {
+        Self {
+            release_mode: false,
+            log_output: true,
+        }
+    }
+}
+
 /// Additional options to pass to the core command.
 pub struct CoreOpts {
     pub feed_timeout: Option<u64>,
@@ -69,7 +84,7 @@ impl Default for ShardOpts {
 /// - `TELEMETRY_FEED_HOST` - host to connect to for feeds (eg 127.0.0.1:3000)
 ///
 pub async fn start_server(
-    release_mode: bool,
+    server_opts: ServerOpts,
     core_opts: CoreOpts,
     shard_opts: ShardOpts,
 ) -> Server {
@@ -77,6 +92,7 @@ pub async fn start_server(
     if let Ok(bin) = std::env::var("TELEMETRY_BIN") {
         return Server::start(server::StartOpts::SingleProcess {
             command: Command::new(bin),
+            log_output: server_opts.log_output
         })
         .await
         .unwrap();
@@ -91,6 +107,7 @@ pub async fn start_server(
         return Server::start(server::StartOpts::ConnectToExisting {
             feed_host,
             submit_hosts,
+            log_output: server_opts.log_output
         })
         .await
         .unwrap();
@@ -100,7 +117,7 @@ pub async fn start_server(
     let mut shard_command = std::env::var("TELEMETRY_SHARD_BIN")
         .map(|val| Command::new(val))
         .unwrap_or_else(|_| {
-            commands::cargo_run_telemetry_shard(release_mode)
+            commands::cargo_run_telemetry_shard(server_opts.release_mode)
                 .expect("must be in rust workspace to run shard command")
         });
 
@@ -130,7 +147,7 @@ pub async fn start_server(
     let mut core_command = std::env::var("TELEMETRY_CORE_BIN")
         .map(|val| Command::new(val))
         .unwrap_or_else(|_| {
-            commands::cargo_run_telemetry_core(release_mode)
+            commands::cargo_run_telemetry_core(server_opts.release_mode)
                 .expect("must be in rust workspace to run core command")
         });
 
@@ -142,10 +159,11 @@ pub async fn start_server(
         core_command = core_command.arg("--worker-threads").arg(val.to_string());
     }
 
-    // Star the server
+    // Start the server
     Server::start(server::StartOpts::ShardAndCore {
         shard_command,
         core_command,
+        log_output: server_opts.log_output
     })
     .await
     .unwrap()
@@ -153,10 +171,10 @@ pub async fn start_server(
 
 /// Start a telemetry core server in debug mode. see [`start_server`] for details.
 pub async fn start_server_debug() -> Server {
-    start_server(false, CoreOpts::default(), ShardOpts::default()).await
+    start_server(ServerOpts::default(), CoreOpts::default(), ShardOpts::default()).await
 }
 
 /// Start a telemetry core server in release mode. see [`start_server`] for details.
 pub async fn start_server_release() -> Server {
-    start_server(true, CoreOpts::default(), ShardOpts::default()).await
+    start_server(ServerOpts::default(), CoreOpts::default(), ShardOpts::default()).await
 }
