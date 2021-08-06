@@ -286,8 +286,8 @@ impl<'a> StateChain<'a> {
     pub fn finalized_block(&self) -> &'a Block {
         self.chain.finalized_block()
     }
-    pub fn iter_nodes(&self) -> impl Iterator<Item = (ChainNodeId, &'a Node)> + 'a {
-        self.chain.iter_nodes()
+    pub fn nodes_slice(&self) -> &[Option<Node>] {
+        self.chain.nodes_slice()
     }
 }
 

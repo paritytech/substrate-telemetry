@@ -30,6 +30,7 @@ pub fn benchmark_subscribe_speed(c: &mut Criterion) {
                     log_output: false,
                 },
                 CoreOpts {
+                    worker_threads: Some(2),
                     ..Default::default()
                 },
                 ShardOpts {

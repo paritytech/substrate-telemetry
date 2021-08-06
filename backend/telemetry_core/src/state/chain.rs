@@ -348,8 +348,8 @@ impl Chain {
     pub fn get_node(&self, id: ChainNodeId) -> Option<&Node> {
         self.nodes.get(id)
     }
-    pub fn iter_nodes(&self) -> impl Iterator<Item = (ChainNodeId, &Node)> {
-        self.nodes.iter()
+    pub fn nodes_slice(&self) -> &[Option<Node>] {
+        self.nodes.as_slice()
     }
     pub fn label(&self) -> &str {
         &self.labels.best()

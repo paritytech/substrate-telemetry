@@ -49,6 +49,10 @@ where
         self.add_with(|_| item)
     }
 
+    pub fn as_slice(&self) -> &[Option<T>] {
+        &self.items
+    }
+
     pub fn add_with<F>(&mut self, f: F) -> Id
     where
         F: FnOnce(Id) -> T,

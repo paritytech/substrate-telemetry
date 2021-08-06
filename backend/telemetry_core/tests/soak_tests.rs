@@ -76,6 +76,7 @@ async fn run_soak_test(opts: SoakTestOpts) {
     let mut server = start_server(
         ServerOpts {
             release_mode: true,
+            log_output: opts.log_output,
             ..Default::default()
         },
         CoreOpts {
@@ -262,6 +263,7 @@ async fn run_realistic_soak_test(opts: SoakTestOpts) {
     let mut server = start_server(
         ServerOpts {
             release_mode: true,
+            log_output: opts.log_output,
             ..Default::default()
         },
         CoreOpts {
@@ -404,6 +406,9 @@ struct SoakTestOpts {
     /// Number of worker threads each shard will use
     #[structopt(long)]
     shard_worker_threads: Option<usize>,
+    /// Should we log output from the core/shards to stdout?
+    #[structopt(long)]
+    log_output: bool
 }
 
 /// Get soak test args from an envvar and parse them via structopt.

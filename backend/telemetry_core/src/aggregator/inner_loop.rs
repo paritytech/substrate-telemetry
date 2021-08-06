@@ -429,27 +429,39 @@ impl InnerLoop {
                     new_chain.finalized_block().height,
                     new_chain.finalized_block().hash,
                 ));
-                for (idx, (chain_node_id, node)) in new_chain.iter_nodes().enumerate() {
-                    let chain_node_id = chain_node_id.into();
-
-                    // Send subscription confirmation and chain head before doing all the nodes,
-                    // and continue sending batches of 32 nodes a time over the wire subsequently
-                    if idx % 32 == 0 {
-                        if let Some(bytes) = feed_serializer.finalize() {
-                            let _ = feed_channel.unbounded_send(ToFeedWebsocket::Bytes(bytes));
-                        }
-                    }
-                    feed_serializer.push(feed_message::AddedNode(chain_node_id, node));
-                    feed_serializer.push(feed_message::FinalizedBlock(
-                        chain_node_id,
-                        node.finalized().height,
-                        node.finalized().hash,
-                    ));
-                    if node.stale() {
-                        feed_serializer.push(feed_message::StaleNode(chain_node_id));
-                    }
-                }
                 if let Some(bytes) = feed_serializer.into_finalized() {
+                    let _ = feed_channel.unbounded_send(ToFeedWebsocket::Bytes(bytes));
+                }
+
+                // If many (eg 10k) nodes are connected, serializing all of their info takes time.
+                // So, parallelise this with Rayon, but we still send out messages for each node in order
+                // (which is helpful for the UI as it tries to maintain a sorted list of nodes). The chunk
+                // size is the max number of node info we fit into 1 message; smaller messages allow the UI
+                // to react a little faster and not have to wait for a larger update to come in. A chunk size
+                // of 64 means each mesage is ~32k.
+                use rayon::prelude::*;
+                let all_feed_messages: Vec<_> = new_chain
+                    .nodes_slice()
+                    .par_iter()
+                    .enumerate()
+                    .chunks(64)
+                    .filter_map(|nodes| {
+                        let mut feed_serializer = FeedMessageSerializer::new();
+                        for (node_id, node) in nodes.iter().filter_map(|&(idx, n)| n.as_ref().map(|n| (idx, n))) {
+                            feed_serializer.push(feed_message::AddedNode(node_id, node));
+                            feed_serializer.push(feed_message::FinalizedBlock(
+                                node_id,
+                                node.finalized().height,
+                                node.finalized().hash,
+                            ));
+                            if node.stale() {
+                                feed_serializer.push(feed_message::StaleNode(node_id));
+                            }
+                        }
+                        feed_serializer.into_finalized()
+                    })
+                    .collect();
+                for bytes in all_feed_messages {
                     let _ = feed_channel.unbounded_send(ToFeedWebsocket::Bytes(bytes));
                 }
 

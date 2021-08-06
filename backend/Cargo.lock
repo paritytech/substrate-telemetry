@@ -1530,6 +1530,7 @@ dependencies = [
  "once_cell",
  "parking_lot",
  "primitive-types",
+ "rayon",
  "reqwest",
  "rustc-hash",
  "serde",
