@@ -78,6 +78,8 @@ fn main() {
     let worker_threads = match opts.worker_threads {
         Some(0) => num_cpus::get(),
         Some(n) => n,
+        // By default, use a max of 8 worker threads, as perf
+        // testing has found that to be a good sweet spot.
         None => usize::min(num_cpus::get(), 8),
     };
 
