@@ -81,9 +81,9 @@ struct Opts {
     #[structopt(long, default_value = "600")]
     node_block_seconds: u64,
     /// Number of worker threads to spawn. If "0" is given, use the number of CPUs available
-    /// on the machine.
-    #[structopt(long, default_value = "0")]
-    worker_threads: usize,
+    /// on the machine. If no value is given, use an internal default that we have deemed sane.
+    #[structopt(long)]
+    worker_threads: Option<usize>,
 }
 
 fn main() {
@@ -97,8 +97,11 @@ fn main() {
     log::info!("Starting Telemetry Shard version: {}", VERSION);
 
     let worker_threads = match opts.worker_threads {
-        0 => num_cpus::get(),
-        n => n,
+        Some(0) => num_cpus::get(),
+        Some(n) => n,
+        // By default, use a max of 4 worker threads, as we don't
+        // expect to need a lot of parallelism in shards.
+        None => usize::min(num_cpus::get(), 4)
     };
 
     tokio::runtime::Builder::new_multi_thread()

@@ -60,9 +60,9 @@ struct Opts {
     #[structopt(long, default_value = "10")]
     feed_timeout: u64,
     /// Number of worker threads to spawn. If "0" is given, use the number of CPUs available
-    /// on the machine.
-    #[structopt(long, default_value = "0")]
-    worker_threads: usize,
+    /// on the machine. If no value is given, use an internal default that we have deemed sane.
+    #[structopt(long)]
+    worker_threads: Option<usize>,
 }
 
 fn main() {
@@ -76,8 +76,9 @@ fn main() {
     log::info!("Starting Telemetry Core version: {}", VERSION);
 
     let worker_threads = match opts.worker_threads {
-        0 => num_cpus::get(),
-        n => n,
+        Some(0) => num_cpus::get(),
+        Some(n) => n,
+        None => usize::min(num_cpus::get(), 8)
     };
 
     tokio::runtime::Builder::new_multi_thread()
