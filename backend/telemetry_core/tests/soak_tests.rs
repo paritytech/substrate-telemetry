@@ -404,6 +404,9 @@ struct SoakTestOpts {
     /// The number of nodes to connect to each feed
     #[structopt(long)]
     nodes: usize,
+    /// Number of aggregator loops to use in the core
+    #[structopt(long)]
+    core_num_aggregators: Option<usize>,
     /// Number of worker threads the core will use
     #[structopt(long)]
     core_worker_threads: Option<usize>,

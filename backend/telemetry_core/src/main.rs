@@ -22,7 +22,7 @@ use std::str::FromStr;
 use tokio::time::{Duration, Instant};
 
 use aggregator::{
-    Aggregator, FromFeedWebsocket, FromShardWebsocket, ToFeedWebsocket, ToShardWebsocket,
+    AggregatorSet, FromFeedWebsocket, FromShardWebsocket, ToFeedWebsocket, ToShardWebsocket,
 };
 use bincode::Options;
 use common::http_utils;
@@ -63,6 +63,10 @@ struct Opts {
     /// on the machine. If no value is given, use an internal default that we have deemed sane.
     #[structopt(long)]
     worker_threads: Option<usize>,
+    /// Each aggregator keeps track of the entire node state. Feed subscriptions are split across
+    /// aggregators.
+    #[structopt(long)]
+    num_aggregators: Option<usize>,
 }
 
 fn main() {
@@ -83,21 +87,29 @@ fn main() {
         None => usize::min(num_cpus::get(), 8),
     };
 
+    let num_aggregators = match opts.num_aggregators {
+        Some(0) => num_cpus::get(),
+        Some(n) => n,
+        // By default, we'll have half as many aggregator tasks
+        // running as we do worker threads (minimum 1).
+        None => usize::max(worker_threads / 2, 1),
+    };
+
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .worker_threads(worker_threads)
         .build()
         .unwrap()
         .block_on(async {
-            if let Err(e) = start_server(opts).await {
+            if let Err(e) = start_server(num_aggregators, opts).await {
                 log::error!("Error starting server: {}", e);
             }
         });
 }
 
 /// Declare our routes and start the server.
-async fn start_server(opts: Opts) -> anyhow::Result<()> {
-    let aggregator = Aggregator::spawn(opts.denylist).await?;
+async fn start_server(num_aggregators: usize, opts: Opts) -> anyhow::Result<()> {
+    let aggregator = AggregatorSet::spawn(num_aggregators, opts.denylist).await?;
     let socket_addr = opts.socket;
     let feed_timeout = opts.feed_timeout;
 

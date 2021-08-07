@@ -15,9 +15,10 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 mod aggregator;
+mod aggregator_set;
 mod inner_loop;
 
 // Expose the various message types that can be worked with externally:
 pub use inner_loop::{FromFeedWebsocket, FromShardWebsocket, ToFeedWebsocket, ToShardWebsocket};
 
-pub use aggregator::*;
+pub use aggregator_set::*;

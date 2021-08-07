@@ -36,6 +36,7 @@ impl Default for ServerOpts {
 pub struct CoreOpts {
     pub feed_timeout: Option<u64>,
     pub worker_threads: Option<usize>,
+    pub num_aggregators: Option<usize>,
 }
 
 impl Default for CoreOpts {
@@ -43,6 +44,7 @@ impl Default for CoreOpts {
         Self {
             feed_timeout: None,
             worker_threads: None,
+            num_aggregators: None,
         }
     }
 }
@@ -155,6 +157,9 @@ pub async fn start_server(
     }
     if let Some(val) = core_opts.worker_threads {
         core_command = core_command.arg("--worker-threads").arg(val.to_string());
+    }
+    if let Some(val) = core_opts.num_aggregators {
+        core_command = core_command.arg("--num-aggregators").arg(val.to_string());
     }
 
     // Start the server
