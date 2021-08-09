@@ -34,6 +34,16 @@ id_type! {
 #[derive(Clone)]
 pub struct Aggregator(Arc<AggregatorInternal>);
 
+/// Options to configure the aggregator loop(s)
+#[derive(Debug, Clone)]
+pub struct AggregatorOpts {
+    /// Any node from these chains is muted
+    pub denylist: Vec<String>,
+    /// If our incoming message queue exceeds this length, we start
+    /// dropping non-essential messages.
+    pub max_queue_len: usize,
+}
+
 struct AggregatorInternal {
     /// Shards that connect are each assigned a unique connection ID.
     /// This helps us know who to send messages back to (especially in
@@ -49,7 +59,7 @@ struct AggregatorInternal {
 
 impl Aggregator {
     /// Spawn a new Aggregator. This connects to the telemetry backend
-    pub async fn spawn(denylist: Vec<String>) -> anyhow::Result<Aggregator> {
+    pub async fn spawn(opts: AggregatorOpts) -> anyhow::Result<Aggregator> {
         let (tx_to_aggregator, rx_from_external) = mpsc::unbounded();
 
         // Kick off a locator task to locate nodes, which hands back a channel to make location requests
@@ -63,7 +73,8 @@ impl Aggregator {
         tokio::spawn(Aggregator::handle_messages(
             rx_from_external,
             tx_to_locator,
-            denylist,
+            opts.max_queue_len,
+            opts.denylist,
         ));
 
         // Return a handle to our aggregator:
@@ -80,9 +91,10 @@ impl Aggregator {
     async fn handle_messages(
         rx_from_external: mpsc::UnboundedReceiver<inner_loop::ToAggregator>,
         tx_to_aggregator: mpsc::UnboundedSender<(NodeId, Ipv4Addr)>,
+        max_queue_len: usize,
         denylist: Vec<String>,
     ) {
-        inner_loop::InnerLoop::new(tx_to_aggregator, denylist)
+        inner_loop::InnerLoop::new(tx_to_aggregator, denylist, max_queue_len)
             .handle(rx_from_external)
             .await;
     }

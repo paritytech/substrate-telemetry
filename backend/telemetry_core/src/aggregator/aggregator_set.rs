@@ -1,4 +1,4 @@
-use super::aggregator::Aggregator;
+use super::aggregator::{Aggregator, AggregatorOpts};
 use super::inner_loop;
 use common::EitherSink;
 use futures::{Sink, SinkExt, StreamExt};
@@ -18,12 +18,12 @@ impl AggregatorSet {
     /// Spawn the number of aggregators we're asked to.
     pub async fn spawn(
         num_aggregators: usize,
-        denylist: Vec<String>,
+        opts: AggregatorOpts,
     ) -> anyhow::Result<AggregatorSet> {
         assert_ne!(num_aggregators, 0, "You must have 1 or more aggregator");
 
         let aggregators = futures::future::try_join_all(
-            (0..num_aggregators).map(|_| Aggregator::spawn(denylist.clone())),
+            (0..num_aggregators).map(|_| Aggregator::spawn(opts.clone())),
         )
         .await?;
 

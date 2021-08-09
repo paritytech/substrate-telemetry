@@ -22,7 +22,8 @@ use std::str::FromStr;
 use tokio::time::{Duration, Instant};
 
 use aggregator::{
-    AggregatorSet, FromFeedWebsocket, FromShardWebsocket, ToFeedWebsocket, ToShardWebsocket,
+    AggregatorOpts, AggregatorSet, FromFeedWebsocket, FromShardWebsocket, ToFeedWebsocket,
+    ToShardWebsocket,
 };
 use bincode::Options;
 use common::http_utils;
@@ -67,6 +68,10 @@ struct Opts {
     /// aggregators.
     #[structopt(long)]
     num_aggregators: Option<usize>,
+    /// How big can the message queue for each aggregator grow before we start dropping non-essential
+    /// messages in an attempt to let it reduce?
+    #[structopt(long)]
+    aggregator_queue_len: Option<usize>,
 }
 
 fn main() {
@@ -110,7 +115,15 @@ fn main() {
 
 /// Declare our routes and start the server.
 async fn start_server(num_aggregators: usize, opts: Opts) -> anyhow::Result<()> {
-    let aggregator = AggregatorSet::spawn(num_aggregators, opts.denylist).await?;
+    let aggregator_queue_len = opts.aggregator_queue_len.unwrap_or(10_000);
+    let aggregator = AggregatorSet::spawn(
+        num_aggregators,
+        AggregatorOpts {
+            max_queue_len: aggregator_queue_len,
+            denylist: opts.denylist,
+        },
+    )
+    .await?;
     let socket_addr = opts.socket;
     let feed_timeout = opts.feed_timeout;
 

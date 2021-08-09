@@ -1,6 +1,8 @@
-use futures::channel::mpsc::{ SendError, TrySendError, UnboundedSender, UnboundedReceiver, unbounded };
-use futures::{ Sink, Stream, SinkExt, StreamExt };
-use std::sync::atomic::{ AtomicUsize, Ordering };
+use futures::channel::mpsc::{
+    unbounded, SendError, TrySendError, UnboundedReceiver, UnboundedSender,
+};
+use futures::{Sink, SinkExt, Stream, StreamExt};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::task::Poll;
 
@@ -12,11 +14,11 @@ pub fn metered_unbounded<T>() -> (MeteredUnboundedSender<T>, MeteredUnboundedRec
 
     let tx = MeteredUnboundedSender {
         inner: tx,
-        len: len
+        len: len,
     };
     let rx = MeteredUnboundedReceiver {
         inner: rx,
-        len: len2
+        len: len2,
     };
 
     (tx, rx)
@@ -30,7 +32,7 @@ pub struct MeteredUnboundedSender<T> {
     len: Arc<AtomicUsize>,
 }
 
-impl <T> MeteredUnboundedSender<T> {
+impl<T> MeteredUnboundedSender<T> {
     /// The current number of messages in the queue.
     pub fn len(&self) -> usize {
         self.len.load(Ordering::Relaxed)
@@ -43,10 +45,13 @@ impl <T> MeteredUnboundedSender<T> {
     }
 }
 
-impl <T> Sink<T> for MeteredUnboundedSender<T> {
+impl<T> Sink<T> for MeteredUnboundedSender<T> {
     type Error = SendError;
 
-    fn poll_ready(self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> Poll<Result<(), Self::Error>> {
+    fn poll_ready(
+        self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> Poll<Result<(), Self::Error>> {
         self.inner.poll_ready(cx)
     }
 
@@ -54,19 +59,28 @@ impl <T> Sink<T> for MeteredUnboundedSender<T> {
         self.unbounded_send(item).map_err(|e| e.into_send_error())
     }
 
-    fn poll_flush(mut self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> Poll<Result<(), Self::Error>> {
+    fn poll_flush(
+        mut self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> Poll<Result<(), Self::Error>> {
         self.inner.poll_flush_unpin(cx)
     }
 
-    fn poll_close(mut self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> Poll<Result<(), Self::Error>> {
+    fn poll_close(
+        mut self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> Poll<Result<(), Self::Error>> {
         self.inner.poll_close_unpin(cx)
     }
 }
 
-impl <T> Stream for MeteredUnboundedReceiver<T> {
+impl<T> Stream for MeteredUnboundedReceiver<T> {
     type Item = T;
 
-    fn poll_next(mut self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> std::task::Poll<Option<Self::Item>> {
+    fn poll_next(
+        mut self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Option<Self::Item>> {
         let res = self.inner.poll_next_unpin(cx);
         if matches!(res, Poll::Ready(Some(..))) {
             self.len.fetch_sub(1, Ordering::Relaxed);
@@ -83,7 +97,7 @@ pub struct MeteredUnboundedReceiver<T> {
     len: Arc<AtomicUsize>,
 }
 
-impl <T> MeteredUnboundedReceiver<T> {
+impl<T> MeteredUnboundedReceiver<T> {
     /// The current number of messages in the queue.
     pub fn len(&self) -> usize {
         self.len.load(Ordering::Relaxed)
@@ -137,7 +151,7 @@ mod test {
 
     #[tokio::test]
     async fn channel_len_consistent_when_send_parallelised() {
-        let (mut tx, mut rx) = metered_unbounded::<usize>();
+        let (tx, _rx) = metered_unbounded::<usize>();
 
         // Send lots of messages on a bunch of real threads:
         let mut join_handles = vec![];
@@ -156,12 +170,11 @@ mod test {
             handle.join().unwrap();
         }
         assert_eq!(tx.len(), 50 * 10_000);
-
     }
 
     #[tokio::test]
     async fn channel_len_consistent_when_send_and_recv_parallelised() {
-        let (mut tx, mut rx) = metered_unbounded::<usize>();
+        let (tx, mut rx) = metered_unbounded::<usize>();
 
         // Send lots of messages on a bunch of real threads:
         let mut join_handles = vec![];
@@ -185,7 +198,5 @@ mod test {
             handle.join().unwrap();
         }
         assert_eq!(tx.len(), 0);
-
     }
-
 }

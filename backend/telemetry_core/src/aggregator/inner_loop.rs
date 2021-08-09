@@ -20,10 +20,10 @@ use crate::find_location;
 use crate::state::{self, NodeId, State};
 use bimap::BiMap;
 use common::{
+    channel::metered_unbounded,
     internal_messages::{self, MuteReason, ShardNodeId},
     node_message,
     node_types::BlockHash,
-    channel::metered_unbounded,
     time,
 };
 use futures::channel::mpsc;
@@ -151,6 +151,10 @@ pub struct InnerLoop {
 
     /// Send messages here to make geographical location requests.
     tx_to_locator: mpsc::UnboundedSender<(NodeId, Ipv4Addr)>,
+
+    /// How big can the queue of messages coming in to the aggregator get before messages
+    /// are prioritised and dropped to try and get back on track.
+    max_queue_len: usize,
 }
 
 impl InnerLoop {
@@ -158,6 +162,7 @@ impl InnerLoop {
     pub fn new(
         tx_to_locator: mpsc::UnboundedSender<(NodeId, Ipv4Addr)>,
         denylist: Vec<String>,
+        max_queue_len: usize,
     ) -> Self {
         InnerLoop {
             node_state: State::new(denylist),
@@ -168,6 +173,7 @@ impl InnerLoop {
             chain_to_feed_conn_ids: HashMap::new(),
             feed_conn_id_finality: HashSet::new(),
             tx_to_locator,
+            max_queue_len,
         }
     }
 
@@ -175,7 +181,7 @@ impl InnerLoop {
     /// only have a single `.await` (in this function). This helps to make it clear that the aggregator loop
     /// will be able to make progress quickly without any potential yield points.
     pub async fn handle(mut self, mut rx_from_external: mpsc::UnboundedReceiver<ToAggregator>) {
-
+        let max_queue_len = self.max_queue_len;
         let (metered_tx, mut metered_rx) = metered_unbounded();
 
         tokio::spawn(async move {
@@ -197,17 +203,30 @@ impl InnerLoop {
         // TEMP: let's monitor message queue len out of interest
         let tx_len = metered_tx.clone();
         std::thread::spawn(move || {
-            tokio::runtime::Runtime::new().unwrap().block_on(async move {
-                let mut n = 0;
-                loop {
-                    println!("#{} Queue len: {}", n, tx_len.len());
-                    n += 1;
-                    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
-                }
-            });
+            tokio::runtime::Runtime::new()
+                .unwrap()
+                .block_on(async move {
+                    let mut n = 0;
+                    loop {
+                        println!("#{} Queue len: {}", n, tx_len.len());
+                        n += 1;
+                        tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+                    }
+                });
         });
 
         while let Some(msg) = rx_from_external.next().await {
+            // ignore node updates if we have too many messages to handle, in an attempt
+            // to reduce the queue length back to something reasonable.
+            if metered_tx.len() > max_queue_len {
+                if matches!(
+                    msg,
+                    ToAggregator::FromShardWebsocket(.., FromShardWebsocket::Update { .. })
+                ) {
+                    continue;
+                }
+            }
+
             if let Err(e) = metered_tx.unbounded_send(msg) {
                 log::error!("Cannot send message into aggregator: {}", e);
                 break;
