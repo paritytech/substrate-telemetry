@@ -38,7 +38,7 @@ impl AggregatorSet {
         &self,
     ) -> impl Sink<inner_loop::FromShardWebsocket, Error = anyhow::Error> + Send + Sync + Unpin + 'static
     {
-        // Special case 1 aggregator to avoid the extra indurection and so on
+        // Special case 1 aggregator to avoid the extra indirection and so on
         // if we don't actually need it.
         if self.0.aggregators.len() == 1 {
             let sub = self.0.aggregators[0].subscribe_shard();
