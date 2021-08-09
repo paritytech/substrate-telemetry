@@ -98,6 +98,7 @@ fn main() {
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .worker_threads(worker_threads)
+        .thread_name("telemetry_core_worker")
         .build()
         .unwrap()
         .block_on(async {

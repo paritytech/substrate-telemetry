@@ -33,6 +33,7 @@ pub fn benchmark_subscribe_speed(c: &mut Criterion) {
                     },
                     CoreOpts {
                         worker_threads: Some(16),
+                        num_aggregators: Some(1),
                         ..Default::default()
                     },
                     ShardOpts {
