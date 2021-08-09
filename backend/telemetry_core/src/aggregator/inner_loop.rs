@@ -23,6 +23,7 @@ use common::{
     internal_messages::{self, MuteReason, ShardNodeId},
     node_message,
     node_types::BlockHash,
+    channel::metered_unbounded,
     time,
 };
 use futures::channel::mpsc;
@@ -127,9 +128,6 @@ pub enum ToFeedWebsocket {
 /// Instances of this are responsible for handling incoming and
 /// outgoing messages in the main aggregator loop.
 pub struct InnerLoop {
-    /// Messages from the outside world come into this:
-    rx_from_external: mpsc::UnboundedReceiver<ToAggregator>,
-
     /// The state of our chains and nodes lives here:
     node_state: State,
     /// We maintain a mapping between NodeId and ConnId+LocalId, so that we know
@@ -158,12 +156,10 @@ pub struct InnerLoop {
 impl InnerLoop {
     /// Create a new inner loop handler with the various state it needs.
     pub fn new(
-        rx_from_external: mpsc::UnboundedReceiver<ToAggregator>,
         tx_to_locator: mpsc::UnboundedSender<(NodeId, Ipv4Addr)>,
         denylist: Vec<String>,
     ) -> Self {
         InnerLoop {
-            rx_from_external,
             node_state: State::new(denylist),
             node_ids: BiMap::new(),
             feed_channels: HashMap::new(),
@@ -178,18 +174,39 @@ impl InnerLoop {
     /// Start handling and responding to incoming messages. Owing to unbounded channels, we actually
     /// only have a single `.await` (in this function). This helps to make it clear that the aggregator loop
     /// will be able to make progress quickly without any potential yield points.
-    pub async fn handle(mut self) {
-        while let Some(msg) = self.rx_from_external.next().await {
-            match msg {
-                ToAggregator::FromFeedWebsocket(feed_conn_id, msg) => {
-                    self.handle_from_feed(feed_conn_id, msg)
+    pub async fn handle(mut self, mut rx_from_external: mpsc::UnboundedReceiver<ToAggregator>) {
+
+        let (metered_tx, mut metered_rx) = metered_unbounded();
+
+        tokio::spawn(async move {
+            while let Some(msg) = metered_rx.next().await {
+                match msg {
+                    ToAggregator::FromFeedWebsocket(feed_conn_id, msg) => {
+                        self.handle_from_feed(feed_conn_id, msg)
+                    }
+                    ToAggregator::FromShardWebsocket(shard_conn_id, msg) => {
+                        self.handle_from_shard(shard_conn_id, msg)
+                    }
+                    ToAggregator::FromFindLocation(node_id, location) => {
+                        self.handle_from_find_location(node_id, location)
+                    }
                 }
-                ToAggregator::FromShardWebsocket(shard_conn_id, msg) => {
-                    self.handle_from_shard(shard_conn_id, msg)
-                }
-                ToAggregator::FromFindLocation(node_id, location) => {
-                    self.handle_from_find_location(node_id, location)
-                }
+            }
+        });
+
+        // TEMP: let's monitor message queue len out of interest
+        let tx_len = metered_tx.clone();
+        tokio::spawn(async move {
+            loop {
+                println!("Queue len: {}", tx_len.len());
+                tokio::time::sleep(tokio::time::Duration::from_secs(1)).await
+            }
+        });
+
+        while let Some(msg) = rx_from_external.next().await {
+            if let Err(e) = metered_tx.unbounded_send(msg) {
+                log::error!("Cannot send message into aggregator: {}", e);
+                break;
             }
         }
     }

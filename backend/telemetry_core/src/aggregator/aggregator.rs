@@ -74,16 +74,16 @@ impl Aggregator {
         })))
     }
 
-    // This is spawned into a separate task and handles any messages coming
-    // in to the aggregator. If nobody is tolding the tx side of the channel
-    // any more, this task will gracefully end.
+    /// This is spawned into a separate task and handles any messages coming
+    /// in to the aggregator. If nobody is tolding the tx side of the channel
+    /// any more, this task will gracefully end.
     async fn handle_messages(
         rx_from_external: mpsc::UnboundedReceiver<inner_loop::ToAggregator>,
         tx_to_aggregator: mpsc::UnboundedSender<(NodeId, Ipv4Addr)>,
         denylist: Vec<String>,
     ) {
-        inner_loop::InnerLoop::new(rx_from_external, tx_to_aggregator, denylist)
-            .handle()
+        inner_loop::InnerLoop::new(tx_to_aggregator, denylist)
+            .handle(rx_from_external)
             .await;
     }
 

@@ -24,6 +24,7 @@ pub mod ready_chunks_all;
 pub mod rolling_total;
 pub mod time;
 pub mod ws_client;
+pub mod channel;
 
 mod assign_id;
 mod dense_map;
