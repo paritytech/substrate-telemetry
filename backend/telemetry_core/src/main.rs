@@ -90,9 +90,9 @@ fn main() {
     let num_aggregators = match opts.num_aggregators {
         Some(0) => num_cpus::get(),
         Some(n) => n,
-        // By default, we'll have half as many aggregator tasks
-        // running as we do worker threads (minimum 1).
-        None => usize::max(worker_threads / 2, 1),
+        // For now, we just have 1 aggregator loop by default,
+        // but we may want to be smarter here eventually.
+        None => 1,
     };
 
     tokio::runtime::Builder::new_multi_thread()
