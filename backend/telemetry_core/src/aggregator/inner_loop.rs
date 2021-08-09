@@ -197,9 +197,11 @@ impl InnerLoop {
         // TEMP: let's monitor message queue len out of interest
         let tx_len = metered_tx.clone();
         tokio::spawn(async move {
+            let mut n = 0;
             loop {
-                println!("Queue len: {}", tx_len.len());
-                tokio::time::sleep(tokio::time::Duration::from_secs(1)).await
+                println!("#{} Queue len: {}", n, tx_len.len());
+                n += 1;
+                tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
             }
         });
 
