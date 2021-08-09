@@ -363,7 +363,6 @@ where
     let recv_handle = tokio::spawn(async move {
         loop {
             let mut bytes = Vec::new();
-
             // Receive a message, or bail if closer called. We don't care about cancel safety;
             // if we're halfway through receiving a message, no biggie since we're closing the
             // connection anyway.
@@ -427,7 +426,9 @@ where
                 Some(msgs) => msgs,
                 None => break,
             };
-
+if _feed_id == 1 {
+    println!("FEED 1 message len: {}", msgs.len());
+}
             // There is only one message type at the mo; bytes to send
             // to the websocket. collect them all up to dispatch in one shot.
             let all_msg_bytes = msgs.into_iter().map(|msg| match msg {
