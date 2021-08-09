@@ -4,6 +4,7 @@ use futures::{Sink, SinkExt, StreamExt};
 use inner_loop::FromShardWebsocket;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use common::EitherSink;
 
 #[derive(Clone)]
 pub struct AggregatorSet(Arc<AggregatorSetInner>);
@@ -19,6 +20,8 @@ impl AggregatorSet {
         num_aggregators: usize,
         denylist: Vec<String>,
     ) -> anyhow::Result<AggregatorSet> {
+        assert_ne!(num_aggregators, 0, "You must have 1 or more aggregator");
+
         let aggregators = futures::future::try_join_all(
             (0..num_aggregators).map(|_| Aggregator::spawn(denylist.clone())),
         )
@@ -35,6 +38,13 @@ impl AggregatorSet {
         &self,
     ) -> impl Sink<inner_loop::FromShardWebsocket, Error = anyhow::Error> + Send + Sync + Unpin + 'static
     {
+        // Special case 1 aggregator to avoid the extra indurection and so on
+        // if we don't actually need it.
+        if self.0.aggregators.len() == 1 {
+            let sub = self.0.aggregators[0].subscribe_shard();
+            return EitherSink::a(sub)
+        }
+
         let mut conns: Vec<_> = self
             .0
             .aggregators
@@ -57,7 +67,7 @@ impl AggregatorSet {
             }
         });
 
-        tx.sink_map_err(|e| anyhow::anyhow!("{}", e))
+        EitherSink::b(tx.sink_map_err(|e| anyhow::anyhow!("{}", e)))
     }
 
     /// Return a sink that a feed can send messages into to be handled by a single aggregator.

@@ -30,6 +30,7 @@ mod dense_map;
 mod mean_list;
 mod most_seen;
 mod num_stats;
+mod either_sink;
 
 // Export a bunch of common bits at the top level for ease of import:
 pub use assign_id::AssignId;
@@ -37,3 +38,4 @@ pub use dense_map::DenseMap;
 pub use mean_list::MeanList;
 pub use most_seen::MostSeen;
 pub use num_stats::NumStats;
+pub use either_sink::EitherSink;
