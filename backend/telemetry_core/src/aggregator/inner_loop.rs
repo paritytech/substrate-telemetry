@@ -277,6 +277,11 @@ impl InnerLoop {
             .map(|c| c.len())
             .sum();
 
+        let num_messages_to_feeds = self.feed_channels
+            .values()
+            .map(|c| c.len())
+            .sum();
+
         println!("Periodic update at {:?}:", std::time::SystemTime::now());
         dbg!(node_ids);
         dbg!(node_count);
@@ -286,6 +291,7 @@ impl InnerLoop {
         dbg!(feed_to_chain);
         dbg!(num_subscribed_chains);
         dbg!(num_subscribed_chain_feeds);
+        dbg!(num_messages_to_feeds);
 
         drop(rx);
     }
