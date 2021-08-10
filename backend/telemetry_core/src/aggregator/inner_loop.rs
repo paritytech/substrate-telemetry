@@ -277,7 +277,7 @@ impl InnerLoop {
             .map(|c| c.len())
             .sum();
 
-        let num_messages_to_feeds = self.feed_channels
+        let num_messages_to_feeds: usize = self.feed_channels
             .values()
             .map(|c| c.len())
             .sum();
