@@ -202,6 +202,7 @@ dependencies = [
  "bimap",
  "bincode",
  "bytes",
+ "flume",
  "fnv",
  "futures",
  "hex",
@@ -1607,6 +1608,7 @@ dependencies = [
  "anyhow",
  "bincode",
  "common",
+ "flume",
  "futures",
  "hex",
  "http",
@@ -1644,6 +1646,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "common",
+ "flume",
  "futures",
  "http",
  "log",

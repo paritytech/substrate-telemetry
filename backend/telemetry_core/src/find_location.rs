@@ -17,7 +17,7 @@
 use std::net::Ipv4Addr;
 use std::sync::Arc;
 
-use futures::{Sink, SinkExt, StreamExt};
+use futures::{Sink, SinkExt};
 use parking_lot::RwLock;
 use rustc_hash::FxHashMap;
 use serde::Deserialize;
@@ -36,7 +36,6 @@ where
     Id: Clone + Send + 'static,
 {
     let (tx, rx) = flume::unbounded();
-    let mut rx = rx.into_stream();
 
     // cache entries
     let mut cache: FxHashMap<Ipv4Addr, Option<Arc<NodeLocation>>> = FxHashMap::default();
@@ -61,7 +60,7 @@ where
         let semaphore = Arc::new(Semaphore::new(4));
 
         loop {
-            while let Some((id, ip_address)) = rx.next().await {
+            while let Ok((id, ip_address)) = rx.recv_async().await {
                 let permit = semaphore.clone().acquire_owned().await.unwrap();
                 let mut response_chan = response_chan.clone();
                 let locator = locator.clone();

@@ -1,7 +1,7 @@
 use super::aggregator::{Aggregator, AggregatorOpts};
 use super::inner_loop;
 use common::EitherSink;
-use futures::{Sink, SinkExt, StreamExt};
+use futures::{Sink, SinkExt};
 use inner_loop::FromShardWebsocket;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
@@ -53,12 +53,10 @@ impl AggregatorSet {
             .collect();
 
         let (tx, rx) = flume::unbounded::<FromShardWebsocket>();
-        let mut rx = rx.into_stream();
-        let tx = tx.into_sink();
 
         // Send every incoming message to all aggregators.
         tokio::spawn(async move {
-            while let Some(msg) = rx.next().await {
+            while let Ok(msg) = rx.recv_async().await {
                 for conn in &mut conns {
                     // Unbounded channel under the hood, so this await
                     // shouldn't ever need to yield.
@@ -70,7 +68,7 @@ impl AggregatorSet {
             }
         });
 
-        EitherSink::b(tx.sink_map_err(|e| anyhow::anyhow!("{}", e)))
+        EitherSink::b(tx.into_sink().sink_map_err(|e| anyhow::anyhow!("{}", e)))
     }
 
     /// Return a sink that a feed can send messages into to be handled by a single aggregator.

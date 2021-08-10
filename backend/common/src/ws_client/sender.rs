@@ -15,8 +15,6 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use super::on_close::OnClose;
-use futures::channel::mpsc;
-use futures::{Sink, SinkExt};
 use std::sync::Arc;
 
 /// A message that can be sent into the channel interface
@@ -41,62 +39,36 @@ pub enum SentMessage {
 /// Send messages into the connection
 #[derive(Clone)]
 pub struct Sender {
-    pub(super) inner: mpsc::UnboundedSender<SentMessage>,
+    pub(super) inner: flume::Sender<SentMessage>,
     pub(super) closer: Arc<OnClose>,
 }
 
 impl Sender {
     /// Ask the underlying Websocket connection to close.
-    pub async fn close(&mut self) -> Result<(), SendError> {
+    pub async fn close(&mut self) -> Result<(), SendError<SentMessage>> {
         self.closer.0.send(()).map_err(|_| SendError::CloseError)?;
         Ok(())
     }
     /// Returns whether this channel is closed.
     pub fn is_closed(&self) -> bool {
-        self.inner.is_closed()
+        self.inner.is_disconnected()
     }
     /// Unbounded send will always queue the message and doesn't
     /// need to be awaited.
-    pub fn unbounded_send(&self, msg: SentMessage) -> Result<(), SendError> {
-        self.inner
-            .unbounded_send(msg)
-            .map_err(|e| e.into_send_error())?;
+    pub fn unbounded_send(&self, msg: SentMessage) -> Result<(), flume::SendError<SentMessage>> {
+        self.inner.send(msg)?;
         Ok(())
+    }
+    /// Convert this sender into a Sink
+    pub fn into_sink(self) -> impl futures::Sink<SentMessage> + std::marker::Unpin + Clone + 'static {
+        self.inner.into_sink()
     }
 }
 
 #[derive(thiserror::Error, Debug, Clone)]
-pub enum SendError {
+pub enum SendError<T: std::fmt::Debug + 'static> {
     #[error("Failed to send message: {0}")]
-    ChannelError(#[from] mpsc::SendError),
+    ChannelError(#[from] flume::SendError<T>),
     #[error("Failed to send close message")]
     CloseError,
-}
-
-impl Sink<SentMessage> for Sender {
-    type Error = SendError;
-    fn poll_ready(
-        mut self: std::pin::Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Result<(), Self::Error>> {
-        self.inner.poll_ready_unpin(cx).map_err(|e| e.into())
-    }
-    fn start_send(
-        mut self: std::pin::Pin<&mut Self>,
-        item: SentMessage,
-    ) -> Result<(), Self::Error> {
-        self.inner.start_send_unpin(item).map_err(|e| e.into())
-    }
-    fn poll_flush(
-        mut self: std::pin::Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Result<(), Self::Error>> {
-        self.inner.poll_flush_unpin(cx).map_err(|e| e.into())
-    }
-    fn poll_close(
-        mut self: std::pin::Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Result<(), Self::Error>> {
-        self.inner.poll_close_unpin(cx).map_err(|e| e.into())
-    }
 }

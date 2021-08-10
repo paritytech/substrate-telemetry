@@ -25,7 +25,6 @@ use common::{
     node_types::BlockHash,
     time,
 };
-use futures::StreamExt;
 use std::collections::{HashMap, HashSet};
 use std::{
     net::{IpAddr, Ipv4Addr},
@@ -184,8 +183,7 @@ impl InnerLoop {
         // check the length of the queue below to decide whether or not to
         // pass the message on to this.
         tokio::spawn(async move {
-            let mut metered_rx = metered_rx.into_stream();
-            while let Some(msg) = metered_rx.next().await {
+            while let Ok(msg) = metered_rx.recv_async().await {
                 match msg {
                     ToAggregator::FromFeedWebsocket(feed_conn_id, msg) => {
                         self.handle_from_feed(feed_conn_id, msg)
@@ -215,8 +213,7 @@ impl InnerLoop {
                 });
         });
 
-        let mut rx_from_external = rx_from_external.into_stream();
-        while let Some(msg) = rx_from_external.next().await {
+        while let Ok(msg) = rx_from_external.recv_async().await {
             // ignore node updates if we have too many messages to handle, in an attempt
             // to reduce the queue length back to something reasonable, lest it get out of
             // control and start consuming a load of memory.

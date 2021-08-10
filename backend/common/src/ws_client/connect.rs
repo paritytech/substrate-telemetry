@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 use super::on_close::OnClose;
-use futures::channel::mpsc;
-use futures::{SinkExt, StreamExt};
 use soketto::handshake::{Client, ServerResponse};
 use std::sync::Arc;
 use tokio::net::TcpStream;
@@ -73,7 +71,7 @@ impl Connection {
         let mut rx_closed2 = tx_closed1.subscribe();
 
         // Receive messages from the socket:
-        let (mut tx_to_external, rx_from_ws) = mpsc::unbounded();
+        let (tx_to_external, rx_from_ws) = flume::unbounded();
         tokio::spawn(async move {
             let mut send_to_external = true;
             loop {
@@ -112,7 +110,7 @@ impl Connection {
                         .map_err(|e| e.into()),
                 };
 
-                if let Err(e) = tx_to_external.send(msg).await {
+                if let Err(e) = tx_to_external.send_async(msg).await {
                     // Our external channel may have closed or errored, but the socket hasn't
                     // been closed, so keep receiving in order to allow the socket to continue to
                     // function properly (we may be happy just sending messages to it), but stop
@@ -124,12 +122,12 @@ impl Connection {
         });
 
         // Send messages to the socket:
-        let (tx_to_ws, mut rx_from_external) = mpsc::unbounded();
+        let (tx_to_ws, rx_from_external) = flume::unbounded::<SentMessage>();
         tokio::spawn(async move {
             loop {
                 // Wait for messages, or bail entirely if asked to close.
                 let msg = tokio::select! {
-                    msg = rx_from_external.next() => { msg },
+                    msg = rx_from_external.recv_async() => { msg },
                     _ = rx_closed2.recv() => {
                         // attempt to gracefully end the connection.
                         let _ = ws_to_connection.close().await;
@@ -141,8 +139,8 @@ impl Connection {
                 // needs to keep receiving data for the WS connection to stay open, there's no
                 // reason to keep this side of the loop open if our channel is closed.
                 let msg = match msg {
-                    None => break,
-                    Some(msg) => msg,
+                    Ok(msg) => msg,
+                    _ => break,
                 };
 
                 // We don't explicitly shut down the channel if we hit send errors. Why? Because the
@@ -207,7 +205,7 @@ impl Connection {
                 closer: Arc::clone(&on_close),
             },
             Receiver {
-                inner: rx_from_ws,
+                inner: rx_from_ws.into_stream(),
                 closer: on_close,
             },
         )

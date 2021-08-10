@@ -15,13 +15,12 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use super::on_close::OnClose;
-use futures::channel::mpsc;
 use futures::{Stream, StreamExt};
 use std::sync::Arc;
 
 /// Receive messages out of a connection
 pub struct Receiver {
-    pub(super) inner: mpsc::UnboundedReceiver<Result<RecvMessage, RecvError>>,
+    pub(super) inner: flume::r#async::RecvStream<'static, Result<RecvMessage, RecvError>>,
     pub(super) closer: Arc<OnClose>,
 }
 
