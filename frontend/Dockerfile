@@ -29,4 +29,4 @@ COPY --from=builder /opt/builder/build /usr/share/nginx/html
 EXPOSE 80
 
 #CMD ["/bin/bash", "-c", "/usr/bin/env.sh && nginx -g \"daemon off;\""]
-CMD [ "nginx", "-g" ,"\"daemon off;\""]
+CMD [ "nginx", "-g" ,"daemon off;"]

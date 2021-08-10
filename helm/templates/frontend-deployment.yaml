@@ -42,11 +42,6 @@ spec:
             value: {{ $val | quote }}
           {{- end }}
           {{- end }}
-          command:
-            - "telemetry_frontend"
-          args:
-            - "--listen"
-            - "0.0.0.0:{{ .Values.service.frontend.targetPort }}"
           ports:
             - name: http
               containerPort: {{ .Values.service.frontend.targetPort }}
