@@ -131,3 +131,37 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn len_doesnt_panic_if_lots_of_retired() {
+
+        let mut map = DenseMap::<usize,usize>::new();
+
+        let id1 = map.add(1);
+        let id2 = map.add(2);
+        let id3 = map.add(3);
+
+        assert_eq!(map.len(), 3);
+
+        map.remove(id1);
+        map.remove(id2);
+
+        assert_eq!(map.len(), 1);
+
+        map.remove(id3);
+
+        assert_eq!(map.len(), 0);
+
+        map.remove(id1);
+        map.remove(id1);
+        map.remove(id1);
+
+        assert_eq!(map.len(), 0);
+    }
+
+}
