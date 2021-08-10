@@ -52,8 +52,11 @@ impl AggregatorSet {
             .map(|a| a.subscribe_shard())
             .collect();
 
+        let (tx, rx) = flume::unbounded::<FromShardWebsocket>();
+        let mut rx = rx.into_stream();
+        let tx = tx.into_sink();
+
         // Send every incoming message to all aggregators.
-        let (tx, mut rx) = futures::channel::mpsc::unbounded::<FromShardWebsocket>();
         tokio::spawn(async move {
             while let Some(msg) = rx.next().await {
                 for conn in &mut conns {
