@@ -119,10 +119,12 @@ async fn run_realistic_soak_test(opts: SoakTestOpts) {
     let bytes_in = Arc::new(AtomicUsize::new(0));
     let ids_per_node = opts.ids_per_node;
     for node in nodes.into_iter().enumerate() {
-        let bytes_in = Arc::clone(&bytes_in);
-        tokio::spawn(async move {
-            let (idx, (tx, _)) = node;
-            for id in 0..ids_per_node {
+        let (idx, (tx, _)) = node;
+        for id in 0..ids_per_node {
+            let bytes_in = Arc::clone(&bytes_in);
+            let tx = tx.clone();
+
+            tokio::spawn(async move {
                 let telemetry = test_utils::fake_telemetry::FakeTelemetry::new(
                     Duration::from_secs(3),
                     format!("Node {}", idx + 1),
@@ -141,8 +143,8 @@ async fn run_realistic_soak_test(opts: SoakTestOpts) {
                 if let Err(e) = res {
                     log::error!("Telemetry Node #{} has died with error: {}", idx, e);
                 }
-            }
-        });
+            });
+        }
     }
 
     // Connect feeds to the core:
