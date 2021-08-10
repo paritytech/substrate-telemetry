@@ -35,6 +35,13 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.envVars.frontend }}
+          env:
+          {{- range $key, $val := .Values.envVars.frontend }}
+          - name: {{ $key }}
+            value: {{ $val | quote }}
+          {{- end }}
+          {{- end }}
           command:
             - "telemetry_frontend"
           args:
@@ -52,8 +59,22 @@ spec:
             httpGet:
               path: /health
               port: http
+          volumeMounts:
+          - name: nginx
+            mountPath: "/etc/nginx/nginx.conf"
+            readOnly: true
+          - name: env-config
+            mountPath: "/usr/share/nginx/html/env-config.js"
+            readOnly: true
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: nginx
+          configMap:
+            name: frontend-nginx
+        - name: env-config
+          configMap:
+            name: frontend-env-config
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

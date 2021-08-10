@@ -23,6 +23,13 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
+envVars:
+  shard: {}
+  core: {}
+  frontend:
+    SUBSTRATE_TELEMETRY_URL: telemetry-core
+
+
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
