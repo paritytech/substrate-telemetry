@@ -66,6 +66,7 @@ pub fn soak_test() {
 
     tokio::runtime::Builder::new_multi_thread()
         .worker_threads(opts.test_worker_threads)
+        .enable_all()
         .thread_name("telemetry_test_runner")
         .build()
         .unwrap()
