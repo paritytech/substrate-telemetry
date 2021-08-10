@@ -15,7 +15,6 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 pub mod byte_size;
-pub mod channel;
 pub mod http_utils;
 pub mod id_type;
 pub mod internal_messages;

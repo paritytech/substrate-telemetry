@@ -18,7 +18,6 @@ use super::inner_loop;
 use crate::find_location::find_location;
 use crate::state::NodeId;
 use common::id_type;
-use futures::channel::mpsc;
 use futures::{future, Sink, SinkExt};
 use std::net::Ipv4Addr;
 use std::sync::atomic::AtomicU64;
@@ -54,17 +53,17 @@ struct AggregatorInternal {
     /// Send messages in to the aggregator from the outside via this. This is
     /// stored here so that anybody holding an `Aggregator` handle can
     /// make use of it.
-    tx_to_aggregator: mpsc::UnboundedSender<inner_loop::ToAggregator>,
+    tx_to_aggregator: flume::Sender<inner_loop::ToAggregator>,
 }
 
 impl Aggregator {
     /// Spawn a new Aggregator. This connects to the telemetry backend
     pub async fn spawn(opts: AggregatorOpts) -> anyhow::Result<Aggregator> {
-        let (tx_to_aggregator, rx_from_external) = mpsc::unbounded();
+        let (tx_to_aggregator, rx_from_external) = flume::unbounded();
 
         // Kick off a locator task to locate nodes, which hands back a channel to make location requests
-        let tx_to_locator = find_location(tx_to_aggregator.clone().with(|(node_id, msg)| {
-            future::ok::<_, mpsc::SendError>(inner_loop::ToAggregator::FromFindLocation(
+        let tx_to_locator = find_location(tx_to_aggregator.clone().into_sink().with(|(node_id, msg)| {
+            future::ok::<_, flume::SendError<_>>(inner_loop::ToAggregator::FromFindLocation(
                 node_id, msg,
             ))
         }));
@@ -89,8 +88,8 @@ impl Aggregator {
     /// in to the aggregator. If nobody is tolding the tx side of the channel
     /// any more, this task will gracefully end.
     async fn handle_messages(
-        rx_from_external: mpsc::UnboundedReceiver<inner_loop::ToAggregator>,
-        tx_to_aggregator: mpsc::UnboundedSender<(NodeId, Ipv4Addr)>,
+        rx_from_external: flume::Receiver<inner_loop::ToAggregator>,
+        tx_to_aggregator: flume::Sender<(NodeId, Ipv4Addr)>,
         max_queue_len: usize,
         denylist: Vec<String>,
     ) {
@@ -114,7 +113,7 @@ impl Aggregator {
 
         // Calling `send` on this Sink requires Unpin. There may be a nicer way than this,
         // but pinning by boxing is the easy solution for now:
-        Box::pin(tx_to_aggregator.with(move |msg| async move {
+        Box::pin(tx_to_aggregator.into_sink().with(move |msg| async move {
             Ok(inner_loop::ToAggregator::FromShardWebsocket(
                 shard_conn_id.into(),
                 msg,
@@ -141,7 +140,7 @@ impl Aggregator {
         // but pinning by boxing is the easy solution for now:
         (
             feed_conn_id,
-            Box::pin(tx_to_aggregator.with(move |msg| async move {
+            Box::pin(tx_to_aggregator.into_sink().with(move |msg| async move {
                 Ok(inner_loop::ToAggregator::FromFeedWebsocket(
                     feed_conn_id.into(),
                     msg,

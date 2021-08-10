@@ -20,13 +20,11 @@ use crate::find_location;
 use crate::state::{self, NodeId, State};
 use bimap::BiMap;
 use common::{
-    channel::metered_unbounded,
     internal_messages::{self, MuteReason, ShardNodeId},
     node_message,
     node_types::BlockHash,
     time,
 };
-use futures::channel::mpsc;
 use futures::StreamExt;
 use std::collections::{HashMap, HashSet};
 use std::{
@@ -48,7 +46,7 @@ pub enum FromShardWebsocket {
     /// When the socket is opened, it'll send this first
     /// so that we have a way to communicate back to it.
     Initialize {
-        channel: mpsc::UnboundedSender<ToShardWebsocket>,
+        channel: flume::Sender<ToShardWebsocket>,
     },
     /// Tell the aggregator about a new node.
     Add {
@@ -86,7 +84,7 @@ pub enum FromFeedWebsocket {
     /// Unbounded so that slow feeds don't block aggregato
     /// progress.
     Initialize {
-        channel: mpsc::UnboundedSender<ToFeedWebsocket>,
+        channel: flume::Sender<ToFeedWebsocket>,
     },
     /// The feed can subscribe to a chain to receive
     /// messages relating to it.
@@ -135,9 +133,9 @@ pub struct InnerLoop {
     node_ids: BiMap<NodeId, (ConnId, ShardNodeId)>,
 
     /// Keep track of how to send messages out to feeds.
-    feed_channels: HashMap<ConnId, mpsc::UnboundedSender<ToFeedWebsocket>>,
+    feed_channels: HashMap<ConnId, flume::Sender<ToFeedWebsocket>>,
     /// Keep track of how to send messages out to shards.
-    shard_channels: HashMap<ConnId, mpsc::UnboundedSender<ToShardWebsocket>>,
+    shard_channels: HashMap<ConnId, flume::Sender<ToShardWebsocket>>,
 
     /// Which chain is a feed subscribed to?
     /// Feed Connection ID -> Chain Genesis Hash
@@ -150,7 +148,7 @@ pub struct InnerLoop {
     feed_conn_id_finality: HashSet<ConnId>,
 
     /// Send messages here to make geographical location requests.
-    tx_to_locator: mpsc::UnboundedSender<(NodeId, Ipv4Addr)>,
+    tx_to_locator: flume::Sender<(NodeId, Ipv4Addr)>,
 
     /// How big can the queue of messages coming in to the aggregator get before messages
     /// are prioritised and dropped to try and get back on track.
@@ -160,7 +158,7 @@ pub struct InnerLoop {
 impl InnerLoop {
     /// Create a new inner loop handler with the various state it needs.
     pub fn new(
-        tx_to_locator: mpsc::UnboundedSender<(NodeId, Ipv4Addr)>,
+        tx_to_locator: flume::Sender<(NodeId, Ipv4Addr)>,
         denylist: Vec<String>,
         max_queue_len: usize,
     ) -> Self {
@@ -177,14 +175,16 @@ impl InnerLoop {
         }
     }
 
-    /// Start handling and responding to incoming messages. Owing to unbounded channels, we actually
-    /// only have a single `.await` (in this function). This helps to make it clear that the aggregator loop
-    /// will be able to make progress quickly without any potential yield points.
-    pub async fn handle(mut self, mut rx_from_external: mpsc::UnboundedReceiver<ToAggregator>) {
+    /// Start handling and responding to incoming messages.
+    pub async fn handle(mut self, rx_from_external: flume::Receiver<ToAggregator>) {
         let max_queue_len = self.max_queue_len;
-        let (metered_tx, mut metered_rx) = metered_unbounded();
+        let (metered_tx, metered_rx) = flume::unbounded();
 
+        // Actually handle all of our messages, but before we get here, we
+        // check the length of the queue below to decide whether or not to
+        // pass the message on to this.
         tokio::spawn(async move {
+            let mut metered_rx = metered_rx.into_stream();
             while let Some(msg) = metered_rx.next().await {
                 match msg {
                     ToAggregator::FromFeedWebsocket(feed_conn_id, msg) => {
@@ -215,9 +215,11 @@ impl InnerLoop {
                 });
         });
 
+        let mut rx_from_external = rx_from_external.into_stream();
         while let Some(msg) = rx_from_external.next().await {
             // ignore node updates if we have too many messages to handle, in an attempt
-            // to reduce the queue length back to something reasonable.
+            // to reduce the queue length back to something reasonable, lest it get out of
+            // control and start consuming a load of memory.
             if metered_tx.len() > max_queue_len {
                 if matches!(
                     msg,
@@ -227,7 +229,7 @@ impl InnerLoop {
                 }
             }
 
-            if let Err(e) = metered_tx.unbounded_send(msg) {
+            if let Err(e) = metered_tx.send(msg) {
                 log::error!("Cannot send message into aggregator: {}", e);
                 break;
             }
@@ -277,7 +279,7 @@ impl InnerLoop {
                 match self.node_state.add_node(genesis_hash, node) {
                     state::AddNodeResult::ChainOnDenyList => {
                         if let Some(shard_conn) = self.shard_channels.get_mut(&shard_conn_id) {
-                            let _ = shard_conn.unbounded_send(ToShardWebsocket::Mute {
+                            let _ = shard_conn.send(ToShardWebsocket::Mute {
                                 local_id,
                                 reason: MuteReason::ChainNotAllowed,
                             });
@@ -285,7 +287,7 @@ impl InnerLoop {
                     }
                     state::AddNodeResult::ChainOverQuota => {
                         if let Some(shard_conn) = self.shard_channels.get_mut(&shard_conn_id) {
-                            let _ = shard_conn.unbounded_send(ToShardWebsocket::Mute {
+                            let _ = shard_conn.send(ToShardWebsocket::Mute {
                                 local_id,
                                 reason: MuteReason::Overquota,
                             });
@@ -326,7 +328,7 @@ impl InnerLoop {
                         // Ask for the grographical location of the node.
                         // Currently we only geographically locate IPV4 addresses so ignore IPV6.
                         if let IpAddr::V4(ip_v4) = ip {
-                            let _ = self.tx_to_locator.unbounded_send((node_id, ip_v4));
+                            let _ = self.tx_to_locator.send((node_id, ip_v4));
                         }
                     }
                 }
@@ -409,7 +411,7 @@ impl InnerLoop {
 
                 // Send this to the channel that subscribed:
                 if let Some(bytes) = feed_serializer.into_finalized() {
-                    let _ = channel.unbounded_send(ToFeedWebsocket::Bytes(bytes));
+                    let _ = channel.send(ToFeedWebsocket::Bytes(bytes));
                 }
             }
             FromFeedWebsocket::Ping { value } => {
@@ -422,7 +424,7 @@ impl InnerLoop {
                 let mut feed_serializer = FeedMessageSerializer::new();
                 feed_serializer.push(feed_message::Pong(&value));
                 if let Some(bytes) = feed_serializer.into_finalized() {
-                    let _ = feed_channel.unbounded_send(ToFeedWebsocket::Bytes(bytes));
+                    let _ = feed_channel.send(ToFeedWebsocket::Bytes(bytes));
                 }
             }
             FromFeedWebsocket::Subscribe { chain } => {
@@ -470,7 +472,7 @@ impl InnerLoop {
                     new_chain.finalized_block().hash,
                 ));
                 if let Some(bytes) = feed_serializer.into_finalized() {
-                    let _ = feed_channel.unbounded_send(ToFeedWebsocket::Bytes(bytes));
+                    let _ = feed_channel.send(ToFeedWebsocket::Bytes(bytes));
                 }
 
                 // If many (eg 10k) nodes are connected, serializing all of their info takes time.
@@ -505,7 +507,7 @@ impl InnerLoop {
                     })
                     .collect();
                 for bytes in all_feed_messages {
-                    let _ = feed_channel.unbounded_send(ToFeedWebsocket::Bytes(bytes));
+                    let _ = feed_channel.send(ToFeedWebsocket::Bytes(bytes));
                 }
 
                 // Actually make a note of the new chain subsciption:
@@ -620,7 +622,7 @@ impl InnerLoop {
         if let Some(feeds) = self.chain_to_feed_conn_ids.get(genesis_hash) {
             for &feed_id in feeds {
                 if let Some(chan) = self.feed_channels.get_mut(&feed_id) {
-                    let _ = chan.unbounded_send(message.clone());
+                    let _ = chan.send(message.clone());
                 }
             }
         }
@@ -636,7 +638,7 @@ impl InnerLoop {
     /// Send a message to everybody.
     fn broadcast_to_all_feeds(&mut self, message: ToFeedWebsocket) {
         for chan in self.feed_channels.values_mut() {
-            let _ = chan.unbounded_send(message.clone());
+            let _ = chan.send(message.clone());
         }
     }
 
@@ -662,7 +664,7 @@ impl InnerLoop {
             // are also subscribed to receive finality updates.
             for &feed_id in feeds.union(&self.feed_conn_id_finality) {
                 if let Some(chan) = self.feed_channels.get_mut(&feed_id) {
-                    let _ = chan.unbounded_send(message.clone());
+                    let _ = chan.send(message.clone());
                 }
             }
         }

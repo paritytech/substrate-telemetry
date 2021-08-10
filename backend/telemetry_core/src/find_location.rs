@@ -17,7 +17,6 @@
 use std::net::Ipv4Addr;
 use std::sync::Arc;
 
-use futures::channel::mpsc;
 use futures::{Sink, SinkExt, StreamExt};
 use parking_lot::RwLock;
 use rustc_hash::FxHashMap;
@@ -31,12 +30,13 @@ pub type Location = Option<Arc<NodeLocation>>;
 
 /// This is responsible for taking an IP address and attempting
 /// to find a geographical location from this
-pub fn find_location<Id, R>(response_chan: R) -> mpsc::UnboundedSender<(Id, Ipv4Addr)>
+pub fn find_location<Id, R>(response_chan: R) -> flume::Sender<(Id, Ipv4Addr)>
 where
     R: Sink<(Id, Option<Arc<NodeLocation>>)> + Unpin + Send + Clone + 'static,
     Id: Clone + Send + 'static,
 {
-    let (tx, mut rx) = mpsc::unbounded();
+    let (tx, rx) = flume::unbounded();
+    let mut rx = rx.into_stream();
 
     // cache entries
     let mut cache: FxHashMap<Ipv4Addr, Option<Arc<NodeLocation>>> = FxHashMap::default();

@@ -29,7 +29,7 @@ use bincode::Options;
 use common::http_utils;
 use common::internal_messages;
 use common::ready_chunks_all::ReadyChunksAll;
-use futures::{channel::mpsc, SinkExt, StreamExt};
+use futures::{SinkExt, StreamExt};
 use hyper::{Method, Response};
 use simple_logger::SimpleLogger;
 use structopt::StructOpt;
@@ -201,7 +201,8 @@ async fn handle_shard_websocket_connection<S>(
 where
     S: futures::Sink<FromShardWebsocket, Error = anyhow::Error> + Unpin + Send + 'static,
 {
-    let (tx_to_shard_conn, mut rx_from_aggregator) = mpsc::unbounded();
+    let (tx_to_shard_conn, rx_from_aggregator) = flume::unbounded();
+    let mut rx_from_aggregator = rx_from_aggregator.into_stream();
 
     // Tell the aggregator about this new connection, and give it a way to send messages to us:
     let init_msg = FromShardWebsocket::Initialize {
@@ -343,8 +344,8 @@ where
     S: futures::Sink<FromFeedWebsocket, Error = anyhow::Error> + Unpin + Send + 'static,
 {
     // unbounded channel so that slow feeds don't block aggregator progress:
-    let (tx_to_feed_conn, rx_from_aggregator) = mpsc::unbounded();
-    let mut rx_from_aggregator_chunks = ReadyChunksAll::new(rx_from_aggregator);
+    let (tx_to_feed_conn, rx_from_aggregator) = flume::unbounded();
+    let mut rx_from_aggregator_chunks = ReadyChunksAll::new(rx_from_aggregator.into_stream());
 
     // Tell the aggregator about this new connection, and give it a way to send messages to us:
     let init_msg = FromFeedWebsocket::Initialize {
