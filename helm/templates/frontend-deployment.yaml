@@ -1,13 +1,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: telemetry-core
+  name: telemetry-frontend
   labels:
     {{- include "substrate-telemetry.labels" . | nindent 4 }}
-    telemetry-component: core
+    telemetry-component: frontend
 spec:
-  {{- if not .Values.autoscaling.core.enabled }}
-  replicas: {{ .Values.replicaCount.core }}
+  {{- if not .Values.autoscaling.frontend.enabled }}
+  replicas: {{ .Values.replicaCount.frontend }}
   {{- end }}
   selector:
     matchLabels:
@@ -20,7 +20,7 @@ spec:
       {{- end }}
       labels:
         {{- include "substrate-telemetry.selectorLabels" . | nindent 8 }}
-        telemetry-component: core
+        telemetry-component: frontend
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -33,16 +33,16 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.backend.repository }}:{{ .Values.image.backend.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.backend.pullPolicy }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
-            - "telemetry_core"
+            - "telemetry_frontend"
           args:
             - "--listen"
-            - "0.0.0.0:{{ .Values.service.core.targetPort }}"
+            - "0.0.0.0:{{ .Values.service.frontend.targetPort }}"
           ports:
             - name: http
-              containerPort: {{ .Values.service.core.targetPort }}
+              containerPort: {{ .Values.service.frontend.targetPort }}
               protocol: TCP
           livenessProbe:
             httpGet:

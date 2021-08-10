@@ -1,5 +1,5 @@
 #### BUILDER IMAGE  ####
-FROM node:12 as builder
+FROM docker.io/node:12 as builder
 LABEL maintainer="Chevdor <chevdor@gmail.com>"
 LABEL description="Polkadot Telemetry frontend builder image"
 
@@ -11,7 +11,7 @@ RUN yarn install && \
     yarn cache clean
 
 #### OUTPUT IMAGE ####
-FROM nginx:stable-alpine
+FROM docker.io/nginx:stable-alpine
 LABEL maintainer="Chevdor <chevdor@gmail.com>"
 LABEL description="Polkadot Telemetry frontend"
 

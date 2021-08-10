@@ -6,7 +6,7 @@ metadata:
     {{- include "substrate-telemetry.labels" . | nindent 4 }}
     telemetry-component: shard
 spec:
-  {{- if not .Values.autoscaling.enabled }}
+  {{- if not .Values.autoscaling.shard.enabled }}
   replicas: {{ .Values.replicaCount.shard }}
   {{- end }}
   selector:
@@ -33,8 +33,8 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          image: "{{ .Values.image.backend.repository }}:{{ .Values.image.backend.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.backend.pullPolicy }}
           command:
             - "telemetry_shard"
           args:
