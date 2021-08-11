@@ -9,6 +9,9 @@ services:
     volumes:
       - /app/node_modules
       - ./packages:/app/packages
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/default:/etc/nginx/sites-available/default
+      - ./env-config.js:/usr/share/nginx/html/env-config.js
     ports:
       - 3000:80
     expose:

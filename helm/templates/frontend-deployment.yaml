@@ -1,13 +1,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: telemetry-shard
+  name: telemetry-frontend
   labels:
     {{- include "substrate-telemetry.labels" . | nindent 4 }}
-    telemetry-component: shard
+    telemetry-component: frontend
 spec:
-  {{- if not .Values.autoscaling.shard.enabled }}
-  replicas: {{ .Values.replicaCount.shard }}
+  {{- if not .Values.autoscaling.frontend.enabled }}
+  replicas: {{ .Values.replicaCount.frontend }}
   {{- end }}
   selector:
     matchLabels:
@@ -20,7 +20,7 @@ spec:
       {{- end }}
       labels:
         {{- include "substrate-telemetry.selectorLabels" . | nindent 8 }}
-        telemetry-component: shard
+        telemetry-component: frontend
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -33,25 +33,18 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.backend.repository }}:{{ .Values.image.backend.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.backend.pullPolicy }}
-          {{- if .Values.envVars.shard }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.envVars.frontend }}
           env:
-          {{- range $key, $val := .Values.envVars.shard }}
+          {{- range $key, $val := .Values.envVars.frontend }}
           - name: {{ $key }}
             value: {{ $val | quote }}
           {{- end }}
           {{- end }}
-          command:
-            - "telemetry_shard"
-          args:
-            - "--listen"
-            - "0.0.0.0:{{ .Values.service.shard.targetPort }}"
-            - "--core"
-            - "http://telemetry-core:{{ .Values.service.core.port }}/shard_submit"
           ports:
             - name: http
-              containerPort: {{ .Values.service.shard.targetPort }}
+              containerPort: {{ .Values.service.frontend.targetPort }}
               protocol: TCP
           livenessProbe:
             httpGet:
@@ -61,8 +54,22 @@ spec:
             httpGet:
               path: /health
               port: http
+          volumeMounts:
+          - name: nginx
+            mountPath: "/etc/nginx/nginx.conf"
+            readOnly: true
+          - name: env-config
+            mountPath: "/usr/share/nginx/html/env-config.js"
+            readOnly: true
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: nginx
+          configMap:
+            name: frontend-nginx
+        - name: env-config
+          configMap:
+            name: frontend-env-config
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

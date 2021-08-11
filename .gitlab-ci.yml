@@ -1,8 +1,10 @@
 variables:
-  CONTAINER_REGISTRY:     "docker.io/parity"
-  CONTAINER_REPO:         "substrate-telemetry-backend"
-  KUBE_NAMESPACE:         "substrate-telemetry"
-  IMAGE_FULL_NAME:        "${CONTAINER_REGISTRY}/${CONTAINER_REPO}:${CI_COMMIT_SHORT_SHA}"
+  CONTAINER_REGISTRY:             "docker.io/parity"
+  BACKEND_CONTAINER_REPO:         "substrate-telemetry-backend"
+  FRONTEND_CONTAINER_REPO:        "substrate-telemetry-frontend"
+  KUBE_NAMESPACE:                 "substrate-telemetry"
+  BACKEND_IMAGE_FULL_NAME:        "${CONTAINER_REGISTRY}/${BACKEND_CONTAINER_REPO}:${CI_COMMIT_SHORT_SHA}"
+  FRONTEND_IMAGE_FULL_NAME:       "${CONTAINER_REGISTRY}/${FRONTEND_CONTAINER_REPO}:${CI_COMMIT_SHORT_SHA}"
 
 stages:
   - dockerize
@@ -11,10 +13,19 @@ stages:
 #.delete_deployment:       &delete_deployment    
 #  - helm uninstall -n "$KUBE_NAMESPACE" "$KUBE_NAMESPACE"
 
+.dockerize:               &dockerize
+  stage:                  dockerize
+  image:                  quay.io/buildah/stable
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "jsdw-sharding"'
+      when: manual
+  tags:
+    - kubernetes-parity-build
+
 .deploy-k8s:              &deploy-k8s
   image:                  paritytech/kubetools:3.5.3
   script:
-    - echo "Deploying using image $IMAGE_FULL_NAME"
+    - echo "Deploying using image $BACKEND_IMAGE_FULL_NAME"
     - echo "Using Helm `helm version --short`"
     - export KUBERNETES_VERSION_TAG="$CI_PIPELINE_ID"
     - |-
@@ -25,8 +36,10 @@ stages:
     - helm --debug template 
         --create-namespace
         --namespace $KUBE_NAMESPACE
-        --set image.repository="${CONTAINER_REGISTRY}/${CONTAINER_REPO}"
-        --set image.tag="${CI_COMMIT_SHORT_SHA}"
+        --set image.backend.repository="${CONTAINER_REGISTRY}/${BACKEND_CONTAINER_REPO}"
+        --set image.backend.tag="${CI_COMMIT_SHORT_SHA}"
+        --set image.frontend.repository="${CONTAINER_REGISTRY}/${FRONTEND_CONTAINER_REPO}"
+        --set image.frontend.tag="${CI_COMMIT_SHORT_SHA}"
         $KUBE_NAMESPACE ./helm/
     # install the chart into the relevant cluster
     - helm --debug upgrade
@@ -35,8 +48,10 @@ stages:
         --timeout 120s
         --create-namespace
         --namespace $KUBE_NAMESPACE
-        --set image.repository="${CONTAINER_REGISTRY}/${CONTAINER_REPO}"
-        --set image.tag="${CI_COMMIT_SHORT_SHA}"
+        --set image.backend.repository="${CONTAINER_REGISTRY}/${BACKEND_CONTAINER_REPO}"
+        --set image.backend.tag="${CI_COMMIT_SHORT_SHA}"
+        --set image.frontend.repository="${CONTAINER_REGISTRY}/${FRONTEND_CONTAINER_REPO}"
+        --set image.frontend.tag="${CI_COMMIT_SHORT_SHA}"
         $KUBE_NAMESPACE ./helm/
   rules:
     - if: '$CI_COMMIT_BRANCH == "jsdw-sharding"'
@@ -44,22 +59,27 @@ stages:
   tags:
     - kubernetes-parity-build
 
-dockerize:
-  stage:                  dockerize
-  image:                  quay.io/buildah/stable
+dockerize-backend:
+  <<:                     &dockerize
   script:
-    - echo "Building image $IMAGE_FULL_NAME"
+    - echo "Building image $BACKEND_IMAGE_FULL_NAME"
     - buildah bud
       --format=docker
-      --tag "$IMAGE_FULL_NAME" ./backend/
+      --tag "$BACKEND_IMAGE_FULL_NAME" ./backend/
     - echo ${Docker_Hub_Pass_Parity} |
         buildah login --username ${Docker_Hub_User_Parity} --password-stdin docker.io
-    - buildah push --format=v2s2 "$IMAGE_FULL_NAME"
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "jsdw-sharding"'
-      when: manual
-  tags:
-    - kubernetes-parity-build
+    - buildah push --format=v2s2 "$BACKEND_IMAGE_FULL_NAME"
+
+dockerize-frontend:
+  <<:                     &dockerize
+  script:
+    - echo "Building image $FRONTEND_IMAGE_FULL_NAME"
+    - buildah bud
+      --format=docker
+      --tag "$FRONTEND_IMAGE_FULL_NAME" ./frontend/
+    - echo ${Docker_Hub_Pass_Parity} |
+        buildah login --username ${Docker_Hub_User_Parity} --password-stdin docker.io
+    - buildah push --format=v2s2 "$FRONTEND_IMAGE_FULL_NAME"
 
 deploy-parity-stg:
   stage:                  staging

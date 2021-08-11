@@ -1,0 +1,29 @@
+{{- if .Values.autoscaling.frontend.enabled }}
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: telemetry-frontend
+  labels:
+    {{- include "substrate-telemetry.labels" . | nindent 4 }}
+    telemetry-component: frontend
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: telemetry-frontend
+  minReplicas: {{ .Values.autoscaling.frontend.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.frontend.maxReplicas }}
+  metrics:
+    {{- if .Values.autoscaling.frontend.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: {{ .Values.autoscaling.frontend.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.autoscaling.frontend.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: {{ .Values.autoscaling.frontend.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
