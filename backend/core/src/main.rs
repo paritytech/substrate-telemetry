@@ -76,12 +76,13 @@ impl From<&LogLevel> for log::LevelFilter {
 }
 
 /// Entry point for connecting nodes
-#[get("/submit")]
+#[get("/submit/{access_key}")]
 async fn node_route(
     req: HttpRequest,
     stream: web::Payload,
     aggregator: web::Data<Addr<Aggregator>>,
     locator: web::Data<Addr<Locator>>,
+    path: web::Path<Box<str>>,
 ) -> Result<HttpResponse, Error> {
     let ip = req
         .connection_info()
@@ -98,7 +99,7 @@ async fn node_route(
     let locator = locator.get_ref().clone().recipient();
 
     Ok(res.streaming(ws::WebsocketContext::with_codec(
-        NodeConnector::new(aggregator, locator, ip),
+        NodeConnector::new(aggregator, locator, ip, path.to_string()),
         stream,
         Codec::new().max_size(10 * 1024 * 1024), // 10mb frame limit
     )))

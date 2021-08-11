@@ -34,6 +34,8 @@ pub struct NodeConnector {
     locator: Recipient<LocateRequest>,
     /// Buffer for constructing continuation messages
     contbuf: BytesMut,
+    /// Access key that identifies a node for further monitoring
+    access_key: String,
 }
 
 enum ConnMultiplex {
@@ -78,6 +80,7 @@ impl NodeConnector {
         aggregator: Addr<Aggregator>,
         locator: Recipient<LocateRequest>,
         ip: Option<Ipv4Addr>,
+        access_key: String,
     ) -> Self {
         Self {
             multiplex: BTreeMap::new(),
@@ -86,6 +89,7 @@ impl NodeConnector {
             ip,
             locator,
             contbuf: BytesMut::new(),
+            access_key,
         }
     }
 
@@ -100,23 +104,18 @@ impl NodeConnector {
                 }));
                 ctx.stop();
             }
+
+            //TODO: send access key to postgres
         });
     }
 
-    fn handle_message(
-        &mut self,
-        msg: NodeMessage,
-        ctx: &mut <Self as Actor>::Context,
-    ) {
+    fn handle_message(&mut self, msg: NodeMessage, ctx: &mut <Self as Actor>::Context) {
         let conn_id = msg.id();
         let payload = msg.into();
 
         match self.multiplex.entry(conn_id).or_default() {
             ConnMultiplex::Connected { nid, chain } => {
-                chain.do_send(UpdateNode {
-                    nid: *nid,
-                    payload,
-                });
+                chain.do_send(UpdateNode { nid: *nid, payload });
             }
             ConnMultiplex::Waiting { backlog } => {
                 if let Payload::SystemConnected(connected) = payload {
@@ -198,10 +197,7 @@ impl Handler<Initialize> for NodeConnector {
 
         if let ConnMultiplex::Waiting { backlog } = mx {
             for payload in backlog.drain(..) {
-                chain.do_send(UpdateNode {
-                    nid,
-                    payload,
-                });
+                chain.do_send(UpdateNode { nid, payload });
             }
 
             *mx = ConnMultiplex::Connected {
