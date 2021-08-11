@@ -178,7 +178,11 @@ async fn start_server(num_aggregators: usize, opts: Opts) -> anyhow::Result<()> 
                             let _ = ws_send.close().await;
                         },
                     ))
-                }
+                },
+                // Return metrics in a prometheus-friendly text based format:
+                (&Method::GET, "/metrics") => {
+                    Ok(return_prometheus_metrics(aggregator).await)
+                },
                 // 404 for anything else:
                 _ => Ok(Response::builder()
                     .status(404)
@@ -427,9 +431,7 @@ where
                 Some(msgs) => msgs,
                 None => break,
             };
-if _feed_id == 1 {
-    println!("FEED 1 message len: {}", msgs.len());
-}
+
             // There is only one message type at the mo; bytes to send
             // to the websocket. collect them all up to dispatch in one shot.
             let all_msg_bytes = msgs.into_iter().map(|msg| match msg {
@@ -480,4 +482,25 @@ if _feed_id == 1 {
 
     // loop ended; give socket back to parent:
     (tx_to_aggregator, ws_send)
+}
+
+async fn return_prometheus_metrics(aggregator: AggregatorSet) -> Response<hyper::Body> {
+    let metrics = aggregator.latest_metrics();
+
+    let mut s = String::new();
+    for (idx, m) in metrics.iter().enumerate() {
+        s.push_str(&format!("telemetry_connected_feeds{{aggregator=\"{}\"}} {} {}\n", idx, m.connected_feeds, m.timestamp_unix_ms));
+        s.push_str(&format!("telemetry_connected_nodes{{aggregator=\"{}\"}} {} {}\n", idx, m.connected_nodes, m.timestamp_unix_ms));
+        s.push_str(&format!("telemetry_connected_shards{{aggregator=\"{}\"}} {} {}\n", idx, m.connected_shards, m.timestamp_unix_ms));
+        s.push_str(&format!("telemetry_chains_subscribed_to{{aggregator=\"{}\"}} {} {}\n", idx, m.chains_subscribed_to, m.timestamp_unix_ms));
+        s.push_str(&format!("telemetry_subscribed_feeds{{aggregator=\"{}\"}} {} {}\n", idx, m.subscribed_feeds, m.timestamp_unix_ms));
+        s.push_str(&format!("telemetry_subscribed_finality_feeds{{aggregator=\"{}\"}} {} {}\n", idx, m.subscribed_finality_feeds, m.timestamp_unix_ms));
+        s.push_str(&format!("telemetry_total_messages_to_feeds{{aggregator=\"{}\"}} {} {}\n", idx, m.total_messages_to_feeds, m.timestamp_unix_ms));
+        s.push_str(&format!("telemetry_total_messages_to_aggregator{{aggregator=\"{}\"}} {} {}\n\n", idx, m.total_messages_to_aggregator, m.timestamp_unix_ms));
+    }
+
+    Response::builder()
+        .header(http::header::CONTENT_TYPE, "text/plain; version=0.0.4")
+        .body(s.into())
+        .unwrap()
 }

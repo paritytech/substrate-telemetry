@@ -37,10 +37,9 @@ pub enum ToAggregator {
     FromShardWebsocket(ConnId, FromShardWebsocket),
     FromFeedWebsocket(ConnId, FromFeedWebsocket),
     FromFindLocation(NodeId, find_location::Location),
-    /// This message is sent periodically and allows us to monitor
-    /// or cleanup things in our inner loop. The channel provided
-    /// is notified when the interval has been handled.
-    Interval(flume::Sender<()>),
+    /// Hand back some metrics. The provided sender is expected not to block when
+    /// a message it sent into it.
+    GatherMetrics(flume::Sender<Metrics>),
 }
 
 /// An incoming shard connection can send these messages to the aggregator.
@@ -100,6 +99,30 @@ pub enum FromFeedWebsocket {
     Ping { value: Box<str> },
     /// The feed is disconnected.
     Disconnected,
+}
+
+/// A set of metrics returned when we ask for metrics
+#[derive(Clone,Debug,Default)]
+pub struct Metrics {
+    /// When in unix MS from epoch were these metrics obtained
+    pub timestamp_unix_ms: u64,
+    /// How many chains are feeds currently subscribed to.
+    pub chains_subscribed_to: usize,
+    /// How many feeds are currently subscribed to something.
+    pub subscribed_feeds: usize,
+    /// How many feeds have asked for finality information, too.
+    pub subscribed_finality_feeds: usize,
+    /// How many messages are currently queued up in internal channels
+    /// waiting to be sent out to feeds.
+    pub total_messages_to_feeds: usize,
+    /// How many messages are queued waiting to be handled by this aggregator.
+    pub total_messages_to_aggregator: usize,
+    /// How many nodes are currently known about by this aggregator.
+    pub connected_nodes: usize,
+    /// How many feeds are currently connected to this aggregator.
+    pub connected_feeds: usize,
+    /// How many shards are currently connected to this aggregator.
+    pub connected_shards: usize
 }
 
 // The frontend sends text based commands; parse them into these messages:
@@ -198,43 +221,11 @@ impl InnerLoop {
                     ToAggregator::FromFindLocation(node_id, location) => {
                         self.handle_from_find_location(node_id, location)
                     },
-                    ToAggregator::Interval(tx) => {
-                        self.handle_interval(tx)
+                    ToAggregator::GatherMetrics(tx) => {
+                        self.handle_gather_metrics(tx, metered_rx.len())
                     }
                 }
             }
-        });
-
-        // Periodically send interval messages for cleanup/monitoring. At most 1
-        // every 60 seconds, but if the message queue is backed up it may take longer.
-        tokio::spawn({
-            let metered_tx = metered_tx.clone();
-            async move {
-                loop {
-                    let now = tokio::time::Instant::now();
-                    let (tx, rx) = flume::unbounded();
-
-                    let _ = metered_tx.send_async(ToAggregator::Interval(tx)).await;
-                    let _ = rx.recv_async().await;
-
-                    tokio::time::sleep_until(now + tokio::time::Duration::from_secs(60)).await;
-                }
-            }
-        });
-
-        // TEMP: let's monitor message queue len out of interest
-        let tx_len = metered_tx.clone();
-        std::thread::spawn(move || {
-            tokio::runtime::Runtime::new()
-                .unwrap()
-                .block_on(async move {
-                    let mut n = 0;
-                    loop {
-                        println!("#{} Queue len: {}", n, tx_len.len());
-                        n += 1;
-                        tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
-                    }
-                });
         });
 
         while let Ok(msg) = rx_from_external.recv_async().await {
@@ -257,43 +248,33 @@ impl InnerLoop {
         }
     }
 
-    /// The periodic interval message gives us a chance to do some tidy up or monitoring.
-    fn handle_interval(&mut self, rx: flume::Sender<()>) {
+    /// Gather and return some metrics.
+    fn handle_gather_metrics(&mut self, rx: flume::Sender<Metrics>, total_messages_to_aggregator: usize) {
 
-        let node_ids = self.node_ids.len();
-        let node_count: usize = self.node_state
-            .iter_chains()
-            .map(|c| c.node_count())
-            .sum();
-
-        let shard_cound = self.shard_channels.len();
+        let timestamp_unix_ms = time::now();
+        let connected_nodes = self.node_ids.len();
+        let subscribed_feeds = self.feed_conn_id_to_chain.len();
+        let chains_subscribed_to = self.chain_to_feed_conn_ids.len();
+        let subscribed_finality_feeds = self.feed_conn_id_finality.len();
+        let connected_shards = self.shard_channels.len();
         let connected_feeds = self.feed_channels.len();
-        let finality_feeds = self.feed_conn_id_finality.len();
-        let feed_to_chain = self.feed_conn_id_to_chain.len();
-
-        let num_subscribed_chains = self.chain_to_feed_conn_ids.len();
-        let num_subscribed_chain_feeds: usize = self.chain_to_feed_conn_ids
+        let total_messages_to_feeds: usize = self.feed_channels
             .values()
             .map(|c| c.len())
             .sum();
 
-        let num_messages_to_feeds: usize = self.feed_channels
-            .values()
-            .map(|c| c.len())
-            .sum();
-
-        println!("Periodic update at {:?}:", std::time::SystemTime::now());
-        dbg!(node_ids);
-        dbg!(node_count);
-        dbg!(shard_cound);
-        dbg!(connected_feeds);
-        dbg!(finality_feeds);
-        dbg!(feed_to_chain);
-        dbg!(num_subscribed_chains);
-        dbg!(num_subscribed_chain_feeds);
-        dbg!(num_messages_to_feeds);
-
-        drop(rx);
+        // Ignore error sending; assume the receiver stopped caring and dropped the channel:
+        let _ = rx.send(Metrics {
+            timestamp_unix_ms,
+            chains_subscribed_to,
+            subscribed_feeds,
+            subscribed_finality_feeds,
+            total_messages_to_feeds,
+            total_messages_to_aggregator,
+            connected_nodes,
+            connected_feeds,
+            connected_shards
+        });
     }
 
     /// Handle messages that come from the node geographical locator.

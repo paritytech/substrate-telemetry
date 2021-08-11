@@ -98,6 +98,17 @@ impl Aggregator {
             .await;
     }
 
+    /// Gather metrics from our aggregator loop
+    pub async fn gather_metrics(&self) -> anyhow::Result<inner_loop::Metrics> {
+        let (tx, rx) = flume::unbounded();
+        let msg = inner_loop::ToAggregator::GatherMetrics(tx);
+
+        self.0.tx_to_aggregator.send_async(msg).await?;
+
+        let metrics = rx.recv_async().await?;
+        Ok(metrics)
+    }
+
     /// Return a sink that a shard can send messages into to be handled by the aggregator.
     pub fn subscribe_shard(
         &self,
