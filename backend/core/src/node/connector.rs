@@ -16,6 +16,8 @@ use bytes::{Bytes, BytesMut};
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(20);
+/// An interval for sending node stats to the database
+const TRACK_INTERVAL: Duration = Duration::from_secs(120);
 /// How long before lack of client response causes a timeout
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(60);
 /// Continuation buffer limit, 10mb
@@ -64,6 +66,7 @@ impl Actor for NodeConnector {
 
     fn started(&mut self, ctx: &mut Self::Context) {
         self.heartbeat(ctx);
+        self.track_node(ctx);
     }
 
     fn stopped(&mut self, _: &mut Self::Context) {
@@ -93,6 +96,12 @@ impl NodeConnector {
         }
     }
 
+    fn track_node(&self, ctx: &mut <Self as Actor>::Context) {
+        ctx.run_interval(TRACK_INTERVAL, |act, ctx|) {
+            //TODO: send access key to postgres
+        }
+    }
+
     fn heartbeat(&self, ctx: &mut <Self as Actor>::Context) {
         ctx.run_interval(HEARTBEAT_INTERVAL, |act, ctx| {
             // check client heartbeats
@@ -104,8 +113,6 @@ impl NodeConnector {
                 }));
                 ctx.stop();
             }
-
-            //TODO: send access key to postgres
         });
     }
 
