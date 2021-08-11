@@ -10,7 +10,7 @@ stages:
   - dockerize
   - staging
 
-#.delete_deployment:       &delete_deployment    
+#.delete_deployment:       &delete_deployment
 #  - helm uninstall -n "$KUBE_NAMESPACE" "$KUBE_NAMESPACE"
 
 .dockerize:               &dockerize
@@ -33,7 +33,7 @@ stages:
     - |-
       sed -i "s/appVersion:.*/appVersion: $KUBERNETES_VERSION_TAG/" ./helm/Chart.yaml
     # validate the chart
-    - helm --debug template 
+    - helm --debug template
         --create-namespace
         --namespace $KUBE_NAMESPACE
         --set image.backend.repository="${CONTAINER_REGISTRY}/${BACKEND_CONTAINER_REPO}"
@@ -60,7 +60,7 @@ stages:
     - kubernetes-parity-build
 
 dockerize-backend:
-  <<:                     &dockerize
+  <<:                     *dockerize
   script:
     - echo "Building image $BACKEND_IMAGE_FULL_NAME"
     - buildah bud
@@ -71,7 +71,7 @@ dockerize-backend:
     - buildah push --format=v2s2 "$BACKEND_IMAGE_FULL_NAME"
 
 dockerize-frontend:
-  <<:                     &dockerize
+  <<:                     *dockerize
   script:
     - echo "Building image $FRONTEND_IMAGE_FULL_NAME"
     - buildah bud
