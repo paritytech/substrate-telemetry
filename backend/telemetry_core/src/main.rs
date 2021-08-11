@@ -487,6 +487,13 @@ where
 async fn return_prometheus_metrics(aggregator: AggregatorSet) -> Response<hyper::Body> {
     let metrics = aggregator.latest_metrics();
 
+    // Instead of using the rust prometheus library, we just split out the text format that prometheus expects
+    // ourselves, using whatever the latest metrics that we've captured so far are. See:
+    //
+    // https://github.com/prometheus/docs/blob/master/content/docs/instrumenting/exposition_formats.md#text-format-details
+    //
+    // For an example and explanation of this text based format. The minimal output we produce here seems to
+    // be handled correctly when pointing a current version of prometheus at it.
     let mut s = String::new();
     for (idx, m) in metrics.iter().enumerate() {
         s.push_str(&format!("telemetry_connected_feeds{{aggregator=\"{}\"}} {} {}\n", idx, m.connected_feeds, m.timestamp_unix_ms));
@@ -500,6 +507,7 @@ async fn return_prometheus_metrics(aggregator: AggregatorSet) -> Response<hyper:
     }
 
     Response::builder()
+        // The version number here tells prometheus which version of the text format we're using:
         .header(http::header::CONTENT_TYPE, "text/plain; version=0.0.4")
         .body(s.into())
         .unwrap()
