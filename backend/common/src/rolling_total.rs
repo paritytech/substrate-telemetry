@@ -148,7 +148,7 @@ where
         self.total
     }
 
-    /// Fetch the current time source, incase we need to modify it.
+    /// Fetch the current time source, in case we need to modify it.
     pub fn time_source(&mut self) -> &mut Time {
         &mut self.time_source
     }

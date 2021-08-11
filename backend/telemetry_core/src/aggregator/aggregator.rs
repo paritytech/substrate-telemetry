@@ -37,7 +37,7 @@ pub struct Aggregator(Arc<AggregatorInternal>);
 struct AggregatorInternal {
     /// Shards that connect are each assigned a unique connection ID.
     /// This helps us know who to send messages back to (especially in
-    /// conjunction with the [`LocalId`] that messages will come with).
+    /// conjunction with the `ShardNodeId` that messages will come with).
     shard_conn_id: AtomicU64,
     /// Feeds that connect have their own unique connection ID, too.
     feed_conn_id: AtomicU64,

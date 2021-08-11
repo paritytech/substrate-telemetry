@@ -46,8 +46,8 @@ macro_rules! id_type {
 
 #[cfg(test)]
 mod test {
-    //! Mostly we're just checking that everything compiles OK
-    //! when the macro is used as expected..
+    // Mostly we're just checking that everything compiles OK
+    // when the macro is used as expected..
 
     // A basic definition is possible:
     id_type! {

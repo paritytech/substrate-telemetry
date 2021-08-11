@@ -97,7 +97,7 @@ impl Chain {
     }
 
     /// Can we add a node? If not, it's because the chain is at its quota.
-    pub fn can_add_node(&self) -> bool {
+    pub fn is_overquota(&self) -> bool {
         // Dynamically determine the max nodes based on the most common
         // label so far, in case it changes to something with a different limit.
         self.nodes.len() < max_nodes(self.labels.best())
@@ -105,7 +105,7 @@ impl Chain {
 
     /// Assign a node to this chain.
     pub fn add_node(&mut self, node: Node) -> AddNodeResult {
-        if !self.can_add_node() {
+        if !self.is_overquota() {
             return AddNodeResult::Overquota;
         }
 

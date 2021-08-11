@@ -30,7 +30,7 @@ use std::sync::Arc;
 /// A unique Id is assigned per websocket connection (or more accurately,
 /// per thing-that-subscribes-to-the-aggregator). That connection might send
 /// data on behalf of multiple chains, so this ID is local to the aggregator,
-/// and a unique ID is assigned per batch of data too ([`internal_messages::LocalId`]).
+/// and a unique ID is assigned per batch of data too ([`internal_messages::ShardNodeId`]).
 type ConnId = u64;
 
 /// Incoming messages are either from websocket connections or

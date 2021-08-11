@@ -83,7 +83,7 @@ fn pick_best_ip_from_options(
     realip
 }
 
-/// Follow https://datatracker.ietf.org/doc/html/rfc7239 to decode the Forwarded header value.
+/// Follow <https://datatracker.ietf.org/doc/html/rfc7239> to decode the Forwarded header value.
 /// Roughly, proxies can add new sets of values by appending a comma to the existing list
 /// (so we have something like "values1, values2, values3" from proxy1, proxy2 and proxy3 for
 /// instance) and then the valeus themselves are ';' separated name=value pairs. The value in each
@@ -91,10 +91,12 @@ fn pick_best_ip_from_options(
 ///
 /// Examples from the RFC:
 ///
-///   Forwarded: for="_gazonk"
-///   Forwarded: For="[2001:db8:cafe::17]:4711"
-///   Forwarded: for=192.0.2.60;proto=http;by=203.0.113.43
-///   Forwarded: for=192.0.2.43, for=198.51.100.17
+/// ```text
+/// Forwarded: for="_gazonk"
+/// Forwarded: For="[2001:db8:cafe::17]:4711"
+/// Forwarded: for=192.0.2.60;proto=http;by=203.0.113.43
+/// Forwarded: for=192.0.2.43, for=198.51.100.17
+/// ```
 fn get_first_addr_from_forwarded_header(value: &str) -> Option<&str> {
     let first_values = value.split(',').next()?;
 
