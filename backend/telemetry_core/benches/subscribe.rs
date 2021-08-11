@@ -78,7 +78,7 @@ pub fn benchmark_subscribe_speed(c: &mut Criterion) {
 
                 // Give those messages a chance to be handled. This, of course,
                 // assumes that those messages _can_ be handled this quickly. If not,
-                // we'll start to skew benchmark results with the "time taklen to add node".
+                // we'll start to skew benchmark results with the "time taken to add node".
                 tokio::time::sleep(Duration::from_millis(250)).await;
 
                 // Start a bunch of feeds:

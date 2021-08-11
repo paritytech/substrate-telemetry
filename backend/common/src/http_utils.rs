@@ -153,7 +153,7 @@ fn header_contains_value(
     pub fn trim(x: &[u8]) -> &[u8] {
         let from = match x.iter().position(|x| !x.is_ascii_whitespace()) {
             Some(i) => i,
-            None => return &x[0..0],
+            None => return &[],
         };
         let to = x.iter().rposition(|x| !x.is_ascii_whitespace()).unwrap();
         &x[from..=to]

@@ -191,7 +191,7 @@ where
 {
     // Limit the number of bytes based on a rolling total and the incoming bytes per second
     // that has been configured via the CLI opts.
-    let bytes_per_second = bytes_per_second.into_bytes();
+    let bytes_per_second = bytes_per_second.num_bytes();
     let mut rolling_total_bytes = RollingTotalBuilder::new()
         .granularity(Duration::from_secs(1))
         .window_size_multiple(10)

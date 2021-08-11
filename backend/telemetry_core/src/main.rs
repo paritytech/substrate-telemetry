@@ -213,7 +213,7 @@ where
             // connection anyway.
             let msg_info = tokio::select! {
                 msg_info = ws_recv.receive_data(&mut bytes) => msg_info,
-                _ = &mut recv_closer_rx => { break }
+                _ = &mut recv_closer_rx => break
             };
 
             // Handle the socket closing, or errors receiving the message.

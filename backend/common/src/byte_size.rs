@@ -23,7 +23,8 @@ impl ByteSize {
     pub fn new(bytes: usize) -> ByteSize {
         ByteSize(bytes)
     }
-    pub fn into_bytes(self) -> usize {
+    /// Return the number of bytes stored within.
+    pub fn num_bytes(self) -> usize {
         self.0
     }
 }
@@ -101,7 +102,7 @@ mod test {
 
         for (s, expected) in cases {
             let b: ByteSize = s.parse().unwrap();
-            assert_eq!(b.into_bytes(), expected);
+            assert_eq!(b.num_bytes(), expected);
         }
     }
 }

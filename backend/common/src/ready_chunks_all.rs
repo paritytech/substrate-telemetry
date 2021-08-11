@@ -72,7 +72,7 @@ impl<St: Stream> Stream for ReadyChunksAll<St> {
                     return if this.items.is_empty() {
                         Poll::Pending
                     } else {
-                        Poll::Ready(Some(mem::replace(this.items, Vec::new())))
+                        Poll::Ready(Some(mem::take(this.items)))
                     }
                 }
 
@@ -87,7 +87,7 @@ impl<St: Stream> Stream for ReadyChunksAll<St> {
                     let last = if this.items.is_empty() {
                         None
                     } else {
-                        let full_buf = mem::replace(this.items, Vec::new());
+                        let full_buf = mem::take(this.items);
                         Some(full_buf)
                     };
 

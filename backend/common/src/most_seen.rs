@@ -28,6 +28,8 @@ pub struct MostSeen<T> {
 
 impl<T: Default> Default for MostSeen<T> {
     fn default() -> Self {
+        // This sets the "most seen item" to the default value for the type,
+        // and notes that nobody has actually seen it yet (current_count is 0).
         Self {
             current_best: T::default(),
             current_count: 0,
@@ -38,6 +40,9 @@ impl<T: Default> Default for MostSeen<T> {
 
 impl<T> MostSeen<T> {
     pub fn new(item: T) -> Self {
+        // This starts us off with an item that we've seen. This item is set as
+        // the "most seen item" and the current_count is set to 1, as we've seen it
+        // once by virtue of providing it here.
         Self {
             current_best: item,
             current_count: 1,

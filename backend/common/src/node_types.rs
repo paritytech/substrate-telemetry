@@ -26,7 +26,7 @@ pub type BlockNumber = u64;
 pub type Timestamp = u64;
 pub use primitive_types::H256 as BlockHash;
 
-///
+/// Basic node details.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct NodeDetails {
     pub chain: Box<str>,
@@ -38,13 +38,22 @@ pub struct NodeDetails {
     pub startup_time: Option<Box<str>>,
 }
 
-///
+/// A couple of node statistics.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct NodeStats {
     pub peers: u64,
     pub txcount: u64,
 }
 
+// # A note about serialization/deserialization of types in this file:
+//
+// Some of the types here are sent to UI feeds. In an effort to keep the
+// amount of bytes sent to a minimum, we have written custom serializers
+// for those types.
+//
+// For testing purposes, it's useful to be able to deserialize from some
+// of these types so that we can test message feed things, so custom
+// deserializers exist to undo the work of the custom serializers.
 impl Serialize for NodeStats {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -67,7 +76,7 @@ impl<'de> Deserialize<'de> for NodeStats {
     }
 }
 
-///
+/// Node IO details.
 #[derive(Default)]
 pub struct NodeIO {
     pub used_state_cache_size: MeanList<f32>,
@@ -85,7 +94,7 @@ impl Serialize for NodeIO {
     }
 }
 
-///
+/// Concise block details
 #[derive(Deserialize, Serialize, Debug, Clone, Copy, PartialEq)]
 pub struct Block {
     pub hash: BlockHash,
@@ -101,7 +110,7 @@ impl Block {
     }
 }
 
-///
+/// Node hardware details.
 #[derive(Default)]
 pub struct NodeHardware {
     /// Upload uses means
@@ -126,7 +135,7 @@ impl Serialize for NodeHardware {
     }
 }
 
-///
+/// Node location details
 #[derive(Debug, Clone, PartialEq)]
 pub struct NodeLocation {
     pub latitude: f32,
@@ -161,7 +170,7 @@ impl<'de> Deserialize<'de> for NodeLocation {
     }
 }
 
-///
+/// Verbose block details
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BlockDetails {
     pub block: Block,

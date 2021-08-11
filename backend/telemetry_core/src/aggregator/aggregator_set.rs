@@ -1,10 +1,10 @@
 use super::aggregator::Aggregator;
 use super::inner_loop;
+use common::EitherSink;
 use futures::{Sink, SinkExt, StreamExt};
 use inner_loop::FromShardWebsocket;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
-use common::EitherSink;
 
 #[derive(Clone)]
 pub struct AggregatorSet(Arc<AggregatorSetInner>);
@@ -42,7 +42,7 @@ impl AggregatorSet {
         // if we don't actually need it.
         if self.0.aggregators.len() == 1 {
             let sub = self.0.aggregators[0].subscribe_shard();
-            return EitherSink::a(sub)
+            return EitherSink::a(sub);
         }
 
         let mut conns: Vec<_> = self

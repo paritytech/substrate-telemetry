@@ -438,7 +438,7 @@ impl InnerLoop {
                 // (which is helpful for the UI as it tries to maintain a sorted list of nodes). The chunk
                 // size is the max number of node info we fit into 1 message; smaller messages allow the UI
                 // to react a little faster and not have to wait for a larger update to come in. A chunk size
-                // of 64 means each mesage is ~32k.
+                // of 64 means each message is ~32k.
                 use rayon::prelude::*;
                 let all_feed_messages: Vec<_> = new_chain
                     .nodes_slice()

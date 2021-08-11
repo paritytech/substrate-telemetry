@@ -36,8 +36,8 @@ pub type RawReceiver =
 /// A websocket connection. From this, we can either expose the raw connection
 /// or expose a cancel-safe interface to it.
 pub struct Connection {
-    tx: soketto::connection::Sender<tokio_util::compat::Compat<tokio::net::TcpStream>>,
-    rx: soketto::connection::Receiver<tokio_util::compat::Compat<tokio::net::TcpStream>>,
+    tx: RawSender,
+    rx: RawReceiver,
 }
 
 impl Connection {

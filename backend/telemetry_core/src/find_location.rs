@@ -110,7 +110,7 @@ impl Locator {
         // Return location quickly if it's cached:
         let cached_loc = {
             let cache_reader = self.cache.read();
-            cache_reader.get(&ip).map(|o| o.clone())
+            cache_reader.get(&ip).cloned()
         };
         if let Some(loc) = cached_loc {
             return Ok(loc);
