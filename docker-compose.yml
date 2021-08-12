@@ -9,14 +9,34 @@ services:
     volumes:
       - /app/node_modules
       - ./packages:/app/packages
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/default:/etc/nginx/sites-available/default
+      - ./env-config.js:/usr/share/nginx/html/env-config.js
     ports:
       - 3000:80
-  telemetry-backend:
+    expose:
+      - 3000
+  telemetry-backend-shard:
     build:
       dockerfile: Dockerfile
       context: ./backend/
-    environment:
-      - PORT=8000
+    command: [
+      'telemetry_shard',
+      '--listen', '0.0.0.0:8001',
+      '--core', 'http://telemetry-backend-core:8000/shard_submit'
+    ]
+    ports:
+      - 8001:8001
+    expose:
+      - 8001
+  telemetry-backend-core:
+    build:
+      dockerfile: Dockerfile
+      context: ./backend/
+    command: [
+      'telemetry_core',
+      '--listen', '0.0.0.0:8000'
+    ]
     ports:
       - 8000:8000
     expose:

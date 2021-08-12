@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: telemetry-frontend
+  labels:
+    {{- include "substrate-telemetry.labels" . | nindent 4 }}
+    telemetry-component: frontend
+  annotations:
+    {{- toYaml .Values.service.frontend.annotations | nindent 4 }}
+spec:
+  type: {{ .Values.service.frontend.type }}
+  ports:
+    - port: {{ .Values.service.frontend.port }}
+      targetPort: {{ .Values.service.frontend.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "substrate-telemetry.selectorLabels" . | nindent 4 }}
+    telemetry-component: frontend
