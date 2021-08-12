@@ -273,7 +273,7 @@ impl FeedReceiver {
 
         // Then, loop a little to make sure we catch any additional messages that are sent soon after:
         loop {
-            match tokio::time::timeout(Duration::from_millis(500), self.recv_feed_messages_once())
+            match tokio::time::timeout(Duration::from_millis(1000), self.recv_feed_messages_once())
                 .await
             {
                 // Timeout elapsed; return the messages we have so far
