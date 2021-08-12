@@ -3,40 +3,46 @@ name: Backend CI
 on:
   push:
     paths:
-      - '.github/workflows/**'
+      - '.github/workflows/backend.yml'
       - 'backend/**'
       - '!frontend/**'
 
+env:
+  CARGO_TERM_COLOR: always
+
+defaults:
+  run:
+    working-directory: ./backend
+
 jobs:
   build:
+    name: Check Code
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v2
+      - name: Checkout sources
+        uses: actions/checkout@v2.3.4
 
-    - name: Build telemetry executables (in debug mode)
-      working-directory: ./backend
-      run: cargo build --bins --verbose
+      - name: Install Rust stable toolchain
+        uses: actions-rs/toolchain@v1.0.7
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
 
-    - name: Run tests
-      working-directory: ./backend
-      run: cargo test --verbose --jobs 1
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v1.3.0
+        with:
+          working-directory: backend
 
-    - name: Check internal documentation links
-      working-directory: ./backend
-      run: RUSTDOCFLAGS="--deny broken_intra_doc_links" cargo doc --verbose --workspace --no-deps --document-private-items
+      - name: Build
+        run: cargo check --all-targets
 
-    - name: Ensure 'cargo fmt' has been used
-      working-directory: ./backend
-      run: cargo fmt --all -- --check
-
-    - name: Build, release and call telemetry executable
-      working-directory: ./backend
-      run: cargo run --bin telemetry_core --release -- --help
-
-    - name: Build, release and call shard executable
-      working-directory: ./backend
-      run: cargo run --bin telemetry_shard --release -- --help
+  docker:
+    name: Push tagged images to docker
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v2.3.4
 
     - name: Login to Dockerhub
       uses: docker/login-action@v1
@@ -52,12 +58,92 @@ jobs:
         tags: parity/substrate-telemetry-backend:latest
         # add_git_labels: true
 
-  e2e:
+  fmt:
+    name: Run rustfmt
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
-    - uses: actions/checkout@v2
+      - name: Checkout sources
+        uses: actions/checkout@v2.3.4
 
-    - name: Run (potentially brittle) E2E tests
-      working-directory: ./backend
-      run: cargo test --verbose --jobs 1 --features e2e 'e2e'
+      - name: Install Rust stable toolchain
+        uses: actions-rs/toolchain@v1.0.7
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: clippy, rustfmt
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v1.3.0
+        with:
+          working-directory: backend
+
+      - name: Cargo fmt
+        run: cargo fmt --all -- --check
+
+  docs:
+    name: Check Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2.3.4
+
+      - name: Install Rust stable toolchain
+        uses: actions-rs/toolchain@v1.0.7
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v1.3.0
+        with:
+          working-directory: backend
+
+      - name: Check internal documentation links
+        run: RUSTDOCFLAGS="--deny broken_intra_doc_links" cargo doc --verbose --workspace --no-deps --document-private-items
+
+  tests:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2.3.4
+
+      - name: Install Rust stable toolchain
+        uses: actions-rs/toolchain@v1.0.7
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v1.3.0
+        with:
+          working-directory: backend
+
+      - name: Cargo test
+        run: cargo test --verbose --jobs 1
+
+  e2e:
+    name: Run potentially brittle E2E tests
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2.3.4
+
+      - name: Install Rust stable toolchain
+        uses: actions-rs/toolchain@v1.0.7
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v1.3.0
+        with:
+          working-directory: backend
+
+      - name: Cargo test
+        run: cargo test --verbose --jobs 1 --features e2e 'e2e'
