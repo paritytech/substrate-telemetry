@@ -13,6 +13,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
+#![cfg(feature = "e2e")]
 
 /*!
 General end-to-end tests
@@ -27,6 +28,12 @@ sudo sysctl -w kern.maxfilesperproc=100000
 ulimit -n 100000
 sudo sysctl -w kern.ipc.somaxconn=100000
 sudo sysctl -w kern.ipc.maxsockbuf=16777216
+```
+
+These tests can be run with:
+
+```sh
+cargo test --features e2e 'e2e'
 ```
 */
 
@@ -43,7 +50,7 @@ use test_utils::{
 /// The simplest test we can run; the main benefit of this test (since we check similar)
 /// below) is just to give a feel for _how_ we can test basic feed related things.
 #[tokio::test]
-async fn feed_sent_version_on_connect() {
+async fn e2e_feed_sent_version_on_connect() {
     let server = start_server_debug().await;
 
     // Connect a feed:
@@ -64,7 +71,7 @@ async fn feed_sent_version_on_connect() {
 /// Another very simple test: pings from feeds should be responded to by pongs
 /// with the same message content.
 #[tokio::test]
-async fn feed_ping_responded_to_with_pong() {
+async fn e2e_feed_ping_responded_to_with_pong() {
     let server = start_server_debug().await;
 
     // Connect a feed:
@@ -89,7 +96,7 @@ async fn feed_ping_responded_to_with_pong() {
 /// As a prelude to `lots_of_mute_messages_dont_cause_a_deadlock`, we can check that
 /// a lot of nodes can simultaneously subscribe and are all sent the expected response.
 #[tokio::test]
-async fn multiple_feeds_sent_version_on_connect() {
+async fn e2e_multiple_feeds_sent_version_on_connect() {
     let server = start_server_debug().await;
 
     // Connect a bunch of feeds:
@@ -127,7 +134,7 @@ async fn multiple_feeds_sent_version_on_connect() {
 /// telemetry core is waiting trying to send up to the shard the next "mute node" message,
 /// resulting in a deadlock. This test gives confidence that we don't run into such a deadlock.
 #[tokio::test]
-async fn lots_of_mute_messages_dont_cause_a_deadlock() {
+async fn e2e_lots_of_mute_messages_dont_cause_a_deadlock() {
     let mut server = start_server_debug().await;
     let shard_id = server.add_shard().await.unwrap();
 
@@ -183,7 +190,7 @@ async fn lots_of_mute_messages_dont_cause_a_deadlock() {
 /// If a node is added, a connecting feed should be told about the new chain.
 /// If the node is removed, the feed should be told that the chain has gone.
 #[tokio::test]
-async fn feed_add_and_remove_node() {
+async fn e2e_feed_add_and_remove_node() {
     // Connect server and add shard
     let mut server = start_server_debug().await;
     let shard_id = server.add_shard().await.unwrap();
@@ -247,7 +254,7 @@ async fn feed_add_and_remove_node() {
 /// and will keep receiving messages about the renamed chain (despite subscribing
 /// to it by name).
 #[tokio::test]
-async fn feeds_told_about_chain_rename_and_stay_subscribed() {
+async fn e2e_feeds_told_about_chain_rename_and_stay_subscribed() {
     // Connect a node:
     let mut server = start_server_debug().await;
     let shard_id = server.add_shard().await.unwrap();
@@ -339,7 +346,7 @@ async fn feeds_told_about_chain_rename_and_stay_subscribed() {
 /// told about both node chains. If one shard goes away, we should get a
 /// "removed chain" message only for the node connected to that shard.
 #[tokio::test]
-async fn feed_add_and_remove_shard() {
+async fn e2e_feed_add_and_remove_shard() {
     let mut server = start_server_debug().await;
 
     let mut shards = vec![];
@@ -415,7 +422,7 @@ async fn feed_add_and_remove_shard() {
 /// feeds can subscribe to one chain at a time. They should get the relevant
 /// messages for that chain and no other.
 #[tokio::test]
-async fn feed_can_subscribe_and_unsubscribe_from_chain() {
+async fn e2e_feed_can_subscribe_and_unsubscribe_from_chain() {
     use FeedMessage::*;
 
     // Start server, add shard, connect node:
@@ -523,7 +530,7 @@ async fn feed_can_subscribe_and_unsubscribe_from_chain() {
 
 /// If a node sends more than some rolling average amount of data, it'll be booted.
 #[tokio::test]
-async fn node_banned_if_it_sends_too_much_data() {
+async fn e2e_node_banned_if_it_sends_too_much_data() {
     async fn try_send_data(max_bytes: usize, send_msgs: usize, bytes_per_msg: usize) -> bool {
         let mut server = start_server(
             ServerOpts::default(),
@@ -574,7 +581,7 @@ async fn node_banned_if_it_sends_too_much_data() {
 
 /// Feeds will be disconnected if they can't receive messages quickly enough.
 #[tokio::test]
-async fn slow_feeds_are_disconnected() {
+async fn e2e_slow_feeds_are_disconnected() {
     let mut server = start_server(
         ServerOpts::default(),
         // Timeout faster so the test can be quicker:
@@ -671,7 +678,7 @@ async fn slow_feeds_are_disconnected() {
 /// of different messags IDs it can send telemetry about, to prevent a malicious actor from
 /// spamming a load of message IDs and exhausting our memory.
 #[tokio::test]
-async fn max_nodes_per_connection_is_enforced() {
+async fn e2e_max_nodes_per_connection_is_enforced() {
     let mut server = start_server(
         ServerOpts::default(),
         CoreOpts::default(),

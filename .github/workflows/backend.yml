@@ -20,7 +20,7 @@ jobs:
 
     - name: Run tests
       working-directory: ./backend
-      run: cargo test --verbose
+      run: cargo test --verbose --jobs 1
 
     - name: Check internal documentation links
       working-directory: ./backend
@@ -51,3 +51,13 @@ jobs:
         push: ${{ startsWith(github.ref, 'refs/tags/') }}
         tags: parity/substrate-telemetry-backend:latest
         # add_git_labels: true
+
+  e2e:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Run (potentially brittle) E2E tests
+      working-directory: ./backend
+      run: cargo test --verbose --jobs 1 --features e2e 'e2e'
