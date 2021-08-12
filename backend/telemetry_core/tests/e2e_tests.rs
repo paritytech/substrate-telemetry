@@ -637,7 +637,7 @@ async fn slow_feeds_are_disconnected() {
     tokio::time::sleep(Duration::from_secs(5)).await;
 
     // Drain anything out and expect to hit a "closed" error, rather than get stuck
-    // waiting to receive mroe data (or see some other error).
+    // waiting to receive more data (or see some other error).
     loop {
         let mut v = Vec::new();
         let data =
