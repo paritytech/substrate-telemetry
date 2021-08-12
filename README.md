@@ -62,8 +62,10 @@ Follow up installation instructions from the [Polkadot repo](https://github.com/
 If you started the backend binaries with their default arguments, you can connect a node to the shard by running:
 
 ```sh
-polkadot --dev --telemetry-url 'ws://localhost:8001/submit 1'
+polkadot --dev --telemetry-url 'ws://localhost:8001/submit 0'
 ```
+
+**Note:** The "0" at the end of the URL is a verbosity level, and not part of the URL itself. Verbosity levels range from 0-9, with 0 denoting the lowest verbosity.
 
 ## Docker
 
@@ -87,7 +89,7 @@ docker build -t substrate-telemetry-frontend .
 
 The easiest way to run the backend and frontend images is to use `docker-compose`. To do this, run `docker-compose up` in the root of this repository to build and run the images. Once running, you can view the UI by navigating a browser to `http://localhost:3000`.
 
-To connect a substrate node and have it send telemetry to this running instance, you have to tell it where to send telemetry by appending the argument `--telemetry-url 'ws://localhost:8001/submit 1'` (see "Terminal 4 - Node" above).
+To connect a substrate node and have it send telemetry to this running instance, you have to tell it where to send telemetry by appending the argument `--telemetry-url 'ws://localhost:8001/submit 0'` (see "Terminal 4 - Node" above).
 
 ### Run the backend and frontend using `docker`
 
