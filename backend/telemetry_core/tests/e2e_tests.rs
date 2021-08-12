@@ -652,7 +652,7 @@ async fn slow_feeds_are_disconnected() {
             }
             Ok(Err(_e)) => {
                 // Occasionally we might hit an error here before the channel is marked as closed. The error probably
-                // means that the socekt has been killed, but we haven't managed to set the state to closed in time
+                // means that the socket has been killed, but we haven't managed to set the state to closed in time
                 // and so we still hit this. We may be able to tighten this up and avoid this permanently, at which point
                 // this can become a test failure.
                 break;
