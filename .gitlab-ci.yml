@@ -17,8 +17,8 @@ stages:
   stage:                  dockerize
   image:                  quay.io/buildah/stable
   rules:
-    - if: '$CI_COMMIT_BRANCH == "jsdw-sharding"'
-      when: manual
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      # when: manual # uncomment this line if we want to make this step a manual process
   tags:
     - kubernetes-parity-build
 
@@ -54,8 +54,8 @@ stages:
         --set image.frontend.tag="${CI_COMMIT_SHORT_SHA}"
         $KUBE_NAMESPACE ./helm/
   rules:
-    - if: '$CI_COMMIT_BRANCH == "jsdw-sharding"'
-      when: manual
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      # when: manual # uncomment this line if we want to make this step a manual process
   tags:
     - kubernetes-parity-build
 
