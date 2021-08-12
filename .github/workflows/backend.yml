@@ -9,7 +9,6 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -22,6 +21,14 @@ jobs:
     - name: Run tests
       working-directory: ./backend
       run: cargo test --verbose
+
+    - name: Check internal documentation links
+      working-directory: ./backend
+      run: RUSTDOCFLAGS="--deny broken_intra_doc_links" cargo doc --verbose --workspace --no-deps --document-private-items
+
+    - name: Ensure 'cargo fmt' has been used
+      working-directory: ./backend
+      run: cargo fmt --all -- --check
 
     - name: Build, release and call telemetry executable
       working-directory: ./backend
