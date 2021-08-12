@@ -650,7 +650,7 @@ async fn slow_feeds_are_disconnected() {
             Ok(Err(soketto::connection::Error::Closed)) => {
                 break; // End loop; success!
             }
-            Ok(Err(e)) => {
+            Ok(Err(_e)) => {
                 // Occasionally we might hit an error here before the channel is marked as closed. The error probably
                 // means that the socekt has been killed, but we haven't managed to set the state to closed in time
                 // and so we still hit this. We may be able to tighten this up and avoid this permanently, at which point
