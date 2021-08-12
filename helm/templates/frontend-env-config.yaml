@@ -5,6 +5,6 @@ metadata:
 data:
   env-config.js: |
     window.process_env = {
-      SUBSTRATE_TELEMETRY_URL: "ws://feed.telemetry.parity-stg.parity.io/feed",
+      SUBSTRATE_TELEMETRY_URL: "wss://feed.telemetry.parity-stg.parity.io/feed",
       SUBSTRATE_TELEMETRY_SAMPLE: "",
     }

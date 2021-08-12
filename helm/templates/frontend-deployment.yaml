@@ -33,8 +33,8 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          image: "{{ .Values.image.frontend.repository }}:{{ .Values.image.frontend.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.frontend.pullPolicy }}
           {{- if .Values.envVars.frontend }}
           env:
           {{- range $key, $val := .Values.envVars.frontend }}
@@ -48,18 +48,20 @@ spec:
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: /health
+              path: /
               port: http
           readinessProbe:
             httpGet:
-              path: /health
+              path: /
               port: http
           volumeMounts:
           - name: nginx
-            mountPath: "/etc/nginx/nginx.conf"
+            mountPath: /etc/nginx/nginx.conf
+            subPath: nginx.conf
             readOnly: true
           - name: env-config
-            mountPath: "/usr/share/nginx/html/env-config.js"
+            mountPath: /usr/share/nginx/html/env-config.js
+            subPath: env-config.js
             readOnly: true
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
