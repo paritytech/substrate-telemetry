@@ -485,13 +485,16 @@ where
 async fn return_prometheus_metrics(aggregator: AggregatorSet) -> Response<hyper::Body> {
     let metrics = aggregator.latest_metrics();
 
-    // Instead of using the rust prometheus library, we just split out the text format that prometheus expects
-    // ourselves, using whatever the latest metrics that we've captured so far are. See:
+    // Instead of using the rust prometheus library (which is optimised around global variables updated across a codebase),
+    // we just split out the text format that prometheus expects ourselves, using whatever the latest metrics that we've
+    // captured so far from the aggregators are. See:
     //
     // https://github.com/prometheus/docs/blob/master/content/docs/instrumenting/exposition_formats.md#text-format-details
     //
     // For an example and explanation of this text based format. The minimal output we produce here seems to
     // be handled correctly when pointing a current version of prometheus at it.
+    //
+    // Note: '{{' and '}}' are just escaped versions of '{' and '}' in Rust fmt strings.
     let mut s = String::new();
     for (idx, m) in metrics.iter().enumerate() {
         s.push_str(&format!(

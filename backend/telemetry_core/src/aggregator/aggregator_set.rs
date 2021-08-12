@@ -63,7 +63,7 @@ impl AggregatorSet {
                     };
 
                     // Lock, update the stored metrics and drop the lock immediately.
-                    // We discard any error; if somethign went wrong talking to the inner loop,
+                    // We discard any error; if something went wrong talking to the inner loop,
                     // it's probably a fatal error
                     {
                         inner.metrics.lock().unwrap()[idx] = metrics;

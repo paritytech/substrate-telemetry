@@ -46,17 +46,17 @@ use test_utils::workspace::{start_server, CoreOpts, ServerOpts, ShardOpts};
 ///
 /// To start up 4 telemetry_shards and 1 telemetry_core with 10 feeds and 100 nodes:
 /// ```sh
-/// SOAK_TEST_ARGS='--feeds 10 --nodes 100 --shards 4' cargo test --release -- realistic_soak_test --ignored --nocapture
+/// SOAK_TEST_ARGS='--feeds 10 --nodes 100 --shards 4' cargo test --release -- soak_test --ignored --nocapture
 /// ```
 ///
 /// You can also run this test against the pre-sharding actix binary with something like this:
 /// ```sh
-/// TELEMETRY_BIN=~/old_telemetry_binary SOAK_TEST_ARGS='--feeds 100 --nodes 100 --shards 4' cargo test --release -- realistic_soak_test --ignored --nocapture
+/// TELEMETRY_BIN=~/old_telemetry_binary SOAK_TEST_ARGS='--feeds 100 --nodes 100 --shards 4' cargo test --release -- soak_test --ignored --nocapture
 /// ```
 ///
 /// Or, you can run it against existing processes on the network with something like this:
 /// ```sh
-/// TELEMETRY_SUBMIT_HOSTS='127.0.0.1:8001' TELEMETRY_FEED_HOST='127.0.0.1:8000' SOAK_TEST_ARGS='--feeds 100 --nodes 100 --shards 4' cargo test --release -- realistic_soak_test --ignored --nocapture
+/// TELEMETRY_SUBMIT_HOSTS='127.0.0.1:8001' TELEMETRY_FEED_HOST='127.0.0.1:8000' SOAK_TEST_ARGS='--feeds 100 --nodes 100 --shards 4' cargo test --release -- soak_test --ignored --nocapture
 /// ```
 ///
 #[ignore]
@@ -70,14 +70,14 @@ pub fn soak_test() {
         .thread_name("telemetry_test_runner")
         .build()
         .unwrap()
-        .block_on(run_realistic_soak_test(opts));
+        .block_on(run_soak_test(opts));
 }
 
 /// A general soak test runner.
 /// This test sends realistic messages from connected nodes
 /// so that we can see how things react under more normal
 /// circumstances
-async fn run_realistic_soak_test(opts: SoakTestOpts) {
+async fn run_soak_test(opts: SoakTestOpts) {
     let mut server = start_server(
         ServerOpts {
             release_mode: true,
