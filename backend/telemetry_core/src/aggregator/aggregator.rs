@@ -62,11 +62,12 @@ impl Aggregator {
         let (tx_to_aggregator, rx_from_external) = flume::unbounded();
 
         // Kick off a locator task to locate nodes, which hands back a channel to make location requests
-        let tx_to_locator = find_location(tx_to_aggregator.clone().into_sink().with(|(node_id, msg)| {
-            future::ok::<_, flume::SendError<_>>(inner_loop::ToAggregator::FromFindLocation(
-                node_id, msg,
-            ))
-        }));
+        let tx_to_locator =
+            find_location(tx_to_aggregator.clone().into_sink().with(|(node_id, msg)| {
+                future::ok::<_, flume::SendError<_>>(inner_loop::ToAggregator::FromFindLocation(
+                    node_id, msg,
+                ))
+            }));
 
         // Handle any incoming messages in our handler loop:
         tokio::spawn(Aggregator::handle_messages(

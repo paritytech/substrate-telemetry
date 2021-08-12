@@ -242,7 +242,7 @@ struct SoakTestOpts {
     log_output: bool,
     /// How many worker threads should the soak test runner use?
     #[structopt(long, default_value = "4")]
-    test_worker_threads: usize
+    test_worker_threads: usize,
 }
 
 /// Get soak test args from an envvar and parse them via structopt.

@@ -60,7 +60,9 @@ impl Sender {
         Ok(())
     }
     /// Convert this sender into a Sink
-    pub fn into_sink(self) -> impl futures::Sink<SentMessage> + std::marker::Unpin + Clone + 'static {
+    pub fn into_sink(
+        self,
+    ) -> impl futures::Sink<SentMessage> + std::marker::Unpin + Clone + 'static {
         self.inner.into_sink()
     }
 }

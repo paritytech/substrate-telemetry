@@ -139,8 +139,7 @@ mod test {
 
     #[test]
     fn len_doesnt_panic_if_lots_of_retired() {
-
-        let mut map = DenseMap::<usize,usize>::new();
+        let mut map = DenseMap::<usize, usize>::new();
 
         let id1 = map.add(1);
         let id2 = map.add(2);
@@ -163,5 +162,4 @@ mod test {
 
         assert_eq!(map.len(), 0);
     }
-
 }

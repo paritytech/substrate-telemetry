@@ -42,7 +42,10 @@ impl ShardSender {
         self.unbounded_send(ws_client::SentMessage::Binary(bytes))
     }
     /// Send JSON as a textual websocket message
-    pub fn send_json_text(&mut self, json: serde_json::Value) -> Result<(), flume::SendError<ws_client::SentMessage>> {
+    pub fn send_json_text(
+        &mut self,
+        json: serde_json::Value,
+    ) -> Result<(), flume::SendError<ws_client::SentMessage>> {
         let s = serde_json::to_string(&json).expect("valid string");
         self.unbounded_send(ws_client::SentMessage::Text(s))
     }

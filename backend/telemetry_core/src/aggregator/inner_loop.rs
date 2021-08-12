@@ -102,7 +102,7 @@ pub enum FromFeedWebsocket {
 }
 
 /// A set of metrics returned when we ask for metrics
-#[derive(Clone,Debug,Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Metrics {
     /// When in unix MS from epoch were these metrics obtained
     pub timestamp_unix_ms: u64,
@@ -122,7 +122,7 @@ pub struct Metrics {
     /// How many feeds are currently connected to this aggregator.
     pub connected_feeds: usize,
     /// How many shards are currently connected to this aggregator.
-    pub connected_shards: usize
+    pub connected_shards: usize,
 }
 
 // The frontend sends text based commands; parse them into these messages:
@@ -220,7 +220,7 @@ impl InnerLoop {
                     }
                     ToAggregator::FromFindLocation(node_id, location) => {
                         self.handle_from_find_location(node_id, location)
-                    },
+                    }
                     ToAggregator::GatherMetrics(tx) => {
                         self.handle_gather_metrics(tx, metered_rx.len())
                     }
@@ -249,8 +249,11 @@ impl InnerLoop {
     }
 
     /// Gather and return some metrics.
-    fn handle_gather_metrics(&mut self, rx: flume::Sender<Metrics>, total_messages_to_aggregator: usize) {
-
+    fn handle_gather_metrics(
+        &mut self,
+        rx: flume::Sender<Metrics>,
+        total_messages_to_aggregator: usize,
+    ) {
         let timestamp_unix_ms = time::now();
         let connected_nodes = self.node_ids.len();
         let subscribed_feeds = self.feed_conn_id_to_chain.len();
@@ -258,10 +261,7 @@ impl InnerLoop {
         let subscribed_finality_feeds = self.feed_conn_id_finality.len();
         let connected_shards = self.shard_channels.len();
         let connected_feeds = self.feed_channels.len();
-        let total_messages_to_feeds: usize = self.feed_channels
-            .values()
-            .map(|c| c.len())
-            .sum();
+        let total_messages_to_feeds: usize = self.feed_channels.values().map(|c| c.len()).sum();
 
         // Ignore error sending; assume the receiver stopped caring and dropped the channel:
         let _ = rx.send(Metrics {
@@ -273,7 +273,7 @@ impl InnerLoop {
             total_messages_to_aggregator,
             connected_nodes,
             connected_feeds,
-            connected_shards
+            connected_shards,
         });
     }
 
