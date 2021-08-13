@@ -86,7 +86,7 @@ impl Aggregator {
     }
 
     /// This is spawned into a separate task and handles any messages coming
-    /// in to the aggregator. If nobody is tolding the tx side of the channel
+    /// in to the aggregator. If nobody is holding the tx side of the channel
     /// any more, this task will gracefully end.
     async fn handle_messages(
         rx_from_external: flume::Receiver<inner_loop::ToAggregator>,

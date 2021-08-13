@@ -138,7 +138,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn len_doesnt_panic_if_lots_of_retired() {
+    fn len_doesnt_panic_if_lots_of_ids_are_retired() {
         let mut map = DenseMap::<usize, usize>::new();
 
         let id1 = map.add(1);

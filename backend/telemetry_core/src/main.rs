@@ -486,8 +486,8 @@ async fn return_prometheus_metrics(aggregator: AggregatorSet) -> Response<hyper:
     let metrics = aggregator.latest_metrics();
 
     // Instead of using the rust prometheus library (which is optimised around global variables updated across a codebase),
-    // we just split out the text format that prometheus expects ourselves, using whatever the latest metrics that we've
-    // captured so far from the aggregators are. See:
+    // we just split out the text format that prometheus expects ourselves, and use the latest metrics that we've
+    // captured so far from the aggregators. See:
     //
     // https://github.com/prometheus/docs/blob/master/content/docs/instrumenting/exposition_formats.md#text-format-details
     //
@@ -528,6 +528,10 @@ async fn return_prometheus_metrics(aggregator: AggregatorSet) -> Response<hyper:
         s.push_str(&format!(
             "telemetry_total_messages_to_aggregator{{aggregator=\"{}\"}} {} {}\n\n",
             idx, m.total_messages_to_aggregator, m.timestamp_unix_ms
+        ));
+        s.push_str(&format!(
+            "telemetry_dropped_messages_to_aggregator{{aggregator=\"{}\"}} {} {}\n\n",
+            idx, m.dropped_messages_to_aggregator, m.timestamp_unix_ms
         ));
     }
 
