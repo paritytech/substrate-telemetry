@@ -112,9 +112,9 @@ pub struct Metrics {
     pub timestamp_unix_ms: u64,
     /// How many chains are feeds currently subscribed to.
     pub chains_subscribed_to: usize,
-    /// How many feeds are currently subscribed to something.
+    /// Number of subscribed feeds.
     pub subscribed_feeds: usize,
-    /// How many feeds have asked for finality information, too.
+    /// Number of subscribed feeds that also asked for finality information.
     pub subscribed_finality_feeds: usize,
     /// How many messages are currently queued up in internal channels
     /// waiting to be sent out to feeds.
