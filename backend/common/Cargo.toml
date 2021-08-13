@@ -10,6 +10,7 @@ anyhow = "1.0.42"
 base64 = { default-features = false, features = ["alloc"], version = "0.13" }
 bimap = "0.6.1"
 bytes = "1.0.1"
+flume = "0.10.8"
 fnv = "1.0.7"
 futures = "0.3.15"
 hex = "0.4.3"

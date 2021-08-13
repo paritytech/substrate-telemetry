@@ -11,6 +11,7 @@ bimap = "0.6.1"
 bincode = "1.3.3"
 bytes = "1.0.1"
 common = { path = "../common" }
+flume = "0.10.8"
 futures = "0.3.15"
 hex = "0.4.3"
 http = "0.2.4"

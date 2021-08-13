@@ -21,7 +21,7 @@ use std::{
 
 use crate::feed_message_de::FeedMessage;
 use common::ws_client;
-use futures::{Sink, SinkExt, Stream, StreamExt};
+use futures::{Stream, StreamExt};
 
 /// Wrap a `ws_client::Sender` with convenient utility methods for shard connections
 pub struct ShardSender(ws_client::Sender);
@@ -32,45 +32,20 @@ impl From<ws_client::Sender> for ShardSender {
     }
 }
 
-impl Sink<ws_client::SentMessage> for ShardSender {
-    type Error = ws_client::SendError;
-    fn poll_ready(
-        mut self: std::pin::Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Result<(), Self::Error>> {
-        self.0.poll_ready_unpin(cx)
-    }
-    fn start_send(
-        mut self: std::pin::Pin<&mut Self>,
-        item: ws_client::SentMessage,
-    ) -> Result<(), Self::Error> {
-        self.0.start_send_unpin(item)
-    }
-    fn poll_flush(
-        mut self: std::pin::Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Result<(), Self::Error>> {
-        self.0.poll_flush_unpin(cx)
-    }
-    fn poll_close(
-        mut self: std::pin::Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Result<(), Self::Error>> {
-        self.0.poll_close_unpin(cx)
-    }
-}
-
 impl ShardSender {
     /// Send JSON as a binary websocket message
     pub fn send_json_binary(
         &mut self,
         json: serde_json::Value,
-    ) -> Result<(), ws_client::SendError> {
+    ) -> Result<(), flume::SendError<ws_client::SentMessage>> {
         let bytes = serde_json::to_vec(&json).expect("valid bytes");
         self.unbounded_send(ws_client::SentMessage::Binary(bytes))
     }
     /// Send JSON as a textual websocket message
-    pub fn send_json_text(&mut self, json: serde_json::Value) -> Result<(), ws_client::SendError> {
+    pub fn send_json_text(
+        &mut self,
+        json: serde_json::Value,
+    ) -> Result<(), flume::SendError<ws_client::SentMessage>> {
         let s = serde_json::to_string(&json).expect("valid string");
         self.unbounded_send(ws_client::SentMessage::Text(s))
     }
@@ -128,34 +103,6 @@ impl From<ws_client::Sender> for FeedSender {
     }
 }
 
-impl Sink<ws_client::SentMessage> for FeedSender {
-    type Error = ws_client::SendError;
-    fn poll_ready(
-        mut self: std::pin::Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Result<(), Self::Error>> {
-        self.0.poll_ready_unpin(cx)
-    }
-    fn start_send(
-        mut self: std::pin::Pin<&mut Self>,
-        item: ws_client::SentMessage,
-    ) -> Result<(), Self::Error> {
-        self.0.start_send_unpin(item)
-    }
-    fn poll_flush(
-        mut self: std::pin::Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Result<(), Self::Error>> {
-        self.0.poll_flush_unpin(cx)
-    }
-    fn poll_close(
-        mut self: std::pin::Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Result<(), Self::Error>> {
-        self.0.poll_close_unpin(cx)
-    }
-}
-
 impl Deref for FeedSender {
     type Target = ws_client::Sender;
     fn deref(&self) -> &Self::Target {
@@ -176,7 +123,7 @@ impl FeedSender {
         &self,
         command: S,
         param: S,
-    ) -> Result<(), ws_client::SendError> {
+    ) -> Result<(), flume::SendError<ws_client::SentMessage>> {
         self.unbounded_send(ws_client::SentMessage::Text(format!(
             "{}:{}",
             command.as_ref(),

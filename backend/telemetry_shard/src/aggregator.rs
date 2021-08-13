@@ -21,8 +21,7 @@ use common::{
     node_types::BlockHash,
     AssignId,
 };
-use futures::channel::mpsc;
-use futures::{Sink, SinkExt, StreamExt};
+use futures::{Sink, SinkExt};
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
@@ -60,7 +59,7 @@ pub enum FromWebsocket {
         /// the websocket connection and force the node to reconnect
         /// so that it sends its system info again incase the telemetry
         /// core has restarted.
-        close_connection: mpsc::Sender<()>,
+        close_connection: flume::Sender<()>,
     },
     /// Tell the aggregator about a new node.
     Add {
@@ -94,28 +93,28 @@ struct AggregatorInternal {
     /// Send messages to the aggregator from websockets via this. This is
     /// stored here so that anybody holding an `Aggregator` handle can
     /// make use of it.
-    tx_to_aggregator: mpsc::Sender<ToAggregator>,
+    tx_to_aggregator: flume::Sender<ToAggregator>,
 }
 
 impl Aggregator {
     /// Spawn a new Aggregator. This connects to the telemetry backend
     pub async fn spawn(telemetry_uri: http::Uri) -> anyhow::Result<Aggregator> {
-        let (tx_to_aggregator, rx_from_external) = mpsc::channel(10);
+        let (tx_to_aggregator, rx_from_external) = flume::bounded(10);
 
         // Establish a resiliant connection to the core (this retries as needed):
-        let (tx_to_telemetry_core, mut rx_from_telemetry_core) =
+        let (tx_to_telemetry_core, rx_from_telemetry_core) =
             create_ws_connection_to_core(telemetry_uri).await;
 
         // Forward messages from the telemetry core into the aggregator:
-        let mut tx_to_aggregator2 = tx_to_aggregator.clone();
+        let tx_to_aggregator2 = tx_to_aggregator.clone();
         tokio::spawn(async move {
-            while let Some(msg) = rx_from_telemetry_core.next().await {
+            while let Ok(msg) = rx_from_telemetry_core.recv_async().await {
                 let msg_to_aggregator = match msg {
                     Message::Connected => ToAggregator::ConnectedToTelemetryCore,
                     Message::Disconnected => ToAggregator::DisconnectedFromTelemetryCore,
                     Message::Data(data) => ToAggregator::FromTelemetryCore(data),
                 };
-                if let Err(_) = tx_to_aggregator2.send(msg_to_aggregator).await {
+                if let Err(_) = tx_to_aggregator2.send_async(msg_to_aggregator).await {
                     // This will close the ws channels, which themselves log messages.
                     break;
                 }
@@ -139,8 +138,8 @@ impl Aggregator {
     // in to the aggregator. If nobody is holding the tx side of the channel
     // any more, this task will gracefully end.
     async fn handle_messages(
-        mut rx_from_external: mpsc::Receiver<ToAggregator>,
-        mut tx_to_telemetry_core: mpsc::Sender<FromAggregator>,
+        rx_from_external: flume::Receiver<ToAggregator>,
+        tx_to_telemetry_core: flume::Sender<FromAggregator>,
     ) {
         use internal_messages::{FromShardAggregator, FromTelemetryCore};
 
@@ -150,7 +149,7 @@ impl Aggregator {
 
         // A list of close channels for the currently connected substrate nodes. Send an empty
         // tuple to these to ask the connections to be closed.
-        let mut close_connections: HashMap<ConnId, mpsc::Sender<()>> = HashMap::new();
+        let mut close_connections: HashMap<ConnId, flume::Sender<()>> = HashMap::new();
 
         // Maintain mappings from the connection ID and node message ID to the "local ID" which we
         // broadcast to the telemetry core.
@@ -160,15 +159,15 @@ impl Aggregator {
         let mut muted: HashSet<ShardNodeId> = HashSet::new();
 
         // Now, loop and receive messages to handle.
-        while let Some(msg) = rx_from_external.next().await {
+        while let Ok(msg) = rx_from_external.recv_async().await {
             match msg {
                 ToAggregator::ConnectedToTelemetryCore => {
                     // Take hold of the connection closers and run them all.
                     let closers = close_connections;
 
-                    for (_, mut closer) in closers {
+                    for (_, closer) in closers {
                         // if this fails, it probably means the connection has died already anyway.
-                        let _ = closer.send(()).await;
+                        let _ = closer.send_async(()).await;
                     }
 
                     // We've told everything to disconnect. Now, reset our state:
@@ -212,7 +211,7 @@ impl Aggregator {
 
                     // Send the message to the telemetry core with this local ID:
                     let _ = tx_to_telemetry_core
-                        .send(FromShardAggregator::AddNode {
+                        .send_async(FromShardAggregator::AddNode {
                             ip,
                             node,
                             genesis_hash,
@@ -245,7 +244,7 @@ impl Aggregator {
 
                     // Send the message to the telemetry core with this local ID:
                     let _ = tx_to_telemetry_core
-                        .send(FromShardAggregator::UpdateNode { local_id, payload })
+                        .send_async(FromShardAggregator::UpdateNode { local_id, payload })
                         .await;
                 }
                 ToAggregator::FromWebsocket(disconnected_conn_id, FromWebsocket::Disconnected) => {
@@ -264,7 +263,7 @@ impl Aggregator {
                         to_local_id.remove_by_id(local_id);
                         muted.remove(&local_id);
                         let _ = tx_to_telemetry_core
-                            .send(FromShardAggregator::RemoveNode { local_id })
+                            .send_async(FromShardAggregator::RemoveNode { local_id })
                             .await;
                     }
                 }
@@ -293,6 +292,7 @@ impl Aggregator {
         // but pinning by boxing is the easy solution for now:
         Box::pin(
             tx_to_aggregator
+                .into_sink()
                 .with(move |msg| async move { Ok(ToAggregator::FromWebsocket(conn_id, msg)) }),
         )
     }

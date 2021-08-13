@@ -22,13 +22,14 @@ use std::str::FromStr;
 use tokio::time::{Duration, Instant};
 
 use aggregator::{
-    AggregatorSet, FromFeedWebsocket, FromShardWebsocket, ToFeedWebsocket, ToShardWebsocket,
+    AggregatorOpts, AggregatorSet, FromFeedWebsocket, FromShardWebsocket, ToFeedWebsocket,
+    ToShardWebsocket,
 };
 use bincode::Options;
 use common::http_utils;
 use common::internal_messages;
 use common::ready_chunks_all::ReadyChunksAll;
-use futures::{channel::mpsc, SinkExt, StreamExt};
+use futures::{SinkExt, StreamExt};
 use hyper::{Method, Response};
 use simple_logger::SimpleLogger;
 use structopt::StructOpt;
@@ -67,6 +68,10 @@ struct Opts {
     /// aggregators.
     #[structopt(long)]
     num_aggregators: Option<usize>,
+    /// How big can the message queue for each aggregator grow before we start dropping non-essential
+    /// messages in an attempt to let it reduce?
+    #[structopt(long)]
+    aggregator_queue_len: Option<usize>,
 }
 
 fn main() {
@@ -110,7 +115,15 @@ fn main() {
 
 /// Declare our routes and start the server.
 async fn start_server(num_aggregators: usize, opts: Opts) -> anyhow::Result<()> {
-    let aggregator = AggregatorSet::spawn(num_aggregators, opts.denylist).await?;
+    let aggregator_queue_len = opts.aggregator_queue_len.unwrap_or(10_000);
+    let aggregator = AggregatorSet::spawn(
+        num_aggregators,
+        AggregatorOpts {
+            max_queue_len: aggregator_queue_len,
+            denylist: opts.denylist,
+        },
+    )
+    .await?;
     let socket_addr = opts.socket;
     let feed_timeout = opts.feed_timeout;
 
@@ -166,6 +179,8 @@ async fn start_server(num_aggregators: usize, opts: Opts) -> anyhow::Result<()> 
                         },
                     ))
                 }
+                // Return metrics in a prometheus-friendly text based format:
+                (&Method::GET, "/metrics") => Ok(return_prometheus_metrics(aggregator).await),
                 // 404 for anything else:
                 _ => Ok(Response::builder()
                     .status(404)
@@ -188,7 +203,8 @@ async fn handle_shard_websocket_connection<S>(
 where
     S: futures::Sink<FromShardWebsocket, Error = anyhow::Error> + Unpin + Send + 'static,
 {
-    let (tx_to_shard_conn, mut rx_from_aggregator) = mpsc::unbounded();
+    let (tx_to_shard_conn, rx_from_aggregator) = flume::unbounded();
+    let mut rx_from_aggregator = rx_from_aggregator.into_stream();
 
     // Tell the aggregator about this new connection, and give it a way to send messages to us:
     let init_msg = FromShardWebsocket::Initialize {
@@ -330,8 +346,8 @@ where
     S: futures::Sink<FromFeedWebsocket, Error = anyhow::Error> + Unpin + Send + 'static,
 {
     // unbounded channel so that slow feeds don't block aggregator progress:
-    let (tx_to_feed_conn, rx_from_aggregator) = mpsc::unbounded();
-    let mut rx_from_aggregator_chunks = ReadyChunksAll::new(rx_from_aggregator);
+    let (tx_to_feed_conn, rx_from_aggregator) = flume::unbounded();
+    let mut rx_from_aggregator_chunks = ReadyChunksAll::new(rx_from_aggregator.into_stream());
 
     // Tell the aggregator about this new connection, and give it a way to send messages to us:
     let init_msg = FromFeedWebsocket::Initialize {
@@ -350,7 +366,6 @@ where
     let recv_handle = tokio::spawn(async move {
         loop {
             let mut bytes = Vec::new();
-
             // Receive a message, or bail if closer called. We don't care about cancel safety;
             // if we're halfway through receiving a message, no biggie since we're closing the
             // connection anyway.
@@ -465,4 +480,64 @@ where
 
     // loop ended; give socket back to parent:
     (tx_to_aggregator, ws_send)
+}
+
+async fn return_prometheus_metrics(aggregator: AggregatorSet) -> Response<hyper::Body> {
+    let metrics = aggregator.latest_metrics();
+
+    // Instead of using the rust prometheus library (which is optimised around global variables updated across a codebase),
+    // we just split out the text format that prometheus expects ourselves, and use the latest metrics that we've
+    // captured so far from the aggregators. See:
+    //
+    // https://github.com/prometheus/docs/blob/master/content/docs/instrumenting/exposition_formats.md#text-format-details
+    //
+    // For an example and explanation of this text based format. The minimal output we produce here seems to
+    // be handled correctly when pointing a current version of prometheus at it.
+    //
+    // Note: '{{' and '}}' are just escaped versions of '{' and '}' in Rust fmt strings.
+    let mut s = String::new();
+    for (idx, m) in metrics.iter().enumerate() {
+        s.push_str(&format!(
+            "telemetry_connected_feeds{{aggregator=\"{}\"}} {} {}\n",
+            idx, m.connected_feeds, m.timestamp_unix_ms
+        ));
+        s.push_str(&format!(
+            "telemetry_connected_nodes{{aggregator=\"{}\"}} {} {}\n",
+            idx, m.connected_nodes, m.timestamp_unix_ms
+        ));
+        s.push_str(&format!(
+            "telemetry_connected_shards{{aggregator=\"{}\"}} {} {}\n",
+            idx, m.connected_shards, m.timestamp_unix_ms
+        ));
+        s.push_str(&format!(
+            "telemetry_chains_subscribed_to{{aggregator=\"{}\"}} {} {}\n",
+            idx, m.chains_subscribed_to, m.timestamp_unix_ms
+        ));
+        s.push_str(&format!(
+            "telemetry_subscribed_feeds{{aggregator=\"{}\"}} {} {}\n",
+            idx, m.subscribed_feeds, m.timestamp_unix_ms
+        ));
+        s.push_str(&format!(
+            "telemetry_subscribed_finality_feeds{{aggregator=\"{}\"}} {} {}\n",
+            idx, m.subscribed_finality_feeds, m.timestamp_unix_ms
+        ));
+        s.push_str(&format!(
+            "telemetry_total_messages_to_feeds{{aggregator=\"{}\"}} {} {}\n",
+            idx, m.total_messages_to_feeds, m.timestamp_unix_ms
+        ));
+        s.push_str(&format!(
+            "telemetry_total_messages_to_aggregator{{aggregator=\"{}\"}} {} {}\n\n",
+            idx, m.total_messages_to_aggregator, m.timestamp_unix_ms
+        ));
+        s.push_str(&format!(
+            "telemetry_dropped_messages_to_aggregator{{aggregator=\"{}\"}} {} {}\n\n",
+            idx, m.dropped_messages_to_aggregator, m.timestamp_unix_ms
+        ));
+    }
+
+    Response::builder()
+        // The version number here tells prometheus which version of the text format we're using:
+        .header(http::header::CONTENT_TYPE, "text/plain; version=0.0.4")
+        .body(s.into())
+        .unwrap()
 }

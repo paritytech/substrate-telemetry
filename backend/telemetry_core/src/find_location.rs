@@ -17,8 +17,7 @@
 use std::net::Ipv4Addr;
 use std::sync::Arc;
 
-use futures::channel::mpsc;
-use futures::{Sink, SinkExt, StreamExt};
+use futures::{Sink, SinkExt};
 use parking_lot::RwLock;
 use rustc_hash::FxHashMap;
 use serde::Deserialize;
@@ -31,12 +30,12 @@ pub type Location = Option<Arc<NodeLocation>>;
 
 /// This is responsible for taking an IP address and attempting
 /// to find a geographical location from this
-pub fn find_location<Id, R>(response_chan: R) -> mpsc::UnboundedSender<(Id, Ipv4Addr)>
+pub fn find_location<Id, R>(response_chan: R) -> flume::Sender<(Id, Ipv4Addr)>
 where
     R: Sink<(Id, Option<Arc<NodeLocation>>)> + Unpin + Send + Clone + 'static,
     Id: Clone + Send + 'static,
 {
-    let (tx, mut rx) = mpsc::unbounded();
+    let (tx, rx) = flume::unbounded();
 
     // cache entries
     let mut cache: FxHashMap<Ipv4Addr, Option<Arc<NodeLocation>>> = FxHashMap::default();
@@ -61,7 +60,7 @@ where
         let semaphore = Arc::new(Semaphore::new(4));
 
         loop {
-            while let Some((id, ip_address)) = rx.next().await {
+            while let Ok((id, ip_address)) = rx.recv_async().await {
                 let permit = semaphore.clone().acquire_owned().await.unwrap();
                 let mut response_chan = response_chan.clone();
                 let locator = locator.clone();

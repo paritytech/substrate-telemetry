@@ -29,7 +29,7 @@ use common::byte_size::ByteSize;
 use common::http_utils;
 use common::node_message;
 use common::rolling_total::RollingTotalBuilder;
-use futures::{channel::mpsc, SinkExt, StreamExt};
+use futures::SinkExt;
 use http::Uri;
 use hyper::{Method, Response};
 use simple_logger::SimpleLogger;
@@ -203,7 +203,7 @@ where
 
     // This could be a oneshot channel, but it's useful to be able to clone
     // messages, and we can't clone oneshot channel senders.
-    let (close_connection_tx, mut close_connection_rx) = mpsc::channel(0);
+    let (close_connection_tx, close_connection_rx) = flume::bounded(1);
 
     // Tell the aggregator about this new connection, and give it a way to close this connection:
     let init_msg = FromWebsocket::Initialize {
@@ -223,7 +223,7 @@ where
         tokio::select! {
             // The close channel has fired, so end the loop. `ws_recv.receive_data` is
             // *not* cancel safe, but since we're closing the connection we don't care.
-            _ = close_connection_rx.next() => {
+            _ = close_connection_rx.recv_async() => {
                 log::info!("connection to {:?} being closed by aggregator", real_addr);
                 break
             },
