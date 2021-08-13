@@ -146,4 +146,4 @@ jobs:
           working-directory: backend
 
       - name: Cargo test
-        run: cargo test --verbose --jobs 1 --features e2e 'e2e'
+        run: cargo test --verbose --jobs 1 e2e -- --ignored
