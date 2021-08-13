@@ -26,11 +26,14 @@ use common::{
     time,
 };
 use std::collections::{HashMap, HashSet};
+use std::sync::{
+    atomic::{AtomicU64, Ordering},
+    Arc,
+};
 use std::{
     net::{IpAddr, Ipv4Addr},
     str::FromStr,
 };
-use std::sync::{ Arc, atomic::{ Ordering, AtomicU64 } };
 
 /// Incoming messages come via subscriptions, and end up looking like this.
 #[derive(Clone, Debug)]
@@ -228,9 +231,11 @@ impl InnerLoop {
                     ToAggregator::FromFindLocation(node_id, location) => {
                         self.handle_from_find_location(node_id, location)
                     }
-                    ToAggregator::GatherMetrics(tx) => {
-                        self.handle_gather_metrics(tx, metered_rx.len(), dropped_messages2.load(Ordering::Relaxed))
-                    }
+                    ToAggregator::GatherMetrics(tx) => self.handle_gather_metrics(
+                        tx,
+                        metered_rx.len(),
+                        dropped_messages2.load(Ordering::Relaxed),
+                    ),
                 }
             }
         });
@@ -263,7 +268,7 @@ impl InnerLoop {
         &mut self,
         rx: flume::Sender<Metrics>,
         total_messages_to_aggregator: usize,
-        dropped_messages_to_aggregator: u64
+        dropped_messages_to_aggregator: u64,
     ) {
         let timestamp_unix_ms = time::now();
         let connected_nodes = self.node_ids.len();
