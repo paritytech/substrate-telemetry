@@ -96,16 +96,16 @@ impl Chain {
         }
     }
 
-    /// Can we add a node? If not, it's because the chain is at its quota.
+    /// Is the chain the node belongs to overquota?
     pub fn is_overquota(&self) -> bool {
         // Dynamically determine the max nodes based on the most common
         // label so far, in case it changes to something with a different limit.
-        self.nodes.len() < max_nodes(self.labels.best())
+        self.nodes.len() >= max_nodes(self.labels.best())
     }
 
     /// Assign a node to this chain.
     pub fn add_node(&mut self, node: Node) -> AddNodeResult {
-        if !self.is_overquota() {
+        if self.is_overquota() {
             return AddNodeResult::Overquota;
         }
 

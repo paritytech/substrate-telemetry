@@ -3,33 +3,46 @@ name: Backend CI
 on:
   push:
     paths:
-      - '.github/workflows/**'
+      - '.github/workflows/backend.yml'
       - 'backend/**'
       - '!frontend/**'
 
+env:
+  CARGO_TERM_COLOR: always
+
+defaults:
+  run:
+    working-directory: ./backend
+
 jobs:
   build:
-
+    name: Check Code
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v2
+      - name: Checkout sources
+        uses: actions/checkout@v2.3.4
 
-    - name: Build telemetry executables (in debug mode)
-      working-directory: ./backend
-      run: cargo build --bins --verbose
+      - name: Install Rust stable toolchain
+        uses: actions-rs/toolchain@v1.0.7
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
 
-    - name: Run tests
-      working-directory: ./backend
-      run: cargo test --verbose
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v1.3.0
+        with:
+          working-directory: backend
 
-    - name: Build, release and call telemetry executable
-      working-directory: ./backend
-      run: cargo run --bin telemetry_core --release -- --help
+      - name: Build
+        run: cargo check --all-targets
 
-    - name: Build, release and call shard executable
-      working-directory: ./backend
-      run: cargo run --bin telemetry_shard --release -- --help
+  docker:
+    name: Push tagged images to docker
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v2.3.4
 
     - name: Login to Dockerhub
       uses: docker/login-action@v1
@@ -44,3 +57,93 @@ jobs:
         push: ${{ startsWith(github.ref, 'refs/tags/') }}
         tags: parity/substrate-telemetry-backend:latest
         # add_git_labels: true
+
+  fmt:
+    name: Run rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2.3.4
+
+      - name: Install Rust stable toolchain
+        uses: actions-rs/toolchain@v1.0.7
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: clippy, rustfmt
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v1.3.0
+        with:
+          working-directory: backend
+
+      - name: Cargo fmt
+        run: cargo fmt --all -- --check
+
+  docs:
+    name: Check Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2.3.4
+
+      - name: Install Rust stable toolchain
+        uses: actions-rs/toolchain@v1.0.7
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v1.3.0
+        with:
+          working-directory: backend
+
+      - name: Check internal documentation links
+        run: RUSTDOCFLAGS="--deny broken_intra_doc_links" cargo doc --verbose --workspace --no-deps --document-private-items
+
+  tests:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2.3.4
+
+      - name: Install Rust stable toolchain
+        uses: actions-rs/toolchain@v1.0.7
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v1.3.0
+        with:
+          working-directory: backend
+
+      - name: Cargo test
+        run: cargo test --verbose --jobs 1
+
+  e2e:
+    name: Run potentially brittle E2E tests
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2.3.4
+
+      - name: Install Rust stable toolchain
+        uses: actions-rs/toolchain@v1.0.7
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v1.3.0
+        with:
+          working-directory: backend
+
+      - name: Cargo test
+        run: cargo test --verbose --jobs 1 e2e -- --ignored
