@@ -26,7 +26,10 @@ fullnameOverride: ""
 envVars:
   shard: {}
   core: {}
-  frontend: {}
+  frontend:
+    # The frontend docker container makes this available to the UI,
+    # so that it knows where to look for feed information:
+    SUBSTRATE_TELEMETRY_URL: wss://feed.telemetry.parity-stg.parity.io/feed
 
 
 
