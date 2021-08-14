@@ -54,17 +54,8 @@ spec:
             httpGet:
               path: /
               port: http
-          volumeMounts:
-          - name: nginx
-            mountPath: /etc/nginx/nginx.conf
-            subPath: nginx.conf
-            readOnly: true
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-      volumes:
-        - name: nginx
-          configMap:
-            name: frontend-nginx
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
