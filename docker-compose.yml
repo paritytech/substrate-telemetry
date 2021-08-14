@@ -5,6 +5,8 @@ services:
     build:
       dockerfile: Dockerfile
       context: ./frontend/
+    environment:
+      SUBSTRATE_TELEMETRY_URL: ws://localhost:8000/feed
     ports:
       - 3000:8000
     expose:
