@@ -18,7 +18,7 @@ stages:
   image:                  quay.io/buildah/stable
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
-      # when: manual # uncomment this line if we want to make this step a manual process
+      when: always
   tags:
     - kubernetes-parity-build
 
@@ -33,7 +33,7 @@ stages:
     - |-
       sed -i "s/appVersion:.*/appVersion: $KUBERNETES_VERSION_TAG/" ./helm/Chart.yaml
     # validate the chart
-    - helm --debug template
+    - helm template
         --create-namespace
         --namespace $KUBE_NAMESPACE
         --set image.backend.repository="${CONTAINER_REGISTRY}/${BACKEND_CONTAINER_REPO}"
@@ -42,7 +42,7 @@ stages:
         --set image.frontend.tag="${CI_COMMIT_SHORT_SHA}"
         $KUBE_NAMESPACE ./helm/
     # install the chart into the relevant cluster
-    - helm --debug upgrade
+    - helm upgrade
         --install
         --atomic
         --timeout 120s
@@ -55,7 +55,7 @@ stages:
         $KUBE_NAMESPACE ./helm/
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
-      # when: manual # uncomment this line if we want to make this step a manual process
+      when: on-success
   tags:
     - kubernetes-parity-build
 

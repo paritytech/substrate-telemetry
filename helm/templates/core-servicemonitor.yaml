@@ -1,0 +1,32 @@
+{{- if .Values.serviceMonitor.core.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: telemetry-core
+  labels:
+    {{- include "substrate-telemetry.labels" . | nindent 4 }}
+    telemetry-component: core
+    {{- if .Values.serviceMonitor.core.additionalLabels }}
+{{ toYaml .Values.serviceMonitor.core.additionalLabels | indent 4 }}
+    {{- end }}
+  {{- if .Values.serviceMonitor.core.annotations }}
+  annotations:
+{{ toYaml .Values.serviceMonitor.core.annotations | indent 4 }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "substrate-telemetry.selectorLabels" . | nindent 6 }}
+      telemetry-component: core
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace | quote }}
+  endpoints:
+  - port: http
+    {{- if .Values.serviceMonitor.core.interval }}
+    interval: {{ .Values.serviceMonitor.core.interval }}
+    {{- end }}
+    {{- if .Values.serviceMonitor.core.scrapeTimeout }}
+    scrapeTimeout: {{ .Values.serviceMonitor.core.scrapeTimeout }}
+    {{- end }}
+{{- end }}

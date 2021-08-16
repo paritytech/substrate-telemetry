@@ -31,7 +31,25 @@ envVars:
     # so that it knows where to look for feed information:
     SUBSTRATE_TELEMETRY_URL: wss://feed.telemetry.parity-stg.parity.io/feed
 
-
+serviceMonitor:
+  shard:
+    enabled: false
+    interval: ""
+    additionalLabels: {}
+    annotations: {}
+    # scrapeTimeout: 10s
+  core:
+    enabled: true
+    interval: ""
+    additionalLabels: {}
+    annotations: {}
+    # scrapeTimeout: 10s
+  frontend:
+    enabled: false
+    interval: ""
+    additionalLabels: {}
+    annotations: {}
+    # scrapeTimeout: 10s
 
 serviceAccount:
   # Specifies whether a service account should be created
