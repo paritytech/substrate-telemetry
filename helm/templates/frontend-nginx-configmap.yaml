@@ -33,9 +33,5 @@ data:
           index index.html;
           listen 8000;
           server_name _;
-
-          location = /favicon.ico {
-            return 204;
-          }
         }
     }
