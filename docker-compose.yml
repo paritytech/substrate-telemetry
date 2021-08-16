@@ -1,19 +1,19 @@
 version: "3"
 
+networks:
+  default:
+    # Give the default network created below a sensible name:
+    name: substrate-telemetry
+
 services:
   telemetry-frontend:
     build:
       dockerfile: Dockerfile
       context: ./frontend/
-    # Copy in changes to the ui, so no need to rebuild the images.
-    volumes:
-      - /app/node_modules
-      - ./packages:/app/packages
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./nginx/default:/etc/nginx/sites-available/default
-      - ./env-config.js:/usr/share/nginx/html/env-config.js
+    environment:
+      SUBSTRATE_TELEMETRY_URL: ws://localhost:8000/feed
     ports:
-      - 3000:80
+      - 3000:8000
     expose:
       - 3000
   telemetry-backend-shard:

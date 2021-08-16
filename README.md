@@ -65,7 +65,7 @@ If you started the backend binaries with their default arguments, you can connec
 polkadot --dev --telemetry-url 'ws://localhost:8001/submit 0'
 ```
 
-**Note:** The "0" at the end of the URL is a verbosity level, and not part of the URL itself. Verbosity levels range from 0-9, with 0 denoting the lowest verbosity.
+**Note:** The "0" at the end of the URL is a verbosity level, and not part of the URL itself. Verbosity levels range from 0-9, with 0 denoting the lowest verbosity. The URL and this verbosity level are parts of a single argument and must therefore be surrounded in quotes (as seen above) in order to be treated as such by your shell.
 
 ## Docker
 
@@ -126,7 +126,7 @@ If you'd like to get things runing manually using Docker, you can do the followi
    ```
    docker run --rm -it --network=telemetry \
        --name frontend \
-       -p 3000:80 \
+       -p 3000:8000 \
        -e SUBSTRATE_TELEMETRY_URL=ws://localhost:8000/feed \
        substrate-telemetry-frontend
    ```
