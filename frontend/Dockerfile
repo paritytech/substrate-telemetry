@@ -15,8 +15,8 @@ FROM docker.io/nginx:stable-alpine
 LABEL maintainer="Chevdor <chevdor@gmail.com>"
 LABEL description="Polkadot Telemetry frontend"
 
-# When we run the built docker image, the default command uses this
-# env var to tell the UI where to look to get feed info.
+# Each time this container is ran, the value that's provided for this env var
+# determines where the frontend will try to request feed information from:
 ENV SUBSTRATE_TELEMETRY_URL=
 
 WORKDIR /usr/share/nginx/html

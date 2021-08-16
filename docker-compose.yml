@@ -1,5 +1,10 @@
 version: "3"
 
+networks:
+  default:
+    # Give the default network created below a sensible name:
+    name: substrate-telemetry
+
 services:
   telemetry-frontend:
     build:
