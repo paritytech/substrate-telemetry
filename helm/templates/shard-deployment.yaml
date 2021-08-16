@@ -12,6 +12,7 @@ spec:
   selector:
     matchLabels:
       {{- include "substrate-telemetry.selectorLabels" . | nindent 6 }}
+      telemetry-component: shard
   template:
     metadata:
       {{- with .Values.podAnnotations }}

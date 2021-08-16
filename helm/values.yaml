@@ -28,7 +28,25 @@ envVars:
   core: {}
   frontend: {}
 
-
+serviceMonitor:
+  shard:
+    enabled: false
+    interval: ""
+    additionalLabels: {}
+    annotations: {}
+    # scrapeTimeout: 10s
+  core:
+    enabled: true
+    interval: ""
+    additionalLabels: {}
+    annotations: {}
+    # scrapeTimeout: 10s
+  frontend:
+    enabled: false
+    interval: ""
+    additionalLabels: {}
+    annotations: {}
+    # scrapeTimeout: 10s
 
 serviceAccount:
   # Specifies whether a service account should be created
