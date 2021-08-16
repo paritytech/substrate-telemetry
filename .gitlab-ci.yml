@@ -55,7 +55,7 @@ stages:
         $KUBE_NAMESPACE ./helm/
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
-      when: on-success
+      when: on_success
   tags:
     - kubernetes-parity-build
 
