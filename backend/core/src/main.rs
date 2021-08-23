@@ -23,6 +23,7 @@ use aggregator::{Aggregator, GetHealth};
 use feed::connector::FeedConnector;
 use node::connector::NodeConnector;
 use shard::connector::ShardConnector;
+use sqlx::migrate::Migrator;
 use sqlx::PgPool;
 use util::{Locator, LocatorFactory};
 
@@ -168,6 +169,8 @@ async fn health(aggregator: web::Data<Addr<Aggregator>>) -> Result<HttpResponse,
     }
 }
 
+static MIGRATOR: Migrator = sqlx::migrate!("../migrations");
+
 /// Telemetry entry point. Listening by default on 127.0.0.1:8000.
 /// This can be changed using the `PORT` and `BIND` ENV variables.
 #[actix_web::main]
@@ -177,6 +180,7 @@ async fn main() -> std::io::Result<()> {
     let mut pool: Option<PgPool> = None;
     if let Some(db_str) = opts.db_string {
         pool = Some(PgPool::connect(&db_str).await.unwrap());
+        MIGRATOR.run(pool.as_ref().unwrap()).await.unwrap();
     }
 
     SimpleLogger::new()
