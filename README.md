@@ -34,6 +34,12 @@ By default, telemetry will listen on the local interface only (127.0.0.1) on por
 telemetry --listen 0.0.0.0:8888
 ```
 
+In order to enable postgresql heartbeat tracking and migrations:
+
+```
+telemetry -d postgres://user:password@db_host/database
+```
+
 This example listen on all interfaces and on port :8888
 
 ### Terminal 2 - Frontend
@@ -49,8 +55,9 @@ yarn start
 Follow up installation instructions from the [Polkadot repo](https://github.com/paritytech/polkadot)
 
 ```sh
-polkadot --dev --telemetry-url ws://localhost:8000/submit
+polkadot --dev --telemetry-url ws://localhost:8000/submit/{access_key}
 ```
+where `access_key` is a unique string identifying the node you want to track.  
 
 ## Docker
 
