@@ -4,7 +4,9 @@ variables:
   FRONTEND_CONTAINER_REPO:        "substrate-telemetry-frontend"
   KUBE_NAMESPACE:                 "substrate-telemetry"
   BACKEND_IMAGE_FULL_NAME:        "${CONTAINER_REGISTRY}/${BACKEND_CONTAINER_REPO}:${CI_COMMIT_SHORT_SHA}"
+  BACKEND_IMAGE_LATEST_TAG:       "${CONTAINER_REGISTRY}/${BACKEND_CONTAINER_REPO}:latest"
   FRONTEND_IMAGE_FULL_NAME:       "${CONTAINER_REGISTRY}/${FRONTEND_CONTAINER_REPO}:${CI_COMMIT_SHORT_SHA}"
+  FRONTEND_IMAGE_LATEST_TAG:      "${CONTAINER_REGISTRY}/${FRONTEND_CONTAINER_REPO}:latest"
 
 stages:
   - dockerize
@@ -25,23 +27,11 @@ stages:
 .deploy-k8s:              &deploy-k8s
   image:                  paritytech/kubetools:3.5.3
   script:
-    - echo "Deploying using image $BACKEND_IMAGE_FULL_NAME"
-    - echo "Using Helm `helm version --short`"
-    - export KUBERNETES_VERSION_TAG="$CI_PIPELINE_ID"
     - |-
-      sed -i "s/version:.*/version: $KUBERNETES_VERSION_TAG/" ./helm/Chart.yaml
-    - |-
-      sed -i "s/appVersion:.*/appVersion: $KUBERNETES_VERSION_TAG/" ./helm/Chart.yaml
-    # validate the chart
-    - helm template
-        --create-namespace
-        --namespace $KUBE_NAMESPACE
-        --set image.backend.repository="${CONTAINER_REGISTRY}/${BACKEND_CONTAINER_REPO}"
-        --set image.backend.tag="${CI_COMMIT_SHORT_SHA}"
-        --set image.frontend.repository="${CONTAINER_REGISTRY}/${FRONTEND_CONTAINER_REPO}"
-        --set image.frontend.tag="${CI_COMMIT_SHORT_SHA}"
-        $KUBE_NAMESPACE ./helm/
-    # install the chart into the relevant cluster
+      echo "Deploying using image $BACKEND_IMAGE_FULL_NAME"
+      echo "Using Helm `helm version --short`"
+      helm repo add parity https://paritytech.github.io/helm-charts/
+      helm repo update
     - helm upgrade
         --install
         --atomic
@@ -52,7 +42,8 @@ stages:
         --set image.backend.tag="${CI_COMMIT_SHORT_SHA}"
         --set image.frontend.repository="${CONTAINER_REGISTRY}/${FRONTEND_CONTAINER_REPO}"
         --set image.frontend.tag="${CI_COMMIT_SHORT_SHA}"
-        $KUBE_NAMESPACE ./helm/
+        --values $HELM_VALUES_FILE
+        $KUBE_NAMESPACE parity/substrate-telemetry
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
       when: on_success
@@ -65,10 +56,13 @@ dockerize-backend:
     - echo "Building image $BACKEND_IMAGE_FULL_NAME"
     - buildah bud
       --format=docker
-      --tag "$BACKEND_IMAGE_FULL_NAME" ./backend/
+      --tag "$BACKEND_IMAGE_FULL_NAME"
+      --tag "$BACKEND_IMAGE_LATEST_TAG" ./backend/
     - echo ${Docker_Hub_Pass_Parity} |
         buildah login --username ${Docker_Hub_User_Parity} --password-stdin docker.io
-    - buildah push --format=v2s2 "$BACKEND_IMAGE_FULL_NAME"
+    - |-
+      buildah push --format=v2s2 "$BACKEND_IMAGE_FULL_NAME"
+      buildah push --format=v2s2 "$BACKEND_IMAGE_LATEST_TAG"
 
 dockerize-frontend:
   <<:                     *dockerize
@@ -76,10 +70,13 @@ dockerize-frontend:
     - echo "Building image $FRONTEND_IMAGE_FULL_NAME"
     - buildah bud
       --format=docker
-      --tag "$FRONTEND_IMAGE_FULL_NAME" ./frontend/
+      --tag "$FRONTEND_IMAGE_FULL_NAME"
+      --tag "$FRONTEND_IMAGE_LATEST_TAG" ./frontend/
     - echo ${Docker_Hub_Pass_Parity} |
         buildah login --username ${Docker_Hub_User_Parity} --password-stdin docker.io
-    - buildah push --format=v2s2 "$FRONTEND_IMAGE_FULL_NAME"
+    - |-
+      buildah push --format=v2s2 "$FRONTEND_IMAGE_FULL_NAME"
+      buildah push --format=v2s2 "$FRONTEND_IMAGE_LATEST_TAG"
 
 deploy-parity-stg:
   stage:                  staging
