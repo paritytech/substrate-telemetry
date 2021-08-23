@@ -36,7 +36,6 @@ stages:
         --install
         --atomic
         --timeout 120s
-        --version $CI_PIPELINE_ID
         --create-namespace
         --namespace $KUBE_NAMESPACE
         --set image.backend.repository="${CONTAINER_REGISTRY}/${BACKEND_CONTAINER_REPO}"
