@@ -55,7 +55,8 @@ dockerize-backend:
     - echo "Building image $BACKEND_IMAGE_FULL_NAME"
     - buildah bud
       --format=docker
-      --tag "$BACKEND_IMAGE_FULL_NAME" ./backend/
+      --tag "$BACKEND_IMAGE_FULL_NAME"
+      --tag latest ./backend/
     - echo ${Docker_Hub_Pass_Parity} |
         buildah login --username ${Docker_Hub_User_Parity} --password-stdin docker.io
     - buildah push --format=v2s2 "$BACKEND_IMAGE_FULL_NAME"
@@ -66,7 +67,8 @@ dockerize-frontend:
     - echo "Building image $FRONTEND_IMAGE_FULL_NAME"
     - buildah bud
       --format=docker
-      --tag "$FRONTEND_IMAGE_FULL_NAME" ./frontend/
+      --tag "$FRONTEND_IMAGE_FULL_NAME"
+      --tag latest ./frontend/
     - echo ${Docker_Hub_Pass_Parity} |
         buildah login --username ${Docker_Hub_User_Parity} --password-stdin docker.io
     - buildah push --format=v2s2 "$FRONTEND_IMAGE_FULL_NAME"
