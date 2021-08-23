@@ -28,16 +28,13 @@ stages:
     - |-
       echo "Deploying using image $BACKEND_IMAGE_FULL_NAME"
       echo "Using Helm `helm version --short`"
-      export KUBERNETES_VERSION_TAG="$CI_PIPELINE_ID"
-      sed -i "s/version:.*/version: $KUBERNETES_VERSION_TAG/" ./helm/Chart.yaml
-      sed -i "s/appVersion:.*/appVersion: $KUBERNETES_VERSION_TAG/" ./helm/Chart.yaml
-    - |-
       helm repo add parity https://paritytech.github.io/helm-charts/
       helm repo update
     - helm upgrade
         --install
         --atomic
         --timeout 120s
+        --version $CI_PIPELINE_ID
         --create-namespace
         --namespace $KUBE_NAMESPACE
         --set image.backend.repository="${CONTAINER_REGISTRY}/${BACKEND_CONTAINER_REPO}"
