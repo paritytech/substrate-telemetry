@@ -7,6 +7,7 @@ use crate::aggregator::{AddNode, Aggregator};
 use crate::chain::{Chain, RemoveNode, UpdateNode};
 use crate::node::message::{NodeMessage, Payload};
 use crate::node::NodeId;
+use crate::tracker::{Heartbeat, Tracker};
 use crate::types::ConnId;
 use crate::util::LocateRequest;
 use actix::prelude::*;
@@ -30,6 +31,8 @@ pub struct NodeConnector {
     hb: Instant,
     /// Aggregator actor address
     aggregator: Addr<Aggregator>,
+    /// Tracker actor address
+    tracker: Addr<Tracker>,
     /// IP address of the node this connector is responsible for
     ip: Option<Ipv4Addr>,
     /// Actix address of location services
@@ -81,6 +84,7 @@ impl Actor for NodeConnector {
 impl NodeConnector {
     pub fn new(
         aggregator: Addr<Aggregator>,
+        tracker: Addr<Tracker>,
         locator: Recipient<LocateRequest>,
         ip: Option<Ipv4Addr>,
         access_key: String,
@@ -89,6 +93,7 @@ impl NodeConnector {
             multiplex: BTreeMap::new(),
             hb: Instant::now(),
             aggregator,
+            tracker,
             ip,
             locator,
             contbuf: BytesMut::new(),
@@ -97,9 +102,10 @@ impl NodeConnector {
     }
 
     fn track_node(&self, ctx: &mut <Self as Actor>::Context) {
-        ctx.run_interval(TRACK_INTERVAL, |act, ctx|) {
-            //TODO: send access key to postgres
-        }
+        ctx.run_interval(TRACK_INTERVAL, |act, ctx| {
+            // at the moment this is ignoring failures
+            act.tracker.do_send(Heartbeat(act.access_key.clone()));
+        });
     }
 
     fn heartbeat(&self, ctx: &mut <Self as Actor>::Context) {

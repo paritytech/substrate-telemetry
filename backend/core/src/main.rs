@@ -14,13 +14,16 @@ mod chain;
 mod feed;
 mod node;
 mod shard;
+mod tracker;
 mod types;
 mod util;
 
+use crate::tracker::Tracker;
 use aggregator::{Aggregator, GetHealth};
 use feed::connector::FeedConnector;
 use node::connector::NodeConnector;
 use shard::connector::ShardConnector;
+use sqlx::PgPool;
 use util::{Locator, LocatorFactory};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -52,6 +55,12 @@ struct Opts {
         about = "Log level."
     )]
     log_level: LogLevel,
+    #[clap(
+        short = 'd',
+        long = "db_string",
+        about = "An optional postgresql connection string for node uptime tracking, in the following format: postgres://postgres:password@localhost/postgres"
+    )]
+    db_string: Option<String>,
 }
 
 #[derive(Clap, Debug, PartialEq)]
@@ -82,6 +91,7 @@ async fn node_route(
     stream: web::Payload,
     aggregator: web::Data<Addr<Aggregator>>,
     locator: web::Data<Addr<Locator>>,
+    tracker: web::Data<Addr<Tracker>>,
     path: web::Path<Box<str>>,
 ) -> Result<HttpResponse, Error> {
     let ip = req
@@ -96,10 +106,11 @@ async fn node_route(
 
     let mut res = ws::handshake(&req)?;
     let aggregator = aggregator.get_ref().clone();
+    let tracker = tracker.get_ref().clone();
     let locator = locator.get_ref().clone().recipient();
 
     Ok(res.streaming(ws::WebsocketContext::with_codec(
-        NodeConnector::new(aggregator, locator, ip, path.to_string()),
+        NodeConnector::new(aggregator, tracker, locator, ip, path.to_string()),
         stream,
         Codec::new().max_size(10 * 1024 * 1024), // 10mb frame limit
     )))
@@ -161,8 +172,13 @@ async fn health(aggregator: web::Data<Addr<Aggregator>>) -> Result<HttpResponse,
 /// This can be changed using the `PORT` and `BIND` ENV variables.
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let opts = Opts::parse();
+    let opts: Opts = Opts::parse();
     let log_level = &opts.log_level;
+    let mut pool: Option<PgPool> = None;
+    if let Some(db_str) = opts.db_string {
+        pool = Some(PgPool::connect(&db_str).await.unwrap());
+    }
+
     SimpleLogger::new()
         .with_level(log_level.into())
         .init()
@@ -170,6 +186,7 @@ async fn main() -> std::io::Result<()> {
 
     let denylist = HashSet::from_iter(opts.denylist);
     let aggregator = Aggregator::new(denylist).start();
+    let tracker = Tracker::new(pool).start();
     let factory = LocatorFactory::new();
     let locator = SyncArbiter::start(4, move || factory.create());
     log::info!("Starting telemetry version: {}", env!("CARGO_PKG_VERSION"));
@@ -178,6 +195,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::NormalizePath::default())
             .data(aggregator.clone())
             .data(locator.clone())
+            .data(tracker.clone())
             .service(node_route)
             .service(feed_route)
             .service(health)
