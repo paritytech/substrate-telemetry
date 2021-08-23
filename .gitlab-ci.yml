@@ -44,7 +44,7 @@ stages:
         --set image.backend.tag="${CI_COMMIT_SHORT_SHA}"
         --set image.frontend.repository="${CONTAINER_REGISTRY}/${FRONTEND_CONTAINER_REPO}"
         --set image.frontend.tag="${CI_COMMIT_SHORT_SHA}"
-        --values https://gitlab.parity.io/parity/infrastructure/cloud-infra/-/raw/master/parity-stg/kubernetes/helm/substrate-telemetry/values-parity.yaml
+        --values $HELM_VALUES_FILE
         $KUBE_NAMESPACE parity/substrate-telemetry
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
