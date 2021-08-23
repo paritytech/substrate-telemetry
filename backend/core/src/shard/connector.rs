@@ -1,8 +1,8 @@
 use std::mem;
 use std::time::{Duration, Instant};
 
-use crate::aggregator::{AddNode, Aggregator};
-use crate::chain::{Chain, RemoveNode, UpdateNode};
+use crate::aggregator::Aggregator;
+use crate::chain::{Chain, RemoveNode};
 use crate::shard::ShardMessage;
 use crate::types::NodeId;
 use crate::util::{DenseMap, Hash};
@@ -76,8 +76,11 @@ impl ShardConnector {
         });
     }
 
-    fn handle_message(&mut self, msg: ShardMessage, ctx: &mut <Self as Actor>::Context) {
-        let ShardMessage { conn_id, payload } = msg;
+    fn handle_message(&mut self, msg: ShardMessage, _ctx: &mut <Self as Actor>::Context) {
+        let ShardMessage {
+            conn_id: _,
+            payload: _,
+        } = msg;
 
         // TODO: get `NodeId` for `ShardConnId` and proxy payload to `self.chain`.
     }

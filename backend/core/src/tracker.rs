@@ -24,7 +24,7 @@ impl Actor for Tracker {
 impl Handler<Heartbeat> for Tracker {
     type Result = ResponseFuture<sqlx::Result<()>>;
 
-    fn handle(&mut self, msg: Heartbeat, ctx: &mut Context<Self>) -> Self::Result {
+    fn handle(&mut self, msg: Heartbeat, _ctx: &mut Context<Self>) -> Self::Result {
         let pool = self.pool.clone();
         Box::pin(async move {
             if let Some(db_pool) = pool {

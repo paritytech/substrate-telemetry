@@ -102,7 +102,7 @@ impl NodeConnector {
     }
 
     fn track_node(&self, ctx: &mut <Self as Actor>::Context) {
-        ctx.run_interval(TRACK_INTERVAL, |act, ctx| {
+        ctx.run_interval(TRACK_INTERVAL, |act, _ctx| {
             // at the moment this is ignoring failures
             act.tracker.do_send(Heartbeat(act.access_key.clone()));
         });
