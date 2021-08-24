@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script is used when the docker container starts and does the magic to
 # bring the ENV variables to the generated static UI.
@@ -20,4 +20,5 @@ for VAR in ${vars[@]}; do
   echo "  $VAR: \"${!VAR}\"," >> $TARGET
 done
 echo "}" >> $TARGET
-chmod 444 $TARGET
+
+chmod 440 $TARGET

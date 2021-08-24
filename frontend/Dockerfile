@@ -20,15 +20,26 @@ LABEL description="Polkadot Telemetry frontend"
 # determines where the frontend will try to request feed information from:
 ENV SUBSTRATE_TELEMETRY_URL=
 
-WORKDIR /usr/share/nginx/html
+WORKDIR /app
 
 COPY --from=builder /opt/builder/scripts/*.sh /usr/local/bin/
+COPY --from=builder /opt/builder/build /app
 
-RUN apk add --no-cache bash; chmod +x /usr/local/bin/env.sh
+RUN chown -R nginx:nginx /app && \
+    chown -R nginx:nginx /var/cache/nginx && \
+    chown -R nginx:nginx /var/log/nginx && \
+    chown -R nginx:nginx /etc/nginx/conf.d
+
+RUN touch /var/run/nginx.pid && \
+    chown -R nginx:nginx /var/run/nginx.pid
+
+RUN apk add --no-cache bash
 
 COPY --from=builder /opt/builder/nginx/nginx.conf /etc/nginx/nginx.conf
-COPY --from=builder /opt/builder/build /usr/share/nginx/html
+COPY --from=builder /opt/builder/build /app
 
+# UID= 101
+USER nginx
 EXPOSE 8000
 
 CMD ["/usr/local/bin/start.sh"]
