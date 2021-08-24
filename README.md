@@ -161,7 +161,7 @@ Running the container in *read-only* mode reduces the number of attacks vectors 
 a container. It requires however a little more effort and mounting additionnal volumes as shown below:
 
 ```
-docker run --rm -it -p 80:3000 --nane frontend \
+docker run --rm -it -p 80:3000 --name frontend \
   -e SUBSTRATE_TELEMETRY_URL=ws://localhost:9944 \
   --tmpfs /var/cache/nginx:uid=101,gid=101 \
   --tmpfs /var/run:uid=101,gid=101 \
