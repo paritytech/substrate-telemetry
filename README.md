@@ -161,11 +161,11 @@ Running the container in *read-only* mode reduces the number of attacks vectors 
 a container. It requires however a little more effort and mounting additionnal volumes as shown below:
 
 ```
-docker run --rm -it -p 80:3000 --name frontend \
+docker run --rm -it -p 80:8000 --name frontend \
   -e SUBSTRATE_TELEMETRY_URL=ws://localhost:1234 \
   --tmpfs /var/cache/nginx:uid=101,gid=101 \
   --tmpfs /var/run:uid=101,gid=101 \
   --tmpfs /app/tmp:uid=101,gid=101 \
   --read-only \
-  chevdor/telemetry-frontend
+  parity/substrate-telemetry-frontend
 ```

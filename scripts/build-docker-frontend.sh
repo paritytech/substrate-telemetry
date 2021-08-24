@@ -11,7 +11,7 @@ while getopts ":Nsgapv:" arg; do
   esac
 done
 
-IMAGE=telemetry-frontend
+IMAGE=substrate-telemetry-frontend
 DOCKER_USER=${DOCKER_USER:-paritytech}
 echo "Publishing $IMAGE as $DOCKER_USER"
 
