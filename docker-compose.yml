@@ -20,6 +20,11 @@ services:
     build:
       dockerfile: Dockerfile
       context: ./backend/
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx:uid=101,gid=101
+      - /var/run:uid=101,gid=101
+      - /app/tmp:uid=101,gid=101
     command: [
       'telemetry_shard',
       '--listen', '0.0.0.0:8001',
