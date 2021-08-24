@@ -160,12 +160,12 @@ DOCKER_USER=chevdor ./scripts/build-docker-frontend.sh
 Running the container in *read-only* mode reduces the number of attacks vectors that could be used to exploit
 a container. It requires however a little more effort and mounting additionnal volumes as shown below:
 
-  -u 101:101 \
-
-  docker run --rm -it -p 80:80 \
-    -e SUBSTRATE_TELEMETRY_URL=ws://nuc01:1234 \
-    --tmpfs /var/cache/nginx:uid=101,gid=101 \
-    --tmpfs /var/run:uid=101,gid=101 \
-    --tmpfs /app/tmp:uid=101,gid=101 \
-    --read-only \
-    chevdor/telemetry-frontend
+```
+docker run --rm -it -p 80:3000 --nane frontend \
+  -e SUBSTRATE_TELEMETRY_URL=ws://localhost:9944 \
+  --tmpfs /var/cache/nginx:uid=101,gid=101 \
+  --tmpfs /var/run:uid=101,gid=101 \
+  --tmpfs /app/tmp:uid=101,gid=101 \
+  --read-only \
+  chevdor/telemetry-frontend
+```
