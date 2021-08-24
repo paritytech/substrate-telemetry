@@ -21,4 +21,3 @@ COPY --from=builder /app/target/$PROFILE/telemetry_core /usr/local/bin
 RUN apt-get -y update && apt-get -y install openssl && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/
 
 EXPOSE 8000
-
