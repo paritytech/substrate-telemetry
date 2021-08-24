@@ -133,6 +133,19 @@ If you'd like to get things runing manually using Docker, you can do the followi
 
    **NOTE:** Here we used `SUBSTRATE_TELEMETRY_URL=ws://localhost:8000/feed`. This will work if you test with everything running locally on your machine but NOT if your backend runs on a remote server. Keep in mind that the frontend docker image is serving a static site running your browser. The `SUBSTRATE_TELEMETRY_URL` is the WebSocket url that your browser will use to reach the backend. Say your backend runs on a remote server at `foo.example.com`, you will need to set the IP/url accordingly in `SUBSTRATE_TELEMETRY_URL` (in this case, to `ws://foo.example.com/feed`).
 
+   **NOTE:** Running the frontend container in *read-only* mode reduces attack surface that could be used to exploit
+   a container. It requires however a little more effort and mounting additionnal volumes as shown below:
+
+   ```
+   docker run --rm -it -p 80:8000 --name frontend \
+      -e SUBSTRATE_TELEMETRY_URL=ws://localhost:8000/feed \
+      --tmpfs /var/cache/nginx:uid=101,gid=101 \
+      --tmpfs /var/run:uid=101,gid=101 \
+      --tmpfs /app/tmp:uid=101,gid=101 \
+      --read-only \
+      parity/substrate-telemetry-frontend
+   ```
+
 With these running, you'll be able to navigate to [http://localhost:3000](http://localhost:3000) to view the UI. If you'd like to connect a node and have it send telemetry to your running shard, you can run the following:
 
 ```sh
@@ -153,19 +166,4 @@ The building process is standard. You just need to notice that the Dockerfile is
 
 ```sh
 DOCKER_USER=chevdor ./scripts/build-docker-frontend.sh
-```
-
-### Docker in read-only mode
-
-Running the container in *read-only* mode reduces the number of attacks vectors that could be used to exploit
-a container. It requires however a little more effort and mounting additionnal volumes as shown below:
-
-```
-docker run --rm -it -p 80:8000 --name frontend \
-  -e SUBSTRATE_TELEMETRY_URL=ws://localhost:1234 \
-  --tmpfs /var/cache/nginx:uid=101,gid=101 \
-  --tmpfs /var/run:uid=101,gid=101 \
-  --tmpfs /app/tmp:uid=101,gid=101 \
-  --read-only \
-  parity/substrate-telemetry-frontend
 ```
