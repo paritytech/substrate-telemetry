@@ -25,6 +25,7 @@ services:
     build:
       dockerfile: Dockerfile
       context: ./backend/
+    read_only: true
     command: [
       'telemetry_shard',
       '--listen', '0.0.0.0:8001',
@@ -38,6 +39,7 @@ services:
     build:
       dockerfile: Dockerfile
       context: ./backend/
+    read_only: true
     command: [
       'telemetry_core',
       '--listen', '0.0.0.0:8000'
