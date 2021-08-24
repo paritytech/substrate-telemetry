@@ -162,7 +162,7 @@ a container. It requires however a little more effort and mounting additionnal v
 
 ```
 docker run --rm -it -p 80:3000 --name frontend \
-  -e SUBSTRATE_TELEMETRY_URL=ws://localhost:8000 \
+  -e SUBSTRATE_TELEMETRY_URL=ws://localhost:1234 \
   --tmpfs /var/cache/nginx:uid=101,gid=101 \
   --tmpfs /var/run:uid=101,gid=101 \
   --tmpfs /app/tmp:uid=101,gid=101 \
