@@ -6,6 +6,7 @@ LABEL description="Polkadot Telemetry frontend builder image"
 WORKDIR /opt/builder
 
 COPY . .
+
 RUN yarn install && \
     yarn build && \
     yarn cache clean
@@ -21,12 +22,13 @@ ENV SUBSTRATE_TELEMETRY_URL=
 
 WORKDIR /usr/share/nginx/html
 
-COPY --from=builder /opt/builder/env.sh /usr/bin/
-RUN apk add --no-cache bash; chmod +x /usr/bin/env.sh
+COPY --from=builder /opt/builder/scripts/*.sh /usr/local/bin/
+
+RUN apk add --no-cache bash; chmod +x /usr/local/bin/env.sh
 
 COPY --from=builder /opt/builder/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY --from=builder /opt/builder/build /usr/share/nginx/html
 
 EXPOSE 8000
 
-CMD ["/bin/bash", "-c", "/usr/bin/env.sh && nginx -g \"daemon off;\""]
+CMD ["/usr/local/bin/start.sh"]
