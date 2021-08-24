@@ -1,7 +1,7 @@
 variables:
   CONTAINER_REGISTRY:             "docker.io/parity"
-  BACKEND_CONTAINER_REPO:         "substrate-telemetry-backend"
-  FRONTEND_CONTAINER_REPO:        "substrate-telemetry-frontend"
+  BACKEND_CONTAINER_REPO:         "substrate-telemetry-backend-stg"
+  FRONTEND_CONTAINER_REPO:        "substrate-telemetry-frontend-stg"
   KUBE_NAMESPACE:                 "substrate-telemetry"
   BACKEND_IMAGE_FULL_NAME:        "${CONTAINER_REGISTRY}/${BACKEND_CONTAINER_REPO}:${CI_COMMIT_SHORT_SHA}"
   BACKEND_IMAGE_LATEST_TAG:       "${CONTAINER_REGISTRY}/${BACKEND_CONTAINER_REPO}:latest"
@@ -32,6 +32,7 @@ stages:
       echo "Using Helm `helm version --short`"
       helm repo add parity https://paritytech.github.io/helm-charts/
       helm repo update
+      curl -sS $HELM_VALUES_FILE > values-parity.yaml
     - helm upgrade
         --install
         --atomic
@@ -42,7 +43,7 @@ stages:
         --set image.backend.tag="${CI_COMMIT_SHORT_SHA}"
         --set image.frontend.repository="${CONTAINER_REGISTRY}/${FRONTEND_CONTAINER_REPO}"
         --set image.frontend.tag="${CI_COMMIT_SHORT_SHA}"
-        --values $HELM_VALUES_FILE
+        --values values-parity.yaml
         $KUBE_NAMESPACE parity/substrate-telemetry
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
