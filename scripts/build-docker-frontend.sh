@@ -15,7 +15,8 @@ IMAGE=substrate-telemetry-frontend
 DOCKER_USER=${DOCKER_USER:-paritytech}
 echo "Publishing $IMAGE as $DOCKER_USER"
 
-docker build -t $DOCKER_USER/$IMAGE -f ./Dockerfile .
+docker build -t $IMAGE -f packages/frontend/Dockerfile .
+docker tag $IMAGE $DOCKER_USER/$IMAGE
 
 if [[ "$PUBLISH" = 'true' ]]; then
     docker push $DOCKER_USER/$IMAGE

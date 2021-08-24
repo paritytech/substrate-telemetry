@@ -107,6 +107,7 @@ If you'd like to get things runing manually using Docker, you can do the followi
    docker run --rm -it --network=telemetry \
        --name backend-core \
        -p 8000:8000 \
+       --read-only \
        substrate-telemetry-backend \
        telemetry_core -l 0.0.0.0:8000
    ```
@@ -117,6 +118,7 @@ If you'd like to get things runing manually using Docker, you can do the followi
    docker run --rm -it --network=telemetry \
        --name backend-shard \
        -p 8001:8001 \
+       --read-only \
        substrate-telemetry-backend \
        telemetry_shard -l 0.0.0.0:8001 -c http://backend-core:8000/shard_submit
    ```
@@ -160,10 +162,11 @@ You should now see your node showing up in your local [telemetry frontend](http:
 
 ![image](doc/screenshot01.png)
 
-### Build & Publish the Frontend docker image
+### Build & Publish the Frontend & Backend docker images
 
-The building process is standard. You just need to notice that the Dockerfile is in ./packages/frontend/ and tell docker about it. The context must remain the repository's root though.
+The building process is standard. You just need to notice that the `Dockerfile`s are in `./frontend/` and `./backend` and tell docker about it. The context must remain the repository's root though. This is all done for you in the following scripts:
 
 ```sh
-DOCKER_USER=chevdor ./scripts/build-docker-frontend.sh
+DOCKER_USER=$USER ./scripts/build-docker-frontend.sh
+DOCKER_USER=$USER ./scripts/build-docker-backend.sh
 ```
