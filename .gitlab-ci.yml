@@ -1,12 +1,10 @@
 variables:
   CONTAINER_REGISTRY:             "docker.io/parity"
-  BACKEND_CONTAINER_REPO:         "substrate-telemetry-backend-stg"
-  FRONTEND_CONTAINER_REPO:        "substrate-telemetry-frontend-stg"
+  BACKEND_CONTAINER_REPO:         "substrate-telemetry-backend"
+  FRONTEND_CONTAINER_REPO:        "substrate-telemetry-frontend"
   KUBE_NAMESPACE:                 "substrate-telemetry"
   BACKEND_IMAGE_FULL_NAME:        "${CONTAINER_REGISTRY}/${BACKEND_CONTAINER_REPO}:${CI_COMMIT_SHORT_SHA}"
-  BACKEND_IMAGE_LATEST_TAG:       "${CONTAINER_REGISTRY}/${BACKEND_CONTAINER_REPO}:latest"
   FRONTEND_IMAGE_FULL_NAME:       "${CONTAINER_REGISTRY}/${FRONTEND_CONTAINER_REPO}:${CI_COMMIT_SHORT_SHA}"
-  FRONTEND_IMAGE_LATEST_TAG:      "${CONTAINER_REGISTRY}/${FRONTEND_CONTAINER_REPO}:latest"
 
 stages:
   - dockerize
@@ -57,13 +55,11 @@ dockerize-backend:
     - echo "Building image $BACKEND_IMAGE_FULL_NAME"
     - buildah bud
       --format=docker
-      --tag "$BACKEND_IMAGE_FULL_NAME"
-      --tag "$BACKEND_IMAGE_LATEST_TAG" ./backend/
+      --tag "$BACKEND_IMAGE_FULL_NAME" ./backend/
     - echo ${Docker_Hub_Pass_Parity} |
         buildah login --username ${Docker_Hub_User_Parity} --password-stdin docker.io
     - |-
       buildah push --format=v2s2 "$BACKEND_IMAGE_FULL_NAME"
-      buildah push --format=v2s2 "$BACKEND_IMAGE_LATEST_TAG"
 
 dockerize-frontend:
   <<:                     *dockerize
@@ -71,13 +67,11 @@ dockerize-frontend:
     - echo "Building image $FRONTEND_IMAGE_FULL_NAME"
     - buildah bud
       --format=docker
-      --tag "$FRONTEND_IMAGE_FULL_NAME"
-      --tag "$FRONTEND_IMAGE_LATEST_TAG" ./frontend/
+      --tag "$FRONTEND_IMAGE_FULL_NAME" ./frontend/
     - echo ${Docker_Hub_Pass_Parity} |
         buildah login --username ${Docker_Hub_User_Parity} --password-stdin docker.io
     - |-
       buildah push --format=v2s2 "$FRONTEND_IMAGE_FULL_NAME"
-      buildah push --format=v2s2 "$FRONTEND_IMAGE_LATEST_TAG"
 
 deploy-parity-stg:
   stage:                  staging
