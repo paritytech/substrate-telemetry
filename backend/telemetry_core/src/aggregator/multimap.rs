@@ -105,7 +105,7 @@ mod test {
     }
 
     #[test]
-    fn multiple_keys_allowed_per_value() {
+    fn multiple_values_allowed_per_key() {
         let mut m = MultiMap::new();
 
         m.insert("a", 1);
