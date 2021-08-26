@@ -586,7 +586,9 @@ impl InnerLoop {
             FromFeedWebsocket::Disconnected => {
                 // The feed has disconnected; clean up references to it:
                 if let Some(chain) = self.feed_conn_id_to_chain.remove(&feed_conn_id) {
-                    self.chain_to_feed_conn_ids.remove(&chain);
+                    if let Some(feed_conn_ids) = self.chain_to_feed_conn_ids.get_mut(&chain) {
+                        feed_conn_ids.remove(&feed_conn_id);
+                    }
                 }
                 self.feed_channels.remove(&feed_conn_id);
                 self.feed_conn_id_finality.remove(&feed_conn_id);

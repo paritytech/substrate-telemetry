@@ -127,7 +127,7 @@ async fn run_soak_test(opts: SoakTestOpts) {
             tokio::spawn(async move {
                 let telemetry = test_utils::fake_telemetry::FakeTelemetry::new(
                     Duration::from_secs(3),
-                    format!("Node {}", idx + 1),
+                    format!("Node {}", (ids_per_node * idx) + id + 1),
                     "Polkadot".to_owned(),
                     id + 1,
                 );
