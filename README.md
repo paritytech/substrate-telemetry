@@ -129,6 +129,7 @@ If you'd like to get things runing manually using Docker, you can do the followi
    docker run --rm -it --network=telemetry \
        --name frontend \
        -p 3000:8000 \
+       --read-only \
        -e SUBSTRATE_TELEMETRY_URL=ws://localhost:8000/feed \
        substrate-telemetry-frontend
    ```
