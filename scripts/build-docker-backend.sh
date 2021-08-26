@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-set -e
 
-pushd "$(git rev-parse --show-toplevel)/frontend" > /dev/null
+pushd "$(git rev-parse --show-toplevel)/backend" > /dev/null
 
 while getopts ":Nsgapv:" arg; do
   case "${arg}" in
@@ -11,11 +10,11 @@ while getopts ":Nsgapv:" arg; do
   esac
 done
 
-IMAGE=substrate-telemetry-frontend
+IMAGE=substrate-telemetry-backend
 DOCKER_USER=${DOCKER_USER:-paritytech}
-echo "Publishing $IMAGE as $DOCKER_USER"
+echo "Building $IMAGE as $DOCKER_USER"
 
-docker build -t $IMAGE -f packages/frontend/Dockerfile .
+docker build -t $IMAGE -f ./Dockerfile .
 docker tag $IMAGE $DOCKER_USER/$IMAGE
 
 if [[ "$PUBLISH" = 'true' ]]; then
