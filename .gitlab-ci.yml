@@ -30,7 +30,6 @@ stages:
       echo "Using Helm `helm version --short`"
       helm repo add parity https://paritytech.github.io/helm-charts/
       helm repo update
-      curl -sS $HELM_VALUES_FILE > values-parity.yaml
     - helm upgrade
         --install
         --atomic
