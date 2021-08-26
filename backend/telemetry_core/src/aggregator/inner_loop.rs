@@ -561,7 +561,8 @@ impl InnerLoop {
 
                 // Actually make a note of the new chain subsciption:
                 let new_genesis_hash = *new_chain.genesis_hash();
-                self.chain_to_feed_conn_ids.insert(new_genesis_hash, feed_conn_id);
+                self.chain_to_feed_conn_ids
+                    .insert(new_genesis_hash, feed_conn_id);
             }
             FromFeedWebsocket::SendFinality => {
                 self.feed_conn_id_finality.insert(feed_conn_id);

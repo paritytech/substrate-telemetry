@@ -19,24 +19,24 @@ use std::hash::Hash;
 /// A map where each key can contain multiple values. We enforce that a value
 /// only ever belongs to one key at a time (the latest key it was inserted
 /// against).
-pub struct MultiMap<K,V> {
+pub struct MultiMap<K, V> {
     value_to_key: HashMap<V, K>,
     key_to_values: HashMap<K, HashSet<V>>,
 }
 
-impl <K, V> MultiMap<K,V> {
+impl<K, V> MultiMap<K, V> {
     /// Construct a new MultiMap
     pub fn new() -> Self {
         Self {
             value_to_key: HashMap::new(),
-            key_to_values: HashMap::new()
+            key_to_values: HashMap::new(),
         }
     }
 
     /// Return the set of values associated with a key.
     pub fn get_values(&self, key: &K) -> Option<&HashSet<V>>
     where
-        K: Eq + Hash
+        K: Eq + Hash,
     {
         self.key_to_values.get(key)
     }
@@ -46,7 +46,7 @@ impl <K, V> MultiMap<K,V> {
     pub fn remove_value(&mut self, value: &V) -> Option<K>
     where
         V: Eq + Hash,
-        K: Eq + Hash
+        K: Eq + Hash,
     {
         if let Some(key) = self.value_to_key.remove(value) {
             if let Some(m) = self.key_to_values.get_mut(&key) {
@@ -66,7 +66,7 @@ impl <K, V> MultiMap<K,V> {
     pub fn insert(&mut self, key: K, value: V)
     where
         V: Clone + Eq + Hash,
-        K: Clone + Eq + Hash
+        K: Clone + Eq + Hash,
     {
         // Ensure that the value doesn't exist elsewhere already;
         // values must be unique and only belong to one key:
