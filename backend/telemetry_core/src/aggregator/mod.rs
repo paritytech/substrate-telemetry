@@ -17,6 +17,7 @@
 mod aggregator;
 mod aggregator_set;
 mod inner_loop;
+mod multimap;
 
 // Expose the various message types that can be worked with externally:
 pub use aggregator::AggregatorOpts;

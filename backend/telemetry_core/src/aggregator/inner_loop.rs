@@ -15,6 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use super::aggregator::ConnId;
+use super::multimap::MultiMap;
 use crate::feed_message::{self, FeedMessageSerializer};
 use crate::find_location;
 use crate::state::{self, NodeId, State};
@@ -169,12 +170,8 @@ pub struct InnerLoop {
     /// Keep track of how to send messages out to shards.
     shard_channels: HashMap<ConnId, flume::Sender<ToShardWebsocket>>,
 
-    /// Which chain is a feed subscribed to?
-    /// Feed Connection ID -> Chain Genesis Hash
-    feed_conn_id_to_chain: HashMap<ConnId, BlockHash>,
-    /// Which feeds are subscribed to a given chain (needs to stay in sync with above)?
-    /// Chain Genesis Hash -> Feed Connection IDs
-    chain_to_feed_conn_ids: HashMap<BlockHash, HashSet<ConnId>>,
+    /// Which feeds are subscribed to a given chain?
+    chain_to_feed_conn_ids: MultiMap<BlockHash, ConnId>,
 
     /// These feeds want finality info, too.
     feed_conn_id_finality: HashSet<ConnId>,
@@ -199,8 +196,7 @@ impl InnerLoop {
             node_ids: BiMap::new(),
             feed_channels: HashMap::new(),
             shard_channels: HashMap::new(),
-            feed_conn_id_to_chain: HashMap::new(),
-            chain_to_feed_conn_ids: HashMap::new(),
+            chain_to_feed_conn_ids: MultiMap::new(),
             feed_conn_id_finality: HashSet::new(),
             tx_to_locator,
             max_queue_len,
@@ -272,8 +268,8 @@ impl InnerLoop {
     ) {
         let timestamp_unix_ms = time::now();
         let connected_nodes = self.node_ids.len();
-        let subscribed_feeds = self.feed_conn_id_to_chain.len();
-        let chains_subscribed_to = self.chain_to_feed_conn_ids.len();
+        let subscribed_feeds = self.chain_to_feed_conn_ids.num_values();
+        let chains_subscribed_to = self.chain_to_feed_conn_ids.num_keys();
         let subscribed_finality_feeds = self.feed_conn_id_finality.len();
         let connected_shards = self.shard_channels.len();
         let connected_feeds = self.feed_channels.len();
@@ -492,12 +488,7 @@ impl InnerLoop {
                 };
 
                 // Unsubscribe from previous chain if subscribed to one:
-                let old_genesis_hash = self.feed_conn_id_to_chain.remove(&feed_conn_id);
-                if let Some(old_genesis_hash) = &old_genesis_hash {
-                    if let Some(map) = self.chain_to_feed_conn_ids.get_mut(old_genesis_hash) {
-                        map.remove(&feed_conn_id);
-                    }
-                }
+                let old_genesis_hash = self.chain_to_feed_conn_ids.remove_value(&feed_conn_id);
 
                 // Untoggle request for finality feeds:
                 self.feed_conn_id_finality.remove(&feed_conn_id);
@@ -570,12 +561,7 @@ impl InnerLoop {
 
                 // Actually make a note of the new chain subsciption:
                 let new_genesis_hash = *new_chain.genesis_hash();
-                self.feed_conn_id_to_chain
-                    .insert(feed_conn_id, new_genesis_hash);
-                self.chain_to_feed_conn_ids
-                    .entry(new_genesis_hash)
-                    .or_default()
-                    .insert(feed_conn_id);
+                self.chain_to_feed_conn_ids.insert(new_genesis_hash, feed_conn_id);
             }
             FromFeedWebsocket::SendFinality => {
                 self.feed_conn_id_finality.insert(feed_conn_id);
@@ -585,11 +571,7 @@ impl InnerLoop {
             }
             FromFeedWebsocket::Disconnected => {
                 // The feed has disconnected; clean up references to it:
-                if let Some(chain) = self.feed_conn_id_to_chain.remove(&feed_conn_id) {
-                    if let Some(feed_conn_ids) = self.chain_to_feed_conn_ids.get_mut(&chain) {
-                        feed_conn_ids.remove(&feed_conn_id);
-                    }
-                }
+                self.chain_to_feed_conn_ids.remove_value(&feed_conn_id);
                 self.feed_channels.remove(&feed_conn_id);
                 self.feed_conn_id_finality.remove(&feed_conn_id);
             }
@@ -679,7 +661,7 @@ impl InnerLoop {
 
     /// Send a message to all chain feeds.
     fn broadcast_to_chain_feeds(&mut self, genesis_hash: &BlockHash, message: ToFeedWebsocket) {
-        if let Some(feeds) = self.chain_to_feed_conn_ids.get(genesis_hash) {
+        if let Some(feeds) = self.chain_to_feed_conn_ids.get_values(genesis_hash) {
             for &feed_id in feeds {
                 if let Some(chan) = self.feed_channels.get_mut(&feed_id) {
                     let _ = chan.send(message.clone());
@@ -719,7 +701,7 @@ impl InnerLoop {
         genesis_hash: &BlockHash,
         message: ToFeedWebsocket,
     ) {
-        if let Some(feeds) = self.chain_to_feed_conn_ids.get(genesis_hash) {
+        if let Some(feeds) = self.chain_to_feed_conn_ids.get_values(genesis_hash) {
             // Get all feeds for the chain, but only broadcast to those feeds that
             // are also subscribed to receive finality updates.
             for &feed_id in feeds.union(&self.feed_conn_id_finality) {
