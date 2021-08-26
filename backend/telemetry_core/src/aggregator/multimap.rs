@@ -126,4 +126,27 @@ mod test {
         assert!(b_vals.contains(&4));
     }
 
+    #[test]
+    fn can_remove_value() {
+        let mut m = MultiMap::new();
+
+        m.insert("a", 1);
+        m.insert("a", 2);
+
+        m.insert("b", 3);
+        m.insert("b", 4);
+
+        assert_eq!(m.num_keys(), 2);
+        assert_eq!(m.num_values(), 4);
+
+        m.remove_value(&1);
+
+        assert_eq!(m.num_keys(), 2);
+        assert_eq!(m.num_values(), 3);
+
+        m.remove_value(&2);
+
+        assert_eq!(m.num_keys(), 1);
+        assert_eq!(m.num_values(), 2);
+    }
 }
