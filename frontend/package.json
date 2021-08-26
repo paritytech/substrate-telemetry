@@ -13,7 +13,7 @@
     "eject": "react-scripts-ts eject",
     "pretty:check": "prettier --check src/**/*.{ts,tsx}",
     "pretty:fix": "prettier --write src",
-    "clean": "rm -rf node_modules build .nyc env-config.js report*.json yarn-error.log"
+    "clean": "rm -rf node_modules build .nyc ./tmp/env-config.js report*.json yarn-error.log"
   },
   "dependencies": {
     "@polkadot/util-crypto": "^2.8.1",

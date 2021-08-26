@@ -1,9 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script is used when the docker container starts and does the magic to
 # bring the ENV variables to the generated static UI.
 
-TARGET=./env-config.js
+ENV_DIR=./tmp
+mkdir -p "$ENV_DIR"
+TARGET="$ENV_DIR/env-config.js"
 
 # Recreate config file
 echo -n > $TARGET
@@ -18,3 +20,5 @@ for VAR in ${vars[@]}; do
   echo "  $VAR: \"${!VAR}\"," >> $TARGET
 done
 echo "}" >> $TARGET
+
+chmod 440 $TARGET

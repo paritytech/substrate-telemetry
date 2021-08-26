@@ -1,11 +1,12 @@
 #### BUILDER IMAGE  ####
 FROM docker.io/node:12 as builder
 LABEL maintainer="Chevdor <chevdor@gmail.com>"
-LABEL description="Polkadot Telemetry frontend builder image"
+LABEL description="Substrate Telemetry Frontend builder image"
 
 WORKDIR /opt/builder
 
 COPY . .
+
 RUN yarn install && \
     yarn build && \
     yarn cache clean
@@ -13,20 +14,28 @@ RUN yarn install && \
 #### OUTPUT IMAGE ####
 FROM docker.io/nginx:stable-alpine
 LABEL maintainer="Chevdor <chevdor@gmail.com>"
-LABEL description="Polkadot Telemetry frontend"
+LABEL description="Substrate Telemetry Frontend"
 
 # Each time this container is ran, the value that's provided for this env var
 # determines where the frontend will try to request feed information from:
 ENV SUBSTRATE_TELEMETRY_URL=
 
-WORKDIR /usr/share/nginx/html
+WORKDIR /app
 
-COPY --from=builder /opt/builder/env.sh /usr/bin/
-RUN apk add --no-cache bash; chmod +x /usr/bin/env.sh
-
+COPY --from=builder /opt/builder/scripts/*.sh /usr/local/bin/
+COPY --from=builder /opt/builder/build /app
 COPY --from=builder /opt/builder/nginx/nginx.conf /etc/nginx/nginx.conf
-COPY --from=builder /opt/builder/build /usr/share/nginx/html
 
+RUN apk add --no-cache bash && \
+    chown -R nginx:nginx /app && \
+    chown -R nginx:nginx /var/cache/nginx && \
+    chown -R nginx:nginx /var/log/nginx && \
+    chown -R nginx:nginx /etc/nginx/conf.d && \
+    touch /var/run/nginx.pid && \
+    chown -R nginx:nginx /var/run/nginx.pid
+
+# UID= 101
+USER nginx
 EXPOSE 8000
 
-CMD ["/bin/bash", "-c", "/usr/bin/env.sh && nginx -g \"daemon off;\""]
+CMD ["/usr/local/bin/start.sh"]
