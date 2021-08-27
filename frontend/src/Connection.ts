@@ -487,7 +487,7 @@ export class Connection {
     this.clean();
 
     // Force reload from the server
-    setTimeout(() => window.location.reload(true), 3000);
+    setTimeout(() => window.location.reload(), 3000);
   }
 
   private clean() {

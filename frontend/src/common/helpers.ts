@@ -119,7 +119,9 @@ export class NumStats<T extends number> {
 
     let sum = 0;
 
-    for (const n of list.sort((a, b) => a - b).slice(extremes, -extremes)) {
+    for (const n of [...list]
+      .sort((a, b) => a - b)
+      .slice(extremes, -extremes)) {
       sum += n;
     }
 
