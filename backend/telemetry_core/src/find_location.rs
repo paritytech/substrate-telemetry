@@ -39,16 +39,16 @@ where
     let (tx, rx) = flume::unbounded();
 
     // cache entries
-    let mut cache: FxHashMap<Ipv4Addr, Option<Arc<NodeLocation>>> = FxHashMap::default();
+    let mut cache: FxHashMap<Ipv4Addr, Arc<NodeLocation>> = FxHashMap::default();
 
     // Default entry for localhost
     cache.insert(
         Ipv4Addr::new(127, 0, 0, 1),
-        Some(Arc::new(NodeLocation {
+        Arc::new(NodeLocation {
             latitude: 52.516_6667,
             longitude: 13.4,
             city: "Berlin".into(),
-        })),
+        }),
     );
 
     // Create a locator with our cache. This is used to obtain locations.
@@ -87,11 +87,11 @@ where
 #[derive(Clone)]
 struct Locator {
     client: reqwest::Client,
-    cache: Arc<RwLock<FxHashMap<Ipv4Addr, Option<Arc<NodeLocation>>>>>,
+    cache: Arc<RwLock<FxHashMap<Ipv4Addr, Arc<NodeLocation>>>>,
 }
 
 impl Locator {
-    pub fn new(cache: FxHashMap<Ipv4Addr, Option<Arc<NodeLocation>>>) -> Self {
+    pub fn new(cache: FxHashMap<Ipv4Addr, Arc<NodeLocation>>) -> Self {
         let client = reqwest::Client::new();
 
         Locator {
@@ -101,13 +101,13 @@ impl Locator {
     }
 
     pub async fn locate(&self, ip: Ipv4Addr) -> Option<Arc<NodeLocation>> {
-        // Return location (or error obtaining location) quickly if it's cached:
+        // Return location quickly if it's cached:
         let cached_loc = {
             let cache_reader = self.cache.read();
             cache_reader.get(&ip).cloned()
         };
-        if let Some(loc) = cached_loc {
-            return loc;
+        if cached_loc.is_some() {
+            return cached_loc;
         }
 
         // Look it up via ipapi.co:
@@ -124,13 +124,13 @@ impl Locator {
             log::warn!("Couldn't obtain location information for {} from ipinfo.co: {}", ip, e);
         }
 
-        // We've logged everything we plan to above, so discard the error.
-        let location = location.ok();
+        // If we successfully obtained a location, cache it
+        if let Ok(location) = &location {
+            self.cache.write().insert(ip, location.clone());
+        }
 
-        // Write success *or failure* to cache to avoid trying again for this location:
-        self.cache.write().insert(ip, location.clone());
-
-        location
+        // Discard the error; we've logged information above.
+        location.ok()
     }
 
     async fn iplocate_ipapi_co(
