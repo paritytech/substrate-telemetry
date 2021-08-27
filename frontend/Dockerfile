@@ -32,7 +32,8 @@ RUN apk add --no-cache bash && \
     chown -R nginx:nginx /var/log/nginx && \
     chown -R nginx:nginx /etc/nginx/conf.d && \
     touch /var/run/nginx.pid && \
-    chown -R nginx:nginx /var/run/nginx.pid
+    chown -R nginx:nginx /var/run/nginx.pid && \
+    rm /etc/nginx/conf.d/default.conf
 
 # UID= 101
 USER nginx
