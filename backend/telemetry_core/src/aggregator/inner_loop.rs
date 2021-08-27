@@ -23,8 +23,7 @@ use common::{
     internal_messages::{self, MuteReason, ShardNodeId},
     node_message,
     node_types::BlockHash,
-    time,
-    MultiMapUnique
+    time, MultiMapUnique,
 };
 use std::collections::{HashMap, HashSet};
 use std::sync::{

@@ -153,5 +153,4 @@ mod test {
         assert!(b_vals.contains(&3));
         assert!(b_vals.contains(&4));
     }
-
 }
