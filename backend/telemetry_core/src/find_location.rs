@@ -24,6 +24,7 @@ use serde::Deserialize;
 
 use common::node_types::NodeLocation;
 use tokio::sync::Semaphore;
+use anyhow::{ Context };
 
 /// The returned location is optional; it may be None if not found.
 pub type Location = Option<Arc<NodeLocation>>;
@@ -73,7 +74,7 @@ where
                             let _ = response_chan.send((id, loc)).await;
                         }
                         Err(e) => {
-                            log::debug!("GET error for ip location: {:?}", e);
+                            log::warn!("Error obtaining location info for {}: {:?}", ip_address, e);
                         }
                     };
 
@@ -105,8 +106,8 @@ impl Locator {
         }
     }
 
-    pub async fn locate(&self, ip: Ipv4Addr) -> Result<Option<Arc<NodeLocation>>, reqwest::Error> {
-        // Return location quickly if it's cached:
+    pub async fn locate(&self, ip: Ipv4Addr) -> Result<Option<Arc<NodeLocation>>, anyhow::Error> {
+        // Return location (or error obtaining location) quickly if it's cached:
         let cached_loc = {
             let cache_reader = self.cache.read();
             cache_reader.get(&ip).cloned()
@@ -115,58 +116,69 @@ impl Locator {
             return Ok(loc);
         }
 
-        // Look it up via the location services if not cached:
-        let location = self.iplocate_ipapi_co(ip).await?;
-        let location = match location {
-            Some(location) => Ok(Some(location)),
-            None => self.iplocate_ipinfo_io(ip).await,
-        }?;
+        // Look it up via ipapi.co:
+        let mut location = self.iplocate_ipapi_co(ip).await;
 
-        self.cache.write().insert(ip, location.clone());
-        Ok(location)
+        // If that fails, try looking it up via ipinfo.co instead:
+        if let Err(first_error) = location {
+            location = self.iplocate_ipinfo_io(ip)
+                .await
+                // Chain first error, so that when we print the error we see our "Couldn't obtain.."
+                // first, and then the context from this error, and then from the first error.
+                // This certainly isn't optimal, but it's easy, and we don't lose any error information.
+                //
+                // Note: seeing the full chain of errors requires printing as debug (:?}.
+                .map_err(|e| first_error.context(e))
+                .with_context(|| "Couldn't obtain location information from ipapi.co or ipinfo.io");
+        }
+
+        // Write success *or failure* to cache to avoid trying again for this location:
+        self.cache.write().insert(ip, location.as_ref().ok().cloned());
+
+        // Return our location (or error if something went wrong fetching it):
+        location.map(|l| Some(l))
     }
 
     async fn iplocate_ipapi_co(
         &self,
         ip: Ipv4Addr,
-    ) -> Result<Option<Arc<NodeLocation>>, reqwest::Error> {
+    ) -> Result<Arc<NodeLocation>, anyhow::Error> {
         let location = self
             .query(&format!("https://ipapi.co/{}/json", ip))
-            .await?
-            .map(Arc::new);
+            .await?;
 
-        Ok(location)
+        Ok(Arc::new(location))
     }
 
     async fn iplocate_ipinfo_io(
         &self,
         ip: Ipv4Addr,
-    ) -> Result<Option<Arc<NodeLocation>>, reqwest::Error> {
+    ) -> Result<Arc<NodeLocation>, anyhow::Error> {
         let location = self
-            .query(&format!("https://ipinfo.io/{}/json", ip))
+            .query::<IPApiLocate>(&format!("https://ipinfo.io/{}/json", ip))
             .await?
-            .and_then(|loc: IPApiLocate| loc.into_node_location().map(Arc::new));
+            .into_node_location()
+            .with_context(|| "ipinfo.io: could not convert response into node location")?;
 
-        Ok(location)
+        Ok(Arc::new(location))
     }
 
-    async fn query<T>(&self, url: &str) -> Result<Option<T>, reqwest::Error>
+    async fn query<T>(&self, url: &str) -> Result<T, anyhow::Error>
     where
         for<'de> T: Deserialize<'de>,
     {
-        match self.client.get(url).send().await?.json::<T>().await {
-            Ok(result) => Ok(Some(result)),
-            Err(err) => {
-                log::debug!("JSON error for ip location: {:?}", err);
-                Ok(None)
-            }
-        }
+        self.client.get(url).send()
+            .await
+            .with_context(|| "Non-200 response code")?
+            .json::<T>()
+            .await
+            .with_context(|| "Could not decode location information")
     }
 }
 
 /// This is the format returned from ipinfo.co, so we do
 /// a little conversion to get it into the shape we want.
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug, Clone)]
 struct IPApiLocate {
     city: Box<str>,
     loc: Box<str>,
