@@ -69,14 +69,8 @@ where
                 // Once we have acquired our permit, spawn a task to avoid
                 // blocking this loop so that we can handle concurrent requests.
                 tokio::spawn(async move {
-                    match locator.locate(ip_address).await {
-                        Ok(loc) => {
-                            let _ = response_chan.send((id, loc)).await;
-                        }
-                        Err(e) => {
-                            log::warn!("Error obtaining location info for {}: {:?}", ip_address, e);
-                        }
-                    };
+                    let location = locator.locate(ip_address).await;
+                    let _ = response_chan.send((id, location)).await;
 
                     // ensure permit is moved into task by dropping it explicitly:
                     drop(permit);
@@ -106,37 +100,37 @@ impl Locator {
         }
     }
 
-    pub async fn locate(&self, ip: Ipv4Addr) -> Result<Option<Arc<NodeLocation>>, anyhow::Error> {
+    pub async fn locate(&self, ip: Ipv4Addr) -> Option<Arc<NodeLocation>> {
         // Return location (or error obtaining location) quickly if it's cached:
         let cached_loc = {
             let cache_reader = self.cache.read();
             cache_reader.get(&ip).cloned()
         };
         if let Some(loc) = cached_loc {
-            return Ok(loc);
+            return loc;
         }
 
         // Look it up via ipapi.co:
         let mut location = self.iplocate_ipapi_co(ip).await;
 
         // If that fails, try looking it up via ipinfo.co instead:
-        if let Err(first_error) = location {
-            location = self.iplocate_ipinfo_io(ip)
-                .await
-                // Chain first error, so that when we print the error we see our "Couldn't obtain.."
-                // first, and then the context from this error, and then from the first error.
-                // This certainly isn't optimal, but it's easy, and we don't lose any error information.
-                //
-                // Note: seeing the full chain of errors requires printing as debug (:?}.
-                .map_err(|e| first_error.context(e))
-                .with_context(|| "Couldn't obtain location information from ipapi.co or ipinfo.io");
+        if let Err(e) = &location {
+            log::warn!("Couldn't obtain location information for {} from ipapi.co: {}", ip, e);
+            location = self.iplocate_ipinfo_io(ip).await
         }
 
-        // Write success *or failure* to cache to avoid trying again for this location:
-        self.cache.write().insert(ip, location.as_ref().ok().cloned());
+        // If both fail, we've logged the errors and we'll return None.
+        if let Err(e) = &location {
+            log::warn!("Couldn't obtain location information for {} from ipinfo.co: {}", ip, e);
+        }
 
-        // Return our location (or error if something went wrong fetching it):
-        location.map(|l| Some(l))
+        // We've logged everything we plan to above, so discard the error.
+        let location = location.ok();
+
+        // Write success *or failure* to cache to avoid trying again for this location:
+        self.cache.write().insert(ip, location.clone());
+
+        location
     }
 
     async fn iplocate_ipapi_co(
@@ -158,7 +152,7 @@ impl Locator {
             .query::<IPApiLocate>(&format!("https://ipinfo.io/{}/json", ip))
             .await?
             .into_node_location()
-            .with_context(|| "ipinfo.io: could not convert response into node location")?;
+            .with_context(|| "Could not convert response into node location")?;
 
         Ok(Arc::new(location))
     }
@@ -167,12 +161,14 @@ impl Locator {
     where
         for<'de> T: Deserialize<'de>,
     {
-        self.client.get(url).send()
+        let res = self.client.get(url).send()
+            .await?
+            .bytes()
             .await
-            .with_context(|| "Non-200 response code")?
-            .json::<T>()
-            .await
-            .with_context(|| "Could not decode location information")
+            .with_context(|| "Failed to obtain response body")?;
+
+        serde_json::from_slice(&res)
+            .with_context(|| format!{"Failed to decode '{}'", std::str::from_utf8(&res).unwrap_or("INVALID_UTF8")})
     }
 }
 
