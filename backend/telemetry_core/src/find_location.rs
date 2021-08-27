@@ -22,9 +22,9 @@ use parking_lot::RwLock;
 use rustc_hash::FxHashMap;
 use serde::Deserialize;
 
+use anyhow::Context;
 use common::node_types::NodeLocation;
 use tokio::sync::Semaphore;
-use anyhow::{ Context };
 
 /// The returned location is optional; it may be None if not found.
 pub type Location = Option<Arc<NodeLocation>>;
@@ -115,13 +115,21 @@ impl Locator {
 
         // If that fails, try looking it up via ipinfo.co instead:
         if let Err(e) = &location {
-            log::warn!("Couldn't obtain location information for {} from ipapi.co: {}", ip, e);
+            log::warn!(
+                "Couldn't obtain location information for {} from ipapi.co: {}",
+                ip,
+                e
+            );
             location = self.iplocate_ipinfo_io(ip).await
         }
 
         // If both fail, we've logged the errors and we'll return None.
         if let Err(e) = &location {
-            log::warn!("Couldn't obtain location information for {} from ipinfo.co: {}", ip, e);
+            log::warn!(
+                "Couldn't obtain location information for {} from ipinfo.co: {}",
+                ip,
+                e
+            );
         }
 
         // If we successfully obtained a location, cache it
@@ -133,21 +141,13 @@ impl Locator {
         location.ok()
     }
 
-    async fn iplocate_ipapi_co(
-        &self,
-        ip: Ipv4Addr,
-    ) -> Result<Arc<NodeLocation>, anyhow::Error> {
-        let location = self
-            .query(&format!("https://ipapi.co/{}/json", ip))
-            .await?;
+    async fn iplocate_ipapi_co(&self, ip: Ipv4Addr) -> Result<Arc<NodeLocation>, anyhow::Error> {
+        let location = self.query(&format!("https://ipapi.co/{}/json", ip)).await?;
 
         Ok(Arc::new(location))
     }
 
-    async fn iplocate_ipinfo_io(
-        &self,
-        ip: Ipv4Addr,
-    ) -> Result<Arc<NodeLocation>, anyhow::Error> {
+    async fn iplocate_ipinfo_io(&self, ip: Ipv4Addr) -> Result<Arc<NodeLocation>, anyhow::Error> {
         let location = self
             .query::<IPApiLocate>(&format!("https://ipinfo.io/{}/json", ip))
             .await?
@@ -161,7 +161,10 @@ impl Locator {
     where
         for<'de> T: Deserialize<'de>,
     {
-        let res = self.client.get(url).send()
+        let res = self
+            .client
+            .get(url)
+            .send()
             .await?
             .bytes()
             .await

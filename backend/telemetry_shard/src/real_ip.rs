@@ -47,7 +47,7 @@ pub enum Source {
     ForwardedHeader,
     XForwardedForHeader,
     XRealIpHeader,
-    SocketAddr
+    SocketAddr,
 }
 
 impl std::fmt::Display for Source {
@@ -83,12 +83,10 @@ fn pick_best_ip_from_options(
         })
         .or_else(|| {
             // fall back to X-Forwarded-For
-            forwarded_for
-                .as_ref()
-                .and_then(|val| {
-                    let addr = get_first_addr_from_x_forwarded_for_header(val)?;
-                    Some((addr, Source::XForwardedForHeader))
-                })
+            forwarded_for.as_ref().and_then(|val| {
+                let addr = get_first_addr_from_x_forwarded_for_header(val)?;
+                Some((addr, Source::XForwardedForHeader))
+            })
         })
         .or_else(|| {
             // fall back to X-Real-IP
@@ -100,7 +98,8 @@ fn pick_best_ip_from_options(
         .and_then(|(ip, source)| {
             // Try parsing assuming it may have a port first,
             // and then assuming it doesn't.
-            let addr = ip.parse::<SocketAddr>()
+            let addr = ip
+                .parse::<SocketAddr>()
                 .map(|s| s.ip())
                 .or_else(|_| ip.parse::<IpAddr>())
                 .ok()?;
