@@ -107,6 +107,7 @@ If you'd like to get things runing manually using Docker, you can do the followi
    docker run --rm -it --network=telemetry \
        --name backend-core \
        -p 8000:8000 \
+       --read-only \
        substrate-telemetry-backend \
        telemetry_core -l 0.0.0.0:8000
    ```
@@ -117,6 +118,7 @@ If you'd like to get things runing manually using Docker, you can do the followi
    docker run --rm -it --network=telemetry \
        --name backend-shard \
        -p 8001:8001 \
+       --read-only \
        substrate-telemetry-backend \
        telemetry_shard -l 0.0.0.0:8001 -c http://backend-core:8000/shard_submit
    ```
@@ -127,11 +129,25 @@ If you'd like to get things runing manually using Docker, you can do the followi
    docker run --rm -it --network=telemetry \
        --name frontend \
        -p 3000:8000 \
+       --read-only \
        -e SUBSTRATE_TELEMETRY_URL=ws://localhost:8000/feed \
        substrate-telemetry-frontend
    ```
 
    **NOTE:** Here we used `SUBSTRATE_TELEMETRY_URL=ws://localhost:8000/feed`. This will work if you test with everything running locally on your machine but NOT if your backend runs on a remote server. Keep in mind that the frontend docker image is serving a static site running your browser. The `SUBSTRATE_TELEMETRY_URL` is the WebSocket url that your browser will use to reach the backend. Say your backend runs on a remote server at `foo.example.com`, you will need to set the IP/url accordingly in `SUBSTRATE_TELEMETRY_URL` (in this case, to `ws://foo.example.com/feed`).
+
+   **NOTE:** Running the frontend container in *read-only* mode reduces attack surface that could be used to exploit
+   a container. It requires however a little more effort and mounting additionnal volumes as shown below:
+
+   ```
+   docker run --rm -it -p 80:8000 --name frontend \
+      -e SUBSTRATE_TELEMETRY_URL=ws://localhost:8000/feed \
+      --tmpfs /var/cache/nginx:uid=101,gid=101 \
+      --tmpfs /var/run:uid=101,gid=101 \
+      --tmpfs /app/tmp:uid=101,gid=101 \
+      --read-only \
+      parity/substrate-telemetry-frontend
+   ```
 
 With these running, you'll be able to navigate to [http://localhost:3000](http://localhost:3000) to view the UI. If you'd like to connect a node and have it send telemetry to your running shard, you can run the following:
 
@@ -147,10 +163,11 @@ You should now see your node showing up in your local [telemetry frontend](http:
 
 ![image](doc/screenshot01.png)
 
-### Build & Publish the Frontend docker image
+### Build & Publish the Frontend & Backend docker images
 
-The building process is standard. You just need to notice that the Dockerfile is in ./packages/frontend/ and tell docker about it. The context must remain the repository's root though.
+The building process is standard. You just need to notice that the `Dockerfile`s are in `./frontend/` and `./backend` and tell docker about it. The context must remain the repository's root though. This is all done for you in the following scripts:
 
 ```sh
-DOCKER_USER=chevdor ./scripts/build-docker-frontend.sh
+DOCKER_USER=$USER ./scripts/build-docker-frontend.sh
+DOCKER_USER=$USER ./scripts/build-docker-backend.sh
 ```

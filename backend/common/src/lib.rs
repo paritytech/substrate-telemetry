@@ -30,6 +30,7 @@ mod dense_map;
 mod either_sink;
 mod mean_list;
 mod most_seen;
+mod multi_map_unique;
 mod num_stats;
 
 // Export a bunch of common bits at the top level for ease of import:
@@ -38,4 +39,5 @@ pub use dense_map::DenseMap;
 pub use either_sink::EitherSink;
 pub use mean_list::MeanList;
 pub use most_seen::MostSeen;
+pub use multi_map_unique::MultiMapUnique;
 pub use num_stats::NumStats;
