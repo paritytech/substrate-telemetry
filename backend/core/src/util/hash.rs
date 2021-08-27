@@ -3,6 +3,7 @@ use std::str::FromStr;
 
 use actix_web::error::ResponseError;
 use serde::de::{self, Deserialize, Deserializer, Unexpected, Visitor};
+use serde::ser::{Serialize, Serializer};
 
 const HASH_BYTES: usize = 32;
 
@@ -52,6 +53,18 @@ impl<'de> Deserialize<'de> for Hash {
         D: Deserializer<'de>,
     {
         deserializer.deserialize_str(HashVisitor)
+    }
+}
+
+impl Serialize for Hash {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let mut buf = [0u8; HASH_BYTES * 2];
+
+        hex::encode_to_slice(&self.0, &mut buf).expect("Buffer has fixed size; qed");
+
+        serializer.serialize_str(
+            std::str::from_utf8(&buf).expect("Hex encoding is always valid utf8; qed"),
+        )
     }
 }
 

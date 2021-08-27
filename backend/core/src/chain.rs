@@ -12,7 +12,7 @@ use crate::node::{
     Node,
 };
 use crate::types::{Block, BlockNumber, ConnId, NodeDetails, NodeId, NodeLocation, Timestamp};
-use crate::util::{now, DenseMap, NumStats};
+use crate::util::{now, DenseMap, Hash, NumStats};
 
 const STALE_TIMEOUT: u64 = 2 * 60 * 1000; // 2 minutes
 
@@ -21,6 +21,8 @@ pub type Label = Arc<str>;
 
 pub struct Chain {
     cid: ChainId,
+    /// Genesis hash of this Chain.
+    genesis_hash: Hash,
     /// Who to inform if the Chain drops itself
     aggregator: Addr<Aggregator>,
     /// Label of this chain, along with count of nodes that use this label
@@ -48,11 +50,17 @@ pub struct Chain {
 }
 
 impl Chain {
-    pub fn new(cid: ChainId, aggregator: Addr<Aggregator>, label: Label) -> Self {
+    pub fn new(
+        cid: ChainId,
+        genesis_hash: Hash,
+        aggregator: Addr<Aggregator>,
+        label: Label,
+    ) -> Self {
         log::info!("[{}] Created", label);
 
         Chain {
             cid,
+            genesis_hash,
             aggregator,
             label: (label, 0),
             nodes: DenseMap::new(),
@@ -482,7 +490,7 @@ impl Handler<Subscribe> for Chain {
 
         feed.do_send(Subscribed(fid, ctx.address().recipient()));
 
-        self.serializer.push(feed::SubscribedTo(&self.label.0));
+        self.serializer.push(feed::SubscribedTo(self.genesis_hash));
         self.serializer.push(feed::TimeSync(now()));
         self.serializer.push(feed::BestBlock(
             self.best.height,
@@ -551,7 +559,8 @@ impl Handler<Unsubscribe> for Chain {
         let Unsubscribe(fid) = msg;
 
         if let Some(feed) = self.feeds.get(fid) {
-            self.serializer.push(feed::UnsubscribedFrom(&self.label.0));
+            self.serializer
+                .push(feed::UnsubscribedFrom(self.genesis_hash));
 
             if let Some(serialized) = self.serializer.finalize() {
                 feed.do_send(serialized);

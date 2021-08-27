@@ -7,6 +7,7 @@ use crate::types::{
     Address, BlockDetails, BlockHash, BlockNumber, NodeHardware, NodeIO, NodeId, NodeStats,
     Timestamp,
 };
+use crate::util::Hash;
 use serde_json::to_writer;
 
 pub mod connector;
@@ -82,9 +83,9 @@ actions! {
     0x09: Hardware<'_>,
     0x0A: TimeSync,
     0x0B: AddedChain<'_>,
-    0x0C: RemovedChain<'_>,
-    0x0D: SubscribedTo<'_>,
-    0x0E: UnsubscribedFrom<'_>,
+    0x0C: RemovedChain,
+    0x0D: SubscribedTo,
+    0x0E: UnsubscribedFrom,
     0x0F: Pong<'_>,
     0x10: AfgFinalized,
     0x11: AfgReceivedPrevote,
@@ -130,16 +131,16 @@ pub struct Hardware<'a>(pub NodeId, pub &'a NodeHardware);
 pub struct TimeSync(pub u64);
 
 #[derive(Serialize)]
-pub struct AddedChain<'a>(pub &'a str, pub usize);
+pub struct AddedChain<'a>(pub &'a str, pub Hash, pub usize);
 
 #[derive(Serialize)]
-pub struct RemovedChain<'a>(pub &'a str);
+pub struct RemovedChain(pub Hash);
 
 #[derive(Serialize)]
-pub struct SubscribedTo<'a>(pub &'a str);
+pub struct SubscribedTo(pub Hash);
 
 #[derive(Serialize)]
-pub struct UnsubscribedFrom<'a>(pub &'a str);
+pub struct UnsubscribedFrom(pub Hash);
 
 #[derive(Serialize)]
 pub struct Pong<'a>(pub &'a str);
