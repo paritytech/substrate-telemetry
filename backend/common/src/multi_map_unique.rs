@@ -87,12 +87,20 @@ impl<K, V> MultiMapUnique<K, V> {
     /// values can exist for a single key, but only one of each value can
     /// exist in the MultiMap.
     ///
+    /// If a previous value did exist, the old key it was inserted against
+    /// is returned.
+    ///
     /// ```
     /// let mut m = common::MultiMapUnique::new();
     ///
-    /// m.insert("a", 1);
-    /// m.insert("b", 1);
-    /// m.insert("c", 1);
+    /// let old_key = m.insert("a", 1);
+    /// assert_eq!(old_key, None);
+    ///
+    /// let old_key = m.insert("b", 1);
+    /// assert_eq!(old_key, Some("a"));
+    ///
+    /// let old_key = m.insert("c", 1);
+    /// assert_eq!(old_key, Some("b"));
     ///
     /// assert_eq!(m.num_keys(), 1);
     /// assert_eq!(m.num_values(), 1);
@@ -103,17 +111,19 @@ impl<K, V> MultiMapUnique<K, V> {
     /// assert!(m.get_values(&"b").is_none());
     /// assert_eq!(m.get_values(&"c").unwrap().iter().collect::<Vec<_>>(), vec![&1]);
     /// ```
-    pub fn insert(&mut self, key: K, value: V)
+    pub fn insert(&mut self, key: K, value: V) -> Option<K>
     where
         V: Clone + Eq + Hash,
         K: Clone + Eq + Hash,
     {
         // Ensure that the value doesn't exist elsewhere already;
         // values must be unique and only belong to one key:
-        self.remove_value(&value);
+        let old_key = self.remove_value(&value);
 
         self.value_to_key.insert(value.clone(), key.clone());
         self.key_to_values.entry(key).or_default().insert(value);
+
+        old_key
     }
 
     /// Number of values stored in the map
