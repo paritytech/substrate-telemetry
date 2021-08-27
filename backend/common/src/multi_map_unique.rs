@@ -19,12 +19,12 @@ use std::hash::Hash;
 /// A map where each key can contain multiple values. We enforce that a value
 /// only ever belongs to one key at a time (the latest key it was inserted
 /// against).
-pub struct MultiMap<K, V> {
+pub struct MultiMapUnique<K, V> {
     value_to_key: HashMap<V, K>,
     key_to_values: HashMap<K, HashSet<V>>,
 }
 
-impl<K, V> MultiMap<K, V> {
+impl<K, V> MultiMapUnique<K, V> {
     /// Construct a new MultiMap
     pub fn new() -> Self {
         Self {
@@ -43,6 +43,29 @@ impl<K, V> MultiMap<K, V> {
 
     /// Remove a value from the MultiMap, returning the key it was found
     /// under, if it was found at all.
+    ///
+    /// ```
+    /// let mut m = common::MultiMapUnique::new();
+    ///
+    /// m.insert("a", 1);
+    /// m.insert("a", 2);
+    ///
+    /// m.insert("b", 3);
+    /// m.insert("b", 4);
+    ///
+    /// assert_eq!(m.num_keys(), 2);
+    /// assert_eq!(m.num_values(), 4);
+    ///
+    /// m.remove_value(&1);
+    ///
+    /// assert_eq!(m.num_keys(), 2);
+    /// assert_eq!(m.num_values(), 3);
+    ///
+    /// m.remove_value(&2);
+    ///
+    /// assert_eq!(m.num_keys(), 1);
+    /// assert_eq!(m.num_values(), 2);
+    /// ```
     pub fn remove_value(&mut self, value: &V) -> Option<K>
     where
         V: Eq + Hash,
@@ -60,9 +83,26 @@ impl<K, V> MultiMap<K, V> {
         None
     }
 
-    /// Insert a key+valeu pair into the multimap. Multiple values
-    /// can exist for a single key, but only one of each value can
+    /// Insert a key+value pair into the multimap. Multiple different
+    /// values can exist for a single key, but only one of each value can
     /// exist in the MultiMap.
+    ///
+    /// ```
+    /// let mut m = common::MultiMapUnique::new();
+    ///
+    /// m.insert("a", 1);
+    /// m.insert("b", 1);
+    /// m.insert("c", 1);
+    ///
+    /// assert_eq!(m.num_keys(), 1);
+    /// assert_eq!(m.num_values(), 1);
+    ///
+    /// // The value `1` must be unique in the map, so it only exists
+    /// // in the last location it was inserted:
+    /// assert!(m.get_values(&"a").is_none());
+    /// assert!(m.get_values(&"b").is_none());
+    /// assert_eq!(m.get_values(&"c").unwrap().iter().collect::<Vec<_>>(), vec![&1]);
+    /// ```
     pub fn insert(&mut self, key: K, value: V)
     where
         V: Clone + Eq + Hash,
@@ -93,20 +133,8 @@ mod test {
     use super::*;
 
     #[test]
-    fn value_is_unique() {
-        let mut m = MultiMap::new();
-
-        m.insert("a", 1);
-        m.insert("b", 1);
-        m.insert("c", 1);
-
-        assert_eq!(m.num_keys(), 1);
-        assert_eq!(m.num_values(), 1);
-    }
-
-    #[test]
     fn multiple_values_allowed_per_key() {
-        let mut m = MultiMap::new();
+        let mut m = MultiMapUnique::new();
 
         m.insert("a", 1);
         m.insert("a", 2);
@@ -126,27 +154,4 @@ mod test {
         assert!(b_vals.contains(&4));
     }
 
-    #[test]
-    fn can_remove_value() {
-        let mut m = MultiMap::new();
-
-        m.insert("a", 1);
-        m.insert("a", 2);
-
-        m.insert("b", 3);
-        m.insert("b", 4);
-
-        assert_eq!(m.num_keys(), 2);
-        assert_eq!(m.num_values(), 4);
-
-        m.remove_value(&1);
-
-        assert_eq!(m.num_keys(), 2);
-        assert_eq!(m.num_values(), 3);
-
-        m.remove_value(&2);
-
-        assert_eq!(m.num_keys(), 1);
-        assert_eq!(m.num_values(), 2);
-    }
 }

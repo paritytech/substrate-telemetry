@@ -31,6 +31,7 @@ mod either_sink;
 mod mean_list;
 mod most_seen;
 mod num_stats;
+mod multi_map_unique;
 
 // Export a bunch of common bits at the top level for ease of import:
 pub use assign_id::AssignId;
@@ -39,3 +40,4 @@ pub use either_sink::EitherSink;
 pub use mean_list::MeanList;
 pub use most_seen::MostSeen;
 pub use num_stats::NumStats;
+pub use multi_map_unique::MultiMapUnique;

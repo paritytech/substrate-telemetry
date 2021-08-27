@@ -15,7 +15,6 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use super::aggregator::ConnId;
-use super::multimap::MultiMap;
 use crate::feed_message::{self, FeedMessageSerializer};
 use crate::find_location;
 use crate::state::{self, NodeId, State};
@@ -25,6 +24,7 @@ use common::{
     node_message,
     node_types::BlockHash,
     time,
+    MultiMapUnique
 };
 use std::collections::{HashMap, HashSet};
 use std::sync::{
@@ -171,7 +171,7 @@ pub struct InnerLoop {
     shard_channels: HashMap<ConnId, flume::Sender<ToShardWebsocket>>,
 
     /// Which feeds are subscribed to a given chain?
-    chain_to_feed_conn_ids: MultiMap<BlockHash, ConnId>,
+    chain_to_feed_conn_ids: MultiMapUnique<BlockHash, ConnId>,
 
     /// These feeds want finality info, too.
     feed_conn_id_finality: HashSet<ConnId>,
@@ -196,7 +196,7 @@ impl InnerLoop {
             node_ids: BiMap::new(),
             feed_channels: HashMap::new(),
             shard_channels: HashMap::new(),
-            chain_to_feed_conn_ids: MultiMap::new(),
+            chain_to_feed_conn_ids: MultiMapUnique::new(),
             feed_conn_id_finality: HashSet::new(),
             tx_to_locator,
             max_queue_len,
