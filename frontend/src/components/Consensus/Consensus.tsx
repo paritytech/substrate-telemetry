@@ -427,12 +427,12 @@ export class Consensus extends React.Component<Consensus.Props, {}> {
     );
   }
 
-  private async subscribeConsensus(chain: Types.ChainLabel) {
+  private async subscribeConsensus(chain: Types.GenesisHash) {
     const connection = await this.props.connection;
     connection.subscribeConsensus(chain);
   }
 
-  private async unsubscribeConsensus(chain: Types.ChainLabel) {
+  private async unsubscribeConsensus(chain: Types.GenesisHash) {
     const connection = await this.props.connection;
     connection.unsubscribeConsensus(chain);
   }

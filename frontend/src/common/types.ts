@@ -19,6 +19,7 @@ import { Id } from './id';
 
 export type FeedVersion = Opaque<number, 'FeedVersion'>;
 export type ChainLabel = Opaque<string, 'ChainLabel'>;
+export type GenesisHash = Opaque<string, 'GenesisHash'>;
 export type FeedId = Id<'Feed'>;
 export type NodeId = Id<'Node'>;
 export type NodeName = Opaque<string, 'NodeName'>;

@@ -275,8 +275,8 @@ export interface State {
   blockTimestamp: Types.Timestamp;
   blockAverage: Maybe<Types.Milliseconds>;
   timeDiff: Types.Milliseconds;
-  subscribed: Maybe<Types.ChainLabel>;
-  chains: Map<Types.ChainLabel, ChainData>;
+  subscribed: Maybe<Types.GenesisHash>;
+  chains: Map<Types.GenesisHash, ChainData>;
   nodes: SortedCollection<Node>;
   settings: Readonly<State.Settings>;
   pins: Readonly<Set<Types.NodeName>>;
@@ -290,5 +290,6 @@ export type Update = <K extends keyof State>(
 
 export interface ChainData {
   label: Types.ChainLabel;
+  genesisHash: Types.GenesisHash;
   nodeCount: Types.NodeCount;
 }

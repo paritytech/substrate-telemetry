@@ -35,6 +35,7 @@ import {
   Timestamp,
   Milliseconds,
   ChainLabel,
+  GenesisHash,
   AuthoritySetInfo,
 } from './types';
 
@@ -142,22 +143,22 @@ export namespace Variants {
 
   export interface AddedChainMessage extends MessageBase {
     action: typeof ACTIONS.AddedChain;
-    payload: [ChainLabel, NodeCount];
+    payload: [ChainLabel, GenesisHash, NodeCount];
   }
 
   export interface RemovedChainMessage extends MessageBase {
     action: typeof ACTIONS.RemovedChain;
-    payload: ChainLabel;
+    payload: GenesisHash;
   }
 
   export interface SubscribedToMessage extends MessageBase {
     action: typeof ACTIONS.SubscribedTo;
-    payload: ChainLabel;
+    payload: GenesisHash;
   }
 
   export interface UnsubscribedFromMessage extends MessageBase {
     action: typeof ACTIONS.UnsubscribedFrom;
-    payload: ChainLabel;
+    payload: GenesisHash;
   }
 
   export interface PongMessage extends MessageBase {
