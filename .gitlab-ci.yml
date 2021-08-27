@@ -28,7 +28,7 @@ stages:
     - |-
       helm repo add parity https://paritytech.github.io/helm-charts/
       helm repo update
-      kubectl get cm helm-custom-values -n substrate-telemetry -o jsonpath='{.data.values-parity\.yaml}' > values-parity.yaml
+      kubectl get cm helm-custom-values -n $KUBE_NAMESPACE -o jsonpath='{.data.values-parity\.yaml}' > values-parity.yaml
     - helm upgrade
         --install
         --atomic
