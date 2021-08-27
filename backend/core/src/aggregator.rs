@@ -97,10 +97,10 @@ impl Aggregator {
         cid
     }
 
-    fn get_chain(&mut self, label: &str) -> Option<&mut ChainEntry> {
+    fn get_chain(&mut self, genesis_hash: &Hash) -> Option<&mut ChainEntry> {
         let chains = &mut self.chains;
-        self.labels
-            .get(label)
+        self.genesis_hashes
+            .get(genesis_hash)
             .and_then(move |&cid| chains.get_mut(cid))
     }
 
@@ -144,7 +144,7 @@ pub struct RenameChain(pub ChainId, pub Label);
 #[derive(Message)]
 #[rtype(result = "bool")]
 pub struct Subscribe {
-    pub chain: Label,
+    pub genesis_hash: Hash,
     pub feed: Addr<FeedConnector>,
 }
 
@@ -152,7 +152,7 @@ pub struct Subscribe {
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct SendFinality {
-    pub chain: Label,
+    pub genesis_hash: Hash,
     pub fid: FeedId,
 }
 
@@ -160,7 +160,7 @@ pub struct SendFinality {
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct NoMoreFinality {
-    pub chain: Label,
+    pub genesis_hash: Hash,
     pub fid: FeedId,
 }
 
@@ -277,9 +277,9 @@ impl Handler<Subscribe> for Aggregator {
     type Result = bool;
 
     fn handle(&mut self, msg: Subscribe, _: &mut Self::Context) -> bool {
-        let Subscribe { chain, feed } = msg;
+        let Subscribe { genesis_hash, feed } = msg;
 
-        if let Some(chain) = self.get_chain(&chain) {
+        if let Some(chain) = self.get_chain(&genesis_hash) {
             chain.addr.do_send(chain::Subscribe(feed));
             true
         } else {
@@ -292,8 +292,8 @@ impl Handler<SendFinality> for Aggregator {
     type Result = ();
 
     fn handle(&mut self, msg: SendFinality, _: &mut Self::Context) {
-        let SendFinality { chain, fid } = msg;
-        if let Some(chain) = self.get_chain(&chain) {
+        let SendFinality { genesis_hash, fid } = msg;
+        if let Some(chain) = self.get_chain(&genesis_hash) {
             chain.addr.do_send(chain::SendFinality(fid));
         }
     }
@@ -303,8 +303,8 @@ impl Handler<NoMoreFinality> for Aggregator {
     type Result = ();
 
     fn handle(&mut self, msg: NoMoreFinality, _: &mut Self::Context) {
-        let NoMoreFinality { chain, fid } = msg;
-        if let Some(chain) = self.get_chain(&chain) {
+        let NoMoreFinality { genesis_hash, fid } = msg;
+        if let Some(chain) = self.get_chain(&genesis_hash) {
             chain.addr.do_send(chain::NoMoreFinality(fid));
         }
     }
