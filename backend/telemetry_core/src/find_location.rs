@@ -22,6 +22,7 @@ use parking_lot::RwLock;
 use rustc_hash::FxHashMap;
 use serde::Deserialize;
 
+use anyhow::Context;
 use common::node_types::NodeLocation;
 use tokio::sync::Semaphore;
 
@@ -38,16 +39,16 @@ where
     let (tx, rx) = flume::unbounded();
 
     // cache entries
-    let mut cache: FxHashMap<Ipv4Addr, Option<Arc<NodeLocation>>> = FxHashMap::default();
+    let mut cache: FxHashMap<Ipv4Addr, Arc<NodeLocation>> = FxHashMap::default();
 
     // Default entry for localhost
     cache.insert(
         Ipv4Addr::new(127, 0, 0, 1),
-        Some(Arc::new(NodeLocation {
+        Arc::new(NodeLocation {
             latitude: 52.516_6667,
             longitude: 13.4,
             city: "Berlin".into(),
-        })),
+        }),
     );
 
     // Create a locator with our cache. This is used to obtain locations.
@@ -68,14 +69,8 @@ where
                 // Once we have acquired our permit, spawn a task to avoid
                 // blocking this loop so that we can handle concurrent requests.
                 tokio::spawn(async move {
-                    match locator.locate(ip_address).await {
-                        Ok(loc) => {
-                            let _ = response_chan.send((id, loc)).await;
-                        }
-                        Err(e) => {
-                            log::debug!("GET error for ip location: {:?}", e);
-                        }
-                    };
+                    let location = locator.locate(ip_address).await;
+                    let _ = response_chan.send((id, location)).await;
 
                     // ensure permit is moved into task by dropping it explicitly:
                     drop(permit);
@@ -92,11 +87,11 @@ where
 #[derive(Clone)]
 struct Locator {
     client: reqwest::Client,
-    cache: Arc<RwLock<FxHashMap<Ipv4Addr, Option<Arc<NodeLocation>>>>>,
+    cache: Arc<RwLock<FxHashMap<Ipv4Addr, Arc<NodeLocation>>>>,
 }
 
 impl Locator {
-    pub fn new(cache: FxHashMap<Ipv4Addr, Option<Arc<NodeLocation>>>) -> Self {
+    pub fn new(cache: FxHashMap<Ipv4Addr, Arc<NodeLocation>>) -> Self {
         let client = reqwest::Client::new();
 
         Locator {
@@ -105,68 +100,84 @@ impl Locator {
         }
     }
 
-    pub async fn locate(&self, ip: Ipv4Addr) -> Result<Option<Arc<NodeLocation>>, reqwest::Error> {
+    pub async fn locate(&self, ip: Ipv4Addr) -> Option<Arc<NodeLocation>> {
         // Return location quickly if it's cached:
         let cached_loc = {
             let cache_reader = self.cache.read();
             cache_reader.get(&ip).cloned()
         };
-        if let Some(loc) = cached_loc {
-            return Ok(loc);
+        if cached_loc.is_some() {
+            return cached_loc;
         }
 
-        // Look it up via the location services if not cached:
-        let location = self.iplocate_ipapi_co(ip).await?;
-        let location = match location {
-            Some(location) => Ok(Some(location)),
-            None => self.iplocate_ipinfo_io(ip).await,
-        }?;
+        // Look it up via ipapi.co:
+        let mut location = self.iplocate_ipapi_co(ip).await;
 
-        self.cache.write().insert(ip, location.clone());
-        Ok(location)
+        // If that fails, try looking it up via ipinfo.co instead:
+        if let Err(e) = &location {
+            log::warn!(
+                "Couldn't obtain location information for {} from ipapi.co: {}",
+                ip,
+                e
+            );
+            location = self.iplocate_ipinfo_io(ip).await
+        }
+
+        // If both fail, we've logged the errors and we'll return None.
+        if let Err(e) = &location {
+            log::warn!(
+                "Couldn't obtain location information for {} from ipinfo.co: {}",
+                ip,
+                e
+            );
+        }
+
+        // If we successfully obtained a location, cache it
+        if let Ok(location) = &location {
+            self.cache.write().insert(ip, location.clone());
+        }
+
+        // Discard the error; we've logged information above.
+        location.ok()
     }
 
-    async fn iplocate_ipapi_co(
-        &self,
-        ip: Ipv4Addr,
-    ) -> Result<Option<Arc<NodeLocation>>, reqwest::Error> {
+    async fn iplocate_ipapi_co(&self, ip: Ipv4Addr) -> Result<Arc<NodeLocation>, anyhow::Error> {
+        let location = self.query(&format!("https://ipapi.co/{}/json", ip)).await?;
+
+        Ok(Arc::new(location))
+    }
+
+    async fn iplocate_ipinfo_io(&self, ip: Ipv4Addr) -> Result<Arc<NodeLocation>, anyhow::Error> {
         let location = self
-            .query(&format!("https://ipapi.co/{}/json", ip))
+            .query::<IPApiLocate>(&format!("https://ipinfo.io/{}/json", ip))
             .await?
-            .map(Arc::new);
+            .into_node_location()
+            .with_context(|| "Could not convert response into node location")?;
 
-        Ok(location)
+        Ok(Arc::new(location))
     }
 
-    async fn iplocate_ipinfo_io(
-        &self,
-        ip: Ipv4Addr,
-    ) -> Result<Option<Arc<NodeLocation>>, reqwest::Error> {
-        let location = self
-            .query(&format!("https://ipinfo.io/{}/json", ip))
-            .await?
-            .and_then(|loc: IPApiLocate| loc.into_node_location().map(Arc::new));
-
-        Ok(location)
-    }
-
-    async fn query<T>(&self, url: &str) -> Result<Option<T>, reqwest::Error>
+    async fn query<T>(&self, url: &str) -> Result<T, anyhow::Error>
     where
         for<'de> T: Deserialize<'de>,
     {
-        match self.client.get(url).send().await?.json::<T>().await {
-            Ok(result) => Ok(Some(result)),
-            Err(err) => {
-                log::debug!("JSON error for ip location: {:?}", err);
-                Ok(None)
-            }
-        }
+        let res = self
+            .client
+            .get(url)
+            .send()
+            .await?
+            .bytes()
+            .await
+            .with_context(|| "Failed to obtain response body")?;
+
+        serde_json::from_slice(&res)
+            .with_context(|| format!{"Failed to decode '{}'", std::str::from_utf8(&res).unwrap_or("INVALID_UTF8")})
     }
 }
 
 /// This is the format returned from ipinfo.co, so we do
 /// a little conversion to get it into the shape we want.
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug, Clone)]
 struct IPApiLocate {
     city: Box<str>,
     loc: Box<str>,

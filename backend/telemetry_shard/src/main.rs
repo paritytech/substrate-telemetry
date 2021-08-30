@@ -134,7 +134,7 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
                 (&Method::GET, "/health") => Ok(Response::new("OK".into())),
                 // Nodes send messages here:
                 (&Method::GET, "/submit") => {
-                    let real_addr = real_ip::real_ip(addr, req.headers());
+                    let (real_addr, real_addr_source) = real_ip::real_ip(addr, req.headers());
 
                     if let Some(reason) = block_list.blocked_reason(&real_addr) {
                         return Ok(Response::builder().status(403).body(reason.into()).unwrap());
@@ -143,7 +143,11 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
                     Ok(http_utils::upgrade_to_websocket(
                         req,
                         move |ws_send, ws_recv| async move {
-                            log::info!("Opening /submit connection from {:?}", addr);
+                            log::info!(
+                                "Opening /submit connection from {:?} (address source: {})",
+                                real_addr,
+                                real_addr_source
+                            );
                             let tx_to_aggregator = aggregator.subscribe_node();
                             let (mut tx_to_aggregator, mut ws_send) =
                                 handle_node_websocket_connection(
@@ -156,7 +160,11 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
                                     block_list,
                                 )
                                 .await;
-                            log::info!("Closing /submit connection from {:?}", addr);
+                            log::info!(
+                                "Closing /submit connection from {:?} (address source: {})",
+                                real_addr,
+                                real_addr_source
+                            );
                             // Tell the aggregator that this connection has closed, so it can tidy up.
                             let _ = tx_to_aggregator.send(FromWebsocket::Disconnected).await;
                             let _ = ws_send.close().await;
