@@ -198,6 +198,26 @@ mod test {
     use super::*;
 
     #[test]
+    fn deosnt_grow_beyond_window_size() {
+        let start_time = Instant::now();
+        let granularity = Duration::from_secs(1);
+        let mut rolling_total = RollingTotalBuilder::new()
+            .granularity(granularity)
+            .window_size_multiple(3) // There should be no more than 3 buckets ever,
+            .time_source(UserTimeSource(start_time))
+            .start();
+
+        for n in 0..1_000 {
+            rolling_total.push(n);
+            rolling_total
+                .time_source()
+                .increment_by(Duration::from_millis(300)); // multiple values per granularity.
+        }
+
+        assert_eq!(rolling_total.averages().len(), 3);
+    }
+
+    #[test]
     fn times_grouped_by_granularity_spacing() {
         let start_time = Instant::now();
         let granularity = Duration::from_secs(1);
