@@ -215,6 +215,7 @@ mod test {
         }
 
         assert_eq!(rolling_total.averages().len(), 3);
+        assert!(rolling_total.averages().capacity() < 10); // Just to show that it's capacity is bounded.
     }
 
     #[test]
