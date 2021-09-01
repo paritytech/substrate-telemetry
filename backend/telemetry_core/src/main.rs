@@ -34,6 +34,13 @@ use hyper::{Method, Response};
 use simple_logger::SimpleLogger;
 use structopt::StructOpt;
 
+#[cfg(not(target_env = "msvc"))]
+use jemallocator::Jemalloc;
+
+#[cfg(not(target_env = "msvc"))]
+#[global_allocator]
+static GLOBAL: Jemalloc = Jemalloc;
+
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
 const NAME: &str = "Substrate Telemetry Backend Core";
