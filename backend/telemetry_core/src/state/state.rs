@@ -47,7 +47,6 @@ pub struct State {
 
     // Find the right chain given various details.
     chains_by_genesis_hash: HashMap<BlockHash, ChainId>,
-    chains_by_label: HashMap<Box<str>, ChainId>,
 
     /// Chain labels that we do not want to allow connecting.
     denylist: HashSet<String>,
@@ -96,6 +95,8 @@ pub struct RemovedNode {
     pub has_chain_label_changed: bool,
     /// The old label of the chain.
     pub old_chain_label: Box<str>,
+    /// Genesis hash of the chain to be updated.
+    pub chain_genesis_hash: BlockHash,
     /// The new label of the chain.
     pub new_chain_label: Box<str>,
 }
@@ -105,7 +106,6 @@ impl State {
         State {
             chains: DenseMap::new(),
             chains_by_genesis_hash: HashMap::new(),
-            chains_by_label: HashMap::new(),
             denylist: denylist.into_iter().collect(),
         }
     }
@@ -123,13 +123,6 @@ impl State {
     pub fn get_chain_by_genesis_hash(&self, genesis_hash: &BlockHash) -> Option<StateChain<'_>> {
         self.chains_by_genesis_hash
             .get(genesis_hash)
-            .and_then(|&chain_id| self.chains.get(chain_id))
-            .map(|chain| StateChain { chain })
-    }
-
-    pub fn get_chain_by_label(&self, label: &str) -> Option<StateChain<'_>> {
-        self.chains_by_label
-            .get(label)
             .and_then(|&chain_id| self.chains.get(chain_id))
             .map(|chain| StateChain { chain })
     }
@@ -169,17 +162,10 @@ impl State {
             chain::AddNodeResult::Added { id, chain_renamed } => {
                 let chain = &*chain;
 
-                // Update the label we use to reference the chain if
-                // it changes (it'll always change first time a node's added):
-                if chain_renamed {
-                    self.chains_by_label.remove(&old_chain_label);
-                    self.chains_by_label.insert(chain.label().into(), chain_id);
-                }
-
                 AddNodeResult::NodeAddedToChain(NodeAddedToChain {
                     id: NodeId(chain_id, id),
                     node: chain.get_node(id).expect("node added above"),
-                    old_chain_label: old_chain_label,
+                    old_chain_label,
                     new_chain_label: chain.label(),
                     chain_node_count: chain.node_count(),
                     has_chain_label_changed: chain_renamed,
@@ -199,26 +185,20 @@ impl State {
         // Get updated chain details.
         let new_chain_label: Box<str> = chain.label().into();
         let chain_node_count = chain.node_count();
+        let chain_genesis_hash = chain.genesis_hash();
 
         // Is the chain empty? Remove if so and clean up indexes to it
         if chain_node_count == 0 {
-            let genesis_hash = *chain.genesis_hash();
-            self.chains_by_label.remove(&old_chain_label);
+            let genesis_hash = chain.genesis_hash();
             self.chains_by_genesis_hash.remove(&genesis_hash);
             self.chains.remove(chain_id);
-        }
-
-        // Make sure chains always referenced by their most common label:
-        if remove_result.chain_renamed {
-            self.chains_by_label.remove(&old_chain_label);
-            self.chains_by_label
-                .insert(new_chain_label.clone(), chain_id);
         }
 
         Some(RemovedNode {
             old_chain_label,
             new_chain_label,
-            chain_node_count: chain_node_count,
+            chain_node_count,
+            chain_genesis_hash,
             has_chain_label_changed: remove_result.chain_renamed,
         })
     }
@@ -268,7 +248,7 @@ impl<'a> StateChain<'a> {
     pub fn label(&self) -> &'a str {
         self.chain.label()
     }
-    pub fn genesis_hash(&self) -> &'a BlockHash {
+    pub fn genesis_hash(&self) -> BlockHash {
         self.chain.genesis_hash()
     }
     pub fn node_count(&self) -> usize {
@@ -358,7 +338,6 @@ mod test {
                 .label(),
             "Chain One"
         );
-        assert!(state.get_chain_by_label("Chain One").is_some());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_some());
 
         let node_id1 = state
@@ -373,7 +352,6 @@ mod test {
                 .label(),
             "Chain One"
         );
-        assert!(state.get_chain_by_label("Chain One").is_some());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_some());
 
         let node_id2 = state
@@ -388,8 +366,6 @@ mod test {
                 .label(),
             "Chain Two"
         );
-        assert!(state.get_chain_by_label("Chain One").is_none());
-        assert!(state.get_chain_by_label("Chain Two").is_some());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_some());
 
         state.remove_node(node_id1).expect("Removal OK (id: 1)");
@@ -403,8 +379,6 @@ mod test {
                 .label(),
             "Chain One"
         );
-        assert!(state.get_chain_by_label("Chain One").is_some());
-        assert!(state.get_chain_by_label("Chain Two").is_none());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_some());
     }
 
@@ -417,13 +391,11 @@ mod test {
             .add_node(chain1_genesis, node("A", "Chain One")) // 0
             .unwrap_id();
 
-        assert!(state.get_chain_by_label("Chain One").is_some());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_some());
         assert_eq!(state.iter_chains().count(), 1);
 
         state.remove_node(node_id);
 
-        assert!(state.get_chain_by_label("Chain One").is_none());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_none());
         assert_eq!(state.iter_chains().count(), 0);
     }

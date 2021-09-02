@@ -27,7 +27,7 @@ import './Chains.css';
 export namespace Chains {
   export interface Props {
     chains: ChainData[];
-    subscribed: Maybe<Types.ChainLabel>;
+    subscribed: Maybe<Types.GenesisHash>;
     connection: Promise<Connection>;
   }
 }
@@ -39,7 +39,7 @@ const RENDER_THROTTLE = 1000;
 
 export class Chains extends React.Component<Chains.Props, {}> {
   private lastRender = performance.now();
-  private clicked: Maybe<Types.ChainLabel>;
+  private clicked: Maybe<Types.GenesisHash>;
 
   public shouldComponentUpdate(nextProps: Chains.Props) {
     if (nextProps.subscribed !== this.clicked) {
@@ -83,11 +83,11 @@ export class Chains extends React.Component<Chains.Props, {}> {
   }
 
   private renderChain(chain: ChainData): React.ReactNode {
-    const { label, nodeCount } = chain;
+    const { label, genesisHash, nodeCount } = chain;
 
     let className = 'Chains-chain';
 
-    if (label === this.props.subscribed) {
+    if (genesisHash === this.props.subscribed) {
       className += ' Chains-chain-selected';
     }
 
@@ -95,7 +95,7 @@ export class Chains extends React.Component<Chains.Props, {}> {
       <a
         key={label}
         className={className}
-        onClick={this.subscribe.bind(this, label)}
+        onClick={this.subscribe.bind(this, genesisHash)}
       >
         {label}
         <span className="Chains-node-count" title="Node Count">
@@ -105,7 +105,7 @@ export class Chains extends React.Component<Chains.Props, {}> {
     );
   }
 
-  private async subscribe(chain: Types.ChainLabel) {
+  private async subscribe(chain: Types.GenesisHash) {
     if (chain === this.clicked) {
       return;
     }

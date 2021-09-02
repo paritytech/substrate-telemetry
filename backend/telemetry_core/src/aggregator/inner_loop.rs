@@ -94,7 +94,7 @@ pub enum FromFeedWebsocket {
     },
     /// The feed can subscribe to a chain to receive
     /// messages relating to it.
-    Subscribe { chain: Box<str> },
+    Subscribe { chain: BlockHash },
     /// The feed wants finality info for the chain, too.
     SendFinality,
     /// The feed doesn't want any more finality info for the chain.
@@ -136,12 +136,16 @@ impl FromStr for FromFeedWebsocket {
     type Err = anyhow::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (cmd, value) = match s.find(':') {
-            Some(idx) => (&s[..idx], s[idx + 1..].into()),
+            Some(idx) => (&s[..idx], &s[idx + 1..]),
             None => return Err(anyhow::anyhow!("Expecting format `CMD:CHAIN_NAME`")),
         };
         match cmd {
-            "ping" => Ok(FromFeedWebsocket::Ping { value }),
-            "subscribe" => Ok(FromFeedWebsocket::Subscribe { chain: value }),
+            "ping" => Ok(FromFeedWebsocket::Ping {
+                value: value.into(),
+            }),
+            "subscribe" => Ok(FromFeedWebsocket::Subscribe {
+                chain: value.parse()?,
+            }),
             "send-finality" => Ok(FromFeedWebsocket::SendFinality),
             "no-more-finality" => Ok(FromFeedWebsocket::NoMoreFinality),
             _ => return Err(anyhow::anyhow!("Command {} not recognised", cmd)),
@@ -306,7 +310,7 @@ impl InnerLoop {
             let chain_genesis_hash = self
                 .node_state
                 .get_chain_by_node_id(node_id)
-                .map(|chain| *chain.genesis_hash());
+                .map(|chain| chain.genesis_hash());
 
             if let Some(chain_genesis_hash) = chain_genesis_hash {
                 self.finalize_and_broadcast_to_chain_feeds(
@@ -353,7 +357,6 @@ impl InnerLoop {
                         self.node_ids.insert(node_id, (shard_conn_id, local_id));
 
                         // Don't hold onto details too long because we want &mut self later:
-                        let old_chain_label = details.old_chain_label.to_owned();
                         let new_chain_label = details.new_chain_label.to_owned();
                         let chain_node_count = details.chain_node_count;
                         let has_chain_label_changed = details.has_chain_label_changed;
@@ -371,11 +374,13 @@ impl InnerLoop {
                         // Tell everybody about the new node count and potential rename:
                         let mut feed_messages_for_all = FeedMessageSerializer::new();
                         if has_chain_label_changed {
-                            feed_messages_for_all
-                                .push(feed_message::RemovedChain(&old_chain_label));
+                            feed_messages_for_all.push(feed_message::RemovedChain(genesis_hash));
                         }
-                        feed_messages_for_all
-                            .push(feed_message::AddedChain(&new_chain_label, chain_node_count));
+                        feed_messages_for_all.push(feed_message::AddedChain(
+                            &new_chain_label,
+                            genesis_hash,
+                            chain_node_count,
+                        ));
                         self.finalize_and_broadcast_to_all_feeds(feed_messages_for_all);
 
                         // Ask for the grographical location of the node.
@@ -419,7 +424,7 @@ impl InnerLoop {
                         .update_node(node_id, payload, &mut feed_message_serializer);
 
                 if let Some(chain) = self.node_state.get_chain_by_node_id(node_id) {
-                    let genesis_hash = *chain.genesis_hash();
+                    let genesis_hash = chain.genesis_hash();
                     if broadcast_finality {
                         self.finalize_and_broadcast_to_chain_finality_feeds(
                             &genesis_hash,
@@ -456,10 +461,13 @@ impl InnerLoop {
 
                 // Tell the new feed subscription some basic things to get it going:
                 let mut feed_serializer = FeedMessageSerializer::new();
-                feed_serializer.push(feed_message::Version(31));
+                feed_serializer.push(feed_message::Version(32));
                 for chain in self.node_state.iter_chains() {
-                    feed_serializer
-                        .push(feed_message::AddedChain(chain.label(), chain.node_count()));
+                    feed_serializer.push(feed_message::AddedChain(
+                        chain.label(),
+                        chain.genesis_hash(),
+                        chain.node_count(),
+                    ));
                 }
 
                 // Send this to the channel that subscribed:
@@ -498,7 +506,7 @@ impl InnerLoop {
                     old_genesis_hash.and_then(|hash| node_state.get_chain_by_genesis_hash(&hash));
 
                 // Get new chain, ignoring the rest if it doesn't exist.
-                let new_chain = match self.node_state.get_chain_by_label(&chain) {
+                let new_chain = match self.node_state.get_chain_by_genesis_hash(&chain) {
                     Some(chain) => chain,
                     None => return,
                 };
@@ -506,9 +514,9 @@ impl InnerLoop {
                 // Send messages to the feed about this subscription:
                 let mut feed_serializer = FeedMessageSerializer::new();
                 if let Some(old_chain) = old_chain {
-                    feed_serializer.push(feed_message::UnsubscribedFrom(old_chain.label()));
+                    feed_serializer.push(feed_message::UnsubscribedFrom(old_chain.genesis_hash()));
                 }
-                feed_serializer.push(feed_message::SubscribedTo(new_chain.label()));
+                feed_serializer.push(feed_message::SubscribedTo(new_chain.genesis_hash()));
                 feed_serializer.push(feed_message::TimeSync(time::now()));
                 feed_serializer.push(feed_message::BestBlock(
                     new_chain.best_block().height,
@@ -559,7 +567,7 @@ impl InnerLoop {
                 }
 
                 // Actually make a note of the new chain subsciption:
-                let new_genesis_hash = *new_chain.genesis_hash();
+                let new_genesis_hash = new_chain.genesis_hash();
                 self.chain_to_feed_conn_ids
                     .insert(new_genesis_hash, feed_conn_id);
             }
@@ -585,7 +593,7 @@ impl InnerLoop {
         for node_id in node_ids.into_iter() {
             if let Some(chain) = self.node_state.get_chain_by_node_id(node_id) {
                 node_ids_per_chain
-                    .entry(*chain.genesis_hash())
+                    .entry(chain.genesis_hash())
                     .or_default()
                     .push(node_id);
             }
@@ -629,13 +637,16 @@ impl InnerLoop {
 
         // The chain has been removed (no nodes left in it, or it was renamed):
         if removed_details.chain_node_count == 0 || removed_details.has_chain_label_changed {
-            feed_for_all.push(feed_message::RemovedChain(&removed_details.old_chain_label));
+            feed_for_all.push(feed_message::RemovedChain(
+                removed_details.chain_genesis_hash,
+            ));
         }
 
         // If the chain still exists, tell everybody about the new label or updated node count:
         if removed_details.chain_node_count != 0 {
             feed_for_all.push(feed_message::AddedChain(
                 &removed_details.new_chain_label,
+                removed_details.chain_genesis_hash,
                 removed_details.chain_node_count,
             ));
         }

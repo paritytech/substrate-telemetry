@@ -24,7 +24,7 @@ import './AllChains.css';
 export namespace AllChains {
   export interface Props {
     chains: ChainData[];
-    subscribed: Maybe<Types.ChainLabel>;
+    subscribed: Maybe<Types.GenesisHash>;
     connection: Promise<Connection>;
   }
 }
@@ -45,10 +45,10 @@ export class AllChains extends React.Component<AllChains.Props, {}> {
   }
 
   private renderChain(chain: ChainData): React.ReactNode {
-    const { label, nodeCount } = chain;
+    const { label, genesisHash, nodeCount } = chain;
 
     const className =
-      label === this.props.subscribed
+      genesisHash === this.props.subscribed
         ? 'AllChains-chain AllChains-chain-selected'
         : 'AllChains-chain';
 
@@ -56,7 +56,7 @@ export class AllChains extends React.Component<AllChains.Props, {}> {
       <a
         key={label}
         className={className}
-        onClick={this.subscribe.bind(this, label)}
+        onClick={this.subscribe.bind(this, genesisHash)}
       >
         {label}{' '}
         <span className="AllChains-node-count" title="Node Count">
@@ -66,7 +66,7 @@ export class AllChains extends React.Component<AllChains.Props, {}> {
     );
   }
 
-  private async subscribe(chain: Types.ChainLabel) {
+  private async subscribe(chain: Types.GenesisHash) {
     const connection = await this.props.connection;
 
     connection.subscribe(chain);

@@ -369,8 +369,8 @@ impl Chain {
     pub fn finalized_block(&self) -> &Block {
         &self.finalized
     }
-    pub fn genesis_hash(&self) -> &BlockHash {
-        &self.genesis_hash
+    pub fn genesis_hash(&self) -> BlockHash {
+        self.genesis_hash
     }
 }
 

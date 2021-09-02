@@ -228,7 +228,7 @@ export default class App extends React.Component<{}, {}> {
     this.chainsCache = stable.inplace(
       Array.from(this.appState.chains.values()),
       (a, b) => {
-        const pinned = comparePinnedChains(a.label, b.label);
+        const pinned = comparePinnedChains(a.genesisHash, b.genesisHash);
 
         if (pinned !== 0) {
           return pinned;
