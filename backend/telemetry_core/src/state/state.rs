@@ -47,7 +47,6 @@ pub struct State {
 
     // Find the right chain given various details.
     chains_by_genesis_hash: HashMap<BlockHash, ChainId>,
-    chains_by_label: HashMap<Box<str>, ChainId>,
 
     /// Chain labels that we do not want to allow connecting.
     denylist: HashSet<String>,
@@ -107,7 +106,6 @@ impl State {
         State {
             chains: DenseMap::new(),
             chains_by_genesis_hash: HashMap::new(),
-            chains_by_label: HashMap::new(),
             denylist: denylist.into_iter().collect(),
         }
     }
@@ -164,13 +162,6 @@ impl State {
             chain::AddNodeResult::Added { id, chain_renamed } => {
                 let chain = &*chain;
 
-                // Update the label we use to reference the chain if
-                // it changes (it'll always change first time a node's added):
-                if chain_renamed {
-                    self.chains_by_label.remove(&old_chain_label);
-                    self.chains_by_label.insert(chain.label().into(), chain_id);
-                }
-
                 AddNodeResult::NodeAddedToChain(NodeAddedToChain {
                     id: NodeId(chain_id, id),
                     node: chain.get_node(id).expect("node added above"),
@@ -199,16 +190,8 @@ impl State {
         // Is the chain empty? Remove if so and clean up indexes to it
         if chain_node_count == 0 {
             let genesis_hash = *chain.genesis_hash();
-            self.chains_by_label.remove(&old_chain_label);
             self.chains_by_genesis_hash.remove(&genesis_hash);
             self.chains.remove(chain_id);
-        }
-
-        // Make sure chains always referenced by their most common label:
-        if remove_result.chain_renamed {
-            self.chains_by_label.remove(&old_chain_label);
-            self.chains_by_label
-                .insert(new_chain_label.clone(), chain_id);
         }
 
         Some(RemovedNode {
