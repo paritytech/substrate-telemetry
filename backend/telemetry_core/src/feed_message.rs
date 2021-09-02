@@ -115,9 +115,9 @@ actions! {
      9: Hardware<'_>,
     10: TimeSync,
     11: AddedChain<'_>,
-    12: RemovedChain<'_>,
-    13: SubscribedTo<'_>,
-    14: UnsubscribedFrom<'_>,
+    12: RemovedChain,
+    13: SubscribedTo,
+    14: UnsubscribedFrom,
     15: Pong<'_>,
     16: AfgFinalized,
     17: AfgReceivedPrevote,
@@ -163,16 +163,16 @@ pub struct Hardware<'a>(pub FeedNodeId, pub &'a NodeHardware);
 pub struct TimeSync(pub u64);
 
 #[derive(Serialize)]
-pub struct AddedChain<'a>(pub &'a str, pub usize);
+pub struct AddedChain<'a>(pub &'a str, pub BlockHash, pub usize);
 
 #[derive(Serialize)]
-pub struct RemovedChain<'a>(pub &'a str);
+pub struct RemovedChain(pub BlockHash);
 
 #[derive(Serialize)]
-pub struct SubscribedTo<'a>(pub &'a str);
+pub struct SubscribedTo(pub BlockHash);
 
 #[derive(Serialize)]
-pub struct UnsubscribedFrom<'a>(pub &'a str);
+pub struct UnsubscribedFrom(pub BlockHash);
 
 #[derive(Serialize)]
 pub struct Pong<'a>(pub &'a str);

@@ -96,6 +96,8 @@ pub struct RemovedNode {
     pub has_chain_label_changed: bool,
     /// The old label of the chain.
     pub old_chain_label: Box<str>,
+    /// Genesis hash of the chain to be updated.
+    pub chain_genesis_hash: BlockHash,
     /// The new label of the chain.
     pub new_chain_label: Box<str>,
 }
@@ -123,13 +125,6 @@ impl State {
     pub fn get_chain_by_genesis_hash(&self, genesis_hash: &BlockHash) -> Option<StateChain<'_>> {
         self.chains_by_genesis_hash
             .get(genesis_hash)
-            .and_then(|&chain_id| self.chains.get(chain_id))
-            .map(|chain| StateChain { chain })
-    }
-
-    pub fn get_chain_by_label(&self, label: &str) -> Option<StateChain<'_>> {
-        self.chains_by_label
-            .get(label)
             .and_then(|&chain_id| self.chains.get(chain_id))
             .map(|chain| StateChain { chain })
     }
@@ -179,7 +174,7 @@ impl State {
                 AddNodeResult::NodeAddedToChain(NodeAddedToChain {
                     id: NodeId(chain_id, id),
                     node: chain.get_node(id).expect("node added above"),
-                    old_chain_label: old_chain_label,
+                    old_chain_label,
                     new_chain_label: chain.label(),
                     chain_node_count: chain.node_count(),
                     has_chain_label_changed: chain_renamed,
@@ -199,6 +194,7 @@ impl State {
         // Get updated chain details.
         let new_chain_label: Box<str> = chain.label().into();
         let chain_node_count = chain.node_count();
+        let chain_genesis_hash = *chain.genesis_hash();
 
         // Is the chain empty? Remove if so and clean up indexes to it
         if chain_node_count == 0 {
@@ -218,7 +214,8 @@ impl State {
         Some(RemovedNode {
             old_chain_label,
             new_chain_label,
-            chain_node_count: chain_node_count,
+            chain_node_count,
+            chain_genesis_hash,
             has_chain_label_changed: remove_result.chain_renamed,
         })
     }

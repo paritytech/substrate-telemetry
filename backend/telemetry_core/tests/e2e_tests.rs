@@ -60,7 +60,7 @@ async fn e2e_feed_sent_version_on_connect() {
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
     assert_eq!(
         feed_messages,
-        vec![FeedMessage::Version(31)],
+        vec![FeedMessage::Version(32)],
         "expecting version"
     );
 
@@ -120,7 +120,7 @@ async fn e2e_multiple_feeds_sent_version_on_connect() {
     for feed_messages in responses {
         assert_eq!(
             feed_messages.expect("should have messages"),
-            vec![FeedMessage::Version(31)],
+            vec![FeedMessage::Version(32)],
             "expecting version"
         );
     }
