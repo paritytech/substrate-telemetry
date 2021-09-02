@@ -73,16 +73,17 @@ pub enum FeedMessage {
     },
     AddedChain {
         name: String,
+        genesis_hash: BlockHash,
         node_count: usize,
     },
     RemovedChain {
-        name: String,
+        genesis_hash: BlockHash,
     },
     SubscribedTo {
-        name: String,
+        genesis_hash: BlockHash,
     },
     UnsubscribedFrom {
-        name: String,
+        genesis_hash: BlockHash,
     },
     Pong {
         msg: String,
@@ -260,23 +261,23 @@ impl FeedMessage {
             }
             // AddedChain
             11 => {
-                let (name, node_count) = serde_json::from_str(raw_val.get())?;
-                FeedMessage::AddedChain { name, node_count }
+                let (name, genesis_hash, node_count) = serde_json::from_str(raw_val.get())?;
+                FeedMessage::AddedChain { name, genesis_hash, node_count }
             }
             // RemovedChain
             12 => {
-                let name = serde_json::from_str(raw_val.get())?;
-                FeedMessage::RemovedChain { name }
+                let genesis_hash = serde_json::from_str(raw_val.get())?;
+                FeedMessage::RemovedChain { genesis_hash }
             }
             // SubscribedTo
             13 => {
-                let name = serde_json::from_str(raw_val.get())?;
-                FeedMessage::SubscribedTo { name }
+                let genesis_hash = serde_json::from_str(raw_val.get())?;
+                FeedMessage::SubscribedTo { genesis_hash }
             }
             // UnsubscribedFrom
             14 => {
-                let name = serde_json::from_str(raw_val.get())?;
-                FeedMessage::UnsubscribedFrom { name }
+                let genesis_hash = serde_json::from_str(raw_val.get())?;
+                FeedMessage::UnsubscribedFrom { genesis_hash }
             }
             // Pong
             15 => {
@@ -355,12 +356,12 @@ mod test {
     #[test]
     fn decode_remove_node_msg() {
         // "remove chain ''":
-        let msg = r#"[12,""]"#;
+        let msg = r#"[12,"0x0000000000000000000000000000000000000000000000000000000000000000"]"#;
 
         assert_eq!(
             FeedMessage::from_bytes(msg.as_bytes()).unwrap(),
             vec![FeedMessage::RemovedChain {
-                name: "".to_owned()
+                genesis_hash: BlockHash::zero(),
             }]
         );
     }
@@ -368,16 +369,17 @@ mod test {
     #[test]
     fn decode_remove_then_add_node_msg() {
         // "remove chain '', then add chain 'Local Testnet' with 1 node":
-        let msg = r#"[12,"",11,["Local Testnet",1]]"#;
+        let msg = r#"[12,"0x0000000000000000000000000000000000000000000000000000000000000000",11,["Local Testnet","0x0000000000000000000000000000000000000000000000000000000000000000",1]]"#;
 
         assert_eq!(
             FeedMessage::from_bytes(msg.as_bytes()).unwrap(),
             vec![
                 FeedMessage::RemovedChain {
-                    name: "".to_owned()
+                    genesis_hash: BlockHash::zero(),
                 },
                 FeedMessage::AddedChain {
                     name: "Local Testnet".to_owned(),
+                    genesis_hash: BlockHash::zero(),
                     node_count: 1
                 },
             ]

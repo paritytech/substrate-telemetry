@@ -46,6 +46,11 @@ use test_utils::{
     workspace::{start_server, start_server_debug, CoreOpts, ServerOpts, ShardOpts},
 };
 
+/// Helper for concise testing
+fn ghash(id: u64) -> BlockHash {
+    BlockHash::from_low_u64_be(id)
+}
+
 /// The simplest test we can run; the main benefit of this test (since we check similar)
 /// below) is just to give a feel for _how_ we can test basic feed related things.
 #[ignore]
@@ -159,7 +164,7 @@ async fn e2e_lots_of_mute_messages_dont_cause_a_deadlock() {
                     "authority":true,
                     "chain":"Local Testnet",
                     "config":"",
-                    "genesis_hash": BlockHash::from_low_u64_ne(1),
+                    "genesis_hash": ghash(1),
                     "implementation":"Substrate Node",
                     "msg":"system.connected",
                     "name": format!("Alice {}", idx),
@@ -217,7 +222,7 @@ async fn e2e_feed_add_and_remove_node() {
                     "authority":true,
                     "chain":"Local Testnet",
                     "config":"",
-                    "genesis_hash": BlockHash::from_low_u64_ne(1),
+                    "genesis_hash": ghash(1),
                     "implementation":"Substrate Node",
                     "msg":"system.connected",
                     "name":"Alice",
@@ -239,7 +244,8 @@ async fn e2e_feed_add_and_remove_node() {
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
     assert!(feed_messages.contains(&FeedMessage::AddedChain {
         name: "Local Testnet".to_owned(),
-        node_count: 1
+        genesis_hash: ghash(1),
+        node_count: 1,
     }));
 
     // Disconnect the node:
@@ -247,7 +253,7 @@ async fn e2e_feed_add_and_remove_node() {
 
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
     assert!(feed_messages.contains(&FeedMessage::RemovedChain {
-        name: "Local Testnet".to_owned(),
+        genesis_hash: ghash(1),
     }));
 
     // Tidy up:
@@ -278,7 +284,7 @@ async fn e2e_feeds_told_about_chain_rename_and_stay_subscribed() {
                 "authority":true,
                 "chain": chain_name,
                 "config":"",
-                "genesis_hash": BlockHash::from_low_u64_ne(1),
+                "genesis_hash": ghash(1),
                 "implementation":"Substrate Node",
                 "msg":"system.connected",
                 "name": node_name,
@@ -289,6 +295,8 @@ async fn e2e_feeds_told_about_chain_rename_and_stay_subscribed() {
         })
     };
 
+    let initial_hash = "0x0000000000000000000000000000000000000000000000000000000000000001";
+
     // Subscribe a chain:
     node_tx
         .send_json_text(node_init_msg(1, "Initial chain name", "Node 1"))
@@ -297,15 +305,15 @@ async fn e2e_feeds_told_about_chain_rename_and_stay_subscribed() {
     // Connect a feed and subscribe to the above chain:
     let (feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
     feed_tx
-        .send_command("subscribe", "Initial chain name")
+        .send_command("subscribe", initial_hash)
         .unwrap();
 
     // Feed is told about the chain, and the node on this chain:
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
     assert_contains_matches!(
         feed_messages,
-        FeedMessage::AddedChain { name, node_count: 1 } if name == "Initial chain name",
-        FeedMessage::SubscribedTo { name } if name == "Initial chain name",
+        FeedMessage::AddedChain { name, genesis_hash, node_count: 1 } if name == "Initial chain name" && genesis_hash == ghash(1),
+        FeedMessage::SubscribedTo { genesis_hash } if genesis_hash == ghash(1),
         FeedMessage::AddedNode { node: NodeDetails { name: node_name, .. }, ..} if node_name == "Node 1",
     );
 
@@ -318,7 +326,7 @@ async fn e2e_feeds_told_about_chain_rename_and_stay_subscribed() {
     assert_contains_matches!(
         feed_messages,
         FeedMessage::AddedNode { node: NodeDetails { name: node_name, .. }, ..} if node_name == "Node 2",
-        FeedMessage::AddedChain { name, node_count: 2 } if name == "Initial chain name",
+        FeedMessage::AddedChain { name, genesis_hash, node_count: 2 } if name == "Initial chain name" && genesis_hash == ghash(1),
     );
 
     // Subscribe a third node. The chain renames, so we're told about the new node but also
@@ -330,8 +338,8 @@ async fn e2e_feeds_told_about_chain_rename_and_stay_subscribed() {
     assert_contains_matches!(
         feed_messages,
         FeedMessage::AddedNode { node: NodeDetails { name: node_name, .. }, ..} if node_name == "Node 3",
-        FeedMessage::RemovedChain { name } if name == "Initial chain name",
-        FeedMessage::AddedChain { name, node_count: 3 } if name == "New chain name",
+        FeedMessage::RemovedChain { genesis_hash } if genesis_hash == ghash(1),
+        FeedMessage::AddedChain { name, genesis_hash, node_count: 3 } if name == "New chain name" && genesis_hash == ghash(1),
     );
 
     // Just to be sure, subscribing a fourth node on this chain will still lead to updates
@@ -343,7 +351,7 @@ async fn e2e_feeds_told_about_chain_rename_and_stay_subscribed() {
     assert_contains_matches!(
         feed_messages,
         FeedMessage::AddedNode { node: NodeDetails { name: node_name, .. }, ..} if node_name == "Node 4",
-        FeedMessage::AddedChain { name, node_count: 4 } if name == "New chain name",
+        FeedMessage::AddedChain { name, genesis_hash, node_count: 4 } if name == "New chain name" && genesis_hash == ghash(1),
     );
 }
 
@@ -377,7 +385,7 @@ async fn e2e_feed_add_and_remove_shard() {
                     "authority":true,
                     "chain": format!("Local Testnet {}", id),
                     "config":"",
-                    "genesis_hash": BlockHash::from_low_u64_ne(id),
+                    "genesis_hash": ghash(id),
                     "implementation":"Substrate Node",
                     "msg":"system.connected",
                     "name":"Alice",
@@ -399,10 +407,12 @@ async fn e2e_feed_add_and_remove_shard() {
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
     assert!(feed_messages.contains(&FeedMessage::AddedChain {
         name: "Local Testnet 1".to_owned(),
+        genesis_hash: ghash(1),
         node_count: 1
     }));
     assert!(feed_messages.contains(&FeedMessage::AddedChain {
         name: "Local Testnet 2".to_owned(),
+        genesis_hash: ghash(2),
         node_count: 1
     }));
 
@@ -412,12 +422,12 @@ async fn e2e_feed_add_and_remove_shard() {
     // We should be told about the node connected to that shard disconnecting:
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
     assert!(feed_messages.contains(&FeedMessage::RemovedChain {
-        name: "Local Testnet 1".to_owned(),
+        genesis_hash: ghash(1),
     }));
     assert!(!feed_messages.contains(
         // Spot the "!"; this chain was not removed.
         &FeedMessage::RemovedChain {
-            name: "Local Testnet 2".to_owned(),
+            genesis_hash: ghash(2),
         }
     ));
 
@@ -453,7 +463,7 @@ async fn e2e_feed_can_subscribe_and_unsubscribe_from_chain() {
                         "authority":true,
                         "chain":format!("Local Testnet {}", id),
                         "config":"",
-                        "genesis_hash": BlockHash::from_low_u64_ne(id),
+                        "genesis_hash": ghash(id),
                         "implementation":"Substrate Node",
                         "msg":"system.connected",
                         "name":format!("Alice {}", id),
@@ -470,7 +480,7 @@ async fn e2e_feed_can_subscribe_and_unsubscribe_from_chain() {
     let (feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
 
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
-    assert_contains_matches!(feed_messages, AddedChain { name, node_count: 1 } if name == "Local Testnet 1");
+    assert_contains_matches!(feed_messages, AddedChain { name, genesis_hash, node_count: 1 } if name == "Local Testnet 1" && genesis_hash == ghash(1));
 
     // Subscribe it to a chain
     feed_tx
@@ -480,7 +490,7 @@ async fn e2e_feed_can_subscribe_and_unsubscribe_from_chain() {
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
     assert_contains_matches!(
         feed_messages,
-        SubscribedTo { name } if name == "Local Testnet 1",
+        SubscribedTo { genesis_hash } if genesis_hash == ghash(1),
         TimeSync {..},
         BestBlock { block_number: 0, timestamp: 0, avg_block_time: None },
         BestFinalized { block_number: 0, .. },
@@ -514,8 +524,8 @@ async fn e2e_feed_can_subscribe_and_unsubscribe_from_chain() {
     // We are told about the subscription change and given similar on-subscribe messages to above.
     assert_contains_matches!(
         &feed_messages,
-        UnsubscribedFrom { name } if name == "Local Testnet 1",
-        SubscribedTo { name } if name == "Local Testnet 2",
+        UnsubscribedFrom { genesis_hash } if *genesis_hash == ghash(1),
+        SubscribedTo { genesis_hash } if *genesis_hash == ghash(2),
         TimeSync {..},
         BestBlock {..},
         BestFinalized {..},
@@ -630,7 +640,7 @@ async fn e2e_slow_feeds_are_disconnected() {
                     "authority":true,
                     "chain":"Polkadot",
                     "config":"",
-                    "genesis_hash": BlockHash::from_low_u64_ne(1),
+                    "genesis_hash": ghash(1),
                     "implementation":"Substrate Node",
                     "msg":"system.connected",
                     "name": format!("Alice {}", n),
@@ -721,7 +731,7 @@ async fn e2e_max_nodes_per_connection_is_enforced() {
                 "authority":true,
                 "chain":"Test Chain",
                 "config":"",
-                "genesis_hash": BlockHash::from_low_u64_ne(1),
+                "genesis_hash": ghash(1),
                 "implementation":"Polkadot",
                 "msg":"system.connected",
                 "name": format!("Alice {}", n),
