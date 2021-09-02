@@ -211,7 +211,6 @@ where
     S: futures::Sink<FromShardWebsocket, Error = anyhow::Error> + Unpin + Send + 'static,
 {
     let (tx_to_shard_conn, rx_from_aggregator) = flume::unbounded();
-    let mut rx_from_aggregator = rx_from_aggregator.into_stream();
 
     // Tell the aggregator about this new connection, and give it a way to send messages to us:
     let init_msg = FromShardWebsocket::Initialize {
@@ -298,13 +297,13 @@ where
     let send_handle = tokio::spawn(async move {
         loop {
             let msg = tokio::select! {
-                msg = rx_from_aggregator.next() => msg,
+                msg = rx_from_aggregator.recv_async() => msg,
                 _ = &mut send_closer_rx => { break }
             };
 
             let msg = match msg {
-                Some(msg) => msg,
-                None => break,
+                Ok(msg) => msg,
+                Err(flume::RecvError::Disconnected) => break,
             };
 
             let internal_msg = match msg {
@@ -354,7 +353,9 @@ where
 {
     // unbounded channel so that slow feeds don't block aggregator progress:
     let (tx_to_feed_conn, rx_from_aggregator) = flume::unbounded();
-    let mut rx_from_aggregator_chunks = ReadyChunksAll::new(rx_from_aggregator.into_stream());
+    let mut rx_from_aggregator_chunks = ReadyChunksAll::new(
+        common::flume_receiver_into_stream(rx_from_aggregator)
+    );
 
     // Tell the aggregator about this new connection, and give it a way to send messages to us:
     let init_msg = FromFeedWebsocket::Initialize {

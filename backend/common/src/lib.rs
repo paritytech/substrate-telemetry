@@ -32,6 +32,7 @@ mod mean_list;
 mod most_seen;
 mod multi_map_unique;
 mod num_stats;
+mod flume_recv_stream;
 
 // Export a bunch of common bits at the top level for ease of import:
 pub use assign_id::AssignId;
@@ -41,3 +42,4 @@ pub use mean_list::MeanList;
 pub use most_seen::MostSeen;
 pub use multi_map_unique::MultiMapUnique;
 pub use num_stats::NumStats;
+pub use flume_recv_stream::{ FlumeRecvStream, flume_receiver_into_stream };
