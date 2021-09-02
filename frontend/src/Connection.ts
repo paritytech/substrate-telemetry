@@ -103,7 +103,7 @@ export class Connection {
   // timestamp at which the last ping has been sent
   private pingSent: Maybe<Types.Timestamp> = null;
   // chain label to resubsribe to on reconnect
-  private resubscribeTo: Maybe<Types.ChainLabel> = getHashData().chain;
+  private resubscribeTo: Maybe<Types.GenesisHash> = getHashData().chain;
   // flag whether or not FE should subscribe to consensus updates on reconnect
   private resubscribeSendFinality: boolean = getHashData().tab === 'consensus';
 
@@ -116,7 +116,7 @@ export class Connection {
     this.bindSocket();
   }
 
-  public subscribe(chain: Types.ChainLabel) {
+  public subscribe(chain: Types.GenesisHash) {
     if (
       this.appState.subscribed != null &&
       this.appState.subscribed !== chain
@@ -132,7 +132,7 @@ export class Connection {
     this.socket.send(`subscribe:${chain}`);
   }
 
-  public subscribeConsensus(chain: Types.ChainLabel) {
+  public subscribeConsensus(chain: Types.GenesisHash) {
     if (this.appState.authorities.length <= VIS_AUTHORITIES_LIMIT) {
       setHashData({ chain });
       this.resubscribeSendFinality = true;
@@ -149,7 +149,7 @@ export class Connection {
     });
   }
 
-  public unsubscribeConsensus(chain: Types.ChainLabel) {
+  public unsubscribeConsensus(chain: Types.GenesisHash) {
     this.resubscribeSendFinality = true;
     this.socket.send(`no-more-finality:${chain}`);
   }
@@ -318,13 +318,13 @@ export class Connection {
         }
 
         case ACTIONS.AddedChain: {
-          const [label, nodeCount] = message.payload;
-          const chain = chains.get(label);
+          const [label, genesisHash, nodeCount] = message.payload;
+          const chain = chains.get(genesisHash);
 
           if (chain) {
             chain.nodeCount = nodeCount;
           } else {
-            chains.set(label, { label, nodeCount });
+            chains.set(genesisHash, { label, genesisHash, nodeCount });
           }
 
           this.appUpdate({ chains });
@@ -536,7 +536,7 @@ export class Connection {
     }
 
     if (topChain) {
-      this.subscribe(topChain.label);
+      this.subscribe(topChain.genesisHash);
     }
   }
 

@@ -1,10 +1,11 @@
 use crate::aggregator::{Aggregator, Connect, Disconnect, NoMoreFinality, SendFinality, Subscribe};
 use crate::chain::Unsubscribe;
 use crate::feed::{FeedMessageSerializer, Pong};
-use crate::util::fnv;
+use crate::util::{Hash, HashParseError};
 use actix::prelude::*;
 use actix_web_actors::ws;
 use bytes::Bytes;
+use std::str::FromStr;
 use std::time::{Duration, Instant};
 
 pub type FeedId = usize;
@@ -25,8 +26,8 @@ pub struct FeedConnector {
     aggregator: Addr<Aggregator>,
     /// Chain actor address
     chain: Option<Recipient<Unsubscribe>>,
-    /// FNV hash of the chain label, optimization to avoid double-subscribing
-    chain_label_hash: u64,
+    /// Genesis hash of the currently subscribed chain, optimization to avoid double-subscribing
+    subscribed_genesis_hash: Hash,
     /// Message serializer
     serializer: FeedMessageSerializer,
 }
@@ -58,7 +59,7 @@ impl FeedConnector {
             hb: Instant::now(),
             aggregator,
             chain: None,
-            chain_label_hash: 0,
+            subscribed_genesis_hash: Hash::default(),
             serializer: FeedMessageSerializer::new(),
         }
     }
@@ -75,17 +76,21 @@ impl FeedConnector {
         });
     }
 
-    fn handle_cmd(&mut self, cmd: &str, payload: &str, ctx: &mut <Self as Actor>::Context) {
+    fn handle_cmd(&mut self, cmd: &str, payload: &str, ctx: &mut <Self as Actor>::Context) -> Result<(), HashParseError> {
         match cmd {
             "subscribe" => {
-                match fnv(payload) {
-                    hash if hash == self.chain_label_hash => return,
-                    hash => self.chain_label_hash = hash,
+                let genesis_hash = Hash::from_str(payload)?;
+
+                if self.subscribed_genesis_hash == genesis_hash {
+                    // Do nothing if the chain did not change
+                    return Ok(());
                 }
+
+                self.subscribed_genesis_hash = genesis_hash;
 
                 self.aggregator
                     .send(Subscribe {
-                        chain: payload.into(),
+                        genesis_hash,
                         feed: ctx.address(),
                     })
                     .into_actor(self)
@@ -93,21 +98,25 @@ impl FeedConnector {
                         match res {
                             Ok(true) => (),
                             // Chain not found, reset hash
-                            _ => actor.chain_label_hash = 0,
+                            _ => actor.subscribed_genesis_hash = Hash::default(),
                         }
                         async {}.into_actor(actor)
                     })
                     .wait(ctx);
             }
             "send-finality" => {
+                let genesis_hash = Hash::from_str(payload)?;
+
                 self.aggregator.do_send(SendFinality {
-                    chain: payload.into(),
+                    genesis_hash,
                     fid: self.fid_chain,
                 });
             }
             "no-more-finality" => {
+                let genesis_hash = Hash::from_str(payload)?;
+
                 self.aggregator.do_send(NoMoreFinality {
-                    chain: payload.into(),
+                    genesis_hash,
                     fid: self.fid_chain,
                 });
             }
@@ -119,6 +128,8 @@ impl FeedConnector {
             }
             _ => (),
         }
+
+        Ok(())
     }
 }
 
@@ -159,7 +170,9 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for FeedConnector {
 
                     log::info!("New FEED message: {}", cmd);
 
-                    self.handle_cmd(cmd, payload, ctx);
+                    if let Err(_) = self.handle_cmd(cmd, payload, ctx) {
+                        log::error!("Failed to parse hash payload for a command: {}", payload);
+                    }
                 }
             }
             Ok(ws::Message::Close(_)) => ctx.stop(),
@@ -192,7 +205,7 @@ impl Handler<Unsubscribed> for FeedConnector {
 
     fn handle(&mut self, _: Unsubscribed, _: &mut Self::Context) {
         self.chain = None;
-        self.chain_label_hash = 0;
+        self.subscribed_genesis_hash = Hash::default();
     }
 }
 

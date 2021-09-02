@@ -71,13 +71,14 @@ impl Aggregator {
         let cid = match self.genesis_hashes.get(&genesis_hash).copied() {
             Some(cid) => cid,
             None => {
-                self.serializer.push(feed::AddedChain(&label, 1));
+                self.serializer
+                    .push(feed::AddedChain(&label, genesis_hash, 1));
 
                 let addr = ctx.address();
                 let max_nodes = max_nodes(label);
                 let label: Label = label.into();
                 let cid = self.chains.add_with(|cid| ChainEntry {
-                    addr: Chain::new(cid, addr, label.clone()).start(),
+                    addr: Chain::new(cid, genesis_hash, addr, label.clone()).start(),
                     genesis_hash,
                     label: label.clone(),
                     nodes: 1,
@@ -96,10 +97,10 @@ impl Aggregator {
         cid
     }
 
-    fn get_chain(&mut self, label: &str) -> Option<&mut ChainEntry> {
+    fn get_chain(&mut self, genesis_hash: &Hash) -> Option<&mut ChainEntry> {
         let chains = &mut self.chains;
-        self.labels
-            .get(label)
+        self.genesis_hashes
+            .get(genesis_hash)
             .and_then(move |&cid| chains.get_mut(cid))
     }
 
@@ -143,7 +144,7 @@ pub struct RenameChain(pub ChainId, pub Label);
 #[derive(Message)]
 #[rtype(result = "bool")]
 pub struct Subscribe {
-    pub chain: Label,
+    pub genesis_hash: Hash,
     pub feed: Addr<FeedConnector>,
 }
 
@@ -151,7 +152,7 @@ pub struct Subscribe {
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct SendFinality {
-    pub chain: Label,
+    pub genesis_hash: Hash,
     pub fid: FeedId,
 }
 
@@ -159,7 +160,7 @@ pub struct SendFinality {
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct NoMoreFinality {
-    pub chain: Label,
+    pub genesis_hash: Hash,
     pub fid: FeedId,
 }
 
@@ -237,7 +238,7 @@ impl Handler<DropChain> for Aggregator {
             let label = &entry.label;
             self.genesis_hashes.remove(&entry.genesis_hash);
             self.labels.remove(label);
-            self.serializer.push(feed::RemovedChain(label));
+            self.serializer.push(feed::RemovedChain(entry.genesis_hash));
             log::info!("Dropped chain [{}] from the aggregator", label);
             self.broadcast();
         }
@@ -256,8 +257,9 @@ impl Handler<RenameChain> for Aggregator {
             }
 
             // Update UI
-            self.serializer.push(feed::RemovedChain(&entry.label));
-            self.serializer.push(feed::AddedChain(&new, entry.nodes));
+            self.serializer.push(feed::RemovedChain(entry.genesis_hash));
+            self.serializer
+                .push(feed::AddedChain(&new, entry.genesis_hash, entry.nodes));
 
             // Update labels -> cid map
             self.labels.remove(&entry.label);
@@ -275,9 +277,9 @@ impl Handler<Subscribe> for Aggregator {
     type Result = bool;
 
     fn handle(&mut self, msg: Subscribe, _: &mut Self::Context) -> bool {
-        let Subscribe { chain, feed } = msg;
+        let Subscribe { genesis_hash, feed } = msg;
 
-        if let Some(chain) = self.get_chain(&chain) {
+        if let Some(chain) = self.get_chain(&genesis_hash) {
             chain.addr.do_send(chain::Subscribe(feed));
             true
         } else {
@@ -290,8 +292,8 @@ impl Handler<SendFinality> for Aggregator {
     type Result = ();
 
     fn handle(&mut self, msg: SendFinality, _: &mut Self::Context) {
-        let SendFinality { chain, fid } = msg;
-        if let Some(chain) = self.get_chain(&chain) {
+        let SendFinality { genesis_hash, fid } = msg;
+        if let Some(chain) = self.get_chain(&genesis_hash) {
             chain.addr.do_send(chain::SendFinality(fid));
         }
     }
@@ -301,8 +303,8 @@ impl Handler<NoMoreFinality> for Aggregator {
     type Result = ();
 
     fn handle(&mut self, msg: NoMoreFinality, _: &mut Self::Context) {
-        let NoMoreFinality { chain, fid } = msg;
-        if let Some(chain) = self.get_chain(&chain) {
+        let NoMoreFinality { genesis_hash, fid } = msg;
+        if let Some(chain) = self.get_chain(&genesis_hash) {
             chain.addr.do_send(chain::NoMoreFinality(fid));
         }
     }
@@ -320,12 +322,15 @@ impl Handler<Connect> for Aggregator {
 
         connector.do_send(Connected(fid));
 
-        self.serializer.push(feed::Version(31));
+        self.serializer.push(feed::Version(32));
 
         // TODO: keep track on number of nodes connected to each chain
         for (_, entry) in self.chains.iter() {
-            self.serializer
-                .push(feed::AddedChain(&entry.label, entry.nodes));
+            self.serializer.push(feed::AddedChain(
+                &entry.label,
+                entry.genesis_hash,
+                entry.nodes,
+            ));
         }
 
         if let Some(msg) = self.serializer.finalize() {
@@ -356,7 +361,8 @@ impl Handler<NodeCount> for Aggregator {
             entry.nodes = count;
 
             if count != 0 {
-                self.serializer.push(feed::AddedChain(&entry.label, count));
+                self.serializer
+                    .push(feed::AddedChain(&entry.label, entry.genesis_hash, count));
                 self.broadcast();
             }
         }

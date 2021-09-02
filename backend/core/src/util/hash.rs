@@ -3,6 +3,7 @@ use std::str::FromStr;
 
 use actix_web::error::ResponseError;
 use serde::de::{self, Deserialize, Deserializer, Unexpected, Visitor};
+use serde::ser::{Serialize, Serializer};
 
 const HASH_BYTES: usize = 32;
 
@@ -10,6 +11,13 @@ const HASH_BYTES: usize = 32;
 // We could use primitive_types::H256 here, but opted for a custom type to avoid more dependencies.
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
 pub struct Hash([u8; HASH_BYTES]);
+
+impl Default for Hash {
+    #[inline(always)]
+    fn default() -> Hash {
+        Hash([0; HASH_BYTES])
+    }
+}
 
 struct HashVisitor;
 
@@ -52,6 +60,20 @@ impl<'de> Deserialize<'de> for Hash {
         D: Deserializer<'de>,
     {
         deserializer.deserialize_str(HashVisitor)
+    }
+}
+
+impl Serialize for Hash {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let mut ascii = [0u8; 2 + HASH_BYTES * 2];
+
+        ascii[..2].copy_from_slice(b"0x");
+
+        hex::encode_to_slice(&self.0, &mut ascii[2..]).expect("Encoding 32 bytes into 64 bytes of ascii; qe");
+
+        serializer.serialize_str(
+            std::str::from_utf8(&ascii).expect("Hex encoding is always valid utf8; qed"),
+        )
     }
 }
 
