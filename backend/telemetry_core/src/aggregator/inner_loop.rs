@@ -140,8 +140,12 @@ impl FromStr for FromFeedWebsocket {
             None => return Err(anyhow::anyhow!("Expecting format `CMD:CHAIN_NAME`")),
         };
         match cmd {
-            "ping" => Ok(FromFeedWebsocket::Ping { value: value.into() }),
-            "subscribe" => Ok(FromFeedWebsocket::Subscribe { chain: value.parse()? }),
+            "ping" => Ok(FromFeedWebsocket::Ping {
+                value: value.into(),
+            }),
+            "subscribe" => Ok(FromFeedWebsocket::Subscribe {
+                chain: value.parse()?,
+            }),
             "send-finality" => Ok(FromFeedWebsocket::SendFinality),
             "no-more-finality" => Ok(FromFeedWebsocket::NoMoreFinality),
             _ => return Err(anyhow::anyhow!("Command {} not recognised", cmd)),
@@ -370,11 +374,13 @@ impl InnerLoop {
                         // Tell everybody about the new node count and potential rename:
                         let mut feed_messages_for_all = FeedMessageSerializer::new();
                         if has_chain_label_changed {
-                            feed_messages_for_all
-                                .push(feed_message::RemovedChain(genesis_hash));
+                            feed_messages_for_all.push(feed_message::RemovedChain(genesis_hash));
                         }
-                        feed_messages_for_all
-                            .push(feed_message::AddedChain(&new_chain_label, genesis_hash, chain_node_count));
+                        feed_messages_for_all.push(feed_message::AddedChain(
+                            &new_chain_label,
+                            genesis_hash,
+                            chain_node_count,
+                        ));
                         self.finalize_and_broadcast_to_all_feeds(feed_messages_for_all);
 
                         // Ask for the grographical location of the node.
@@ -457,8 +463,11 @@ impl InnerLoop {
                 let mut feed_serializer = FeedMessageSerializer::new();
                 feed_serializer.push(feed_message::Version(32));
                 for chain in self.node_state.iter_chains() {
-                    feed_serializer
-                        .push(feed_message::AddedChain(chain.label(), *chain.genesis_hash(), chain.node_count()));
+                    feed_serializer.push(feed_message::AddedChain(
+                        chain.label(),
+                        *chain.genesis_hash(),
+                        chain.node_count(),
+                    ));
                 }
 
                 // Send this to the channel that subscribed:
@@ -628,7 +637,9 @@ impl InnerLoop {
 
         // The chain has been removed (no nodes left in it, or it was renamed):
         if removed_details.chain_node_count == 0 || removed_details.has_chain_label_changed {
-            feed_for_all.push(feed_message::RemovedChain(removed_details.chain_genesis_hash));
+            feed_for_all.push(feed_message::RemovedChain(
+                removed_details.chain_genesis_hash,
+            ));
         }
 
         // If the chain still exists, tell everybody about the new label or updated node count:
