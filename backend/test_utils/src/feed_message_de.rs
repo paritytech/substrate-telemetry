@@ -262,7 +262,11 @@ impl FeedMessage {
             // AddedChain
             11 => {
                 let (name, genesis_hash, node_count) = serde_json::from_str(raw_val.get())?;
-                FeedMessage::AddedChain { name, genesis_hash, node_count }
+                FeedMessage::AddedChain {
+                    name,
+                    genesis_hash,
+                    node_count,
+                }
             }
             // RemovedChain
             12 => {

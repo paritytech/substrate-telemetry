@@ -303,7 +303,10 @@ async fn e2e_feeds_told_about_chain_rename_and_stay_subscribed() {
     // Connect a feed and subscribe to the above chain:
     let (feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
     feed_tx
-        .send_command("subscribe", "0x0000000000000000000000000000000000000000000000000000000000000001")
+        .send_command(
+            "subscribe",
+            "0x0000000000000000000000000000000000000000000000000000000000000001",
+        )
         .unwrap();
 
     // Feed is told about the chain, and the node on this chain:
@@ -482,7 +485,10 @@ async fn e2e_feed_can_subscribe_and_unsubscribe_from_chain() {
 
     // Subscribe it to a chain
     feed_tx
-        .send_command("subscribe", "0x0000000000000000000000000000000000000000000000000000000000000001")
+        .send_command(
+            "subscribe",
+            "0x0000000000000000000000000000000000000000000000000000000000000001",
+        )
         .unwrap();
 
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
@@ -515,7 +521,10 @@ async fn e2e_feed_can_subscribe_and_unsubscribe_from_chain() {
 
     // We can change our subscription:
     feed_tx
-        .send_command("subscribe", "0x0000000000000000000000000000000000000000000000000000000000000002")
+        .send_command(
+            "subscribe",
+            "0x0000000000000000000000000000000000000000000000000000000000000002",
+        )
         .unwrap();
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
 
@@ -787,7 +796,12 @@ async fn e2e_max_nodes_per_connection_is_enforced() {
     // (now that the chain "Test Chain" is known about, subscribe to it for update messages.
     // This wasn't needed to receive messages re the above since everybody hears about node
     // count changes)
-    feed_tx.send_command("subscribe", "0x0000000000000000000000000000000000000000000000000000000000000001").unwrap();
+    feed_tx
+        .send_command(
+            "subscribe",
+            "0x0000000000000000000000000000000000000000000000000000000000000001",
+        )
+        .unwrap();
     feed_rx.recv_feed_messages().await.unwrap();
 
     // Update about non-ignored IDs should still lead to feed output:
