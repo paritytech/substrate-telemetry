@@ -355,7 +355,6 @@ mod test {
                 .label(),
             "Chain One"
         );
-        assert!(state.get_chain_by_label("Chain One").is_some());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_some());
 
         let node_id1 = state
@@ -370,7 +369,6 @@ mod test {
                 .label(),
             "Chain One"
         );
-        assert!(state.get_chain_by_label("Chain One").is_some());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_some());
 
         let node_id2 = state
@@ -385,8 +383,6 @@ mod test {
                 .label(),
             "Chain Two"
         );
-        assert!(state.get_chain_by_label("Chain One").is_none());
-        assert!(state.get_chain_by_label("Chain Two").is_some());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_some());
 
         state.remove_node(node_id1).expect("Removal OK (id: 1)");
@@ -400,8 +396,6 @@ mod test {
                 .label(),
             "Chain One"
         );
-        assert!(state.get_chain_by_label("Chain One").is_some());
-        assert!(state.get_chain_by_label("Chain Two").is_none());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_some());
     }
 
@@ -414,13 +408,11 @@ mod test {
             .add_node(chain1_genesis, node("A", "Chain One")) // 0
             .unwrap_id();
 
-        assert!(state.get_chain_by_label("Chain One").is_some());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_some());
         assert_eq!(state.iter_chains().count(), 1);
 
         state.remove_node(node_id);
 
-        assert!(state.get_chain_by_label("Chain One").is_none());
         assert!(state.get_chain_by_genesis_hash(&chain1_genesis).is_none());
         assert_eq!(state.iter_chains().count(), 0);
     }
