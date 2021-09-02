@@ -310,7 +310,7 @@ impl InnerLoop {
             let chain_genesis_hash = self
                 .node_state
                 .get_chain_by_node_id(node_id)
-                .map(|chain| *chain.genesis_hash());
+                .map(|chain| chain.genesis_hash());
 
             if let Some(chain_genesis_hash) = chain_genesis_hash {
                 self.finalize_and_broadcast_to_chain_feeds(
@@ -424,7 +424,7 @@ impl InnerLoop {
                         .update_node(node_id, payload, &mut feed_message_serializer);
 
                 if let Some(chain) = self.node_state.get_chain_by_node_id(node_id) {
-                    let genesis_hash = *chain.genesis_hash();
+                    let genesis_hash = chain.genesis_hash();
                     if broadcast_finality {
                         self.finalize_and_broadcast_to_chain_finality_feeds(
                             &genesis_hash,
@@ -465,7 +465,7 @@ impl InnerLoop {
                 for chain in self.node_state.iter_chains() {
                     feed_serializer.push(feed_message::AddedChain(
                         chain.label(),
-                        *chain.genesis_hash(),
+                        chain.genesis_hash(),
                         chain.node_count(),
                     ));
                 }
@@ -514,9 +514,9 @@ impl InnerLoop {
                 // Send messages to the feed about this subscription:
                 let mut feed_serializer = FeedMessageSerializer::new();
                 if let Some(old_chain) = old_chain {
-                    feed_serializer.push(feed_message::UnsubscribedFrom(*old_chain.genesis_hash()));
+                    feed_serializer.push(feed_message::UnsubscribedFrom(old_chain.genesis_hash()));
                 }
-                feed_serializer.push(feed_message::SubscribedTo(*new_chain.genesis_hash()));
+                feed_serializer.push(feed_message::SubscribedTo(new_chain.genesis_hash()));
                 feed_serializer.push(feed_message::TimeSync(time::now()));
                 feed_serializer.push(feed_message::BestBlock(
                     new_chain.best_block().height,
@@ -567,7 +567,7 @@ impl InnerLoop {
                 }
 
                 // Actually make a note of the new chain subsciption:
-                let new_genesis_hash = *new_chain.genesis_hash();
+                let new_genesis_hash = new_chain.genesis_hash();
                 self.chain_to_feed_conn_ids
                     .insert(new_genesis_hash, feed_conn_id);
             }
@@ -593,7 +593,7 @@ impl InnerLoop {
         for node_id in node_ids.into_iter() {
             if let Some(chain) = self.node_state.get_chain_by_node_id(node_id) {
                 node_ids_per_chain
-                    .entry(*chain.genesis_hash())
+                    .entry(chain.genesis_hash())
                     .or_default()
                     .push(node_id);
             }

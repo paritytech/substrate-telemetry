@@ -185,11 +185,11 @@ impl State {
         // Get updated chain details.
         let new_chain_label: Box<str> = chain.label().into();
         let chain_node_count = chain.node_count();
-        let chain_genesis_hash = *chain.genesis_hash();
+        let chain_genesis_hash = chain.genesis_hash();
 
         // Is the chain empty? Remove if so and clean up indexes to it
         if chain_node_count == 0 {
-            let genesis_hash = *chain.genesis_hash();
+            let genesis_hash = chain.genesis_hash();
             self.chains_by_genesis_hash.remove(&genesis_hash);
             self.chains.remove(chain_id);
         }
@@ -248,7 +248,7 @@ impl<'a> StateChain<'a> {
     pub fn label(&self) -> &'a str {
         self.chain.label()
     }
-    pub fn genesis_hash(&self) -> &'a BlockHash {
+    pub fn genesis_hash(&self) -> BlockHash {
         self.chain.genesis_hash()
     }
     pub fn node_count(&self) -> usize {
