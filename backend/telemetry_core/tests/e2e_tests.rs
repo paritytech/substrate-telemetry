@@ -289,6 +289,10 @@ async fn e2e_feeds_told_about_chain_rename_and_stay_subscribed() {
         })
     };
 
+    // Wait a little for this message to propagate to the core
+    // (so that our feed connects after the core knows and not before).
+    tokio::time::sleep(Duration::from_millis(500)).await;
+
     // Subscribe a chain:
     node_tx
         .send_json_text(node_init_msg(1, "Initial chain name", "Node 1"))
