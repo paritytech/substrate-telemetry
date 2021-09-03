@@ -289,14 +289,14 @@ async fn e2e_feeds_told_about_chain_rename_and_stay_subscribed() {
         })
     };
 
-    // Wait a little for this message to propagate to the core
-    // (so that our feed connects after the core knows and not before).
-    tokio::time::sleep(Duration::from_millis(500)).await;
-
     // Subscribe a chain:
     node_tx
         .send_json_text(node_init_msg(1, "Initial chain name", "Node 1"))
         .unwrap();
+
+    // Wait a little for this message to propagate to the core so that
+    // it knows what we're on about when we subscribe, below.
+    tokio::time::sleep(Duration::from_millis(500)).await;
 
     // Connect a feed and subscribe to the above chain:
     let (feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
