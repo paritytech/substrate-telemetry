@@ -53,7 +53,6 @@ fn ghash(id: u64) -> BlockHash {
 
 /// The simplest test we can run; the main benefit of this test (since we check similar)
 /// below) is just to give a feel for _how_ we can test basic feed related things.
-#[ignore]
 #[tokio::test]
 async fn e2e_feed_sent_version_on_connect() {
     let server = start_server_debug().await;
@@ -75,7 +74,6 @@ async fn e2e_feed_sent_version_on_connect() {
 
 /// Another very simple test: pings from feeds should be responded to by pongs
 /// with the same message content.
-#[ignore]
 #[tokio::test]
 async fn e2e_feed_ping_responded_to_with_pong() {
     let server = start_server_debug().await;
@@ -101,7 +99,6 @@ async fn e2e_feed_ping_responded_to_with_pong() {
 
 /// As a prelude to `lots_of_mute_messages_dont_cause_a_deadlock`, we can check that
 /// a lot of nodes can simultaneously subscribe and are all sent the expected response.
-#[ignore]
 #[tokio::test]
 async fn e2e_multiple_feeds_sent_version_on_connect() {
     let server = start_server_debug().await;
@@ -140,7 +137,6 @@ async fn e2e_multiple_feeds_sent_version_on_connect() {
 /// where the shard is waiting trying to send the next "add node" message, while the
 /// telemetry core is waiting trying to send up to the shard the next "mute node" message,
 /// resulting in a deadlock. This test gives confidence that we don't run into such a deadlock.
-#[ignore]
 #[tokio::test]
 async fn e2e_lots_of_mute_messages_dont_cause_a_deadlock() {
     let mut server = start_server_debug().await;
@@ -197,7 +193,6 @@ async fn e2e_lots_of_mute_messages_dont_cause_a_deadlock() {
 
 /// If a node is added, a connecting feed should be told about the new chain.
 /// If the node is removed, the feed should be told that the chain has gone.
-#[ignore]
 #[tokio::test]
 async fn e2e_feed_add_and_remove_node() {
     // Connect server and add shard
@@ -263,7 +258,6 @@ async fn e2e_feed_add_and_remove_node() {
 /// If nodes connect and the chain name changes, feeds will be told about this
 /// and will keep receiving messages about the renamed chain (despite subscribing
 /// to it by name).
-#[ignore]
 #[tokio::test]
 async fn e2e_feeds_told_about_chain_rename_and_stay_subscribed() {
     // Connect a node:
@@ -359,7 +353,6 @@ async fn e2e_feeds_told_about_chain_rename_and_stay_subscribed() {
 /// If we add a couple of shards and a node for each, all feeds should be
 /// told about both node chains. If one shard goes away, we should get a
 /// "removed chain" message only for the node connected to that shard.
-#[ignore]
 #[tokio::test]
 async fn e2e_feed_add_and_remove_shard() {
     let mut server = start_server_debug().await;
@@ -438,7 +431,6 @@ async fn e2e_feed_add_and_remove_shard() {
 
 /// feeds can subscribe to one chain at a time. They should get the relevant
 /// messages for that chain and no other.
-#[ignore]
 #[tokio::test]
 async fn e2e_feed_can_subscribe_and_unsubscribe_from_chain() {
     use FeedMessage::*;
@@ -553,7 +545,6 @@ async fn e2e_feed_can_subscribe_and_unsubscribe_from_chain() {
 }
 
 /// If a node sends more than some rolling average amount of data, it'll be booted.
-#[ignore]
 #[tokio::test]
 async fn e2e_node_banned_if_it_sends_too_much_data() {
     async fn try_send_data(max_bytes: usize, send_msgs: usize, bytes_per_msg: usize) -> bool {
@@ -605,7 +596,6 @@ async fn e2e_node_banned_if_it_sends_too_much_data() {
 }
 
 /// Feeds will be disconnected if they can't receive messages quickly enough.
-#[ignore]
 #[tokio::test]
 async fn e2e_slow_feeds_are_disconnected() {
     let mut server = start_server(
@@ -703,7 +693,6 @@ async fn e2e_slow_feeds_are_disconnected() {
 /// If something connects to the `/submit` endpoint, there is a limit to the number
 /// of different messags IDs it can send telemetry about, to prevent a malicious actor from
 /// spamming a load of message IDs and exhausting our memory.
-#[ignore]
 #[tokio::test]
 async fn e2e_max_nodes_per_connection_is_enforced() {
     let mut server = start_server(
