@@ -15,8 +15,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use super::on_close::OnClose;
-use std::sync::Arc;
 use futures::channel;
+use std::sync::Arc;
 
 /// A message that can be sent into the channel interface
 #[derive(Debug, Clone)]
@@ -57,7 +57,9 @@ impl Sender {
     /// Unbounded send will always queue the message and doesn't
     /// need to be awaited.
     pub fn unbounded_send(&self, msg: SentMessage) -> Result<(), channel::mpsc::SendError> {
-        self.inner.unbounded_send(msg).map_err(|e| e.into_send_error())?;
+        self.inner
+            .unbounded_send(msg)
+            .map_err(|e| e.into_send_error())?;
         Ok(())
     }
     /// Convert this sender into a Sink

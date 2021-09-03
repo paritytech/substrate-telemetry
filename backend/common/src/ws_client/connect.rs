@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 use super::on_close::OnClose;
+use futures::{channel, StreamExt};
 use soketto::handshake::{Client, ServerResponse};
 use std::sync::Arc;
 use tokio::net::TcpStream;
 use tokio_util::compat::TokioAsyncReadCompatExt;
-use futures::{channel, StreamExt};
 
 use super::{
     receiver::{Receiver, RecvMessage},
@@ -123,7 +123,7 @@ impl Connection {
         });
 
         // Send messages to the socket:
-        let (tx_to_ws, mut rx_from_external) =  channel::mpsc::unbounded::<SentMessage>();
+        let (tx_to_ws, mut rx_from_external) = channel::mpsc::unbounded::<SentMessage>();
         tokio::spawn(async move {
             loop {
                 // Wait for messages, or bail entirely if asked to close.
