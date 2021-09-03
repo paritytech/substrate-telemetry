@@ -55,7 +55,7 @@ jobs:
       uses: docker/build-push-action@v2 # https://github.com/docker/build-push-action
       with:
         context: './backend'
-        push: false # while testing
+        push: true
         tags: parity/substrate-telemetry-backend:latest
         # add_git_labels: true
 
