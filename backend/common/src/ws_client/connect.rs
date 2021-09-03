@@ -205,7 +205,7 @@ impl Connection {
                 closer: Arc::clone(&on_close),
             },
             Receiver {
-                inner: rx_from_ws.into_stream(),
+                inner: crate::flume_receiver_into_stream(rx_from_ws),
                 closer: on_close,
             },
         )
