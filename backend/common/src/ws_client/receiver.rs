@@ -20,7 +20,7 @@ use std::sync::Arc;
 
 /// Receive messages out of a connection
 pub struct Receiver {
-    pub(super) inner: crate::FlumeRecvStream<'static, Result<RecvMessage, RecvError>>,
+    pub(super) inner: crate::FlumeRecvStream<Result<RecvMessage, RecvError>>,
     pub(super) closer: Arc<OnClose>,
 }
 
