@@ -353,8 +353,7 @@ where
 {
     // unbounded channel so that slow feeds don't block aggregator progress:
     let (tx_to_feed_conn, rx_from_aggregator) = flume::unbounded();
-    let mut rx_from_aggregator_chunks =
-        ReadyChunksAll::new(common::flume_receiver_into_stream(rx_from_aggregator));
+    let mut rx_from_aggregator_chunks = ReadyChunksAll::new(rx_from_aggregator.into_stream());
 
     // Tell the aggregator about this new connection, and give it a way to send messages to us:
     let init_msg = FromFeedWebsocket::Initialize {
