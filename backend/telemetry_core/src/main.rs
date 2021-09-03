@@ -353,6 +353,12 @@ where
 {
     // unbounded channel so that slow feeds don't block aggregator progress:
     let (tx_to_feed_conn, rx_from_aggregator) = flume::unbounded();
+
+    // `Receiver::into_stream()` is currently problematic at the time of writing
+    // (see https://github.com/zesterer/flume/issues/88). If this stream is polled lots
+    // and isn't ready, it'll leak memory. In this case, since we only select from it or
+    // a close channel, we shouldn't poll the thing more than once before it's ready (and
+    // when it's ready, it cleans up after itself properly). So, I hope it won't leak!
     let mut rx_from_aggregator_chunks = ReadyChunksAll::new(rx_from_aggregator.into_stream());
 
     // Tell the aggregator about this new connection, and give it a way to send messages to us:
