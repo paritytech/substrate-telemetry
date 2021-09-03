@@ -21,7 +21,7 @@ use std::{
 
 use crate::feed_message_de::FeedMessage;
 use common::ws_client;
-use futures::{Stream, StreamExt};
+use futures::{channel, Stream, StreamExt};
 
 /// Wrap a `ws_client::Sender` with convenient utility methods for shard connections
 pub struct ShardSender(ws_client::Sender);
@@ -37,7 +37,7 @@ impl ShardSender {
     pub fn send_json_binary(
         &mut self,
         json: serde_json::Value,
-    ) -> Result<(), flume::SendError<ws_client::SentMessage>> {
+    ) -> Result<(), channel::mpsc::SendError> {
         let bytes = serde_json::to_vec(&json).expect("valid bytes");
         self.unbounded_send(ws_client::SentMessage::Binary(bytes))
     }
@@ -45,7 +45,7 @@ impl ShardSender {
     pub fn send_json_text(
         &mut self,
         json: serde_json::Value,
-    ) -> Result<(), flume::SendError<ws_client::SentMessage>> {
+    ) -> Result<(), channel::mpsc::SendError> {
         let s = serde_json::to_string(&json).expect("valid string");
         self.unbounded_send(ws_client::SentMessage::Text(s))
     }
@@ -123,7 +123,7 @@ impl FeedSender {
         &self,
         command: S,
         param: S,
-    ) -> Result<(), flume::SendError<ws_client::SentMessage>> {
+    ) -> Result<(), channel::mpsc::SendError> {
         self.unbounded_send(ws_client::SentMessage::Text(format!(
             "{}:{}",
             command.as_ref(),

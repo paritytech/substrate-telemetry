@@ -15,6 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use super::on_close::OnClose;
+use futures::channel;
 use std::sync::Arc;
 
 /// A message that can be sent into the channel interface
@@ -39,7 +40,7 @@ pub enum SentMessage {
 /// Send messages into the connection
 #[derive(Clone)]
 pub struct Sender {
-    pub(super) inner: flume::Sender<SentMessage>,
+    pub(super) inner: channel::mpsc::UnboundedSender<SentMessage>,
     pub(super) closer: Arc<OnClose>,
 }
 
@@ -51,19 +52,21 @@ impl Sender {
     }
     /// Returns whether this channel is closed.
     pub fn is_closed(&self) -> bool {
-        self.inner.is_disconnected()
+        self.inner.is_closed()
     }
     /// Unbounded send will always queue the message and doesn't
     /// need to be awaited.
-    pub fn unbounded_send(&self, msg: SentMessage) -> Result<(), flume::SendError<SentMessage>> {
-        self.inner.send(msg)?;
+    pub fn unbounded_send(&self, msg: SentMessage) -> Result<(), channel::mpsc::SendError> {
+        self.inner
+            .unbounded_send(msg)
+            .map_err(|e| e.into_send_error())?;
         Ok(())
     }
     /// Convert this sender into a Sink
     pub fn into_sink(
         self,
     ) -> impl futures::Sink<SentMessage> + std::marker::Unpin + Clone + 'static {
-        self.inner.into_sink()
+        self.inner
     }
 }
 
