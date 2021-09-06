@@ -8,22 +8,14 @@ use tokio::time::{self, MissedTickBehavior};
 /// This emits fake but realistic looking telemetry messages.
 /// Can be connected to a telemetry server to emit realistic messages.
 pub struct FakeTelemetry {
-    block_time: Duration,
-    node_name: String,
-    chain: String,
-    message_id: usize,
+    pub block_time: Duration,
+    pub node_name: String,
+    pub chain: String,
+    pub genesis_hash: BlockHash,
+    pub message_id: usize,
 }
 
 impl FakeTelemetry {
-    pub fn new(block_time: Duration, node_name: String, chain: String, message_id: usize) -> Self {
-        Self {
-            block_time,
-            node_name,
-            chain,
-            message_id,
-        }
-    }
-
     /// Begin emitting messages from this node, calling the provided callback each
     /// time a new message is emitted.
     // Unused assignments allowed because macro seems to mess with knowledge of what's
@@ -38,6 +30,7 @@ impl FakeTelemetry {
         let id = self.message_id;
         let name = self.node_name;
         let chain = self.chain;
+        let genesis_hash = self.genesis_hash;
         let block_time = self.block_time;
 
         // Our "state". These numbers can be hashed to give a block hash,
@@ -62,7 +55,7 @@ impl FakeTelemetry {
                 "authority":true,
                 "chain":chain,
                 "config":"",
-                "genesis_hash":block_hash(best_block_n),
+                "genesis_hash":genesis_hash,
                 "implementation":"Substrate Node",
                 "msg":"system.connected",
                 "name":name,
