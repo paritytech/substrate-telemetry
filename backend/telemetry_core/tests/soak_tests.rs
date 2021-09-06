@@ -34,8 +34,8 @@ In general, if you run into issues, it may be better to run this on a linux
 box; MacOS seems to hit limits quicker in general.
 */
 
-use common::ws_client::SentMessage;
 use common::node_types::BlockHash;
+use common::ws_client::SentMessage;
 use futures::{future, StreamExt};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
