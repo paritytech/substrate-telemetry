@@ -9,6 +9,11 @@ on:
       - '.github/workflows/frontend.yml'
       - 'frontend/**'
       - '!backend/**'
+  pull_request:
+    paths:
+      - '.github/workflows/frontend.yml'
+      - 'frontend/**'
+      - '!backend/**'
 
 defaults:
   run:

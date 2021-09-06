@@ -6,6 +6,11 @@ on:
       - '.github/workflows/backend.yml'
       - 'backend/**'
       - '!frontend/**'
+  pull_request:
+    paths:
+      - '.github/workflows/backend.yml'
+      - 'backend/**'
+      - '!frontend/**'
 
 env:
   CARGO_TERM_COLOR: always
