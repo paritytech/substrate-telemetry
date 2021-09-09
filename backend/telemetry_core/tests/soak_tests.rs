@@ -116,9 +116,8 @@ async fn run_soak_test(opts: SoakTestOpts) {
         nodes.append(&mut conns);
     }
 
-    // TODO: Derive the str form the BlockHash.
     let genesis_hash = BlockHash::from_low_u64_be(1);
-    let genesis_hash_str = "0x0000000000000000000000000000000000000000000000000000000000000001";
+    let genesis_hash_str = format!("{:0x}", genesis_hash);
 
     // Start nodes talking to the shards:
     let bytes_in = Arc::new(AtomicUsize::new(0));
