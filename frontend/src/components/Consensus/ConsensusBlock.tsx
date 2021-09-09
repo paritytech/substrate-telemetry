@@ -125,9 +125,8 @@ export class ConsensusBlock extends React.Component<ConsensusBlock.Props, {}> {
                   className="legend"
                   key={'block_row_' + this.props.height + '_legend'}
                 >
-                  <Tooltip text={`Block number: ${this.props.height}`}>
-                    {this.displayBlockNumber()}
-                  </Tooltip>
+                  <Tooltip text={`Block number: ${this.props.height}`} />
+                  {this.displayBlockNumber()}
                 </th>
                 <th
                   className="finalizedInfo"

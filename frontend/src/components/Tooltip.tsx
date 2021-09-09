@@ -23,7 +23,6 @@ export namespace Tooltip {
   export interface Props {
     text: string;
     copy?: (cb: CopyCallback) => void;
-    className?: string;
     position?: 'left' | 'right' | 'center';
     onInit?: (update: UpdateCallback) => void;
   }
@@ -45,82 +44,75 @@ function copyToClipboard(text: string) {
   document.body.removeChild(el);
 }
 
-export class Tooltip extends React.Component<Tooltip.Props, Tooltip.State> {
-  public state = { copied: false };
+export function Tooltip({
+  text,
+  position,
+  copy,
+  onInit,
+}: Tooltip.Props): JSX.Element {
+  const [copied, setCopied] = React.useState<boolean>(false);
+  const [timer, setTimer] = React.useState<NodeJS.Timer | null>(null);
+  const el = React.useRef<HTMLDivElement>(null);
 
-  private el: HTMLDivElement;
-  private timer: NodeJS.Timer | null = null;
+  const update = React.useCallback(
+    (newText: string) => {
+      if (el.current) {
+        el.current.textContent = newText;
+      }
+    },
+    [el]
+  );
 
-  public componentDidMount() {
-    if (this.props.onInit) {
-      this.props.onInit(this.update);
-    }
-    if (this.props.copy) {
-      this.props.copy(this.onClick);
-    }
+  function restore() {
+    setCopied(false);
+    setTimer(null);
   }
 
-  public componentWillUnmount() {
-    if (this.timer) {
-      clearTimeout(this.timer);
+  function onClick() {
+    copyToClipboard(text);
+
+    if (timer) {
+      clearTimeout(timer);
     }
-    if (this.props.copy) {
-      this.props.copy(null);
-    }
+
+    setCopied(true);
+
+    setTimer(setTimeout(restore, 2000));
   }
 
-  public shouldComponentUpdate(
-    nextProps: Tooltip.Props,
-    nextState: Tooltip.State
-  ) {
-    return (
-      this.props.text !== nextProps.text ||
-      this.state.copied !== nextState.copied
-    );
+  React.useEffect(() => {
+    if (onInit) {
+      onInit(update);
+    }
+
+    if (copy) {
+      copy(onClick);
+    }
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+
+      if (copy) {
+        copy(null);
+      }
+    };
+  }, []);
+
+  let tooltipClass = 'Tooltip';
+
+  if (position && position !== 'center') {
+    tooltipClass += ` Tooltip-${position}`;
   }
 
-  public render() {
-    const { text, className, position } = this.props;
-    const { copied } = this.state;
-
-    let tooltipClass = 'Tooltip';
-
-    if (position && position !== 'center') {
-      tooltipClass += ` Tooltip-${position}`;
-    }
-
-    if (copied) {
-      tooltipClass += ' Tooltip-copied';
-    }
-
-    return (
-      <div className={tooltipClass} ref={this.onRef}>
-        {copied ? 'Copied to clipboard!' : text}
-      </div>
-    );
+  if (copied) {
+    tooltipClass += ' Tooltip-copied';
   }
 
-  private onRef = (el: HTMLDivElement) => {
-    this.el = el;
-  };
-
-  private update = (text: string) => {
-    this.el.textContent = text;
-  };
-
-  private onClick = () => {
-    copyToClipboard(this.props.text);
-
-    if (this.timer) {
-      clearTimeout(this.timer);
-    }
-
-    this.setState({ copied: true });
-    this.timer = setTimeout(this.restore, 2000);
-  };
-
-  private restore = () => {
-    this.setState({ copied: false });
-    this.timer = null;
-  };
+  return (
+    <div className={tooltipClass} ref={el}>
+      {copied ? 'Copied to clipboard!' : text}
+    </div>
+  );
 }
