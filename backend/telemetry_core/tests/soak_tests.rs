@@ -117,7 +117,7 @@ async fn run_soak_test(opts: SoakTestOpts) {
     }
 
     let genesis_hash = BlockHash::from_low_u64_be(1);
-    let genesis_hash_str = format!("{:0x}", genesis_hash);
+    let genesis_hash_string = format!("{:0x}", genesis_hash);
 
     // Start nodes talking to the shards:
     let bytes_in = Arc::new(AtomicUsize::new(0));
@@ -161,7 +161,7 @@ async fn run_soak_test(opts: SoakTestOpts) {
 
     // Every feed subscribes to the chain above to recv messages about it:
     for (feed_tx, _) in &mut feeds {
-        feed_tx.send_command("subscribe", genesis_hash_str).unwrap();
+        feed_tx.send_command("subscribe", &genesis_hash_string).unwrap();
     }
 
     // Also start receiving messages, counting the bytes received so far.
