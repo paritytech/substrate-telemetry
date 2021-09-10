@@ -34,6 +34,7 @@ In general, if you run into issues, it may be better to run this on a linux
 box; MacOS seems to hit limits quicker in general.
 */
 
+use common::node_types::BlockHash;
 use common::ws_client::SentMessage;
 use futures::{future, StreamExt};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -115,6 +116,9 @@ async fn run_soak_test(opts: SoakTestOpts) {
         nodes.append(&mut conns);
     }
 
+    let genesis_hash = BlockHash::from_low_u64_be(1);
+    let genesis_hash_string = format!("{:0x}", genesis_hash);
+
     // Start nodes talking to the shards:
     let bytes_in = Arc::new(AtomicUsize::new(0));
     let ids_per_node = opts.ids_per_node;
@@ -125,12 +129,13 @@ async fn run_soak_test(opts: SoakTestOpts) {
             let tx = tx.clone();
 
             tokio::spawn(async move {
-                let telemetry = test_utils::fake_telemetry::FakeTelemetry::new(
-                    Duration::from_secs(3),
-                    format!("Node {}", (ids_per_node * idx) + id + 1),
-                    "Polkadot".to_owned(),
-                    id + 1,
-                );
+                let telemetry = test_utils::fake_telemetry::FakeTelemetry {
+                    block_time: Duration::from_secs(3),
+                    node_name: format!("Node {}", (ids_per_node * idx) + id + 1),
+                    chain: "Polkadot".to_owned(),
+                    genesis_hash: genesis_hash,
+                    message_id: id + 1,
+                };
 
                 let res = telemetry
                     .start(|msg| async {
@@ -156,7 +161,9 @@ async fn run_soak_test(opts: SoakTestOpts) {
 
     // Every feed subscribes to the chain above to recv messages about it:
     for (feed_tx, _) in &mut feeds {
-        feed_tx.send_command("subscribe", "Polkadot").unwrap();
+        feed_tx
+            .send_command("subscribe", &genesis_hash_string)
+            .unwrap();
     }
 
     // Also start receiving messages, counting the bytes received so far.
