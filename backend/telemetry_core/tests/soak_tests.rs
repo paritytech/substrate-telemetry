@@ -161,7 +161,9 @@ async fn run_soak_test(opts: SoakTestOpts) {
 
     // Every feed subscribes to the chain above to recv messages about it:
     for (feed_tx, _) in &mut feeds {
-        feed_tx.send_command("subscribe", &genesis_hash_string).unwrap();
+        feed_tx
+            .send_command("subscribe", &genesis_hash_string)
+            .unwrap();
     }
 
     // Also start receiving messages, counting the bytes received so far.
