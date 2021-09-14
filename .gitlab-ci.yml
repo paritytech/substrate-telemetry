@@ -4,10 +4,22 @@ variables:
   BACKEND_IMAGE_FULL_NAME:        "${BACKEND_CONTAINER_REPO}:${CI_COMMIT_SHORT_SHA}-beta"
   FRONTEND_IMAGE_FULL_NAME:       "${FRONTEND_CONTAINER_REPO}:${CI_COMMIT_SHORT_SHA}-beta"
   KUBE_NAMESPACE:                 "substrate-telemetry"
+  VAULT_SERVER_URL:               "https://vault.parity-mgmt-vault.parity.io"
+  VAULT_AUTH_PATH:                "gitlab-parity-io-jwt"
+  VAULT_AUTH_ROLE:                "cicd_gitlab_parity_${CI_PROJECT_NAME}"
 
 stages:
   - dockerize
   - staging
+
+.vault-secrets:                    &vault-secrets
+  secrets:
+    DOCKER_HUB_USER:
+      vault:                       cicd/gitlab/parity/DOCKER_HUB_USER@kv
+      file:                        false
+    DOCKER_HUB_PASS:
+      vault:                       cicd/gitlab/parity/DOCKER_HUB_PASS@kv
+      file:                        false
 
 .dockerize:               &dockerize
   stage:                  dockerize
@@ -45,24 +57,26 @@ stages:
 
 dockerize-backend:
   <<:                     *dockerize
+  <<:                     *vault-secrets
   script:
     - echo "Building image $BACKEND_IMAGE_FULL_NAME"
     - buildah bud
       --format=docker
       --tag "$BACKEND_IMAGE_FULL_NAME" ./backend/
-    - echo ${Docker_Hub_Pass_Parity} |
-        buildah login --username ${Docker_Hub_User_Parity} --password-stdin docker.io
+    - echo ${DOCKER_HUB_PASS} |
+        buildah login --username ${DOCKER_HUB_USER} --password-stdin docker.io
     - buildah push --format=v2s2 "$BACKEND_IMAGE_FULL_NAME"
 
 dockerize-frontend:
   <<:                     *dockerize
+  <<:                     *vault-secrets
   script:
     - echo "Building image $FRONTEND_IMAGE_FULL_NAME"
     - buildah bud
       --format=docker
       --tag "$FRONTEND_IMAGE_FULL_NAME" ./frontend/
-    - echo ${Docker_Hub_Pass_Parity} |
-        buildah login --username ${Docker_Hub_User_Parity} --password-stdin docker.io
+    - echo ${DOCKER_HUB_PASS} |
+        buildah login --username ${DOCKER_HUB_USER} --password-stdin docker.io
     - buildah push --format=v2s2 "$FRONTEND_IMAGE_FULL_NAME"
 
 deploy-parity-stg:
