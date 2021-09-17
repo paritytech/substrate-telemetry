@@ -104,7 +104,7 @@ stages:
   image:                  paritytech/kubetools:3.5.3
   script:
     - |-
-      echo genenrating an empty custom-values.yaml file
+      echo generating an empty custom-values.yaml file
       touch custom-values.yaml
     - |-
       echo fetching the custom values file from the configmap if HELM_CONFIGMAP_NAME is specified
