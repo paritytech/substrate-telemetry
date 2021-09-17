@@ -38,7 +38,7 @@ variables:
 default:
   before_script:
     - |-
-      echo defining DOKCER_IMAGE_TAG variable
+      echo defining DOCKER_IMAGE_TAG variable
       if [[ $FORCE_DOCKER_TAG ]]; then
         export DOCKER_IMAGE_TAG="${FORCE_DOCKER_TAG}"
       elif [[ $CI_COMMIT_TAG =~ ^v[0-9]+\.[0-9]+.*$ ]]; then
