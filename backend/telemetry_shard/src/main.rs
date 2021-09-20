@@ -34,7 +34,7 @@ use common::http_utils;
 use common::node_message;
 use common::node_message::NodeMessageId;
 use common::rolling_total::RollingTotalBuilder;
-use futures::SinkExt;
+use futures::{ SinkExt, StreamExt };
 use http::Uri;
 use hyper::{Method, Response};
 use simple_logger::SimpleLogger;
@@ -96,10 +96,11 @@ struct Opts {
     /// on the machine. If no value is given, use an internal default that we have deemed sane.
     #[structopt(long)]
     worker_threads: Option<usize>,
-    /// Roughly how long to wait  in seconds between telemetry data coming from a specific message
-    /// ID on a connection before we assume that the message ID is no logner used and remove the
-    /// corresponding node state.
-    #[structopt(long)]
+    /// Roughly how long to wait in seconds for new telemetry data to arrive from a node. If
+    /// telemetry for a node does not arrive in this time frame, we remove the corresponding node
+    /// state, and if no messages are received on the connection at all in this time, it will be
+    /// dropped.
+    #[structopt(long, default_value = "30")]
     stale_node_timeout: u64,
 }
 
@@ -235,57 +236,78 @@ where
 
     // Tell the aggregator about this new connection, and give it a way to close this connection:
     let init_msg = FromWebsocket::Initialize {
-        close_connection: close_connection_tx,
+        close_connection: close_connection_tx.clone(),
     };
     if let Err(e) = tx_to_aggregator.send(init_msg).await {
         log::error!("Error sending message to aggregator: {}", e);
         return (tx_to_aggregator, ws_send);
     }
 
-    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(30));
+    // A periodic interval to check for stale nodes.
+    let mut stale_interval = tokio::time::interval(stale_node_timeout / 2);
 
-    // Now we've "initialized", wait for messages from the node. Messages will
-    // either be `SystemConnected` type messages that inform us that a new set
-    // of messages with some message ID will be sent (a node could have more
-    // than one of these), or updates linked to a specific message_id.
+    // Receiving data isn't cancel safe, so let it happen in a separate task.
+    // If this loop ends, the outer will receive a `None` message and end too.
+    // If the outer loop ends, it fires a msg on `close_connection_rx` to ensure this ends too.
+    let (ws_tx_atomic, mut ws_rx_atomic) = futures::channel::mpsc::unbounded();
+    tokio::task::spawn(async move {
+        loop {
+            let mut bytes = Vec::new();
+            tokio::select! {
+                // The close channel has fired, so end the loop. `ws_recv.receive_data` is
+                // *not* cancel safe, but since we're closing the connection we don't care.
+                _ = close_connection_rx.recv_async() => {
+                    log::info!("connection to {:?} being closed", real_addr);
+                    break
+                },
+                // Receive data and relay it on to our main select loop below.
+                msg_info = ws_recv.receive_data(&mut bytes) => {
+                    if let Err(soketto::connection::Error::Closed) = msg_info {
+                        break;
+                    }
+                    if let Err(e) = msg_info {
+                        log::error!("Shutting down websocket connection: Failed to receive data: {}", e);
+                        break;
+                    }
+                    if ws_tx_atomic.unbounded_send(bytes).is_err() {
+                        // The other end closed; end this loop.
+                        break;
+                    }
+                }
+            }
+        }
+    });
+
+    // Our main select loop atomically receives and handles telemetry messages from the node,
+    // and periodically checks for stale connections to keep our ndoe state tidy.
     loop {
-        let mut bytes = Vec::new();
         tokio::select! {
-            // The close channel has fired, so end the loop. `ws_recv.receive_data` is
-            // *not* cancel safe, but since we're closing the connection we don't care.
-            _ = close_connection_rx.recv_async() => {
-                log::info!("connection to {:?} being closed by aggregator", real_addr);
-                break
-            },
             // We periodically check for stale message IDs and remove nodes associated with
             // them, to prevent a buildup. We boot the whole connection if no interpretable
             // messages have been sent at all in the time period.
-            _ = interval.tick() => {
+            _ = stale_interval.tick() => {
                 let stale_ids: Vec<NodeMessageId> = allowed_message_ids.iter()
                     .filter(|(_, last_seen)| last_seen.elapsed() > stale_node_timeout)
                     .map(|(&id, _)| id)
                     .collect();
 
-                for message_id in stale_ids {
+                for &message_id in &stale_ids {
                     allowed_message_ids.remove(&message_id);
                     let _ = tx_to_aggregator.send(FromWebsocket::Remove { message_id } ).await;
                 }
 
-                if allowed_message_ids.is_empty() {
+                if !stale_ids.is_empty() && allowed_message_ids.is_empty() {
                     // End the entire connection if no recent messages came in for any ID.
                     break;
                 }
             },
-            // A message was received; handle it:
-            msg_info = ws_recv.receive_data(&mut bytes) => {
-                // Handle the socket closing, or errors receiving the message.
-                if let Err(soketto::connection::Error::Closed) = msg_info {
-                    break;
-                }
-                if let Err(e) = msg_info {
-                    log::error!("Shutting down websocket connection: Failed to receive data: {}", e);
-                    break;
-                }
+            // Handle messages received by the connected node.
+            msg = ws_rx_atomic.next() => {
+                // No more messages? break.
+                let bytes = match msg {
+                    Some(bytes) => bytes,
+                    None => { break; }
+                };
 
                 // Keep track of total bytes and bail if average over last 10 secs exceeds preference.
                 rolling_total_bytes.push(bytes.len());
@@ -351,6 +373,9 @@ where
             }
         }
     }
+
+    // Make sure to kill off the receive-messages task if the main select loop ends:
+    let _ = close_connection_tx.send(());
 
     // Return what we need to close the connection gracefully:
     (tx_to_aggregator, ws_send)
