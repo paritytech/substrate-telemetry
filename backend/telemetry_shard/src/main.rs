@@ -34,7 +34,7 @@ use common::http_utils;
 use common::node_message;
 use common::node_message::NodeMessageId;
 use common::rolling_total::RollingTotalBuilder;
-use futures::{ SinkExt, StreamExt };
+use futures::{SinkExt, StreamExt};
 use http::Uri;
 use hyper::{Method, Response};
 use simple_logger::SimpleLogger;
