@@ -7,7 +7,7 @@ use crate::aggregator::{AddNode, Aggregator};
 use crate::chain::{Chain, RemoveNode, UpdateNode};
 use crate::node::message::{NodeMessage, Payload};
 use crate::node::NodeId;
-use crate::types::{ConnId, NetworkId};
+use crate::types::{ConnId, NodeName};
 use crate::util::LocateRequest;
 use actix::prelude::*;
 use actix_http::ws::Item;
@@ -24,9 +24,9 @@ const CONT_BUF_LIMIT: usize = 10 * 1024 * 1024;
 pub struct NodeConnector {
     /// Multiplexing connections by id
     multiplex: BTreeMap<ConnId, ConnMultiplex>,
-    /// Mapping `NetworkId`s to `ConnId`s to de-duplicate multiple `system.connected` messages
+    /// Mapping `NodeName`s to `ConnId`s to de-duplicate multiple `system.connected` messages
     /// for parachains.
-    network_ids: BTreeMap<NetworkId, ConnId>,
+    names: BTreeMap<NodeName, ConnId>,
     /// Client must send ping at least once every 60 seconds (CLIENT_TIMEOUT),
     hb: Instant,
     /// Aggregator actor address
@@ -84,7 +84,7 @@ impl NodeConnector {
     ) -> Self {
         Self {
             multiplex: BTreeMap::new(),
-            network_ids: BTreeMap::new(),
+            names: BTreeMap::new(),
             hb: Instant::now(),
             aggregator,
             ip,
@@ -119,7 +119,7 @@ impl NodeConnector {
             }
             ConnMultiplex::Waiting { backlog } => {
                 if let Payload::SystemConnected(connected) = payload {
-                    let network_id = connected.node.network_id;
+                    let name = connected.node.name;
 
                     self.aggregator.do_send(AddNode {
                         node: connected.node,
@@ -128,7 +128,7 @@ impl NodeConnector {
                         node_connector: ctx.address(),
                     });
 
-                    self.network_ids.insert(network_id, conn_id)
+                    self.names.insert(name, conn_id)
                 } else {
                     if backlog.len() >= 10 {
                         backlog.remove(0);

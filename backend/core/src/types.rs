@@ -10,12 +10,13 @@ pub type BlockNumber = u64;
 pub type Timestamp = u64;
 pub type Address = Box<str>;
 pub type NetworkId = ArrayString<64>;
+pub type NodeName = ArrayString<64>;
 pub use primitive_types::H256 as BlockHash;
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct NodeDetails {
     pub chain: Box<str>,
-    pub name: Box<str>,
+    pub name: NodeName,
     pub implementation: Box<str>,
     pub version: Box<str>,
     pub validator: Option<Box<str>>,
