@@ -243,9 +243,6 @@ where
         return (tx_to_aggregator, ws_send);
     }
 
-    // A periodic interval to check for stale nodes.
-    let mut stale_interval = tokio::time::interval(stale_node_timeout / 2);
-
     // Receiving data isn't cancel safe, so let it happen in a separate task.
     // If this loop ends, the outer will receive a `None` message and end too.
     // If the outer loop ends, it fires a msg on `close_connection_rx` to ensure this ends too.
@@ -277,6 +274,9 @@ where
             }
         }
     });
+
+    // A periodic interval to check for stale nodes.
+    let mut stale_interval = tokio::time::interval(stale_node_timeout / 2);
 
     // Our main select loop atomically receives and handles telemetry messages from the node,
     // and periodically checks for stale connections to keep our ndoe state tidy.
@@ -348,7 +348,7 @@ where
                         continue;
                     }
 
-                    // Register the message ID against the network ID, and allow nodes with this message ID.
+                    // Note of the message ID, allowing telemetry for it.
                     allowed_message_ids.insert(message_id, Instant::now());
 
                     // Tell the aggregator loop about the new node.
