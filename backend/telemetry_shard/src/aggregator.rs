@@ -250,13 +250,8 @@ impl Aggregator {
                     let _ = tx_to_telemetry_core
                         .send_async(FromShardAggregator::UpdateNode { local_id, payload })
                         .await;
-                },
-                ToAggregator::FromWebsocket(
-                    conn_id,
-                    FromWebsocket::Remove {
-                        message_id
-                    }
-                ) => {
+                }
+                ToAggregator::FromWebsocket(conn_id, FromWebsocket::Remove { message_id }) => {
                     // Get the local ID, ignoring the message if none match:
                     let local_id = match to_local_id.get_id(&(conn_id, message_id)) {
                         Some(id) => id,
@@ -271,7 +266,7 @@ impl Aggregator {
                     let _ = tx_to_telemetry_core
                         .send_async(FromShardAggregator::RemoveNode { local_id })
                         .await;
-                },
+                }
                 ToAggregator::FromWebsocket(disconnected_conn_id, FromWebsocket::Disconnected) => {
                     // Find all of the local IDs corresponding to the disconnected connection ID and
                     // remove them, telling Telemetry Core about them too. This could be more efficient,

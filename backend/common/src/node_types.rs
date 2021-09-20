@@ -17,9 +17,9 @@
 //! These types are partly used in [`crate::node_message`], but also stored and used
 //! more generally through the application.
 
+use arrayvec::ArrayString;
 use serde::ser::{SerializeTuple, Serializer};
 use serde::{Deserialize, Serialize};
-use arrayvec::ArrayString;
 
 use crate::{time, MeanList};
 
