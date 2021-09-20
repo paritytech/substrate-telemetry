@@ -28,12 +28,15 @@ use blocked_addrs::BlockedAddrs;
 use common::byte_size::ByteSize;
 use common::http_utils;
 use common::node_message;
+use common::node_message::NodeMessageId;
+use common::node_types::NetworkId;
 use common::rolling_total::RollingTotalBuilder;
 use futures::SinkExt;
 use http::Uri;
 use hyper::{Method, Response};
 use simple_logger::SimpleLogger;
 use structopt::StructOpt;
+use std::collections::BTreeMap;
 
 #[cfg(not(target_env = "msvc"))]
 use jemallocator::Jemalloc;
@@ -204,6 +207,13 @@ async fn handle_node_websocket_connection<S>(
 where
     S: futures::Sink<FromWebsocket, Error = anyhow::Error> + Unpin + Send + 'static,
 {
+    // The network ID of a node uniquely identifies it, but the message ID might change if
+    // there's some sort of buggy implementation. So, keep a mapping from network ID to
+    // connection ID, so that if we see a "new" connection from a node that turns out to already
+    // exist, we can remove the one that exists and replace it with the new one.
+    let mut network_id_to_msg_id = BTreeMap::<NetworkId, node_message::NodeMessageId>::new();
+    let mut allowed_message_ids = HashSet::<NodeMessageId>::new();
+
     // Limit the number of bytes based on a rolling total and the incoming bytes per second
     // that has been configured via the CLI opts.
     let bytes_per_second = bytes_per_second.num_bytes();
@@ -211,10 +221,6 @@ where
         .granularity(Duration::from_secs(1))
         .window_size_multiple(10)
         .start();
-
-    // Track all of the message IDs that we've seen so far. If we exceed the
-    // max_nodes_per_connection limit we ignore subsequent message IDs.
-    let mut message_ids_seen = HashSet::new();
 
     // This could be a oneshot channel, but it's useful to be able to clone
     // messages, and we can't clone oneshot channel senders.
@@ -283,21 +289,28 @@ where
                 let message_id = node_message.id();
                 let payload = node_message.into_payload();
 
-                // Ignore messages from IDs that exceed our limit:
-                if message_ids_seen.contains(&message_id) {
-                    // continue on; we're happy
-                } else if message_ids_seen.len() >= max_nodes_per_connection {
-                    // ignore this message; it's not a "seen" ID and we've hit our limit.
-                    continue;
-                } else {
-                    // not seen ID, not hit limit; make note of new ID
-                    message_ids_seen.insert(message_id);
-                }
-
                 // Until the aggregator receives an `Add` message, which we can create once
                 // we see one of these SystemConnected ones, it will ignore messages with
                 // the corresponding message_id.
                 if let node_message::Payload::SystemConnected(info) = payload {
+                    let network_id = info.node.network_id;
+
+                    // Node with network ID already exist? Remove it to be replaced with this one.
+                    if let Some(&old_message_id) = network_id_to_msg_id.get(&network_id) {
+                        network_id_to_msg_id.remove(&network_id);
+                        allowed_message_ids.remove(&old_message_id);
+                        let _ = tx_to_aggregator.send(FromWebsocket::Remove { message_id: old_message_id }).await;
+                    }
+                    // Too many nodes seen on this connection? Ignore this one.
+                    else if network_id_to_msg_id.len() >= max_nodes_per_connection {
+                        continue;
+                    }
+
+                    // Register the message ID against the network ID, and allow nodes with this message ID.
+                    network_id_to_msg_id.insert(network_id, message_id);
+                    allowed_message_ids.insert(message_id);
+
+                    // Tell the aggregator loop about the new node.
                     let _ = tx_to_aggregator.send(FromWebsocket::Add {
                         message_id,
                         ip: real_addr,
@@ -307,9 +320,13 @@ where
                 }
                 // Anything that's not an "Add" is an Update. The aggregator will ignore
                 // updates against a message_id that hasn't first been Added, above.
-                else if let Err(e) = tx_to_aggregator.send(FromWebsocket::Update { message_id, payload } ).await {
-                    log::error!("Failed to send node message to aggregator: {}", e);
-                    continue;
+                else {
+                    if allowed_message_ids.contains(&message_id) {
+                        if let Err(e) = tx_to_aggregator.send(FromWebsocket::Update { message_id, payload } ).await {
+                            log::error!("Failed to send node message to aggregator: {}", e);
+                            continue;
+                        }
+                    }
                 }
             }
         }

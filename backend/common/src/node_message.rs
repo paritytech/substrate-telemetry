@@ -141,6 +141,7 @@ impl Payload {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use arrayvec::ArrayString;
     use bincode::Options;
 
     // Without adding a derive macro and marker trait (and enforcing their use), we don't really
@@ -166,7 +167,7 @@ mod tests {
                     implementation: "foo".into(),
                     version: "foo".into(),
                     validator: None,
-                    network_id: None,
+                    network_id: ArrayString::new(),
                     startup_time: None,
                 },
             }),

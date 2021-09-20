@@ -274,6 +274,7 @@ impl<'a> StateChain<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use common::node_types::NetworkId;
 
     fn node(name: &str, chain: &str) -> NodeDetails {
         NodeDetails {
@@ -282,7 +283,7 @@ mod test {
             implementation: "Bar".into(),
             version: "0.1".into(),
             validator: None,
-            network_id: None,
+            network_id: NetworkId::new(),
             startup_time: None,
         }
     }

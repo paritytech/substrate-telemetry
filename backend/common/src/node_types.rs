@@ -19,12 +19,14 @@
 
 use serde::ser::{SerializeTuple, Serializer};
 use serde::{Deserialize, Serialize};
+use arrayvec::ArrayString;
 
 use crate::{time, MeanList};
 
 pub type BlockNumber = u64;
 pub type Timestamp = u64;
 pub use primitive_types::H256 as BlockHash;
+pub type NetworkId = ArrayString<64>;
 
 /// Basic node details.
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -34,7 +36,7 @@ pub struct NodeDetails {
     pub implementation: Box<str>,
     pub version: Box<str>,
     pub validator: Option<Box<str>>,
-    pub network_id: Option<Box<str>>,
+    pub network_id: NetworkId,
     pub startup_time: Option<Box<str>>,
 }
 
