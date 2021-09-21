@@ -100,7 +100,7 @@ struct Opts {
     /// telemetry for a node does not arrive in this time frame, we remove the corresponding node
     /// state, and if no messages are received on the connection at all in this time, it will be
     /// dropped.
-    #[structopt(long, default_value = "30")]
+    #[structopt(long, default_value = "60")]
     stale_node_timeout: u64,
 }
 
