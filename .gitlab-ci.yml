@@ -110,7 +110,7 @@ stages:
       echo fetching the custom values file from the configmap if HELM_CONFIGMAP_NAME is specified
       if [[ $HELM_CONFIGMAP_NAME ]]; then
         # escape dot characters
-        HELM_CONFIGMAP_KEYNAME=`echo $HELM_CONFIGMAP_KEYNAME | sed 's/\./\\./g'`
+        HELM_CONFIGMAP_KEYNAME=`echo $HELM_CONFIGMAP_KEYNAME | sed 's/\./\\\./g'`
         kubectl get cm $HELM_CONFIGMAP_NAME -n $HELM_NAMESPACE -o jsonpath="{.data.$HELM_CONFIGMAP_KEYNAME}" \
           > custom-values.yaml
       fi
