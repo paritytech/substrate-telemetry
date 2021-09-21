@@ -219,7 +219,7 @@ where
     S: futures::Sink<FromWebsocket, Error = anyhow::Error> + Unpin + Send + 'static,
 {
     // Keep track of the message Ids that have been "granted access". We allow a maximum of
-    // `max_nodes_per_connection` before ignoreing others.
+    // `max_nodes_per_connection` before ignoring others.
     let mut allowed_message_ids = HashMap::<NodeMessageId, Instant>::new();
 
     // Limit the number of bytes based on a rolling total and the incoming bytes per second

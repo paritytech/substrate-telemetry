@@ -259,10 +259,8 @@ impl Aggregator {
                     };
 
                     // Remove references to this single node:
-                    muted.remove(&local_id);
                     to_local_id.remove_by_id(local_id);
-
-                    // Tell the core to remove references to it, too:
+                    muted.remove(&local_id);
                     let _ = tx_to_telemetry_core
                         .send_async(FromShardAggregator::RemoveNode { local_id })
                         .await;
