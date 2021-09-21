@@ -1,86 +1,178 @@
+# Gitlab-CI Workflow
+# stages:
+#   build:
+#     - Runs on commits on master or tags that match the pattern "v[0-9]+\.[0-9]+.*$". (e.g. 1.0, v2.1rc1)
+#   deploy-staging: 
+#     - Runs on commits on master or tags that match the pattern v1.0, v2.1rc1 (continues deployment)
+#   deploy-production:
+#     - Runs on tags that match the pattern v1.0, v2.1rc1 (manual deployment)
+
 variables:
-  BACKEND_CONTAINER_REPO:         "docker.io/parity/substrate-telemetry-backend"
-  FRONTEND_CONTAINER_REPO:        "docker.io/parity/substrate-telemetry-frontend"
-  BACKEND_IMAGE_FULL_NAME:        "${BACKEND_CONTAINER_REPO}:${CI_COMMIT_SHORT_SHA}-beta"
-  FRONTEND_IMAGE_FULL_NAME:       "${FRONTEND_CONTAINER_REPO}:${CI_COMMIT_SHORT_SHA}-beta"
-  KUBE_NAMESPACE:                 "substrate-telemetry"
-  VAULT_SERVER_URL:               "https://vault.parity-mgmt-vault.parity.io"
-  VAULT_AUTH_PATH:                "gitlab-parity-io-jwt"
-  VAULT_AUTH_ROLE:                "cicd_gitlab_parity_${CI_PROJECT_NAME}"
+  # Build Variables (Mandatory)
+  CONTAINER_REPO:             ""
+  DOCKERFILE_DIRECTORY:       ""
+  
+  # Deploy Variables (Mandatory)
+  HELM_NAMESPACE:             "substrate-telemetry"
+  HELM_RELEASE_NAME:          "substrate-telemetry"
+  HELM_CHART:                 "parity/substrate-telemetry"
+  
+  # Deploy Variables (Optional)
+  HELM_REPO_NAME:             "parity"
+  HELM_REPO_URL:              "https://paritytech.github.io/helm-charts/"
+  HELM_CONFIGMAP_NAME:        "helm-custom-values"
+  HELM_CONFIGMAP_KEYNAME:     "values-parity.yaml"
+
+  # Manual Variables (Optional)
+  ## Could be used in the webconsole when triggering the pipeline manually
+  ## DO NOT SET THEM IN THIS FILE!! They've been mentioned here only for documentation purposes!
+  FORCE_DEPLOY:               ""        # boolean: true or false - triggers the deploy-production stage
+  FORCE_DOCKER_TAG:           ""        # choose an existing docker tag to be deployed (e.g. v1.2.3)
+
+  # Vault variables (Optional)
+  VAULT_SERVER_URL:           "https://vault.parity-mgmt-vault.parity.io"
+  VAULT_AUTH_PATH:            "gitlab-parity-io-jwt"
+  VAULT_AUTH_ROLE:            "cicd_gitlab_parity_${CI_PROJECT_NAME}"
+
+
+default:
+  before_script:
+    - |-
+      echo defining DOCKER_IMAGE_TAG variable
+      if [[ $FORCE_DOCKER_TAG ]]; then
+        export DOCKER_IMAGE_TAG="${FORCE_DOCKER_TAG}"
+      elif [[ $CI_COMMIT_TAG =~ ^v[0-9]+\.[0-9]+.*$ ]]; then
+        export DOCKER_IMAGE_TAG="${CI_COMMIT_TAG}"
+        #export BUILD_LATEST_IMAGE="true"
+      else
+        export DOCKER_IMAGE_TAG="${CI_COMMIT_SHORT_SHA}-beta"
+      fi
 
 stages:
-  - dockerize
-  - staging
+  - build
+  - deploy-staging
+  - deploy-production
 
-.vault-secrets:                    &vault-secrets
+
+# Pipeline Job Templates:
+.vault-secrets:           &vault-secrets
   secrets:
     DOCKER_HUB_USER:
-      vault:                       cicd/gitlab/parity/DOCKER_HUB_USER@kv
-      file:                        false
+      vault:              cicd/gitlab/parity/DOCKER_HUB_USER@kv
+      file:               false
     DOCKER_HUB_PASS:
-      vault:                       cicd/gitlab/parity/DOCKER_HUB_PASS@kv
-      file:                        false
+      vault:              cicd/gitlab/parity/DOCKER_HUB_PASS@kv
+      file:               false
 
 .dockerize:               &dockerize
-  stage:                  dockerize
+  stage:                  build
   image:                  quay.io/buildah/stable
+  script:
+    - |-
+      echo building "$CONTAINER_REPO:$DOCKER_IMAGE_TAG"
+      if [[ $BUILD_LATEST_IMAGE ]]; then
+        buildah bud \
+        --format=docker \
+        --tag "$CONTAINER_REPO:$DOCKER_IMAGE_TAG" \
+        --tag "$CONTAINER_REPO:latest" "$DOCKERFILE_DIRECTORY"
+      else
+        buildah bud \
+        --format=docker \
+        --tag "$CONTAINER_REPO:$DOCKER_IMAGE_TAG" "$DOCKERFILE_DIRECTORY"
+      fi
+    - echo ${DOCKER_HUB_PASS} |
+        buildah login --username ${DOCKER_HUB_USER} --password-stdin docker.io
+    - |-
+      echo pushing "$CONTAINER_REPO:$DOCKER_IMAGE_TAG"
+      if [[ $BUILD_LATEST_IMAGE ]]; then
+        buildah push --format=v2s2 "$CONTAINER_REPO:$DOCKER_IMAGE_TAG"
+        buildah push --format=v2s2 "$CONTAINER_REPO:latest"
+      else
+        buildah push --format=v2s2 "$CONTAINER_REPO:$DOCKER_IMAGE_TAG"
+      fi
   rules:
-    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$FORCE_DOCKER_TAG'
+      when: never
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+.*$/'         # i.e. v1.0, v2.1rc1
+      when: always
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
       when: always
   tags:
     - kubernetes-parity-build
 
-.deploy-k8s:              &deploy-k8s
+.deploy:                  &deploy
   image:                  paritytech/kubetools:3.5.3
   script:
     - |-
-      helm repo add parity https://paritytech.github.io/helm-charts/
-      helm repo update
-      kubectl get cm helm-custom-values -n $KUBE_NAMESPACE -o jsonpath='{.data.values-parity\.yaml}' > values-parity.yaml
+      echo generating an empty custom-values.yaml file
+      touch custom-values.yaml
+    - |-
+      echo fetching the custom values file from the configmap if HELM_CONFIGMAP_NAME is specified
+      if [[ $HELM_CONFIGMAP_NAME ]]; then
+        # escape dot characters
+        HELM_CONFIGMAP_KEYNAME=`echo $HELM_CONFIGMAP_KEYNAME | sed 's/\./\\./g'`
+        kubectl get cm $HELM_CONFIGMAP_NAME -n $HELM_NAMESPACE -o jsonpath="{.data.$HELM_CONFIGMAP_KEYNAME}" \
+          > custom-values.yaml
+      fi
+    - |-
+      echo adding the helm repository if HELM_REPO_URL is specified
+      if [[ $HELM_REPO_URL ]]; then
+        helm repo add $HELM_REPO_NAME $HELM_REPO_URL
+        helm repo update
+      fi
+    - echo installing the helm chart
     - helm upgrade
         --install
         --atomic
         --timeout 120s
-        --create-namespace
-        --namespace $KUBE_NAMESPACE
-        --set image.backend.repository="${BACKEND_CONTAINER_REPO}"
-        --set image.backend.tag="${CI_COMMIT_SHORT_SHA}-beta"
-        --set image.frontend.repository="${FRONTEND_CONTAINER_REPO}"
-        --set image.frontend.tag="${CI_COMMIT_SHORT_SHA}-beta"
-        --values values-parity.yaml
-        $KUBE_NAMESPACE parity/substrate-telemetry
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "master"'
-      when: on_success
+        --namespace $HELM_NAMESPACE
+        --values custom-values.yaml
+        --set image.backend.repository="${CONTAINER_REPO_BACKEND}"
+        --set image.backend.tag="${DOCKER_IMAGE_TAG}"
+        --set image.frontend.repository="${CONTAINER_REPO_FRONTEND}"
+        --set image.frontend.tag="${DOCKER_IMAGE_TAG}"
+        ${HELM_RELEASE_NAME} ${HELM_CHART}
   tags:
     - kubernetes-parity-build
 
-dockerize-backend:
+
+# Pipeline Jobs:
+build-backend:
+  variables:
+    CONTAINER_REPO:       "docker.io/parity/substrate-telemetry-backend"
+    DOCKERFILE_DIRECTORY: "./backend/"
   <<:                     *dockerize
   <<:                     *vault-secrets
-  script:
-    - echo "Building image $BACKEND_IMAGE_FULL_NAME"
-    - buildah bud
-      --format=docker
-      --tag "$BACKEND_IMAGE_FULL_NAME" ./backend/
-    - echo ${DOCKER_HUB_PASS} |
-        buildah login --username ${DOCKER_HUB_USER} --password-stdin docker.io
-    - buildah push --format=v2s2 "$BACKEND_IMAGE_FULL_NAME"
 
-dockerize-frontend:
+build-frontend:
+  variables:
+    CONTAINER_REPO:       "docker.io/parity/substrate-telemetry-frontend"
+    DOCKERFILE_DIRECTORY: "./frontend/"
   <<:                     *dockerize
   <<:                     *vault-secrets
-  script:
-    - echo "Building image $FRONTEND_IMAGE_FULL_NAME"
-    - buildah bud
-      --format=docker
-      --tag "$FRONTEND_IMAGE_FULL_NAME" ./frontend/
-    - echo ${DOCKER_HUB_PASS} |
-        buildah login --username ${DOCKER_HUB_USER} --password-stdin docker.io
-    - buildah push --format=v2s2 "$FRONTEND_IMAGE_FULL_NAME"
 
-deploy-parity-stg:
-  stage:                  staging
-  <<:                     *deploy-k8s
+deploy-staging:
+  variables:
+    CONTAINER_REPO_BACKEND:  "docker.io/parity/substrate-telemetry-backend"
+    CONTAINER_REPO_FRONTEND: "docker.io/parity/substrate-telemetry-frontend"
+  stage:                  deploy-staging
+  <<:                     *deploy
   environment:
     name:                 parity-stg
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+.*$/'       # i.e. v1.0, v2.1rc1
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
+#deploy-production:
+#  variables:
+#    CONTAINER_REPO_BACKEND:  "docker.io/parity/substrate-telemetry-backend"
+#    CONTAINER_REPO_FRONTEND: "docker.io/parity/substrate-telemetry-frontend"
+#  stage:                  deploy-production
+#  <<:                     *deploy
+#  environment:
+#    name:                 parity-prod
+#  rules:
+#    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+.*$/'       # i.e. v1.0, v2.1rc1
+#      when: manual
+#    - if: '$FORCE_DEPLOY == "true"'
+#      when: manual
