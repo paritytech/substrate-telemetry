@@ -657,7 +657,10 @@ async fn e2e_slow_feeds_are_disconnected() {
     let (mut raw_feed_tx, mut raw_feed_rx) = server.get_core().connect_feed_raw().await.unwrap();
 
     // Subscribe the feed:
-    raw_feed_tx.send_text("subscribe:Polkadot").await.unwrap();
+    raw_feed_tx
+        .send_text("subscribe:0x0000000000000000000000000000000000000000000000000000000000000001")
+        .await
+        .unwrap();
 
     // Wait a little.. the feed hasn't been receiving messages so it should
     // be booted after ~a second.

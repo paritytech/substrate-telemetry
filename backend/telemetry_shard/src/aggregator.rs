@@ -73,6 +73,10 @@ pub enum FromWebsocket {
         message_id: node_message::NodeMessageId,
         payload: node_message::Payload,
     },
+    /// remove a node with the given message ID
+    Remove {
+        message_id: node_message::NodeMessageId,
+    },
     /// Make a note when the node disconnects.
     Disconnected,
 }
@@ -245,6 +249,20 @@ impl Aggregator {
                     // Send the message to the telemetry core with this local ID:
                     let _ = tx_to_telemetry_core
                         .send_async(FromShardAggregator::UpdateNode { local_id, payload })
+                        .await;
+                }
+                ToAggregator::FromWebsocket(conn_id, FromWebsocket::Remove { message_id }) => {
+                    // Get the local ID, ignoring the message if none match:
+                    let local_id = match to_local_id.get_id(&(conn_id, message_id)) {
+                        Some(id) => id,
+                        None => continue,
+                    };
+
+                    // Remove references to this single node:
+                    to_local_id.remove_by_id(local_id);
+                    muted.remove(&local_id);
+                    let _ = tx_to_telemetry_core
+                        .send_async(FromShardAggregator::RemoveNode { local_id })
                         .await;
                 }
                 ToAggregator::FromWebsocket(disconnected_conn_id, FromWebsocket::Disconnected) => {

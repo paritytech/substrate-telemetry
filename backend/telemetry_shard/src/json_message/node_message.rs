@@ -246,7 +246,7 @@ pub struct NodeDetails {
     pub implementation: Box<str>,
     pub version: Box<str>,
     pub validator: Option<Box<str>>,
-    pub network_id: Option<Box<str>>,
+    pub network_id: node_types::NetworkId,
     pub startup_time: Option<Box<str>>,
 }
 
