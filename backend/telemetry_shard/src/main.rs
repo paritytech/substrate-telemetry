@@ -292,12 +292,14 @@ where
                     .collect();
 
                 for &message_id in &stale_ids {
+                    log::info!("Removing stale node with message ID {} from {:?}", message_id, real_addr);
                     allowed_message_ids.remove(&message_id);
                     let _ = tx_to_aggregator.send(FromWebsocket::Remove { message_id } ).await;
                 }
 
                 if !stale_ids.is_empty() && allowed_message_ids.is_empty() {
                     // End the entire connection if no recent messages came in for any ID.
+                    log::info!("Closing stale connection from {:?}", real_addr);
                     break;
                 }
             },
@@ -352,6 +354,7 @@ where
                     allowed_message_ids.insert(message_id, Instant::now());
 
                     // Tell the aggregator loop about the new node.
+                    log::info!("Adding node with message ID {} from {:?}", message_id, real_addr);
                     let _ = tx_to_aggregator.send(FromWebsocket::Add {
                         message_id,
                         ip: real_addr,
