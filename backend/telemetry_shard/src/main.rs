@@ -347,6 +347,7 @@ where
                 if let node_message::Payload::SystemConnected(info) = payload {
                     // Too many nodes seen on this connection? Ignore this one.
                     if allowed_message_ids.len() >= max_nodes_per_connection {
+                        log::info!("Ignoring new node from {:?} (we've hit the max of {} nodes per connection)", real_addr, max_nodes_per_connection);
                         continue;
                     }
 
