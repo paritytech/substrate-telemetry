@@ -439,6 +439,8 @@ impl InnerLoop {
                 }
             }
             FromShardWebsocket::Disconnected => {
+                self.shard_channels.remove(&shard_conn_id);
+
                 // Find all nodes associated with this shard connection ID:
                 let node_ids_to_remove: Vec<NodeId> = self
                     .node_ids
