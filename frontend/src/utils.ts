@@ -72,7 +72,7 @@ export function secondsWithPrecision(num: number): string {
 
 export interface HashData {
   tab?: string;
-  chain?: Types.ChainLabel;
+  chain?: Types.GenesisHash;
 }
 
 export function getHashData(): HashData {
@@ -83,7 +83,7 @@ export function getHashData(): HashData {
   }
 
   const [tab, rawChain] = hash.substr(1).split('/');
-  const chain = decodeURIComponent(rawChain) as Types.ChainLabel;
+  const chain = decodeURIComponent(rawChain) as Types.GenesisHash;
 
   return { tab, chain };
 }

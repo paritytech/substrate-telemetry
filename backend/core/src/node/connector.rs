@@ -8,7 +8,7 @@ use crate::chain::{Chain, RemoveNode, UpdateNode};
 use crate::node::message::{NodeMessage, Payload};
 use crate::node::NodeId;
 use crate::tracker::{Heartbeat, Tracker};
-use crate::types::ConnId;
+use crate::types::{ConnId, NodeName};
 use crate::util::LocateRequest;
 use actix::prelude::*;
 use actix_http::ws::Item;
@@ -27,6 +27,9 @@ const CONT_BUF_LIMIT: usize = 10 * 1024 * 1024;
 pub struct NodeConnector {
     /// Multiplexing connections by id
     multiplex: BTreeMap<ConnId, ConnMultiplex>,
+    /// Mapping `NodeName`s to `ConnId`s to de-duplicate multiple `system.connected` messages
+    /// for parachains.
+    names: BTreeMap<NodeName, ConnId>,
     /// Client must send ping at least once every 60 seconds (CLIENT_TIMEOUT),
     hb: Instant,
     /// Aggregator actor address
@@ -91,6 +94,7 @@ impl NodeConnector {
     ) -> Self {
         Self {
             multiplex: BTreeMap::new(),
+            names: BTreeMap::new(),
             hb: Instant::now(),
             aggregator,
             tracker,
@@ -126,25 +130,39 @@ impl NodeConnector {
         let conn_id = msg.id();
         let payload = msg.into();
 
-        match self.multiplex.entry(conn_id).or_default() {
+        let replaced_conn_id = match self.multiplex.entry(conn_id).or_default() {
             ConnMultiplex::Connected { nid, chain } => {
                 chain.do_send(UpdateNode { nid: *nid, payload });
+                None
             }
             ConnMultiplex::Waiting { backlog } => {
                 if let Payload::SystemConnected(connected) = payload {
+                    let name = connected.node.name;
+
                     self.aggregator.do_send(AddNode {
                         node: connected.node,
                         genesis_hash: connected.genesis_hash,
                         conn_id,
                         node_connector: ctx.address(),
                     });
+
+                    self.names.insert(name, conn_id)
                 } else {
                     if backlog.len() >= 10 {
                         backlog.remove(0);
                     }
 
                     backlog.push(payload);
+
+
+                    None
                 }
+            }
+        };
+
+        if let Some(conn_id) = replaced_conn_id {
+            if let Some(ConnMultiplex::Connected { chain, nid }) = self.multiplex.remove(&conn_id) {
+                chain.do_send(RemoveNode(nid));
             }
         }
     }
