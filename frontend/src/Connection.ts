@@ -541,7 +541,7 @@ export class Connection {
     let topChain: Maybe<ChainData> = null;
 
     for (const chain of chains.values()) {
-      if (PINNED_CHAINS[chain.label] === 1) {
+      if (PINNED_CHAINS[chain.genesisHash] === 1) {
         topChain = chain;
         break;
       }
