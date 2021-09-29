@@ -238,7 +238,7 @@ impl InnerLoop {
                         tx,
                         metered_rx.len(),
                         dropped_messages2.load(Ordering::Relaxed),
-                        total_messages2.load(Ordering::Relaxed)
+                        total_messages2.load(Ordering::Relaxed),
                     ),
                 }
             }
