@@ -213,7 +213,7 @@ If we want to deploy a commit that an image does not exist for (see https://hub.
 
 1. Tag the commit on `master` that you'd like to deploy, eg `git tag v0.1-foo`. The tag must be compatible with the regular expression `^v[0-9]+\.[0-9]+.*$`.
 2. Push the tag to master, eg `git push origin v0.1-foo`.
-3. The deployment pipeline will kick off, and you can view the progress here https://gitlab.parity.io/parity/substrate-telemetry/-/pipelines.
+3. This will kick off the deployment process, which in this case will also lead to new docker images being built. You can view the progress at https://gitlab.parity.io/parity/substrate-telemetry/-/pipelines.
 4. Once a deployment to staging has been successful, run whatever tests you need against the staging deployment to convince yourself that you're happy with it.
 5. Visit the CI/CD pipelines page again (URl above) and click the "play" button on the "Deploy-production" stage to perform the deployment to live.
 6. Confirm that things are working once the deployment has finished by visiting https://telemetry.polkadot.io/.
