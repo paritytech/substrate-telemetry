@@ -190,17 +190,15 @@ Once we're happy with things in staging, we can do a deployment to live as follo
 
 1. Ensure that the PRs you'd like to deploy are merged to master.
 2. Navigate to https://gitlab.parity.io/parity/substrate-telemetry/-/pipelines/new.
-3. Add a variable called `FORCE_DEPLOY` with the value `true`.
-4. Hit 'Run Pipeline'. A deployment to staging will be carried out, and if you're happy with that, you can then hit the "play" button on the "Deploy-production" stage to perform the deployment to live.
-5. Confirm that things are working once the deployment has finished by visiting https://telemetry.polkadot.io/.
+3. Hit 'Run Pipeline'. A deployment to staging will be carried out, and if you're happy with that, you can then hit the "play" button on the "Deploy-production" stage to perform the deployment to live.
+4. Confirm that things are working once the deployment has finished by visiting https://telemetry.polkadot.io/.
 
 ### Rolling back to a previous deployment
 
 If something goes wrong running the above, we can roll back the deployment to live as follows.
 
-1. Decide what image tag you'd like to roll back to. Go to https://hub.docker.com/r/parity/substrate-telemetry-backend/tags?page=1&ordering=last_updated and have a look at the available tags (eg `224b1fae-beta`) to select one you'd like. You can cross reference this with the tags available using `git tag` in the repository to help see which tags correspond to which code changes.
+1. Decide what image tag you'd like to roll back to. Go to https://hub.docker.com/r/parity/substrate-telemetry-backend/tags?page=1&ordering=last_updated and have a look at the available image tags (eg `224b1fae-beta`) to select one you'd like. You can cross reference this with the commit hashes in `git log` to find a commit you want to revert to.
 2. Navigate to https://gitlab.parity.io/parity/substrate-telemetry/-/pipelines/new.
-3. Add a variable called `FORCE_DEPLOY` with the value `true`.
-4. Add a variable called `FORCE_DOCKER_TAG` with a value corresponding to the tag you want to deploy, eg `224b1fae-beta`. Images must exist already for this tag.
-5. Hit 'Run Pipeline'. As above, a deployment to staging will be carried out, and if you're happy with that, you can hit the "play" button on the "Deploy-production" stage to perform the deployment to live.
-6. Confirm that things are working once the deployment has finished by visiting https://telemetry.polkadot.io/.
+3. Add a variable called `FORCE_DOCKER_TAG` with a value corresponding to the tag you want to deploy, eg `224b1fae-beta`. Images must exist already for this tag.
+4. Hit 'Run Pipeline'. As above, a deployment to staging will be carried out, and if you're happy with that, you can hit the "play" button on the "Deploy-production" stage to perform the deployment to live.
+5. Confirm that things are working once the deployment has finished by visiting https://telemetry.polkadot.io/.
