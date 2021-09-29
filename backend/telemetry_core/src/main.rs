@@ -538,6 +538,10 @@ async fn return_prometheus_metrics(aggregator: AggregatorSet) -> Response<hyper:
             idx, m.total_messages_to_feeds, m.timestamp_unix_ms
         ));
         s.push_str(&format!(
+            "telemetry_current_messages_to_aggregator{{aggregator=\"{}\"}} {} {}\n\n",
+            idx, m.current_messages_to_aggregator, m.timestamp_unix_ms
+        ));
+        s.push_str(&format!(
             "telemetry_total_messages_to_aggregator{{aggregator=\"{}\"}} {} {}\n\n",
             idx, m.total_messages_to_aggregator, m.timestamp_unix_ms
         ));
