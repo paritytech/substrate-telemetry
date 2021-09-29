@@ -2,7 +2,7 @@
 # stages:
 #   build:
 #     - Runs on commits on master or tags that match the pattern "v[0-9]+\.[0-9]+.*$". (e.g. 1.0, v2.1rc1)
-#   deploy-staging: 
+#   deploy-staging:
 #     - Runs on commits on master or tags that match the pattern v1.0, v2.1rc1 (continues deployment)
 #   deploy-production:
 #     - Runs on tags that match the pattern v1.0, v2.1rc1 (manual deployment)
@@ -11,12 +11,12 @@ variables:
   # Build Variables (Mandatory)
   CONTAINER_REPO:             ""
   DOCKERFILE_DIRECTORY:       ""
-  
+
   # Deploy Variables (Mandatory)
   HELM_NAMESPACE:             "substrate-telemetry"
   HELM_RELEASE_NAME:          "substrate-telemetry"
   HELM_CHART:                 "parity/substrate-telemetry"
-  
+
   # Deploy Variables (Optional)
   HELM_REPO_NAME:             "parity"
   HELM_REPO_URL:              "https://paritytech.github.io/helm-charts/"
@@ -26,8 +26,7 @@ variables:
   # Manual Variables (Optional)
   ## Could be used in the webconsole when triggering the pipeline manually
   ## DO NOT SET THEM IN THIS FILE!! They've been mentioned here only for documentation purposes!
-  FORCE_DEPLOY:               ""        # boolean: true or false - triggers the deploy-production stage
-  FORCE_DOCKER_TAG:           ""        # choose an existing docker tag to be deployed (e.g. v1.2.3)
+  FORCE_DOCKER_TAG:           ""        # choose an existing docker tag to be deployed (e.g. 224b1fae-beta)
 
   # Vault variables (Optional)
   VAULT_SERVER_URL:           "https://vault.parity-mgmt-vault.parity.io"
@@ -41,11 +40,8 @@ default:
       echo defining DOCKER_IMAGE_TAG variable
       if [[ $FORCE_DOCKER_TAG ]]; then
         export DOCKER_IMAGE_TAG="${FORCE_DOCKER_TAG}"
-      elif [[ $CI_COMMIT_TAG =~ ^v[0-9]+\.[0-9]+.*$ ]]; then
-        export DOCKER_IMAGE_TAG="${CI_COMMIT_TAG}"
-        export BUILD_LATEST_IMAGE="true"
       else
-        export DOCKER_IMAGE_TAG="${CI_COMMIT_SHORT_SHA}-beta"
+        export DOCKER_IMAGE_TAG="${CI_COMMIT_SHORT_SHA}"
       fi
 
 stages:
@@ -70,31 +66,19 @@ stages:
   script:
     - |-
       echo building "$CONTAINER_REPO:$DOCKER_IMAGE_TAG"
-      if [[ $BUILD_LATEST_IMAGE ]]; then
-        buildah bud \
+      buildah bud \
         --format=docker \
         --tag "$CONTAINER_REPO:$DOCKER_IMAGE_TAG" \
         --tag "$CONTAINER_REPO:latest" "$DOCKERFILE_DIRECTORY"
-      else
-        buildah bud \
-        --format=docker \
-        --tag "$CONTAINER_REPO:$DOCKER_IMAGE_TAG" "$DOCKERFILE_DIRECTORY"
-      fi
     - echo ${DOCKER_HUB_PASS} |
         buildah login --username ${DOCKER_HUB_USER} --password-stdin docker.io
     - |-
       echo pushing "$CONTAINER_REPO:$DOCKER_IMAGE_TAG"
-      if [[ $BUILD_LATEST_IMAGE ]]; then
-        buildah push --format=v2s2 "$CONTAINER_REPO:$DOCKER_IMAGE_TAG"
-        buildah push --format=v2s2 "$CONTAINER_REPO:latest"
-      else
-        buildah push --format=v2s2 "$CONTAINER_REPO:$DOCKER_IMAGE_TAG"
-      fi
+      buildah push --format=v2s2 "$CONTAINER_REPO:$DOCKER_IMAGE_TAG"
+      buildah push --format=v2s2 "$CONTAINER_REPO:latest"
   rules:
     - if: '$FORCE_DOCKER_TAG'
       when: never
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+.*$/'         # i.e. v1.0, v2.1rc1
-      when: always
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
       when: always
   tags:
@@ -160,7 +144,6 @@ deploy-staging:
   environment:
     name:                 parity-stg
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+.*$/'       # i.e. v1.0, v2.1rc1
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
 
 deploy-production:
@@ -171,8 +154,4 @@ deploy-production:
   <<:                     *deploy
   environment:
     name:                 parity-prod
-  rules:
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+.*$/'       # i.e. v1.0, v2.1rc1
-      when: manual
-    - if: '$FORCE_DEPLOY == "true"'
-      when: manual
+  when: manual
