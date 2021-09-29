@@ -178,7 +178,7 @@ This section covers the internal deployment of Substrate Telemetry to our stagin
 
 ### Deployment to staging
 
-Every time new code is merged to `master`, a new version of telemetry will be built and deployed to our staging environment. Roughly what will happen is:
+Every time new code is merged to `master`, a new version of telemetry will be automatically built and deployed to our staging environment, so there is nothing that you need to do. Roughly what will happen is:
 
 - An image tag will be generated that looks like `$CI_COMMIT_SHORT_SHA-beta`, for example `224b1fae-beta`.
 - Docker images for the frontend and backend will be pushed to the docker repo (see https://hub.docker.com/r/parity/substrate-telemetry-backend/tags?page=1&ordering=last_updated and https://hub.docker.com/r/parity/substrate-telemetry-frontend/tags?page=1&ordering=last_updated).
