@@ -204,16 +204,3 @@ If something goes wrong running the above, we can roll back the deployment to li
 4. Add a variable called `FORCE_DOCKER_TAG` with a value corresponding to the tag you want to deploy, eg `224b1fae-beta`. Images must exist already for this tag.
 5. Hit 'Run Pipeline'. As above, a deployment to staging will be carried out, and if you're happy with that, you can hit the "play" button on the "Deploy-production" stage to perform the deployment to live.
 6. Confirm that things are working once the deployment has finished by visiting https://telemetry.polkadot.io/.
-
-### Deploying a commit that no image exists for
-
-This should be unnecessary, but I mention it here for the sake of completeness and to briefly mention the handling of specially tagged commits on master by the CI pipeline.
-
-If we want to deploy a commit that an image does not exist for (see https://hub.docker.com/r/parity/substrate-telemetry-backend/tags?page=1&ordering=last_updated), we can do the following.
-
-1. Tag the commit on `master` that you'd like to deploy, eg `git tag v0.1-foo`. The tag must be compatible with the regular expression `^v[0-9]+\.[0-9]+.*$`.
-2. Push the tag to master, eg `git push origin v0.1-foo`.
-3. This will kick off the deployment process, which in this case will also lead to new docker images being built. You can view the progress at https://gitlab.parity.io/parity/substrate-telemetry/-/pipelines.
-4. Once a deployment to staging has been successful, run whatever tests you need against the staging deployment to convince yourself that you're happy with it.
-5. Visit the CI/CD pipelines page again (URl above) and click the "play" button on the "Deploy-production" stage to perform the deployment to live.
-6. Confirm that things are working once the deployment has finished by visiting https://telemetry.polkadot.io/.
