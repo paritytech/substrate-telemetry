@@ -33,8 +33,9 @@ import {
   StateCacheColumn,
 } from './components/List';
 
-const TIMEOUT_BASE = (1000 * 5) as Types.Milliseconds; // 5 seconds
-const TIMEOUT_MAX = (1000 * 60 * 5) as Types.Milliseconds; // 5 minutes
+const CONNECTION_TIMEOUT_BASE = (1000 * 5) as Types.Milliseconds; // 5 seconds
+const CONNECTION_TIMEOUT_MAX = (1000 * 60 * 5) as Types.Milliseconds; // 5 minutes
+const MESSAGE_TIMEOUT = (1000 * 60) as Types.Milliseconds; // 60 seconds
 
 declare global {
   interface Window {
@@ -74,12 +75,15 @@ export class Connection {
 
   private static async socket(): Promise<WebSocket> {
     let socket = await Connection.trySocket();
-    let timeout = TIMEOUT_BASE;
+    let timeout = CONNECTION_TIMEOUT_BASE;
 
     while (!socket) {
       await sleep(timeout);
 
-      timeout = Math.min(timeout * 2, TIMEOUT_MAX) as Types.Milliseconds;
+      timeout = Math.min(
+        timeout * 2,
+        CONNECTION_TIMEOUT_MAX
+      ) as Types.Milliseconds;
       socket = await Connection.trySocket();
     }
 
@@ -112,6 +116,8 @@ export class Connection {
     });
   }
 
+  // timer which will force a reconnection if no message is seen for a while
+  private messageTimeout: Maybe<ResettableTimeout> = null;
   // id sent to the backend used to pair responses
   private pingId = 0;
   // timeout handler for ping messages
@@ -170,7 +176,8 @@ export class Connection {
     this.socket.send(`no-more-finality:${chain}`);
   }
 
-  public handleMessages = (messages: FeedMessage.Message[]) => {
+  private handleMessages = (messages: FeedMessage.Message[]) => {
+    this.messageTimeout?.reset();
     const { nodes, chains, sortBy, selectedColumns } = this.appState;
     const nodesStateRef = nodes.ref;
 
@@ -429,6 +436,13 @@ export class Connection {
   };
 
   private bindSocket() {
+    console.log('Connected');
+    // Disconnect if no messages are received in 60s:
+    this.messageTimeout = resettableTimeout(
+      this.handleDisconnect,
+      MESSAGE_TIMEOUT
+    );
+    // Ping periodically to keep the above happy even if no other data is coming in:
     this.ping();
 
     if (this.appState) {
@@ -460,8 +474,6 @@ export class Connection {
     this.pingId += 1;
     this.pingSent = timestamp();
     this.socket.send(`ping:${this.pingId}`);
-
-    this.pingTimeout = setTimeout(this.ping, 30000);
   };
 
   private pong(id: number) {
@@ -479,7 +491,15 @@ export class Connection {
     }
 
     const latency = timestamp() - this.pingSent;
+    console.log(`Ping latency: ${latency}ms`);
+
     this.pingSent = null;
+
+    // Schedule a new ping to be sent at least 30s after the last one:
+    this.pingTimeout = setTimeout(
+      this.ping,
+      Math.max(0, MESSAGE_TIMEOUT / 2 - latency)
+    );
   }
 
   private newVersion() {
@@ -493,6 +513,8 @@ export class Connection {
   private clean() {
     clearTimeout(this.pingTimeout);
     this.pingSent = null;
+    this.messageTimeout?.cancel();
+    this.messageTimeout = null;
 
     this.socket.removeEventListener('message', this.handleFeedData);
     this.socket.removeEventListener('close', this.handleDisconnect);
@@ -557,6 +579,7 @@ export class Connection {
   }
 
   private handleDisconnect = async () => {
+    console.warn('Disconnecting; will attempt reconnect');
     this.appUpdate({ status: 'offline' });
     this.resetConsensus();
     this.clean();
@@ -565,3 +588,26 @@ export class Connection {
     this.bindSocket();
   };
 }
+
+/**
+ * Fire a function if the timer runs out. You can reset it, or
+ * cancel it to prevent the function from being fired.
+ *
+ * @param onExpired
+ * @param timeoutMs
+ * @returns
+ */
+function resettableTimeout(onExpired: () => void, timeoutMs: number) {
+  let timer = setTimeout(onExpired, timeoutMs);
+
+  return {
+    reset: () => {
+      clearTimeout(timer);
+      timer = setTimeout(onExpired, timeoutMs);
+    },
+    cancel: () => {
+      clearTimeout(timer);
+    },
+  };
+}
+type ResettableTimeout = ReturnType<typeof resettableTimeout>;
