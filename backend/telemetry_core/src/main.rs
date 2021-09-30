@@ -507,44 +507,59 @@ async fn return_prometheus_metrics(aggregator: AggregatorSet) -> Response<hyper:
     // be handled correctly when pointing a current version of prometheus at it.
     //
     // Note: '{{' and '}}' are just escaped versions of '{' and '}' in Rust fmt strings.
+    use std::fmt::Write;
     let mut s = String::new();
     for (idx, m) in metrics.iter().enumerate() {
-        s.push_str(&format!(
-            "telemetry_connected_feeds{{aggregator=\"{}\"}} {} {}\n",
+        let _ = write!(
+            &mut s,
+            "telemetry_core_connected_feeds{{aggregator=\"{}\"}} {} {}\n",
             idx, m.connected_feeds, m.timestamp_unix_ms
-        ));
-        s.push_str(&format!(
-            "telemetry_connected_nodes{{aggregator=\"{}\"}} {} {}\n",
+        );
+        let _ = write!(
+            &mut s,
+            "telemetry_core_connected_nodes{{aggregator=\"{}\"}} {} {}\n",
             idx, m.connected_nodes, m.timestamp_unix_ms
-        ));
-        s.push_str(&format!(
-            "telemetry_connected_shards{{aggregator=\"{}\"}} {} {}\n",
+        );
+        let _ = write!(
+            &mut s,
+            "telemetry_core_connected_shards{{aggregator=\"{}\"}} {} {}\n",
             idx, m.connected_shards, m.timestamp_unix_ms
-        ));
-        s.push_str(&format!(
-            "telemetry_chains_subscribed_to{{aggregator=\"{}\"}} {} {}\n",
+        );
+        let _ = write!(
+            &mut s,
+            "telemetry_core_chains_subscribed_to{{aggregator=\"{}\"}} {} {}\n",
             idx, m.chains_subscribed_to, m.timestamp_unix_ms
-        ));
-        s.push_str(&format!(
-            "telemetry_subscribed_feeds{{aggregator=\"{}\"}} {} {}\n",
+        );
+        let _ = write!(
+            &mut s,
+            "telemetry_core_subscribed_feeds{{aggregator=\"{}\"}} {} {}\n",
             idx, m.subscribed_feeds, m.timestamp_unix_ms
-        ));
-        s.push_str(&format!(
-            "telemetry_subscribed_finality_feeds{{aggregator=\"{}\"}} {} {}\n",
+        );
+        let _ = write!(
+            &mut s,
+            "telemetry_core_subscribed_finality_feeds{{aggregator=\"{}\"}} {} {}\n",
             idx, m.subscribed_finality_feeds, m.timestamp_unix_ms
-        ));
-        s.push_str(&format!(
-            "telemetry_total_messages_to_feeds{{aggregator=\"{}\"}} {} {}\n",
+        );
+        let _ = write!(
+            &mut s,
+            "telemetry_core_total_messages_to_feeds{{aggregator=\"{}\"}} {} {}\n",
             idx, m.total_messages_to_feeds, m.timestamp_unix_ms
-        ));
-        s.push_str(&format!(
-            "telemetry_total_messages_to_aggregator{{aggregator=\"{}\"}} {} {}\n\n",
+        );
+        let _ = write!(
+            &mut s,
+            "telemetry_core_current_messages_to_aggregator{{aggregator=\"{}\"}} {} {}\n\n",
+            idx, m.current_messages_to_aggregator, m.timestamp_unix_ms
+        );
+        let _ = write!(
+            &mut s,
+            "telemetry_core_total_messages_to_aggregator{{aggregator=\"{}\"}} {} {}\n\n",
             idx, m.total_messages_to_aggregator, m.timestamp_unix_ms
-        ));
-        s.push_str(&format!(
-            "telemetry_dropped_messages_to_aggregator{{aggregator=\"{}\"}} {} {}\n\n",
+        );
+        let _ = write!(
+            &mut s,
+            "telemetry_core_dropped_messages_to_aggregator{{aggregator=\"{}\"}} {} {}\n\n",
             idx, m.dropped_messages_to_aggregator, m.timestamp_unix_ms
-        ));
+        );
     }
 
     Response::builder()
