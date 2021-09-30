@@ -124,7 +124,7 @@ stages:
     - helm upgrade
         --install
         --atomic
-        --timeout 120s
+        --timeout 600s
         --namespace $HELM_NAMESPACE
         --values custom-values.yaml
         --set image.backend.repository="${CONTAINER_REPO_BACKEND}"
