@@ -597,7 +597,10 @@ export class Connection {
  * @param timeoutMs
  * @returns
  */
-function resettableTimeout(onExpired: () => void, timeoutMs: number) {
+function resettableTimeout(
+  onExpired: () => void,
+  timeoutMs: Types.Milliseconds
+) {
   let timer = setTimeout(onExpired, timeoutMs);
 
   return {
