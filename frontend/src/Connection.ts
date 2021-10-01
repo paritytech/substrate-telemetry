@@ -601,11 +601,11 @@ function resettableTimeout(onExpired: () => void, timeoutMs: number) {
   let timer = setTimeout(onExpired, timeoutMs);
 
   return {
-    reset: () => {
+    reset() {
       clearTimeout(timer);
       timer = setTimeout(onExpired, timeoutMs);
     },
-    cancel: () => {
+    cancel() {
       clearTimeout(timer);
     },
   };
