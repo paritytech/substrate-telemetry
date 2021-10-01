@@ -259,7 +259,7 @@ impl Chain {
                     self.best.hash,
                 );
                 if let Some(timestamp) = self.timestamp {
-                    self.block_times.push(now - timestamp);
+                    self.block_times.push(now.saturating_sub(timestamp));
                     self.average_block_time = Some(self.block_times.average());
                 }
                 self.timestamp = Some(now);
@@ -271,7 +271,7 @@ impl Chain {
                 propagation_time = Some(0);
             } else if block.height == self.best.height {
                 if let Some(timestamp) = self.timestamp {
-                    propagation_time = Some(now - timestamp);
+                    propagation_time = Some(now.saturating_sub(timestamp));
                 }
             }
 
