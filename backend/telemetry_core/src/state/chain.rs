@@ -54,7 +54,7 @@ pub struct Chain {
     timestamp: Option<Timestamp>,
     /// Genesis hash of this chain
     genesis_hash: BlockHash,
-    /// Maximum number of nodes allowed in this chain
+    /// Maximum number of nodes allowed to connect from this chain
     max_nodes: usize,
 }
 
