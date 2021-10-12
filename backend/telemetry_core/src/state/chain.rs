@@ -111,8 +111,6 @@ impl Chain {
 
     /// Is the chain the node belongs to overquota?
     pub fn is_overquota(&self) -> bool {
-        // Dynamically determine the max nodes based on the most common
-        // label so far, in case it changes to something with a different limit.
         self.nodes.len() >= self.max_nodes
     }
 
