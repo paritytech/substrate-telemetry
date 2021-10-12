@@ -50,6 +50,10 @@ pub struct State {
 
     /// Chain labels that we do not want to allow connecting.
     denylist: HashSet<String>,
+
+    /// How many nodes from third party chains are allowed to connect
+    /// before we prevent connections from them.
+    max_third_party_nodes: usize,
 }
 
 /// Adding a node to a chain leads to this node_idult
@@ -102,11 +106,12 @@ pub struct RemovedNode {
 }
 
 impl State {
-    pub fn new<T: IntoIterator<Item = String>>(denylist: T) -> State {
+    pub fn new<T: IntoIterator<Item = String>>(denylist: T, max_third_party_nodes: usize) -> State {
         State {
             chains: DenseMap::new(),
             chains_by_genesis_hash: HashMap::new(),
             denylist: denylist.into_iter().collect(),
+            max_third_party_nodes,
         }
     }
 
@@ -143,7 +148,11 @@ impl State {
         let chain_id = match self.chains_by_genesis_hash.get(&genesis_hash) {
             Some(id) => *id,
             None => {
-                let chain_id = self.chains.add(Chain::new(genesis_hash));
+                let max_nodes = match chain::is_first_party_network(&genesis_hash) {
+                    true => usize::MAX,
+                    false => self.max_third_party_nodes,
+                };
+                let chain_id = self.chains.add(Chain::new(genesis_hash, max_nodes));
                 self.chains_by_genesis_hash.insert(genesis_hash, chain_id);
                 chain_id
             }
@@ -290,7 +299,7 @@ mod test {
 
     #[test]
     fn adding_a_node_returns_expected_response() {
-        let mut state = State::new(None);
+        let mut state = State::new(None, 1000);
 
         let chain1_genesis = BlockHash::from_low_u64_be(1);
 
@@ -325,7 +334,7 @@ mod test {
 
     #[test]
     fn adding_and_removing_nodes_updates_chain_label_mapping() {
-        let mut state = State::new(None);
+        let mut state = State::new(None, 1000);
 
         let chain1_genesis = BlockHash::from_low_u64_be(1);
         let node_id0 = state
@@ -385,7 +394,7 @@ mod test {
 
     #[test]
     fn chain_removed_when_last_node_is() {
-        let mut state = State::new(None);
+        let mut state = State::new(None, 1000);
 
         let chain1_genesis = BlockHash::from_low_u64_be(1);
         let node_id = state

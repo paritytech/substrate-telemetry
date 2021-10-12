@@ -195,9 +195,10 @@ impl InnerLoop {
         tx_to_locator: flume::Sender<(NodeId, Ipv4Addr)>,
         denylist: Vec<String>,
         max_queue_len: usize,
+        max_third_party_nodes: usize,
     ) -> Self {
         InnerLoop {
-            node_state: State::new(denylist),
+            node_state: State::new(denylist, max_third_party_nodes),
             node_ids: BiMap::new(),
             feed_channels: HashMap::new(),
             shard_channels: HashMap::new(),
