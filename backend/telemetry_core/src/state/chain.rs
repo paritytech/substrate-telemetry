@@ -20,6 +20,7 @@ use common::node_types::{BlockHash, BlockNumber};
 use common::{id_type, time, DenseMap, MostSeen, NumStats};
 use once_cell::sync::Lazy;
 use std::collections::HashSet;
+use std::str::FromStr;
 
 use crate::feed_message::{self, FeedMessageSerializer};
 use crate::find_location;
@@ -53,6 +54,8 @@ pub struct Chain {
     timestamp: Option<Timestamp>,
     /// Genesis hash of this chain
     genesis_hash: BlockHash,
+    /// Maximum number of nodes allowed to connect from this chain
+    max_nodes: usize,
 }
 
 pub enum AddNodeResult {
@@ -67,23 +70,31 @@ pub struct RemoveNodeResult {
     pub chain_renamed: bool,
 }
 
-/// Labels of chains we consider "first party". These chains allow any
+/// Genesis hashes of chains we consider "first party". These chains allow any
 /// number of nodes to connect.
-static FIRST_PARTY_NETWORKS: Lazy<HashSet<&'static str>> = Lazy::new(|| {
-    let mut set = HashSet::new();
-    set.insert("Polkadot");
-    set.insert("Kusama");
-    set.insert("Westend");
-    set.insert("Rococo");
-    set
+static FIRST_PARTY_NETWORKS: Lazy<HashSet<BlockHash>> = Lazy::new(|| {
+    let genesis_hash_strs = &[
+        "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3", // Polkadot
+        "0xb0a8d493285c2df73290dfb7e61f870f17b41801197a149ca93654499ea3dafe", // Kusama
+        "0xe143f23803ac50e8f6f8e62695d1ce9e4e1d68aa36c1cd2cfd15340213f3423e", // Westend
+        "0xf6e9983c37baf68846fedafe21e56718790e39fb1c582abc408b81bc7b208f9a", // Rococo
+    ];
+
+    genesis_hash_strs
+        .iter()
+        .map(|h| BlockHash::from_str(h).expect("hardcoded hash str should be valid"))
+        .collect()
 });
 
-/// Max number of nodes allowed to connect to the telemetry server.
-const THIRD_PARTY_NETWORKS_MAX_NODES: usize = 500;
+/// When we construct a chain, we want to check to see whether or not it's a "first party"
+/// network first, and assign a `max_nodes` accordingly. This helps us do that.
+pub fn is_first_party_network(genesis_hash: &BlockHash) -> bool {
+    FIRST_PARTY_NETWORKS.contains(genesis_hash)
+}
 
 impl Chain {
     /// Create a new chain with an initial label.
-    pub fn new(genesis_hash: BlockHash) -> Self {
+    pub fn new(genesis_hash: BlockHash, max_nodes: usize) -> Self {
         Chain {
             labels: MostSeen::default(),
             nodes: DenseMap::new(),
@@ -93,14 +104,13 @@ impl Chain {
             average_block_time: None,
             timestamp: None,
             genesis_hash,
+            max_nodes,
         }
     }
 
     /// Is the chain the node belongs to overquota?
     pub fn is_overquota(&self) -> bool {
-        // Dynamically determine the max nodes based on the most common
-        // label so far, in case it changes to something with a different limit.
-        self.nodes.len() >= max_nodes(self.labels.best())
+        self.nodes.len() >= self.max_nodes
     }
 
     /// Assign a node to this chain.
@@ -371,16 +381,5 @@ impl Chain {
     }
     pub fn genesis_hash(&self) -> BlockHash {
         self.genesis_hash
-    }
-}
-
-/// First party networks (Polkadot, Kusama etc) are allowed any number of nodes.
-/// Third party networks are allowed `THIRD_PARTY_NETWORKS_MAX_NODES` nodes and
-/// no more.
-fn max_nodes(label: &str) -> usize {
-    if FIRST_PARTY_NETWORKS.contains(label) {
-        usize::MAX
-    } else {
-        THIRD_PARTY_NETWORKS_MAX_NODES
     }
 }

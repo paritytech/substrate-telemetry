@@ -41,6 +41,9 @@ pub struct AggregatorOpts {
     /// If our incoming message queue exceeds this length, we start
     /// dropping non-essential messages.
     pub max_queue_len: usize,
+    /// How many nodes from third party chains are allowed to connect
+    /// before we prevent connections from them.
+    pub max_third_party_nodes: usize,
 }
 
 struct AggregatorInternal {
@@ -75,6 +78,7 @@ impl Aggregator {
             tx_to_locator,
             opts.max_queue_len,
             opts.denylist,
+            opts.max_third_party_nodes,
         ));
 
         // Return a handle to our aggregator:
@@ -93,10 +97,16 @@ impl Aggregator {
         tx_to_aggregator: flume::Sender<(NodeId, Ipv4Addr)>,
         max_queue_len: usize,
         denylist: Vec<String>,
+        max_third_party_nodes: usize,
     ) {
-        inner_loop::InnerLoop::new(tx_to_aggregator, denylist, max_queue_len)
-            .handle(rx_from_external)
-            .await;
+        inner_loop::InnerLoop::new(
+            tx_to_aggregator,
+            denylist,
+            max_queue_len,
+            max_third_party_nodes,
+        )
+        .handle(rx_from_external)
+        .await;
     }
 
     /// Gather metrics from our aggregator loop

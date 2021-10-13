@@ -79,6 +79,9 @@ struct Opts {
     /// messages in an attempt to let it reduce?
     #[structopt(long)]
     aggregator_queue_len: Option<usize>,
+    /// How many nodes from third party chains are allowed to connect before we prevent connections from them.
+    #[structopt(long, default_value = "1000")]
+    max_third_party_nodes: usize,
 }
 
 fn main() {
@@ -128,6 +131,7 @@ async fn start_server(num_aggregators: usize, opts: Opts) -> anyhow::Result<()> 
         AggregatorOpts {
             max_queue_len: aggregator_queue_len,
             denylist: opts.denylist,
+            max_third_party_nodes: opts.max_third_party_nodes,
         },
     )
     .await?;

@@ -39,12 +39,17 @@ cargo test e2e -- --ignored
 use common::node_types::BlockHash;
 use common::ws_client::SentMessage;
 use serde_json::json;
-use std::time::Duration;
+use std::{str::FromStr, time::Duration};
 use test_utils::{
     assert_contains_matches,
     feed_message_de::{FeedMessage, NodeDetails},
     workspace::{start_server, start_server_debug, CoreOpts, ServerOpts, ShardOpts},
 };
+
+fn polkadot_genesis_hash() -> BlockHash {
+    BlockHash::from_str("0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3")
+        .expect("valid polkadot genesis hash")
+}
 
 /// Helper for concise testing
 fn ghash(id: u64) -> BlockHash {
@@ -641,7 +646,7 @@ async fn e2e_slow_feeds_are_disconnected() {
                     "authority":true,
                     "chain":"Polkadot",
                     "config":"",
-                    "genesis_hash": ghash(1),
+                    "genesis_hash": polkadot_genesis_hash(), // First party node connections aren't limited.
                     "implementation":"Substrate Node",
                     "msg":"system.connected",
                     "name": format!("Alice {}", n),
