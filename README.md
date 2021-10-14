@@ -190,9 +190,9 @@ Once we're happy with things in staging, we can do a deployment to live as follo
 
 1. Ensure that the PRs you'd like to deploy are merged to master.
 2. Tag the commit on `master` that you'd like to deploy with the form `v1.0-a1b2c3d`.
-   - The version number (`1.0` here) should just be incremented from whatever the latest version found using `git tag` is.
-   - The suffix is a short git commit hash, just so that it's really easy to relate the built docker images back to the corresponding code.
-3. Pushing the tag (`git push origin v1.0-a1b2c3d`) will kick off the deployment process, which in this case will also lead to new docker images being built. You can view the progress at https://gitlab.parity.io/parity/substrate-telemetry/-/pipelines.
+   - The version number (`1.0` here) should just be incremented from whatever the latest version found using `git tag` is. We don't use semantic versioning or anything like that; this is just a dumb "increment version number" approach so that we can see clearly what we've deployed to live and in what order.
+   - The suffix is a short git commit hash (which can be generated with `git rev-parse --short HEAD`), just so that it's really easy to relate the built docker images back to the corresponding code.
+3. Pushing the tag (eg `git push origin v1.0-a1b2c3d`) will kick off the deployment process, which in this case will also lead to new docker images being built. You can view the progress at https://gitlab.parity.io/parity/substrate-telemetry/-/pipelines.
 4. Once a deployment to staging has been successful, run whatever tests you need against the staging deployment to convince yourself that you're happy with it.
 5. Visit the CI/CD pipelines page again (URl above) and click the "play" button on the "Deploy-production" stage to perform the deployment to live.
 6. Confirm that things are working once the deployment has finished by visiting https://telemetry.polkadot.io/.
