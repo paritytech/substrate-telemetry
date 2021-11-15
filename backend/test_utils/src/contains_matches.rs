@@ -43,7 +43,7 @@ assert!(does_contain);
 */
 #[macro_export]
 macro_rules! contains_matches {
-    ($expression:expr, $( $( $pattern:pat_param )|+ $( if $guard:expr )? ),+ $(,)?) => {{
+    ($expression:expr, $( $pattern:pat $( if $guard:expr )? ),+ $(,)?) => {{
         let mut items = $expression.into_iter();
 
         // For each pattern we want to match, we consume items until
@@ -63,7 +63,7 @@ macro_rules! contains_matches {
                 };
 
                 match item {
-                    $( $pattern )|+ $( if $guard )? => break,
+                    $pattern $( if $guard )? => break,
                     _ => continue
                 }
             }
@@ -99,10 +99,10 @@ test_utils::assert_contains_matches!(
 */
 #[macro_export]
 macro_rules! assert_contains_matches {
-    ($expression:expr, $( $( $pattern:pat_param )|+ $( if $guard:expr )? ),+ $(,)?) => {
+    ($expression:expr, $( $pattern:pat $( if $guard:expr )? ),+ $(,)?) => {
         let does_contain_matches = $crate::contains_matches!(
             $expression,
-            $( $( $pattern )|+ $( if $guard )? ),+
+            $( $pattern $( if $guard )? ),+
         );
 
         assert!(does_contain_matches);
