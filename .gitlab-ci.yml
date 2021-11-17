@@ -2,7 +2,7 @@
 # stages:
 #   build:
 #     - Runs on commits on master or tags that match the pattern "v[0-9]+\.[0-9]+.*$". (e.g. 1.0, v2.1rc1)
-#   deploy-staging: 
+#   deploy-staging:
 #     - Runs on commits on master or tags that match the pattern v1.0, v2.1rc1 (continues deployment)
 #   deploy-production:
 #     - Runs on tags that match the pattern v1.0, v2.1rc1 (manual deployment)
@@ -11,12 +11,12 @@ variables:
   # Build Variables (Mandatory)
   CONTAINER_REPO:             ""
   DOCKERFILE_DIRECTORY:       ""
-  
+
   # Deploy Variables (Mandatory)
   HELM_NAMESPACE:             "substrate-telemetry"
   HELM_RELEASE_NAME:          "substrate-telemetry"
   HELM_CHART:                 "parity/substrate-telemetry"
-  
+
   # Deploy Variables (Optional)
   HELM_REPO_NAME:             "parity"
   HELM_REPO_URL:              "https://paritytech.github.io/helm-charts/"
@@ -47,6 +47,12 @@ default:
       else
         export DOCKER_IMAGE_TAG="${CI_COMMIT_SHORT_SHA}-beta"
       fi
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - unknown_failure
+      - api_failure
 
 stages:
   - build
