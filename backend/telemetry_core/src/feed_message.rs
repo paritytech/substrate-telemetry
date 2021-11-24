@@ -25,7 +25,6 @@ use common::node_types::{
 };
 use serde_json::to_writer;
 
-type Address = Box<str>;
 type FeedNodeId = usize;
 
 pub trait FeedMessage {
@@ -119,9 +118,8 @@ actions! {
     13: SubscribedTo,
     14: UnsubscribedFrom,
     15: Pong<'_>,
-    // Note; some now-unused messages were removed between IDs 15 and 19.
+    // Note; some now-unused messages were removed between IDs 15 and 20.
     // We maintain existing IDs for backward compatibility.
-    19: AfgAuthoritySet,
     20: StaleNode,
     21: NodeIOUpdate<'_>,
 }
@@ -175,15 +173,6 @@ pub struct UnsubscribedFrom(pub BlockHash);
 
 #[derive(Serialize)]
 pub struct Pong<'a>(pub &'a str);
-
-#[derive(Serialize)]
-pub struct AfgAuthoritySet(
-    pub Address,
-    pub Address,
-    pub Address,
-    pub BlockNumber,
-    pub BlockHash,
-);
 
 #[derive(Serialize)]
 pub struct StaleNode(pub FeedNodeId);

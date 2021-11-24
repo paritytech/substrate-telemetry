@@ -162,20 +162,23 @@ impl Chain {
         if let Some(node) = self.nodes.get_mut(nid) {
             match payload {
                 Payload::SystemInterval(ref interval) => {
+                    // Send a feed message if any of the relevant node details change:
                     if node.update_hardware(interval) {
                         feed.push(feed_message::Hardware(nid.into(), node.hardware()));
                     }
-
                     if let Some(stats) = node.update_stats(interval) {
                         feed.push(feed_message::NodeStatsUpdate(nid.into(), stats));
                     }
-
                     if let Some(io) = node.update_io(interval) {
                         feed.push(feed_message::NodeIOUpdate(nid.into(), io));
                     }
                 }
                 Payload::AfgAuthoritySet(authority) => {
-                    node.set_validator_address(authority.authority_id.clone());
+                    // If our node validator address (and thus details) change, send an
+                    // updated "add node" feed message:
+                    if node.set_validator_address(authority.authority_id.clone()) {
+                        feed.push(feed_message::AddedNode(nid.into(), &node));
+                    }
                     return;
                 }
                 _ => {},

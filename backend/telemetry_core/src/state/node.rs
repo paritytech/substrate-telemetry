@@ -213,8 +213,13 @@ impl Node {
         self.stale
     }
 
-    pub fn set_validator_address(&mut self, addr: Box<str>) {
-        self.details.validator = Some(addr);
+    pub fn set_validator_address(&mut self, addr: Box<str>) -> bool {
+        if self.details.validator.as_ref() == Some(&addr) {
+            false
+        } else {
+            self.details.validator = Some(addr);
+            true
+        }
     }
 
     pub fn startup_time(&self) -> Option<Timestamp> {
