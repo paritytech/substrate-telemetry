@@ -93,7 +93,7 @@ export class Chains extends React.Component<Chains.Props, {}> {
 
     return (
       <a
-        key={label}
+        key={genesisHash}
         className={className}
         onClick={this.subscribe.bind(this, genesisHash)}
       >
