@@ -16,7 +16,7 @@
 
 use common::node_message::Payload;
 use common::node_types::{Block, Timestamp};
-use common::node_types::{BlockHash, BlockNumber};
+use common::node_types::BlockHash;
 use common::{id_type, time, DenseMap, MostSeen, NumStats};
 use once_cell::sync::Lazy;
 use std::collections::HashSet;
@@ -149,13 +149,12 @@ impl Chain {
     }
 
     /// Attempt to update the best block seen in this chain.
-    /// Returns a boolean which denotes whether the output is for finalization feeds (true) or not (false).
     pub fn update_node(
         &mut self,
         nid: ChainNodeId,
         payload: Payload,
         feed: &mut FeedMessageSerializer,
-    ) -> bool {
+    ) {
         if let Some(block) = payload.best_block() {
             self.handle_block(block, nid, feed);
         }
@@ -177,51 +176,9 @@ impl Chain {
                 }
                 Payload::AfgAuthoritySet(authority) => {
                     node.set_validator_address(authority.authority_id.clone());
-                    return false;
+                    return;
                 }
-                Payload::AfgFinalized(finalized) => {
-                    if let Ok(finalized_number) = finalized.finalized_number.parse::<BlockNumber>()
-                    {
-                        if let Some(addr) = node.details().validator.clone() {
-                            feed.push(feed_message::AfgFinalized(
-                                addr,
-                                finalized_number,
-                                finalized.finalized_hash,
-                            ));
-                        }
-                    }
-                    return true;
-                }
-                Payload::AfgReceivedPrecommit(precommit) => {
-                    if let Ok(finalized_number) = precommit.target_number.parse::<BlockNumber>() {
-                        if let Some(addr) = node.details().validator.clone() {
-                            let voter = precommit.voter.clone();
-                            feed.push(feed_message::AfgReceivedPrecommit(
-                                addr,
-                                finalized_number,
-                                precommit.target_hash,
-                                voter,
-                            ));
-                        }
-                    }
-                    return true;
-                }
-                Payload::AfgReceivedPrevote(prevote) => {
-                    if let Ok(finalized_number) = prevote.target_number.parse::<BlockNumber>() {
-                        if let Some(addr) = node.details().validator.clone() {
-                            let voter = prevote.voter.clone();
-                            feed.push(feed_message::AfgReceivedPrevote(
-                                addr,
-                                finalized_number,
-                                prevote.target_hash,
-                                voter,
-                            ));
-                        }
-                    }
-                    return true;
-                }
-                Payload::AfgReceivedCommit(_) => {}
-                _ => (),
+                _ => {},
             }
 
             if let Some(block) = payload.finalized_block() {
@@ -242,8 +199,6 @@ impl Chain {
                 }
             }
         }
-
-        false
     }
 
     fn handle_block(&mut self, block: &Block, nid: ChainNodeId, feed: &mut FeedMessageSerializer) {

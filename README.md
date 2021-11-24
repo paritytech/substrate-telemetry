@@ -9,6 +9,29 @@ This repository contains the backend ingestion server for Substrate Telemetry (w
 
 The backend is a Rust project and the frontend is React/Typescript project.
 
+Substrate based nodes can be connected to an arbitrary Telemetry backend using the `--telemetry-url` (see below for more complete instructions on how to get this up and running).
+
+### Messages
+
+Depending on the configured verbosity, substrate nodes will send different types of messages to the Telemetry server. Verbosity level `0` is sufficient to provide the Telemetry server with almost all of the node information needed. Using this verbosity level will lead to the substrate node sending the following message types to Telemetry:
+
+```
+system.connected
+system.interval
+block.import
+notify.finalized
+```
+
+Increasing the verbosity level to 1 will lead to additional "consensus info" messages being sent, one of which had the identifier:
+
+```
+afg.authority_set
+```
+
+Which we use to populate the "validator address" field if applicable.
+
+Increasing the verbosity level beyond 1 is unnecessary, and will not result in any additional messages that Telemetry can handle (but other metric gathering systems might find them useful).
+
 ## Getting Started
 
 To run the backend, you will need `cargo` to build the binary. We recommend using [`rustup`](https://rustup.rs/).

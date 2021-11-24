@@ -319,7 +319,7 @@ where
                     log::error!("Shutting down websocket connection: Too much traffic ({}bps averaged over last 10s)", this_bytes_per_second);
                     break;
                 }
-
+println!("msg: {:?}", { let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap(); v["payload"]["msg"].as_str().unwrap().to_owned() });
                 // Deserialize from JSON, warning in debug mode if deserialization fails:
                 let node_message: json_message::NodeMessage = match serde_json::from_slice(&bytes) {
                     Ok(node_message) => node_message,

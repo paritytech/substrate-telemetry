@@ -59,15 +59,7 @@ pub enum Payload {
     SystemInterval(SystemInterval),
     BlockImport(Block),
     NotifyFinalized(Finalized),
-    TxPoolImport,
-    AfgFinalized(AfgFinalized),
-    AfgReceivedPrecommit(AfgReceived),
-    AfgReceivedPrevote(AfgReceived),
-    AfgReceivedCommit(AfgReceived),
     AfgAuthoritySet(AfgAuthoritySet),
-    AfgFinalizedBlocksUpTo,
-    AuraPreSealedBlock,
-    PreparedBlockForProposing,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -92,19 +84,6 @@ pub struct SystemInterval {
 pub struct Finalized {
     pub hash: BlockHash,
     pub height: Box<str>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct AfgFinalized {
-    pub finalized_hash: BlockHash,
-    pub finalized_number: Box<str>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct AfgReceived {
-    pub target_hash: BlockHash,
-    pub target_number: Box<str>,
-    pub voter: Option<Box<str>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -206,34 +185,6 @@ mod tests {
             payload: Payload::NotifyFinalized(Finalized {
                 hash: BlockHash::zero(),
                 height: "foo".into(),
-            }),
-        });
-    }
-
-    #[test]
-    fn bincode_can_serialize_and_deserialize_node_message_tx_pool_import() {
-        bincode_can_serialize_and_deserialize(NodeMessage::V1 {
-            payload: Payload::TxPoolImport,
-        });
-    }
-
-    #[test]
-    fn bincode_can_serialize_and_deserialize_node_message_afg_finalized() {
-        bincode_can_serialize_and_deserialize(NodeMessage::V1 {
-            payload: Payload::AfgFinalized(AfgFinalized {
-                finalized_hash: BlockHash::zero(),
-                finalized_number: "foo".into(),
-            }),
-        });
-    }
-
-    #[test]
-    fn bincode_can_serialize_and_deserialize_node_message_afg_received() {
-        bincode_can_serialize_and_deserialize(NodeMessage::V1 {
-            payload: Payload::AfgReceivedPrecommit(AfgReceived {
-                target_hash: BlockHash::zero(),
-                target_number: "foo".into(),
-                voter: None,
             }),
         });
     }
