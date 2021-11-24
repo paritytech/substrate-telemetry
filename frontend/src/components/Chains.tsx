@@ -114,6 +114,5 @@ export class Chains extends React.Component<Chains.Props, {}> {
     const connection = await this.props.connection;
 
     connection.subscribe(chain);
-    connection.resetConsensus();
   }
 }

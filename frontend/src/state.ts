@@ -268,12 +268,7 @@ export interface State {
   status: 'online' | 'offline' | 'upgrade-requested';
   best: Types.BlockNumber;
   finalized: Types.BlockNumber;
-  consensusInfo: Types.ConsensusInfo;
-  displayConsensusLoadingScreen: boolean;
   tab: string;
-  authorities: Types.Address[];
-  authoritySetId: Maybe<Types.AuthoritySetId>;
-  sendFinality: boolean;
   blockTimestamp: Types.Timestamp;
   blockAverage: Maybe<Types.Milliseconds>;
   timeDiff: Types.Milliseconds;

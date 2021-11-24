@@ -20,7 +20,7 @@ import { Types, Maybe } from '../../common';
 import { State as AppState, Update as AppUpdate } from '../../state';
 import { getHashData } from '../../utils';
 import { Header } from './';
-import { Tile, Ago, List, Map, Settings, Consensus } from '../';
+import { List, Map, Settings } from '../';
 import { Persistent, PersistentObject, PersistentSet } from '../../persist';
 
 import './Chain.css';
@@ -54,9 +54,6 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
         break;
       case 'settings':
         display = 'settings';
-        break;
-      case 'consensus':
-        display = 'consensus';
         break;
     }
 
@@ -95,10 +92,6 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     }
 
     const { appState, appUpdate, connection, pins, sortBy } = this.props;
-
-    if (display === 'consensus') {
-      return <Consensus appState={appState} connection={connection} />;
-    }
 
     return display === 'list' ? (
       <List

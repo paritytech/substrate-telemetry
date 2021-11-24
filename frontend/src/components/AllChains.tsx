@@ -70,6 +70,5 @@ export class AllChains extends React.Component<AllChains.Props, {}> {
     const connection = await this.props.connection;
 
     connection.subscribe(chain);
-    connection.resetConsensus();
   }
 }
