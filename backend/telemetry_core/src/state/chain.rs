@@ -15,8 +15,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use common::node_message::Payload;
-use common::node_types::{Block, Timestamp};
 use common::node_types::BlockHash;
+use common::node_types::{Block, Timestamp};
 use common::{id_type, time, DenseMap, MostSeen, NumStats};
 use once_cell::sync::Lazy;
 use std::collections::HashSet;
@@ -181,7 +181,7 @@ impl Chain {
                     }
                     return;
                 }
-                _ => {},
+                _ => {}
             }
 
             if let Some(block) = payload.finalized_block() {

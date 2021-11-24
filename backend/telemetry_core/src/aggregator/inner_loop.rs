@@ -415,7 +415,8 @@ impl InnerLoop {
                 };
 
                 let mut feed_message_serializer = FeedMessageSerializer::new();
-                self.node_state.update_node(node_id, payload, &mut feed_message_serializer);
+                self.node_state
+                    .update_node(node_id, payload, &mut feed_message_serializer);
 
                 if let Some(chain) = self.node_state.get_chain_by_node_id(node_id) {
                     let genesis_hash = chain.genesis_hash();
@@ -673,5 +674,4 @@ impl InnerLoop {
             let _ = chan.send(message.clone());
         }
     }
-
 }
