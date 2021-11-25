@@ -22,7 +22,7 @@ block.import
 notify.finalized
 ```
 
-Increasing the verbosity level to 1 will lead to additional "consensus info" messages being sent, one of which had the identifier:
+Increasing the verbosity level to 1 will lead to additional "consensus info" messages being sent, one of which has the identifier:
 
 ```
 afg.authority_set
