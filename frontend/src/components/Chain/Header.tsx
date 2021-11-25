@@ -91,14 +91,6 @@ export class Header extends React.Component<Header.Props, {}> {
             setDisplay={setDisplay}
           />
           <Tab
-            icon={consensusIcon}
-            label="Consensus"
-            display="consensus"
-            tab="consensus"
-            current={currentTab}
-            setDisplay={setDisplay}
-          />
-          <Tab
             icon={settingsIcon}
             label="Settings"
             display="settings"

@@ -74,24 +74,8 @@ pub enum Payload {
     BlockImport(Block),
     #[serde(rename = "notify.finalized")]
     NotifyFinalized(Finalized),
-    #[serde(rename = "txpool.import")]
-    TxPoolImport,
-    #[serde(rename = "afg.finalized")]
-    AfgFinalized(AfgFinalized),
-    #[serde(rename = "afg.received_precommit")]
-    AfgReceivedPrecommit(AfgReceived),
-    #[serde(rename = "afg.received_prevote")]
-    AfgReceivedPrevote(AfgReceived),
-    #[serde(rename = "afg.received_commit")]
-    AfgReceivedCommit(AfgReceived),
     #[serde(rename = "afg.authority_set")]
     AfgAuthoritySet(AfgAuthoritySet),
-    #[serde(rename = "afg.finalized_blocks_up_to")]
-    AfgFinalizedBlocksUpTo,
-    #[serde(rename = "aura.pre_sealed_block")]
-    AuraPreSealedBlock,
-    #[serde(rename = "prepared_block_for_proposing")]
-    PreparedBlockForProposing,
 }
 
 impl From<Payload> for internal::Payload {
@@ -101,15 +85,7 @@ impl From<Payload> for internal::Payload {
             Payload::SystemInterval(m) => internal::Payload::SystemInterval(m.into()),
             Payload::BlockImport(m) => internal::Payload::BlockImport(m.into()),
             Payload::NotifyFinalized(m) => internal::Payload::NotifyFinalized(m.into()),
-            Payload::TxPoolImport => internal::Payload::TxPoolImport,
-            Payload::AfgFinalized(m) => internal::Payload::AfgFinalized(m.into()),
-            Payload::AfgReceivedPrecommit(m) => internal::Payload::AfgReceivedPrecommit(m.into()),
-            Payload::AfgReceivedPrevote(m) => internal::Payload::AfgReceivedPrevote(m.into()),
-            Payload::AfgReceivedCommit(m) => internal::Payload::AfgReceivedCommit(m.into()),
             Payload::AfgAuthoritySet(m) => internal::Payload::AfgAuthoritySet(m.into()),
-            Payload::AfgFinalizedBlocksUpTo => internal::Payload::AfgFinalizedBlocksUpTo,
-            Payload::AuraPreSealedBlock => internal::Payload::AuraPreSealedBlock,
-            Payload::PreparedBlockForProposing => internal::Payload::PreparedBlockForProposing,
         }
     }
 }
@@ -187,38 +163,6 @@ impl From<AfgAuthoritySet> for internal::AfgAuthoritySet {
             authority_id: msg.authority_id,
             authorities: msg.authorities,
             authority_set_id: msg.authority_set_id,
-        }
-    }
-}
-
-#[derive(Deserialize, Debug, Clone)]
-pub struct AfgFinalized {
-    pub finalized_hash: Hash,
-    pub finalized_number: Box<str>,
-}
-
-impl From<AfgFinalized> for internal::AfgFinalized {
-    fn from(msg: AfgFinalized) -> Self {
-        internal::AfgFinalized {
-            finalized_hash: msg.finalized_hash.into(),
-            finalized_number: msg.finalized_number,
-        }
-    }
-}
-
-#[derive(Deserialize, Debug, Clone)]
-pub struct AfgReceived {
-    pub target_hash: Hash,
-    pub target_number: Box<str>,
-    pub voter: Option<Box<str>>,
-}
-
-impl From<AfgReceived> for internal::AfgReceived {
-    fn from(msg: AfgReceived) -> Self {
-        internal::AfgReceived {
-            target_hash: msg.target_hash.into(),
-            target_number: msg.target_number,
-            voter: msg.voter,
         }
     }
 }
@@ -310,30 +254,6 @@ mod tests {
     }
 
     #[test]
-    fn message_v2_received_precommit() {
-        let json = r#"{
-            "id":1,
-            "ts":"2021-01-13T12:22:20.053527101+01:00",
-            "payload":{
-                "target_hash":"0xcc41708573f2acaded9dd75e07dac2d4163d136ca35b3061c558d7a35a09dd8d",
-                "target_number":"209",
-                "voter":"foo",
-                "msg":"afg.received_precommit"
-            }
-        }"#;
-        assert!(
-            matches!(
-                serde_json::from_str::<NodeMessage>(json).unwrap(),
-                NodeMessage::V2 {
-                    payload: Payload::AfgReceivedPrecommit(..),
-                    ..
-                },
-            ),
-            "message did not match the expected output",
-        );
-    }
-
-    #[test]
     fn message_v2_tx_pool_import() {
         // We should happily ignore any fields we don't care about.
         let json = r#"{
@@ -343,14 +263,16 @@ mod tests {
                 "foo":"Something",
                 "bar":123,
                 "wibble":"wobble",
-                "msg":"txpool.import"
+                "msg":"block.import",
+                "best":"0xcc41708573f2acaded9dd75e07dac2d4163d136ca35b3061c558d7a35a09dd8d",
+                "height": 1234
             }
         }"#;
         assert!(
             matches!(
                 serde_json::from_str::<NodeMessage>(json).unwrap(),
                 NodeMessage::V2 {
-                    payload: Payload::TxPoolImport,
+                    payload: Payload::BlockImport(Block { .. }),
                     ..
                 },
             ),

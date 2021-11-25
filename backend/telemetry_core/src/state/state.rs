@@ -213,18 +213,17 @@ impl State {
     }
 
     /// Attempt to update the best block seen, given a node and block.
-    /// Returns a boolean which denotes whether the output is for finalization feeds (true) or not (false).
     pub fn update_node(
         &mut self,
         NodeId(chain_id, chain_node_id): NodeId,
         payload: Payload,
         feed: &mut FeedMessageSerializer,
-    ) -> bool {
+    ) {
         let chain = match self.chains.get_mut(chain_id) {
             Some(chain) => chain,
             None => {
                 log::error!("Cannot find chain for node with ID {:?}", chain_id);
-                return false;
+                return;
             }
         };
 

@@ -80,21 +80,6 @@ export declare type AuthoritySetInfo = [
   BlockNumber,
   BlockHash
 ];
-export declare type ConsensusItem = [BlockNumber, ConsensusView];
-export declare type ConsensusInfo = Array<ConsensusItem>;
-export declare type ConsensusView = Map<Address, ConsensusState>;
-export declare type ConsensusState = Map<Address, ConsensusDetail>;
-export interface ConsensusDetail {
-  Precommit: Precommit;
-  ImplicitPrecommit: ImplicitPrecommit;
-  Prevote: Prevote;
-  ImplicitPrevote: ImplicitPrevote;
-  ImplicitPointer: ImplicitPointer;
-  Finalized: ImplicitFinalized;
-  ImplicitFinalized: Finalized;
-  FinalizedHash: BlockHash;
-  FinalizedHeight: BlockNumber;
-}
 export declare type Precommit = Opaque<boolean, 'Precommit'>;
 export declare type Prevote = Opaque<boolean, 'Prevote'>;
 export declare type Finalized = Opaque<boolean, 'Finalized'>;

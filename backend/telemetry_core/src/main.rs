@@ -541,11 +541,6 @@ async fn return_prometheus_metrics(aggregator: AggregatorSet) -> Response<hyper:
         );
         let _ = write!(
             &mut s,
-            "telemetry_core_subscribed_finality_feeds{{aggregator=\"{}\"}} {} {}\n",
-            idx, m.subscribed_finality_feeds, m.timestamp_unix_ms
-        );
-        let _ = write!(
-            &mut s,
             "telemetry_core_total_messages_to_feeds{{aggregator=\"{}\"}} {} {}\n",
             idx, m.total_messages_to_feeds, m.timestamp_unix_ms
         );

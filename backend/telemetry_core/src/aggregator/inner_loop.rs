@@ -25,7 +25,7 @@ use common::{
     node_types::BlockHash,
     time, MultiMapUnique,
 };
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::{
     atomic::{AtomicU64, Ordering},
     Arc,
@@ -95,10 +95,6 @@ pub enum FromFeedWebsocket {
     /// The feed can subscribe to a chain to receive
     /// messages relating to it.
     Subscribe { chain: BlockHash },
-    /// The feed wants finality info for the chain, too.
-    SendFinality,
-    /// The feed doesn't want any more finality info for the chain.
-    NoMoreFinality,
     /// An explicit ping message.
     Ping { value: Box<str> },
     /// The feed is disconnected.
@@ -114,8 +110,6 @@ pub struct Metrics {
     pub chains_subscribed_to: usize,
     /// Number of subscribed feeds.
     pub subscribed_feeds: usize,
-    /// Number of subscribed feeds that also asked for finality information.
-    pub subscribed_finality_feeds: usize,
     /// How many messages are currently queued up in internal channels
     /// waiting to be sent out to feeds.
     pub total_messages_to_feeds: usize,
@@ -148,8 +142,6 @@ impl FromStr for FromFeedWebsocket {
             "subscribe" => Ok(FromFeedWebsocket::Subscribe {
                 chain: value.parse()?,
             }),
-            "send-finality" => Ok(FromFeedWebsocket::SendFinality),
-            "no-more-finality" => Ok(FromFeedWebsocket::NoMoreFinality),
             _ => return Err(anyhow::anyhow!("Command {} not recognised", cmd)),
         }
     }
@@ -178,9 +170,6 @@ pub struct InnerLoop {
     /// Which feeds are subscribed to a given chain?
     chain_to_feed_conn_ids: MultiMapUnique<BlockHash, ConnId>,
 
-    /// These feeds want finality info, too.
-    feed_conn_id_finality: HashSet<ConnId>,
-
     /// Send messages here to make geographical location requests.
     tx_to_locator: flume::Sender<(NodeId, Ipv4Addr)>,
 
@@ -203,7 +192,6 @@ impl InnerLoop {
             feed_channels: HashMap::new(),
             shard_channels: HashMap::new(),
             chain_to_feed_conn_ids: MultiMapUnique::new(),
-            feed_conn_id_finality: HashSet::new(),
             tx_to_locator,
             max_queue_len,
         }
@@ -282,7 +270,6 @@ impl InnerLoop {
         let connected_nodes = self.node_ids.len();
         let subscribed_feeds = self.chain_to_feed_conn_ids.num_values();
         let chains_subscribed_to = self.chain_to_feed_conn_ids.num_keys();
-        let subscribed_finality_feeds = self.feed_conn_id_finality.len();
         let connected_shards = self.shard_channels.len();
         let connected_feeds = self.feed_channels.len();
         let total_messages_to_feeds: usize = self.feed_channels.values().map(|c| c.len()).sum();
@@ -292,7 +279,6 @@ impl InnerLoop {
             timestamp_unix_ms,
             chains_subscribed_to,
             subscribed_feeds,
-            subscribed_finality_feeds,
             total_messages_to_feeds,
             current_messages_to_aggregator,
             total_messages_to_aggregator,
@@ -429,23 +415,15 @@ impl InnerLoop {
                 };
 
                 let mut feed_message_serializer = FeedMessageSerializer::new();
-                let broadcast_finality =
-                    self.node_state
-                        .update_node(node_id, payload, &mut feed_message_serializer);
+                self.node_state
+                    .update_node(node_id, payload, &mut feed_message_serializer);
 
                 if let Some(chain) = self.node_state.get_chain_by_node_id(node_id) {
                     let genesis_hash = chain.genesis_hash();
-                    if broadcast_finality {
-                        self.finalize_and_broadcast_to_chain_finality_feeds(
-                            &genesis_hash,
-                            feed_message_serializer,
-                        );
-                    } else {
-                        self.finalize_and_broadcast_to_chain_feeds(
-                            &genesis_hash,
-                            feed_message_serializer,
-                        );
-                    }
+                    self.finalize_and_broadcast_to_chain_feeds(
+                        &genesis_hash,
+                        feed_message_serializer,
+                    );
                 }
             }
             FromShardWebsocket::Disconnected => {
@@ -508,9 +486,6 @@ impl InnerLoop {
 
                 // Unsubscribe from previous chain if subscribed to one:
                 let old_genesis_hash = self.chain_to_feed_conn_ids.remove_value(&feed_conn_id);
-
-                // Untoggle request for finality feeds:
-                self.feed_conn_id_finality.remove(&feed_conn_id);
 
                 // Get old chain if there was one:
                 let node_state = &self.node_state;
@@ -583,17 +558,10 @@ impl InnerLoop {
                 self.chain_to_feed_conn_ids
                     .insert(new_genesis_hash, feed_conn_id);
             }
-            FromFeedWebsocket::SendFinality => {
-                self.feed_conn_id_finality.insert(feed_conn_id);
-            }
-            FromFeedWebsocket::NoMoreFinality => {
-                self.feed_conn_id_finality.remove(&feed_conn_id);
-            }
             FromFeedWebsocket::Disconnected => {
                 // The feed has disconnected; clean up references to it:
                 self.chain_to_feed_conn_ids.remove_value(&feed_conn_id);
                 self.feed_channels.remove(&feed_conn_id);
-                self.feed_conn_id_finality.remove(&feed_conn_id);
             }
         }
     }
@@ -704,34 +672,6 @@ impl InnerLoop {
     fn broadcast_to_all_feeds(&mut self, message: ToFeedWebsocket) {
         for chan in self.feed_channels.values_mut() {
             let _ = chan.send(message.clone());
-        }
-    }
-
-    /// Finalize a [`FeedMessageSerializer`] and broadcast the result to chain finality feeds
-    fn finalize_and_broadcast_to_chain_finality_feeds(
-        &mut self,
-        genesis_hash: &BlockHash,
-        serializer: FeedMessageSerializer,
-    ) {
-        if let Some(bytes) = serializer.into_finalized() {
-            self.broadcast_to_chain_finality_feeds(genesis_hash, ToFeedWebsocket::Bytes(bytes));
-        }
-    }
-
-    /// Send a message to all chain finality feeds.
-    fn broadcast_to_chain_finality_feeds(
-        &mut self,
-        genesis_hash: &BlockHash,
-        message: ToFeedWebsocket,
-    ) {
-        if let Some(feeds) = self.chain_to_feed_conn_ids.get_values(genesis_hash) {
-            // Get all feeds for the chain, but only broadcast to those feeds that
-            // are also subscribed to receive finality updates.
-            for &feed_id in feeds.union(&self.feed_conn_id_finality) {
-                if let Some(chan) = self.feed_channels.get_mut(&feed_id) {
-                    let _ = chan.send(message.clone());
-                }
-            }
         }
     }
 }

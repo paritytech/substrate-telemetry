@@ -18,8 +18,6 @@ import { VERSION, timestamp, FeedMessage, Types, Maybe, sleep } from './common';
 import { State, Update, Node, ChainData, PINNED_CHAINS } from './state';
 import { PersistentSet } from './persist';
 import { getHashData, setHashData } from './utils';
-import { AfgHandling } from './AfgHandling';
-import { VIS_AUTHORITIES_LIMIT } from './components/Consensus';
 import { ACTIONS } from './common/feed';
 import {
   Column,
@@ -126,8 +124,6 @@ export class Connection {
   private pingSent: Maybe<Types.Timestamp> = null;
   // chain label to resubsribe to on reconnect
   private resubscribeTo: Maybe<Types.GenesisHash> = getHashData().chain;
-  // flag whether or not FE should subscribe to consensus updates on reconnect
-  private resubscribeSendFinality: boolean = getHashData().tab === 'consensus';
 
   constructor(
     private socket: WebSocket,
@@ -154,34 +150,10 @@ export class Connection {
     this.socket.send(`subscribe:${chain}`);
   }
 
-  public subscribeConsensus(chain: Types.GenesisHash) {
-    if (this.appState.authorities.length <= VIS_AUTHORITIES_LIMIT) {
-      setHashData({ chain });
-      this.resubscribeSendFinality = true;
-      this.socket.send(`send-finality:${chain}`);
-    }
-  }
-
-  public resetConsensus() {
-    this.appUpdate({
-      consensusInfo: new Array() as Types.ConsensusInfo,
-      displayConsensusLoadingScreen: true,
-      authorities: [] as Types.Address[],
-      authoritySetId: null,
-    });
-  }
-
-  public unsubscribeConsensus(chain: Types.GenesisHash) {
-    this.resubscribeSendFinality = true;
-    this.socket.send(`no-more-finality:${chain}`);
-  }
-
   private handleMessages = (messages: FeedMessage.Message[]) => {
     this.messageTimeout?.reset();
     const { nodes, chains, sortBy, selectedColumns } = this.appState;
     const nodesStateRef = nodes.ref;
-
-    const afg = new AfgHandling(this.appUpdate, this.appState);
 
     let sortByColumn: Maybe<Column> = null;
 
@@ -361,7 +333,6 @@ export class Connection {
           if (this.appState.subscribed === message.payload) {
             nodes.clear();
             this.appUpdate({ subscribed: null, nodes, chains });
-            this.resetConsensus();
           }
 
           break;
@@ -387,37 +358,6 @@ export class Connection {
 
         case ACTIONS.Pong: {
           this.pong(Number(message.payload));
-
-          break;
-        }
-
-        case ACTIONS.AfgFinalized: {
-          const [nodeAddress, finalizedNumber, finalizedHash] = message.payload;
-          const no = parseInt(String(finalizedNumber), 10) as Types.BlockNumber;
-          afg.receivedFinalized(nodeAddress, no, finalizedHash);
-
-          break;
-        }
-
-        case ACTIONS.AfgReceivedPrevote: {
-          const [nodeAddress, blockNumber, blockHash, voter] = message.payload;
-          const no = parseInt(String(blockNumber), 10) as Types.BlockNumber;
-          afg.receivedPre(nodeAddress, no, voter, 'prevote');
-
-          break;
-        }
-
-        case ACTIONS.AfgReceivedPrecommit: {
-          const [nodeAddress, blockNumber, blockHash, voter] = message.payload;
-          const no = parseInt(String(blockNumber), 10) as Types.BlockNumber;
-          afg.receivedPre(nodeAddress, no, voter, 'precommit');
-
-          break;
-        }
-
-        case ACTIONS.AfgAuthoritySet: {
-          const [authoritySetId, authorities] = message.payload;
-          afg.receivedAuthoritySet(authoritySetId, authorities);
 
           break;
         }
@@ -456,8 +396,7 @@ export class Connection {
 
     if (this.appState.subscribed) {
       this.resubscribeTo = this.appState.subscribed;
-      this.resubscribeSendFinality = this.appState.sendFinality;
-      this.appUpdate({ subscribed: null, sendFinality: false });
+      this.appUpdate({ subscribed: null });
     }
 
     this.socket.addEventListener('message', this.handleFeedData);
@@ -544,7 +483,7 @@ export class Connection {
 
   private autoSubscribe() {
     const { subscribed, chains } = this.appState;
-    const { resubscribeTo, resubscribeSendFinality } = this;
+    const { resubscribeTo } = this;
 
     if (subscribed) {
       return;
@@ -553,9 +492,6 @@ export class Connection {
     if (resubscribeTo) {
       if (chains.has(resubscribeTo)) {
         this.subscribe(resubscribeTo);
-        if (resubscribeSendFinality) {
-          this.subscribeConsensus(resubscribeTo);
-        }
         return;
       }
     }
@@ -581,7 +517,6 @@ export class Connection {
   private handleDisconnect = async () => {
     console.warn('Disconnecting; will attempt reconnect');
     this.appUpdate({ status: 'offline' });
-    this.resetConsensus();
     this.clean();
     this.socket.close();
     this.socket = await Connection.socket();
