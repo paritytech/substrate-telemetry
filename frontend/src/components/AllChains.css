@@ -16,64 +16,108 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
-.AllChains {
-  position: fixed;
-  z-index: 20;
-  top: 16px;
-  bottom: 16px;
-  left: 50%;
-  margin: 0 0 0 -150px;
-  width: 25vw;
-  min-width: 300px;
-  background: #fff;
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.35);
-  overflow-y: scroll;
-  overflow-x: hide;
-}
-
 .AllChains-overlay {
   position: fixed;
-  display: block;
   z-index: 19;
   background: rgba(0, 0, 0, 0.35);
   left: 0;
   right: 0;
   top: 0;
   bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.AllChains-content {
+  max-height: calc(100vh - 2em);
+  max-width: calc(100vw - 2em);
+  border-radius: 4px;
+  width: 600px;
+  overflow: auto;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+}
+
+.AllChains-controls {
+  padding-bottom: 0.5em;
+  display: flex;
+  align-items: center;
+  padding: 0.5em;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.AllChains-controls input {
+  border: 1px solid rgba(0,0,0,0.5);
+  border-radius: 4px;
+  padding: 0.5em;
+  flex-grow: 1;
+  min-width: 100px;
+}
+
+.AllChains-controls-sortby {
+  padding: 0.4em 0.5em;
+  margin-left: 0.5em;
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+  font-weight: bold;
+  font-size: 0.9em;
+  border: 1px solid black;
+}
+
+.AllChains-controls-sortby-active {
+  background-color: #e6007a;
+  border-color: #e6007a;
+  color: white;
+}
+
+.AllChains-chains {
+  flex-grow: 1;
+  overflow: auto;
+  padding: 0.5em;
 }
 
 .AllChains-chain {
-  padding: 0 12px;
-  background: #b5aeae;
-  color: #444;
-  display: block;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
-  height: 40px;
-  line-height: 40px;
+  padding: 10px 10px;
+  background: rgb(220,220,220);
+  color: black;
+  display: inline-flex;
+  margin-right: 0.5em;
+  margin-bottom: 0.5em;
+  border-radius: 4px;
   cursor: pointer;
   font-size: 0.8em;
   font-weight: bold;
   position: relative;
+  align-items: center;
+  justify-content: center;
+}
+
+.AllChains-chain-highlighted-text {
+  background-color: yellow;
 }
 
 .AllChains-node-count {
-  display: inline-block;
-  padding: 0 0.5em 0.1em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 1em;
   background: #8c8787;
   color: #fff;
   font-weight: normal;
-  text-shadow: rgba(0, 0, 0, 0.5) 0 1px 0;
   font-size: 0.9em;
-  line-height: 1.4em;
-  margin: 0 -0.3em 0 0.3em;
+  margin-left: 0.5em;
+  padding: 0.3em 0.5em;
 }
 
 .AllChains-chain-selected {
-  background: #fff;
-  color: #000;
+  background: #e6007a;
+  color: white;
 }
 
 .AllChains-chain-selected .AllChains-node-count {
-  background: #e6007a;
+  background: white;
+  color: #e6007a;
 }

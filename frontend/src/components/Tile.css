@@ -28,7 +28,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 .Tile-label {
   position: absolute;
   top: 24px;
-  left: 100px;
+  left: 70px;
   right: 0;
   font-size: 0.4em;
   text-transform: uppercase;
@@ -37,7 +37,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 .Tile-content {
   position: absolute;
   bottom: 16px;
-  left: 100px;
+  left: 70px;
   right: 0;
   font-weight: 300;
   font-size: 0.75em;
@@ -48,7 +48,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
   left: 20px;
   top: 20px;
   font-size: 0.8em;
-  padding: 0.5em;
+  padding: 0.1em;
   border-radius: 1.25em;
   border: 2px solid #e6007a;
   color: #e6007a;

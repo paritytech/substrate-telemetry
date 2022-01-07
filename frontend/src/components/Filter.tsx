@@ -105,7 +105,12 @@ export class Filter extends React.Component<Filter.Props, {}> {
   };
 
   private onWindowKeyUp = (event: KeyboardEvent) => {
+    // Ignore if control key is being pressed
     if (event.ctrlKey) {
+      return;
+    }
+    // Ignore events dispatched to other elements that want to use it
+    if (['INPUT', 'TEXTAREA'].includes((event as any).target.tagName)) {
       return;
     }
 

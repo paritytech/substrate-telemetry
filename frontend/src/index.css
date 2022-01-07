@@ -16,6 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
+* {
+  /* Use "standard"/common sense heights/widths (ie they include padding+boreder) */
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   padding: 0;
