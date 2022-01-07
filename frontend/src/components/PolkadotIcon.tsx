@@ -174,7 +174,14 @@ function getColors(address: string): string[] {
  * @description Generate a array of the circles that make up an indenticon
  */
 function generate(address: string, isSixPoint = false): Circle[] {
-  const colors = getColors(address);
+  let colors: string[] = [];
+  try {
+    colors = getColors(address);
+  } catch (e) {
+    console.error(
+      `Error decoding address to generate validator icon for: ${address} (${e})`
+    );
+  }
 
   return [OUTER_CIRCLE].concat(
     getCircleXY(isSixPoint).map(
@@ -183,7 +190,7 @@ function generate(address: string, isSixPoint = false): Circle[] {
           cx,
           cy,
           r: Z,
-          fill: colors[index],
+          fill: colors[index] || 'rgb(255,255,255)',
         };
       }
     )
