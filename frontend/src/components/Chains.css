@@ -90,7 +90,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
   left: 0;
   right: 0;
   height: 0px;
+  /*
+  To animate the tab height changes, we can uncomment this line:
+
   transition: height ease-in-out 0.2s;
+  */
 }
 
 /* Animate the tab background to rise up slightly on hover */
