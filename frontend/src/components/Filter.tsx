@@ -110,7 +110,7 @@ export class Filter extends React.Component<Filter.Props, {}> {
       return;
     }
     // Ignore events dispatched to other elements that want to use it
-    if (['INPUT', 'TEXTAREA'].includes((event as any).target.tagName)) {
+    if (['INPUT', 'TEXTAREA'].includes((event.target as any)?.tagName)) {
       return;
     }
 
