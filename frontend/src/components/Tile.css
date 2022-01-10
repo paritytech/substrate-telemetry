@@ -46,7 +46,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 .Tile .Icon {
   position: absolute;
   left: 20px;
-  top: 20px;
+  top: 15px;
   font-size: 0.8em;
   padding: 0.1em;
   border-radius: 1.25em;

@@ -37,6 +37,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
   cursor: pointer;
   font-size: 0.8em;
   position: relative;
+  z-index: 0;
   border-radius: 4px 4px 0 0;
 }
 
@@ -78,13 +79,41 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
   padding: 0.3em 0.5em;
 }
 
-.Chains-chain-selected {
-  background: #fff;
-  color: #393838;
-  font-weight: bold;
+/* Create a "tab background" that will rise up on hover/selection */
+.Chains-chain::before {
+  content: '';
+  background-color: white;
+  border-radius: 4px 4px 0 0;
+  position: absolute;
+  z-index: -1;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 0px;
+  transition: height ease-in-out 0.3s;
 }
 
-.Chains-chain-selected .Chains-node-count {
+/* Animate the tab background to rise up slightly on hover */
+.Chains-chain:hover::before {
+  height: 4px;
+}
+
+.Chains-chain.Chains-chain-selected {
+  color: #393838;
+  /*
+  Instead of making the font bold, which changes the container width and
+  causes some wobbling, apply a tiny text shadow to "bold" it without the
+  width change:
+  */
+  text-shadow: -0.06ex 0 #393838, 0.06ex 0 #393838;
+}
+
+/* Animate the tab background to rise up all the way on selection */
+.Chains-chain.Chains-chain-selected::before {
+  height: 36px;
+}
+
+.Chains-chain.Chains-chain-selected .Chains-node-count {
   background: #393838;
   color: #fff;
 }
