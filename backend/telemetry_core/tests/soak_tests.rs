@@ -104,51 +104,59 @@ async fn run_soak_test(opts: SoakTestOpts) {
         shard_ids.push(shard_id);
     }
 
-    // Connect nodes to each shard:
+    // Connect nodes to each shard for each chain:
     let mut nodes = vec![];
-    for &shard_id in &shard_ids {
-        let mut conns = server
-            .get_shard(shard_id)
-            .unwrap()
-            .connect_multiple_nodes(opts.nodes)
-            .await
-            .expect("node connections failed");
-        nodes.append(&mut conns);
+    for chain_name in chain_names(opts.chains) {
+        for &shard_id in &shard_ids {
+            let conns = server
+                .get_shard(shard_id)
+                .unwrap()
+                .connect_multiple_nodes(opts.nodes)
+                .await
+                .expect("node connections failed");
+            nodes.push((chain_name.clone(), conns));
+        }
     }
 
-    let genesis_hash = BlockHash::from_low_u64_be(1);
-    let genesis_hash_string = format!("{:0x}", genesis_hash);
+    let first_genesis_hash = BlockHash::from_low_u64_be(1);
+    let first_genesis_hash_string = format!("{:0x}", first_genesis_hash);
 
     // Start nodes talking to the shards:
     let bytes_in = Arc::new(AtomicUsize::new(0));
     let ids_per_node = opts.ids_per_node;
-    for node in nodes.into_iter().enumerate() {
-        let (idx, (tx, _)) = node;
-        for id in 0..ids_per_node {
-            let bytes_in = Arc::clone(&bytes_in);
-            let tx = tx.clone();
 
-            tokio::spawn(async move {
-                let telemetry = test_utils::fake_telemetry::FakeTelemetry {
-                    block_time: Duration::from_secs(3),
-                    node_name: format!("Node {}", (ids_per_node * idx) + id + 1),
-                    chain: "Polkadot".to_owned(),
-                    genesis_hash: genesis_hash,
-                    message_id: id + 1,
-                };
+    // For each chain...
+    for (i, (chain_name, conns)) in nodes.into_iter().enumerate() {
+        // ...Broadcast an init message from each node with that chain name
+        for (j, (tx, _)) in conns.into_iter().enumerate() {
+            let idx = i * opts.nodes + j;
+            for id in 0..ids_per_node {
+                let bytes_in = Arc::clone(&bytes_in);
+                let tx = tx.clone();
+                let chain_name = chain_name.clone();
 
-                let res = telemetry
-                    .start(|msg| async {
-                        bytes_in.fetch_add(msg.len(), Ordering::Relaxed);
-                        tx.unbounded_send(SentMessage::Binary(msg))?;
-                        Ok::<_, anyhow::Error>(())
-                    })
-                    .await;
+                tokio::spawn(async move {
+                    let telemetry = test_utils::fake_telemetry::FakeTelemetry {
+                        block_time: Duration::from_secs(3),
+                        node_name: format!("{} Node {}", chain_name, (ids_per_node * idx) + id + 1),
+                        chain: chain_name,
+                        genesis_hash: BlockHash::from_low_u64_be((i + 1) as u64),
+                        message_id: id + 1,
+                    };
 
-                if let Err(e) = res {
-                    log::error!("Telemetry Node #{} has died with error: {}", idx, e);
-                }
-            });
+                    let res = telemetry
+                        .start(|msg| async {
+                            bytes_in.fetch_add(msg.len(), Ordering::Relaxed);
+                            tx.unbounded_send(SentMessage::Binary(msg))?;
+                            Ok::<_, anyhow::Error>(())
+                        })
+                        .await;
+
+                    if let Err(e) = res {
+                        log::error!("Telemetry Node #{} has died with error: {}", idx, e);
+                    }
+                });
+            }
         }
     }
 
@@ -159,10 +167,10 @@ async fn run_soak_test(opts: SoakTestOpts) {
         .await
         .expect("feed connections failed");
 
-    // Every feed subscribes to the chain above to recv messages about it:
+    // Every feed subscribes to the first chain we have started up. We ignore the rest.
     for (feed_tx, _) in &mut feeds {
         feed_tx
-            .send_command("subscribe", &genesis_hash_string)
+            .send_command("subscribe", &first_genesis_hash_string)
             .unwrap();
     }
 
@@ -218,6 +226,42 @@ async fn run_soak_test(opts: SoakTestOpts) {
     future::pending().await
 }
 
+/// Return an iterator of `total` unique chain names.
+fn chain_names(total: usize) -> impl Iterator<Item = String> {
+    static CHAIN_STARTS: [&'static str; 5] = ["Polkadot", "Kusama", "Khala", "Wibble", "Moonbase"];
+    static CHAIN_ENDS: [&'static str; 6] = ["", " Testnet", " Main", "-Dev", "Alpha", "Beta"];
+
+    let mut count = 0;
+    let mut s_n = 0;
+    let mut e_n = 0;
+
+    std::iter::from_fn(move || {
+        if count == total {
+            return None;
+        }
+
+        let mut res = format!("{}{}", CHAIN_STARTS[s_n], CHAIN_ENDS[e_n]);
+
+        let suffix = count / (CHAIN_STARTS.len() * CHAIN_ENDS.len());
+        if suffix > 0 {
+            res.push(' ');
+            res.push_str(&suffix.to_string());
+        }
+
+        s_n += 1;
+        count += 1;
+        if s_n == CHAIN_STARTS.len() {
+            s_n = 0;
+            e_n += 1;
+            if e_n == CHAIN_ENDS.len() {
+                e_n = 0;
+            }
+        }
+
+        Some(res)
+    })
+}
+
 /// General arguments that are used to start a soak test. Run `soak_test` as
 /// instructed by its documentation for full control over what is ran, or run
 /// preconfigured variants.
@@ -226,10 +270,14 @@ struct SoakTestOpts {
     /// The number of shards to run this test with
     #[structopt(long)]
     shards: usize,
-    /// The number of feeds to connect
+    /// The number of feeds to connect to the core
     #[structopt(long)]
     feeds: usize,
-    /// The number of nodes to connect to each feed
+    /// The number of chains that nodes will pretend to belong to
+    #[structopt(long, default_value = "1")]
+    chains: usize,
+    /// The number of nodes to connect to each shard * chain combo.
+    /// If we have 10 chains and 4 shards, setting this to 1 will connect `10 x 4 x 1 = 40` nodes.
     #[structopt(long)]
     nodes: usize,
     /// The number of different virtual nodes to connect per actual node socket connection
