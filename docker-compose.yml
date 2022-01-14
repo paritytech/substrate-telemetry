@@ -1,10 +1,8 @@
 version: "3"
 
 networks:
-  default:
-    # Give the default network created below a sensible name:
-    name: substrate-telemetry
-
+  # Give the default network created below a sensible name and then remove this line:
+  sensible-name:
 services:
   telemetry-frontend:
     build:
