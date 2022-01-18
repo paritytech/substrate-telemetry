@@ -168,7 +168,7 @@ If you'd like to get things running manually using Docker, you can do the follow
       --tmpfs /var/run:uid=101,gid=101 \
       --tmpfs /app/tmp:uid=101,gid=101 \
       --read-only \
-      substrate-telemetry-frontend
+      parity/substrate-telemetry-frontend
    ```
 
 With these running, you'll be able to navigate to [http://localhost:3000](http://localhost:3000) to view the UI. If you'd like to connect a node and have it send telemetry to your running shard, you can run the following:
