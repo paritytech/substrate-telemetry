@@ -130,6 +130,9 @@ export default class App extends React.Component<{}, {}> {
   public render() {
     const { timeDiff, subscribed, status, tab } = this.appState;
     const chains = this.chains();
+    const subscribedData = subscribed
+      ? this.appState.chains.get(subscribed)
+      : null;
 
     Ago.timeDiff = timeDiff;
 
@@ -156,7 +159,8 @@ export default class App extends React.Component<{}, {}> {
         <OfflineIndicator status={status} />
         <Chains
           chains={chains}
-          subscribed={subscribed}
+          subscribedHash={subscribed}
+          subscribedData={subscribedData}
           connection={this.connection}
         />
         <Chain
