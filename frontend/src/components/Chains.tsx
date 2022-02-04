@@ -19,6 +19,7 @@ import { Connection } from '../Connection';
 import { Icon } from './Icon';
 import { Types, Maybe } from '../common';
 import { ChainData } from '../state';
+import { viewport } from '../utils';
 
 import githubIcon from '../icons/mark-github.svg';
 import listIcon from '../icons/kebab-horizontal.svg';
@@ -27,42 +28,59 @@ import './Chains.css';
 export namespace Chains {
   export interface Props {
     chains: ChainData[];
-    subscribed: Maybe<Types.GenesisHash>;
+    subscribedHash: Maybe<Types.GenesisHash>;
+    subscribedData: Maybe<ChainData>;
     connection: Promise<Connection>;
   }
 }
 
-// How many chains should be rendered in the DOM
-const VISIBLE_CAP = 16;
+// Average tab width in pixels
+const AVERAGE_TAB_WIDTH = 160;
 // Milliseconds, sets the minimum time between the renders
 const RENDER_THROTTLE = 1000;
 
 export class Chains extends React.Component<Chains.Props, {}> {
   private lastRender = performance.now();
   private clicked: Maybe<Types.GenesisHash>;
+  private subscribedChainInView = false;
 
   public shouldComponentUpdate(nextProps: Chains.Props) {
-    if (nextProps.subscribed !== this.clicked) {
-      this.clicked = nextProps.subscribed;
+    if (nextProps.subscribedHash !== this.clicked) {
+      this.clicked = nextProps.subscribedHash;
     }
 
     return (
-      this.props.subscribed !== nextProps.subscribed ||
+      this.props.subscribedHash !== nextProps.subscribedHash ||
       performance.now() - this.lastRender > RENDER_THROTTLE
     );
   }
 
   public render() {
     this.lastRender = performance.now();
+    this.subscribedChainInView = false;
 
-    const allChainsHref = this.props.subscribed
-      ? `#all-chains/${this.props.subscribed}`
+    const viewportWidth = viewport().width;
+    const { chains, subscribedHash, subscribedData } = this.props;
+
+    const renderedChains = chains
+      .slice(0, (viewportWidth / AVERAGE_TAB_WIDTH) | 0)
+      .map((data) => this.renderChain(data));
+
+    const allChainsHref = subscribedHash
+      ? `#all-chains/${subscribedHash}`
       : `#all-chains`;
-    const { chains } = this.props;
+
+    const subscribedChain =
+      subscribedData && !this.subscribedChainInView ? (
+        <div className="Chains-extra-subscribed-chain">
+          {this.renderChain(subscribedData)}
+        </div>
+      ) : null;
 
     return (
       <div className="Chains">
-        {chains.slice(0, VISIBLE_CAP).map((chain) => this.renderChain(chain))}
+        {subscribedChain}
+        {renderedChains}
         <a
           className="Chains-all-chains"
           href={allChainsHref}
@@ -82,13 +100,14 @@ export class Chains extends React.Component<Chains.Props, {}> {
     );
   }
 
-  private renderChain(chain: ChainData): React.ReactNode {
-    const { label, genesisHash, nodeCount } = chain;
+  private renderChain(chainData: ChainData): React.ReactNode {
+    const { label, genesisHash, nodeCount } = chainData;
 
     let className = 'Chains-chain';
 
-    if (genesisHash === this.props.subscribed) {
+    if (genesisHash === this.props.subscribedHash) {
       className += ' Chains-chain-selected';
+      this.subscribedChainInView = true;
     }
 
     return (
