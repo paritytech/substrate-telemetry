@@ -1,0 +1,42 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  namespace: substrate-telemetry
+  name: telemetry-frontend
+  labels:
+    app: telemetry-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: telemetry-frontend
+  template:
+    metadata:
+      labels:
+        app: telemetry-frontend
+    spec:
+      containers:
+        - name: telemetry-frontend
+          image: ghcr.io/envops-git/substrate-telemetry-frontend:master
+          ports:
+            - containerPort: 8000
+          env:
+            - name: SUBSTRATE_TELEMETRY_URL
+              value: "ws://backend-core:8000/feed"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: telemetry-frontend
+  namespace: substrate-telemetry
+  labels:
+    app: telemetry-frontend
+spec:
+  ports:
+  - port: 8000
+    nodePort: 32000
+    name: telemetry-frontend
+  selector:
+    app: telemetry-frontend
+  type: NodePort

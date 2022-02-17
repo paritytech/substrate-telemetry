@@ -1,0 +1,40 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  namespace: substrate-telemetry
+  name: backend-shard
+  labels:
+    app: backend-shard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend-shard
+  template:
+    metadata:
+      labels:
+        app: backend-shard
+    spec:
+      containers:
+        - name: backend-core
+          image: ghcr.io/envops-git/substrate-telemetry:master-backend
+          command: ['telemetry_shard', '--listen', '0.0.0.0:8001','--core', 'http://backend-core:8000/shard_submit']
+          ports:
+            - containerPort: 8001
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-shard
+  namespace: substrate-telemetry
+  labels:
+    app: backend-shard
+spec:
+  ports:
+  - port: 8001
+    name: backend-shard
+  selector:
+    app: backend-shard
+
