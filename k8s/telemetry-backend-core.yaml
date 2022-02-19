@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: backend-core
-          image: ghcr.io/envops-git/substrate-telemetry:master-backend
+          image: parity/substrate-telemetry-backend
           command: ['telemetry_core', '--listen', '0.0.0.0:8000']
           ports:
             - containerPort: 8000
@@ -34,7 +34,9 @@ metadata:
 spec:
   ports:
   - port: 8000
+    targetPort: 8000
+    nodePort: 31112
     name: backend-core
   selector:
     app: backend-core
-
+  type: NodePort
