@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: backend-core
-          image: ghcr.io/envops-git/substrate-telemetry:master-backend
+          image: parity/substrate-telemetry-backend
           command: ['telemetry_shard', '--listen', '0.0.0.0:8001','--core', 'http://backend-core:8000/shard_submit']
           ports:
             - containerPort: 8001
@@ -37,4 +37,3 @@ spec:
     name: backend-shard
   selector:
     app: backend-shard
-
