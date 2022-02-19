@@ -17,12 +17,13 @@ spec:
     spec:
       containers:
         - name: telemetry-frontend
-          image: ghcr.io/envops-git/substrate-telemetry-frontend:master
+          image: ghcr.io/gear-tech/substrate-telemetry-frontend:latest
           ports:
             - containerPort: 8000
           env:
             - name: SUBSTRATE_TELEMETRY_URL
-              value: "ws://backend-core:8000/feed"
+              value: "ws:///ec2-54-219-211-196.us-west-1.compute.amazonaws.com:31112/feed"
+          imagePullPolicy: Always
 
 ---
 apiVersion: v1
