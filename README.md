@@ -229,3 +229,4 @@ If something goes wrong running the above, we can roll back the deployment to li
 4. Add a variable called `FORCE_DOCKER_TAG` with a value corresponding to the tag you want to deploy, eg `v1.0-a1b2c3d`. Images must exist already for this tag.
 5. Hit 'Run Pipeline'. As above, a deployment to staging will be carried out, and if you're happy with that, you can hit the "play" button on the "Deploy-production" stage to perform the deployment to live.
 6. Confirm that things are working once the deployment has finished by visiting https://telemetry.polkadot.io/.
+
