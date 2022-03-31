@@ -80,7 +80,7 @@ struct Opts {
     #[structopt(long)]
     aggregator_queue_len: Option<usize>,
     /// How many nodes from third party chains are allowed to connect before we prevent connections from them.
-    #[structopt(long, default_value = "1000")]
+    #[structopt(long, default_value = "5000")]
     max_third_party_nodes: usize,
 }
 
