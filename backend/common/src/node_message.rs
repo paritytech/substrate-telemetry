@@ -161,7 +161,6 @@ mod tests {
                     network_id: ArrayString::new(),
                     startup_time: None,
                     sysinfo: None,
-                    hwbench: None,
                 },
             }),
         });
