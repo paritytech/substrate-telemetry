@@ -279,6 +279,7 @@ export interface State {
   pins: Readonly<Set<Types.NodeName>>;
   sortBy: Readonly<Maybe<number>>;
   selectedColumns: Column[];
+  chainStats: Maybe<Types.ChainStats>;
 }
 
 export type Update = <K extends keyof State>(

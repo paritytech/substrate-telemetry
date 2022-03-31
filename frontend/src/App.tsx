@@ -112,6 +112,7 @@ export default class App extends React.Component<{}, {}> {
       sortBy: this.sortBy.get(),
       selectedColumns: this.selectedColumns(this.settings.raw()),
       tab,
+      chainStats: null,
     });
     this.appState = this.appUpdate({});
 

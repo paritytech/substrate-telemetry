@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use super::node::Node;
-use crate::feed_message::FeedMessageSerializer;
+use crate::feed_message::{ChainStats, FeedMessageSerializer};
 use crate::find_location;
 use common::node_message::Payload;
 use common::node_types::{Block, BlockHash, NodeDetails, Timestamp};
@@ -277,6 +277,9 @@ impl<'a> StateChain<'a> {
     pub fn nodes_slice(&self) -> &[Option<Node>] {
         self.chain.nodes_slice()
     }
+    pub fn stats(&self) -> &ChainStats {
+        self.chain.stats()
+    }
 }
 
 #[cfg(test)]
@@ -289,10 +292,14 @@ mod test {
             chain: chain.into(),
             name: name.into(),
             implementation: "Bar".into(),
+            target_arch: Some("x86_64".into()),
+            target_os: Some("linux".into()),
+            target_env: Some("env".into()),
             version: "0.1".into(),
             validator: None,
             network_id: NetworkId::new(),
             startup_time: None,
+            sysinfo: None,
         }
     }
 

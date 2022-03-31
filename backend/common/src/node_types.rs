@@ -38,6 +38,40 @@ pub struct NodeDetails {
     pub validator: Option<Box<str>>,
     pub network_id: NetworkId,
     pub startup_time: Option<Box<str>>,
+    pub target_os: Option<Box<str>>,
+    pub target_arch: Option<Box<str>>,
+    pub target_env: Option<Box<str>>,
+    pub sysinfo: Option<NodeSysInfo>,
+}
+
+/// Hardware and software information for the node.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct NodeSysInfo {
+    /// The exact CPU model.
+    pub cpu: Option<Box<str>>,
+    /// The total amount of memory, in bytes.
+    pub memory: Option<u64>,
+    /// The number of physical CPU cores.
+    pub core_count: Option<u32>,
+    /// The Linux kernel version.
+    pub linux_kernel: Option<Box<str>>,
+    /// The exact Linux distribution used.
+    pub linux_distro: Option<Box<str>>,
+    /// Whether the node's running under a virtual machine.
+    pub is_virtual_machine: Option<bool>,
+}
+
+/// Hardware benchmark results for the node.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct NodeHwBench {
+    /// The CPU speed, as measured in how many MB/s it can hash using the BLAKE2b-256 hash.
+    pub cpu_hashrate_score: u64,
+    /// Memory bandwidth in MB/s, calculated by measuring the throughput of `memcpy`.
+    pub memory_memcpy_score: u64,
+    /// Sequential disk write speed in MB/s.
+    pub disk_sequential_write_score: Option<u64>,
+    /// Random disk write speed in MB/s.
+    pub disk_random_write_score: Option<u64>,
 }
 
 /// A couple of node statistics.

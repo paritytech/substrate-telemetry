@@ -1,5 +1,5 @@
 // Source code for the Substrate Telemetry Server.
-// Copyright (C) 2021 Parity Technologies (UK) Ltd.
+// Copyright (C) 2022 Parity Technologies (UK) Ltd.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,19 +14,4 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-export * from './AllChains';
-export * from './Chains';
-export * from './Chain';
-export * from './List';
-export * from './Map';
-export * from './Settings';
 export * from './Stats';
-export * from './Icon';
-export * from './Tile';
-export * from './Ago';
-export * from './OfflineIndicator';
-export * from './Sparkline';
-export * from './Truncate';
-export * from './Tooltip';
-export * from './Filter';
-export * from './PolkadotIcon';

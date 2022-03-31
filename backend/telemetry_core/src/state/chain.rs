@@ -19,10 +19,11 @@ use common::node_types::BlockHash;
 use common::node_types::{Block, Timestamp};
 use common::{id_type, time, DenseMap, MostSeen, NumStats};
 use once_cell::sync::Lazy;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
+use std::time::{Duration, Instant};
 
-use crate::feed_message::{self, FeedMessageSerializer};
+use crate::feed_message::{self, ChainStats, FeedMessageSerializer, Ranking};
 use crate::find_location;
 
 use super::node::Node;
@@ -35,6 +36,298 @@ id_type! {
 pub type Label = Box<str>;
 
 const STALE_TIMEOUT: u64 = 2 * 60 * 1000; // 2 minutes
+const STATS_UPDATE_INTERVAL: Duration = Duration::from_secs(5);
+
+#[derive(Default)]
+struct Counter<K> {
+    map: HashMap<K, u64>,
+    empty: u64,
+}
+
+impl<K> Counter<K>
+where
+    K: Sized + std::hash::Hash + Eq,
+{
+    fn modify<'a, Q>(&mut self, key: Option<&'a Q>, increment: bool)
+    where
+        Q: ?Sized + std::hash::Hash + Eq,
+        K: std::borrow::Borrow<Q>,
+        Q: std::borrow::ToOwned<Owned = K>,
+    {
+        if let Some(key) = key {
+            if let Some(entry) = self.map.get_mut(key) {
+                if increment {
+                    *entry += 1;
+                } else {
+                    *entry -= 1;
+                    if *entry == 0 {
+                        // Don't keep entries for which there are no hits.
+                        self.map.remove(key);
+                    }
+                }
+            } else {
+                assert!(increment);
+                self.map.insert(key.to_owned(), 1);
+            }
+        } else {
+            if increment {
+                self.empty += 1;
+            } else {
+                self.empty -= 1;
+            }
+        }
+    }
+
+    fn generate_ranking_top(&self, max_count: usize) -> Ranking<K>
+    where
+        K: Clone,
+    {
+        let mut all: Vec<(&K, u64)> = self.map.iter().map(|(key, count)| (key, *count)).collect();
+        all.sort_unstable_by_key(|&(_, count)| !count);
+
+        let list = all
+            .iter()
+            .take(max_count)
+            .map(|&(key, count)| (key.clone(), count))
+            .collect();
+
+        let other = all
+            .iter()
+            .skip(max_count)
+            .fold(0, |sum, (_, count)| sum + *count);
+
+        Ranking {
+            list,
+            other,
+            unknown: self.empty,
+        }
+    }
+
+    fn generate_ranking_ordered(&self) -> Ranking<K>
+    where
+        K: Copy + Clone + Ord,
+    {
+        let mut list: Vec<(K, u64)> = self.map.iter().map(|(key, count)| (*key, *count)).collect();
+        list.sort_unstable_by_key(|&(key, count)| (key, !count));
+
+        Ranking {
+            list,
+            other: 0,
+            unknown: self.empty,
+        }
+    }
+}
+
+// These are the benchmark scores generated on our reference hardware.
+const REFERENCE_CPU_SCORE: u64 = 1028;
+const REFERENCE_MEMORY_SCORE: u64 = 14899;
+const REFERENCE_DISK_SEQUENTIAL_WRITE_SCORE: u64 = 485;
+const REFERENCE_DISK_RANDOM_WRITE_SCORE: u64 = 222;
+
+macro_rules! buckets {
+    (@try $value:expr, $bucket_min:expr, $bucket_max:expr,) => {
+        if $value < $bucket_max {
+            return ($bucket_min, Some($bucket_max));
+        }
+    };
+
+    ($value:expr, $bucket_min:expr, $bucket_max:expr, $($remaining:expr,)*) => {
+        buckets! { @try $value, $bucket_min, $bucket_max, }
+        buckets! { $value, $bucket_max, $($remaining,)* }
+    };
+
+    ($value:expr, $bucket_last:expr,) => {
+        ($bucket_last, None)
+    }
+}
+
+/// Translates a given raw benchmark score into a relative measure
+/// of how the score compares to the reference score.
+///
+/// The value returned is the range (in percent) within which the given score
+/// falls into. For example, a value of `(90, Some(110))` means that the score
+/// is between 90% and 110% of the reference score, with the lower bound being
+/// inclusive and the upper bound being exclusive.
+fn bucket_score(score: u64, reference_score: u64) -> (u32, Option<u32>) {
+    let relative_score = ((score as f64 / reference_score as f64) * 100.0) as u32;
+
+    buckets! {
+        relative_score,
+        0,
+        10,
+        30,
+        50,
+        70,
+        90,
+        110,
+        130,
+        150,
+        200,
+        300,
+        400,
+        500,
+    }
+}
+
+#[test]
+fn test_bucket_score() {
+    assert_eq!(bucket_score(0, 100), (0, Some(10)));
+    assert_eq!(bucket_score(9, 100), (0, Some(10)));
+    assert_eq!(bucket_score(10, 100), (10, Some(30)));
+    assert_eq!(bucket_score(29, 100), (10, Some(30)));
+    assert_eq!(bucket_score(30, 100), (30, Some(50)));
+    assert_eq!(bucket_score(100, 100), (90, Some(110)));
+    assert_eq!(bucket_score(500, 100), (500, None));
+}
+
+fn bucket_memory(memory: u64) -> (u32, Option<u32>) {
+    let memory = memory / (1024 * 1024) / 1000;
+
+    buckets! {
+        memory,
+        1,
+        2,
+        4,
+        6,
+        8,
+        10,
+        16,
+        24,
+        32,
+        48,
+        56,
+        64,
+    }
+}
+
+#[derive(Default)]
+struct ChainStatsCollator {
+    version: Counter<String>,
+    target_os: Counter<String>,
+    target_arch: Counter<String>,
+    cpu: Counter<String>,
+    memory: Counter<(u32, Option<u32>)>,
+    core_count: Counter<u32>,
+    linux_kernel: Counter<String>,
+    linux_distro: Counter<String>,
+    is_virtual_machine: Counter<bool>,
+    cpu_hashrate_score: Counter<(u32, Option<u32>)>,
+    memory_memcpy_score: Counter<(u32, Option<u32>)>,
+    disk_sequential_write_score: Counter<(u32, Option<u32>)>,
+    disk_random_write_score: Counter<(u32, Option<u32>)>,
+}
+
+impl ChainStatsCollator {
+    fn add_or_remove_node(
+        &mut self,
+        details: &common::node_types::NodeDetails,
+        hwbench: Option<&common::node_types::NodeHwBench>,
+        was_added: bool,
+    ) {
+        self.version.modify(Some(&*details.version), was_added);
+
+        self.target_os
+            .modify(details.target_os.as_ref().map(|value| &**value), was_added);
+
+        self.target_arch.modify(
+            details.target_arch.as_ref().map(|value| &**value),
+            was_added,
+        );
+
+        let sysinfo = details.sysinfo.as_ref();
+        self.cpu.modify(
+            sysinfo
+                .and_then(|sysinfo| sysinfo.cpu.as_ref())
+                .map(|value| &**value),
+            was_added,
+        );
+
+        let memory = sysinfo.and_then(|sysinfo| sysinfo.memory.map(bucket_memory));
+        self.memory.modify(memory.as_ref(), was_added);
+
+        self.core_count.modify(
+            sysinfo.and_then(|sysinfo| sysinfo.core_count.as_ref()),
+            was_added,
+        );
+
+        self.linux_kernel.modify(
+            sysinfo
+                .and_then(|sysinfo| sysinfo.linux_kernel.as_ref())
+                .map(|value| &**value),
+            was_added,
+        );
+
+        self.linux_distro.modify(
+            sysinfo
+                .and_then(|sysinfo| sysinfo.linux_distro.as_ref())
+                .map(|value| &**value),
+            was_added,
+        );
+
+        self.is_virtual_machine.modify(
+            sysinfo.and_then(|sysinfo| sysinfo.is_virtual_machine.as_ref()),
+            was_added,
+        );
+
+        self.update_hwbench(hwbench, was_added);
+    }
+
+    fn update_hwbench(
+        &mut self,
+        hwbench: Option<&common::node_types::NodeHwBench>,
+        was_added: bool,
+    ) {
+        self.cpu_hashrate_score.modify(
+            hwbench
+                .map(|hwbench| bucket_score(hwbench.cpu_hashrate_score, REFERENCE_CPU_SCORE))
+                .as_ref(),
+            was_added,
+        );
+
+        self.memory_memcpy_score.modify(
+            hwbench
+                .map(|hwbench| bucket_score(hwbench.memory_memcpy_score, REFERENCE_MEMORY_SCORE))
+                .as_ref(),
+            was_added,
+        );
+
+        self.disk_sequential_write_score.modify(
+            hwbench
+                .and_then(|hwbench| hwbench.disk_sequential_write_score)
+                .map(|score| bucket_score(score, REFERENCE_DISK_SEQUENTIAL_WRITE_SCORE))
+                .as_ref(),
+            was_added,
+        );
+
+        self.disk_random_write_score.modify(
+            hwbench
+                .and_then(|hwbench| hwbench.disk_random_write_score)
+                .map(|score| bucket_score(score, REFERENCE_DISK_RANDOM_WRITE_SCORE))
+                .as_ref(),
+            was_added,
+        );
+    }
+
+    fn generate(&self) -> ChainStats {
+        ChainStats {
+            version: self.version.generate_ranking_top(10),
+            target_os: self.target_os.generate_ranking_top(10),
+            target_arch: self.target_arch.generate_ranking_top(10),
+            cpu: self.cpu.generate_ranking_top(10),
+            memory: self.memory.generate_ranking_ordered(),
+            core_count: self.core_count.generate_ranking_top(10),
+            linux_kernel: self.linux_kernel.generate_ranking_top(10),
+            linux_distro: self.linux_distro.generate_ranking_top(10),
+            is_virtual_machine: self.is_virtual_machine.generate_ranking_ordered(),
+            cpu_hashrate_score: self.cpu_hashrate_score.generate_ranking_top(10),
+            memory_memcpy_score: self.memory_memcpy_score.generate_ranking_ordered(),
+            disk_sequential_write_score: self
+                .disk_sequential_write_score
+                .generate_ranking_ordered(),
+            disk_random_write_score: self.disk_random_write_score.generate_ranking_ordered(),
+        }
+    }
+}
 
 pub struct Chain {
     /// Labels that nodes use for this chain. We keep track of
@@ -56,6 +349,12 @@ pub struct Chain {
     genesis_hash: BlockHash,
     /// Maximum number of nodes allowed to connect from this chain
     max_nodes: usize,
+    /// Collator for the stats.
+    stats_collator: ChainStatsCollator,
+    /// Stats for this chain.
+    stats: ChainStats,
+    /// Timestamp of when the stats were last regenerated.
+    stats_last_regenerated: Instant,
 }
 
 pub enum AddNodeResult {
@@ -105,6 +404,9 @@ impl Chain {
             timestamp: None,
             genesis_hash,
             max_nodes,
+            stats_collator: Default::default(),
+            stats: Default::default(),
+            stats_last_regenerated: Instant::now(),
         }
     }
 
@@ -119,7 +421,10 @@ impl Chain {
             return AddNodeResult::Overquota;
         }
 
-        let node_chain_label = &node.details().chain;
+        let details = node.details();
+        self.stats_collator.add_or_remove_node(details, None, true);
+
+        let node_chain_label = &details.chain;
         let label_result = self.labels.insert(node_chain_label);
         let node_id = self.nodes.add(node);
 
@@ -139,6 +444,10 @@ impl Chain {
                 }
             }
         };
+
+        let details = node.details();
+        self.stats_collator
+            .add_or_remove_node(details, node.hwbench(), false);
 
         let node_chain_label = &node.details().chain;
         let label_result = self.labels.remove(node_chain_label);
@@ -181,6 +490,18 @@ impl Chain {
                     }
                     return;
                 }
+                Payload::HwBench(ref hwbench) => {
+                    let new_hwbench = common::node_types::NodeHwBench {
+                        cpu_hashrate_score: hwbench.cpu_hashrate_score,
+                        memory_memcpy_score: hwbench.memory_memcpy_score,
+                        disk_sequential_write_score: hwbench.disk_sequential_write_score,
+                        disk_random_write_score: hwbench.disk_random_write_score,
+                    };
+                    let old_hwbench = node.replace_hwbench(new_hwbench);
+                    self.stats_collator
+                        .update_hwbench(old_hwbench.as_ref(), false);
+                    self.stats_collator.update_hwbench(node.hwbench(), true);
+                }
                 _ => {}
             }
 
@@ -210,6 +531,7 @@ impl Chain {
         let nodes_len = self.nodes.len();
 
         self.update_stale_nodes(now, feed);
+        self.regenerate_stats_if_necessary(feed);
 
         let node = match self.nodes.get_mut(nid) {
             Some(node) => node,
@@ -300,6 +622,21 @@ impl Chain {
         }
     }
 
+    fn regenerate_stats_if_necessary(&mut self, feed: &mut FeedMessageSerializer) {
+        let now = Instant::now();
+        let elapsed = now - self.stats_last_regenerated;
+        if elapsed < STATS_UPDATE_INTERVAL {
+            return;
+        }
+
+        self.stats_last_regenerated = now;
+        let new_stats = self.stats_collator.generate();
+        if new_stats != self.stats {
+            self.stats = new_stats;
+            feed.push(feed_message::ChainStatsUpdate(&self.stats));
+        }
+    }
+
     pub fn update_node_location(
         &mut self,
         node_id: ChainNodeId,
@@ -339,5 +676,8 @@ impl Chain {
     }
     pub fn genesis_hash(&self) -> BlockHash {
         self.genesis_hash
+    }
+    pub fn stats(&self) -> &ChainStats {
+        &self.stats
     }
 }

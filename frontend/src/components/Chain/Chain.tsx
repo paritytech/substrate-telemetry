@@ -20,13 +20,13 @@ import { Types, Maybe } from '../../common';
 import { State as AppState, Update as AppUpdate } from '../../state';
 import { getHashData } from '../../utils';
 import { Header } from './';
-import { List, Map, Settings } from '../';
+import { List, Map, Settings, Stats } from '../';
 import { Persistent, PersistentObject, PersistentSet } from '../../persist';
 
 import './Chain.css';
 
 export namespace Chain {
-  export type Display = 'list' | 'map' | 'settings' | 'consensus';
+  export type Display = 'list' | 'map' | 'settings' | 'consensus' | 'stats';
 
   export interface Props {
     appState: Readonly<AppState>;
@@ -93,16 +93,26 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
 
     const { appState, appUpdate, connection, pins, sortBy } = this.props;
 
-    return display === 'list' ? (
-      <List
-        appState={appState}
-        appUpdate={appUpdate}
-        pins={pins}
-        sortBy={sortBy}
-      />
-    ) : (
-      <Map appState={appState} />
-    );
+    if (display === 'list') {
+      return (
+        <List
+          appState={appState}
+          appUpdate={appUpdate}
+          pins={pins}
+          sortBy={sortBy}
+        />
+      );
+    }
+
+    if (display === 'map') {
+      return <Map appState={appState} />;
+    }
+
+    if (display === 'stats') {
+      return <Stats appState={appState} />;
+    }
+
+    throw new Error('invalid `display`: ${display}');
   }
 
   private setDisplay = (display: Chain.Display) => {

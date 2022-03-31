@@ -87,3 +87,25 @@ export declare type ImplicitPrecommit = Opaque<boolean, 'ImplicitPrecommit'>;
 export declare type ImplicitPrevote = Opaque<boolean, 'ImplicitPrevote'>;
 export declare type ImplicitFinalized = Opaque<boolean, 'ImplicitFinalized'>;
 export declare type ImplicitPointer = Opaque<BlockNumber, 'ImplicitPointer'>;
+
+export type Ranking = {
+  list: Array<[string, number]>;
+  other: number;
+  unknown: number;
+};
+
+export type ChainStats = {
+  version: Maybe<Ranking>;
+  target_os: Maybe<Ranking>;
+  target_arch: Maybe<Ranking>;
+  cpu: Maybe<Ranking>;
+  core_count: Maybe<Ranking>;
+  memory: Maybe<Ranking>;
+  is_virtual_machine: Maybe<Ranking>;
+  linux_distro: Maybe<Ranking>;
+  linux_kernel: Maybe<Ranking>;
+  cpu_hashrate_score: Maybe<Ranking>;
+  memory_memcpy_score: Maybe<Ranking>;
+  disk_sequential_write_score: Maybe<Ranking>;
+  disk_random_write_score: Maybe<Ranking>;
+};
