@@ -38,9 +38,15 @@ pub type Label = Box<str>;
 const STALE_TIMEOUT: u64 = 2 * 60 * 1000; // 2 minutes
 const STATS_UPDATE_INTERVAL: Duration = Duration::from_secs(5);
 
+/// A data structure which counts how many occurences of a given key we've seen.
 #[derive(Default)]
 struct Counter<K> {
+    /// A map containing the number of occurences of a given key.
+    ///
+    /// If there are none then the entry is removed.
     map: HashMap<K, u64>,
+
+    /// The number of occurences where the key is `None`.
     empty: u64,
 }
 
@@ -48,6 +54,7 @@ impl<K> Counter<K>
 where
     K: Sized + std::hash::Hash + Eq,
 {
+    /// Either adds or removes a single occurence of a given `key`.
     fn modify<'a, Q>(&mut self, key: Option<&'a Q>, increment: bool)
     where
         Q: ?Sized + std::hash::Hash + Eq,
@@ -78,6 +85,7 @@ where
         }
     }
 
+    /// Generates a top-N table of the most common keys.
     fn generate_ranking_top(&self, max_count: usize) -> Ranking<K>
     where
         K: Clone,
@@ -103,6 +111,7 @@ where
         }
     }
 
+    /// Generates a sorted table of all of the keys.
     fn generate_ranking_ordered(&self) -> Ranking<K>
     where
         K: Copy + Clone + Ord,
