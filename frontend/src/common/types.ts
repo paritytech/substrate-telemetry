@@ -88,24 +88,26 @@ export declare type ImplicitPrevote = Opaque<boolean, 'ImplicitPrevote'>;
 export declare type ImplicitFinalized = Opaque<boolean, 'ImplicitFinalized'>;
 export declare type ImplicitPointer = Opaque<BlockNumber, 'ImplicitPointer'>;
 
-export type Ranking = {
-  list: Array<[string, number]>;
+export type Ranking<T> = {
+  list: Array<[T, number]>;
   other: number;
   unknown: number;
 };
 
+export type Range = [number, number | null];
+
 export type ChainStats = {
-  version: Maybe<Ranking>;
-  target_os: Maybe<Ranking>;
-  target_arch: Maybe<Ranking>;
-  cpu: Maybe<Ranking>;
-  core_count: Maybe<Ranking>;
-  memory: Maybe<Ranking>;
-  is_virtual_machine: Maybe<Ranking>;
-  linux_distro: Maybe<Ranking>;
-  linux_kernel: Maybe<Ranking>;
-  cpu_hashrate_score: Maybe<Ranking>;
-  memory_memcpy_score: Maybe<Ranking>;
-  disk_sequential_write_score: Maybe<Ranking>;
-  disk_random_write_score: Maybe<Ranking>;
+  version: Maybe<Ranking<string>>;
+  target_os: Maybe<Ranking<string>>;
+  target_arch: Maybe<Ranking<string>>;
+  cpu: Maybe<Ranking<string>>;
+  core_count: Maybe<Ranking<number>>;
+  memory: Maybe<Ranking<Range>>;
+  is_virtual_machine: Maybe<Ranking<boolean>>;
+  linux_distro: Maybe<Ranking<string>>;
+  linux_kernel: Maybe<Ranking<string>>;
+  cpu_hashrate_score: Maybe<Ranking<Range>>;
+  memory_memcpy_score: Maybe<Ranking<Range>>;
+  disk_sequential_write_score: Maybe<Ranking<Range>>;
+  disk_random_write_score: Maybe<Ranking<Range>>;
 };

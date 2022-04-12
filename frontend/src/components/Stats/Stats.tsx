@@ -19,7 +19,7 @@ import { Maybe } from '../../common';
 import { State as AppState } from '../../state';
 import { Row } from '../List';
 import { PersistentObject } from '../../persist';
-import { Ranking } from '../../common/types';
+import { Ranking, Range } from '../../common/types';
 
 import './Stats.css';
 
@@ -35,11 +35,11 @@ function displayPercentage(percent: number): string {
   return (Math.round(percent * 100) / 100).toFixed(2);
 }
 
-function generateRankingTable(
+function generateRankingTable<T>(
   key: string,
   label: string,
-  format: (value: any) => string,
-  ranking: Ranking
+  format: (value: T) => string,
+  ranking: Ranking<T>
 ) {
   let total = ranking.other + ranking.unknown;
   ranking.list.forEach(([_, count]) => {
@@ -101,11 +101,11 @@ function generateRankingTable(
   );
 }
 
-function identity(value: any): string {
+function identity(value: string | number): string {
   return value + '';
 }
 
-function formatMemory(value: any): string {
+function formatMemory(value: Range): string {
   const [min, max] = value;
   if (min === 0) {
     return 'Less than ' + max + ' GB';
@@ -116,7 +116,7 @@ function formatMemory(value: any): string {
   return min + ' GB';
 }
 
-function formatYesNo(value: any): string {
+function formatYesNo(value: boolean): string {
   if (value) {
     return 'Yes';
   } else {
@@ -124,13 +124,13 @@ function formatYesNo(value: any): string {
   }
 }
 
-function formatScore(value: any): string {
+function formatScore(value: Range): string {
   const [min, max] = value;
-  if (min === 0) {
-    return 'Less than ' + (max / 100).toFixed(1) + 'x';
-  }
   if (max === null) {
     return 'More than ' + (min / 100).toFixed(1) + 'x';
+  }
+  if (min === 0) {
+    return 'Less than ' + (max / 100).toFixed(1) + 'x';
   }
   if (min <= 100 && max >= 100) {
     return 'Baseline';
@@ -138,44 +138,66 @@ function formatScore(value: any): string {
   return (min / 100).toFixed(1) + 'x';
 }
 
-const LIST: any[] = [
-  ['version', 'Version', identity],
-  ['target_os', 'Operating System', identity],
-  ['target_arch', 'CPU Architecture', identity],
-  ['cpu', 'CPU', identity],
-  ['core_count', 'CPU Cores', identity],
-  ['memory', 'Memory', formatMemory],
-  ['is_virtual_machine', 'Is Virtual Machine?', formatYesNo],
-  ['linux_distro', 'Linux Distribution', identity],
-  ['linux_kernel', 'Linux Kernel', identity],
-  ['cpu_hashrate_score', 'CPU Speed', formatScore],
-  ['memory_memcpy_score', 'Memory Speed', formatScore],
-  [
-    'disk_sequential_write_score',
-    'Disk Speed (sequential writes)',
-    formatScore,
-  ],
-  ['disk_random_write_score', 'Disk Speed (random writes)', formatScore],
-];
-
 export class Stats extends React.Component<Stats.Props, {}> {
   public render() {
     const { appState } = this.props;
 
     const children: React.ReactNode[] = [];
-    LIST.forEach(([key, label, format]) => {
-      if (appState.chainStats && appState.chainStats[key]) {
-        const child = generateRankingTable(
-          key,
-          label,
-          format,
-          appState.chainStats[key]
-        );
+    function add<T>(
+      key: string,
+      label: string,
+      format: (value: T) => string,
+      ranking: Maybe<Ranking<T>>
+    ) {
+      if (ranking) {
+        const child = generateRankingTable(key, label, format, ranking);
         if (child !== null) {
           children.push(child);
         }
       }
-    });
+    }
+
+    const stats = appState.chainStats;
+    if (stats) {
+      add('version', 'Version', identity, stats.version);
+      add('target_os', 'Operating System', identity, stats.target_os);
+      add('target_arch', 'CPU Architecture', identity, stats.target_arch);
+      add('cpu', 'CPU', identity, stats.cpu);
+      add('core_count', 'CPU Cores', identity, stats.core_count);
+      add('memory', 'Memory', formatMemory, stats.memory);
+      add(
+        'is_virtual_machine',
+        'Is Virtual Machine?',
+        formatYesNo,
+        stats.is_virtual_machine
+      );
+      add('linux_distro', 'Linux Distribution', identity, stats.linux_distro);
+      add('linux_kernel', 'Linux Kernel', identity, stats.linux_kernel);
+      add(
+        'cpu_hashrate_score',
+        'CPU Speed',
+        formatScore,
+        stats.cpu_hashrate_score
+      );
+      add(
+        'memory_memcpy_score',
+        'Memory Speed',
+        formatScore,
+        stats.memory_memcpy_score
+      );
+      add(
+        'disk_sequential_write_score',
+        'Disk Speed (sequential writes)',
+        formatScore,
+        stats.disk_sequential_write_score
+      );
+      add(
+        'disk_random_write_score',
+        'Disk Speed (random writes)',
+        formatScore,
+        stats.disk_random_write_score
+      );
+    }
 
     return <div className="Stats">{children}</div>;
   }
