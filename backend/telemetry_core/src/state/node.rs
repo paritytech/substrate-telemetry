@@ -118,7 +118,7 @@ impl Node {
         self.hwbench.as_ref()
     }
 
-    pub fn replace_hwbench(&mut self, hwbench: NodeHwBench) -> Option<NodeHwBench> {
+    pub fn update_hwbench(&mut self, hwbench: NodeHwBench) -> Option<NodeHwBench> {
         self.hwbench.replace(hwbench)
     }
 

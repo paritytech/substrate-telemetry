@@ -515,7 +515,7 @@ impl Chain {
                         disk_sequential_write_score: hwbench.disk_sequential_write_score,
                         disk_random_write_score: hwbench.disk_random_write_score,
                     };
-                    let old_hwbench = node.replace_hwbench(new_hwbench);
+                    let old_hwbench = node.update_hwbench(new_hwbench);
                     self.stats_collator
                         .update_hwbench(old_hwbench.as_ref(), CounterValue::Decrement);
                     self.stats_collator
