@@ -50,12 +50,18 @@ struct Counter<K> {
     empty: u64,
 }
 
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+enum CounterValue {
+    Increment,
+    Decrement,
+}
+
 impl<K> Counter<K>
 where
     K: Sized + std::hash::Hash + Eq,
 {
     /// Either adds or removes a single occurence of a given `key`.
-    fn modify<'a, Q>(&mut self, key: Option<&'a Q>, increment: bool)
+    fn modify<'a, Q>(&mut self, key: Option<&'a Q>, op: CounterValue)
     where
         Q: ?Sized + std::hash::Hash + Eq,
         K: std::borrow::Borrow<Q>,
@@ -63,24 +69,30 @@ where
     {
         if let Some(key) = key {
             if let Some(entry) = self.map.get_mut(key) {
-                if increment {
-                    *entry += 1;
-                } else {
-                    *entry -= 1;
-                    if *entry == 0 {
-                        // Don't keep entries for which there are no hits.
-                        self.map.remove(key);
+                match op {
+                    CounterValue::Increment => {
+                        *entry += 1;
+                    }
+                    CounterValue::Decrement => {
+                        *entry -= 1;
+                        if *entry == 0 {
+                            // Don't keep entries for which there are no hits.
+                            self.map.remove(key);
+                        }
                     }
                 }
             } else {
-                assert!(increment);
+                assert_eq!(op, CounterValue::Increment);
                 self.map.insert(key.to_owned(), 1);
             }
         } else {
-            if increment {
-                self.empty += 1;
-            } else {
-                self.empty -= 1;
+            match op {
+                CounterValue::Increment => {
+                    self.empty += 1;
+                }
+                CounterValue::Decrement => {
+                    self.empty -= 1;
+                }
             }
         }
     }
@@ -231,73 +243,69 @@ impl ChainStatsCollator {
         &mut self,
         details: &common::node_types::NodeDetails,
         hwbench: Option<&common::node_types::NodeHwBench>,
-        was_added: bool,
+        op: CounterValue,
     ) {
-        self.version.modify(Some(&*details.version), was_added);
+        self.version.modify(Some(&*details.version), op);
 
         self.target_os
-            .modify(details.target_os.as_ref().map(|value| &**value), was_added);
+            .modify(details.target_os.as_ref().map(|value| &**value), op);
 
-        self.target_arch.modify(
-            details.target_arch.as_ref().map(|value| &**value),
-            was_added,
-        );
+        self.target_arch
+            .modify(details.target_arch.as_ref().map(|value| &**value), op);
 
         let sysinfo = details.sysinfo.as_ref();
         self.cpu.modify(
             sysinfo
                 .and_then(|sysinfo| sysinfo.cpu.as_ref())
                 .map(|value| &**value),
-            was_added,
+            op,
         );
 
         let memory = sysinfo.and_then(|sysinfo| sysinfo.memory.map(bucket_memory));
-        self.memory.modify(memory.as_ref(), was_added);
+        self.memory.modify(memory.as_ref(), op);
 
-        self.core_count.modify(
-            sysinfo.and_then(|sysinfo| sysinfo.core_count.as_ref()),
-            was_added,
-        );
+        self.core_count
+            .modify(sysinfo.and_then(|sysinfo| sysinfo.core_count.as_ref()), op);
 
         self.linux_kernel.modify(
             sysinfo
                 .and_then(|sysinfo| sysinfo.linux_kernel.as_ref())
                 .map(|value| &**value),
-            was_added,
+            op,
         );
 
         self.linux_distro.modify(
             sysinfo
                 .and_then(|sysinfo| sysinfo.linux_distro.as_ref())
                 .map(|value| &**value),
-            was_added,
+            op,
         );
 
         self.is_virtual_machine.modify(
             sysinfo.and_then(|sysinfo| sysinfo.is_virtual_machine.as_ref()),
-            was_added,
+            op,
         );
 
-        self.update_hwbench(hwbench, was_added);
+        self.update_hwbench(hwbench, op);
     }
 
     fn update_hwbench(
         &mut self,
         hwbench: Option<&common::node_types::NodeHwBench>,
-        was_added: bool,
+        op: CounterValue,
     ) {
         self.cpu_hashrate_score.modify(
             hwbench
                 .map(|hwbench| bucket_score(hwbench.cpu_hashrate_score, REFERENCE_CPU_SCORE))
                 .as_ref(),
-            was_added,
+            op,
         );
 
         self.memory_memcpy_score.modify(
             hwbench
                 .map(|hwbench| bucket_score(hwbench.memory_memcpy_score, REFERENCE_MEMORY_SCORE))
                 .as_ref(),
-            was_added,
+            op,
         );
 
         self.disk_sequential_write_score.modify(
@@ -305,7 +313,7 @@ impl ChainStatsCollator {
                 .and_then(|hwbench| hwbench.disk_sequential_write_score)
                 .map(|score| bucket_score(score, REFERENCE_DISK_SEQUENTIAL_WRITE_SCORE))
                 .as_ref(),
-            was_added,
+            op,
         );
 
         self.disk_random_write_score.modify(
@@ -313,7 +321,7 @@ impl ChainStatsCollator {
                 .and_then(|hwbench| hwbench.disk_random_write_score)
                 .map(|score| bucket_score(score, REFERENCE_DISK_RANDOM_WRITE_SCORE))
                 .as_ref(),
-            was_added,
+            op,
         );
     }
 
@@ -431,7 +439,8 @@ impl Chain {
         }
 
         let details = node.details();
-        self.stats_collator.add_or_remove_node(details, None, true);
+        self.stats_collator
+            .add_or_remove_node(details, None, CounterValue::Increment);
 
         let node_chain_label = &details.chain;
         let label_result = self.labels.insert(node_chain_label);
@@ -456,7 +465,7 @@ impl Chain {
 
         let details = node.details();
         self.stats_collator
-            .add_or_remove_node(details, node.hwbench(), false);
+            .add_or_remove_node(details, node.hwbench(), CounterValue::Decrement);
 
         let node_chain_label = &node.details().chain;
         let label_result = self.labels.remove(node_chain_label);
@@ -508,8 +517,9 @@ impl Chain {
                     };
                     let old_hwbench = node.replace_hwbench(new_hwbench);
                     self.stats_collator
-                        .update_hwbench(old_hwbench.as_ref(), false);
-                    self.stats_collator.update_hwbench(node.hwbench(), true);
+                        .update_hwbench(old_hwbench.as_ref(), CounterValue::Decrement);
+                    self.stats_collator
+                        .update_hwbench(node.hwbench(), CounterValue::Increment);
                 }
                 _ => {}
             }
