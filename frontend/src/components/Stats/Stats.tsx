@@ -77,7 +77,7 @@ function generateRankingTable(
   if (ranking.unknown > 0) {
     const percent = displayPercentage((ranking.unknown / total) * 100);
     entries.push(
-      <tr key="other">
+      <tr key="unknown">
         <td className="Stats-percent">{percent}%</td>
         <td className="Stats-count">{ranking.unknown}</td>
         <td className="Stats-value Stats-unknown">Unknown</td>
