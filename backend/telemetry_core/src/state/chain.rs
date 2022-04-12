@@ -19,13 +19,14 @@ use common::node_types::BlockHash;
 use common::node_types::{Block, Timestamp};
 use common::{id_type, time, DenseMap, MostSeen, NumStats};
 use once_cell::sync::Lazy;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::str::FromStr;
 use std::time::{Duration, Instant};
 
-use crate::feed_message::{self, ChainStats, FeedMessageSerializer, Ranking};
+use crate::feed_message::{self, ChainStats, FeedMessageSerializer};
 use crate::find_location;
 
+use super::counter::{Counter, CounterValue};
 use super::node::Node;
 
 id_type! {
@@ -37,107 +38,6 @@ pub type Label = Box<str>;
 
 const STALE_TIMEOUT: u64 = 2 * 60 * 1000; // 2 minutes
 const STATS_UPDATE_INTERVAL: Duration = Duration::from_secs(5);
-
-/// A data structure which counts how many occurences of a given key we've seen.
-#[derive(Default)]
-struct Counter<K> {
-    /// A map containing the number of occurences of a given key.
-    ///
-    /// If there are none then the entry is removed.
-    map: HashMap<K, u64>,
-
-    /// The number of occurences where the key is `None`.
-    empty: u64,
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
-enum CounterValue {
-    Increment,
-    Decrement,
-}
-
-impl<K> Counter<K>
-where
-    K: Sized + std::hash::Hash + Eq,
-{
-    /// Either adds or removes a single occurence of a given `key`.
-    fn modify<'a, Q>(&mut self, key: Option<&'a Q>, op: CounterValue)
-    where
-        Q: ?Sized + std::hash::Hash + Eq,
-        K: std::borrow::Borrow<Q>,
-        Q: std::borrow::ToOwned<Owned = K>,
-    {
-        if let Some(key) = key {
-            if let Some(entry) = self.map.get_mut(key) {
-                match op {
-                    CounterValue::Increment => {
-                        *entry += 1;
-                    }
-                    CounterValue::Decrement => {
-                        *entry -= 1;
-                        if *entry == 0 {
-                            // Don't keep entries for which there are no hits.
-                            self.map.remove(key);
-                        }
-                    }
-                }
-            } else {
-                assert_eq!(op, CounterValue::Increment);
-                self.map.insert(key.to_owned(), 1);
-            }
-        } else {
-            match op {
-                CounterValue::Increment => {
-                    self.empty += 1;
-                }
-                CounterValue::Decrement => {
-                    self.empty -= 1;
-                }
-            }
-        }
-    }
-
-    /// Generates a top-N table of the most common keys.
-    fn generate_ranking_top(&self, max_count: usize) -> Ranking<K>
-    where
-        K: Clone,
-    {
-        let mut all: Vec<(&K, u64)> = self.map.iter().map(|(key, count)| (key, *count)).collect();
-        all.sort_unstable_by_key(|&(_, count)| !count);
-
-        let list = all
-            .iter()
-            .take(max_count)
-            .map(|&(key, count)| (key.clone(), count))
-            .collect();
-
-        let other = all
-            .iter()
-            .skip(max_count)
-            .fold(0, |sum, (_, count)| sum + *count);
-
-        Ranking {
-            list,
-            other,
-            unknown: self.empty,
-        }
-    }
-
-    /// Generates a sorted table of all of the keys.
-    fn generate_ranking_ordered(&self) -> Ranking<K>
-    where
-        K: Copy + Clone + Ord,
-    {
-        let mut list: Vec<(K, u64)> = self.map.iter().map(|(key, count)| (*key, *count)).collect();
-        list.sort_unstable_by_key(|&(key, count)| (key, !count));
-
-        Ranking {
-            list,
-            other: 0,
-            unknown: self.empty,
-        }
-    }
-}
 
 // These are the benchmark scores generated on our reference hardware.
 const REFERENCE_CPU_SCORE: u64 = 1028;
