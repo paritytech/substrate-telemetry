@@ -76,6 +76,8 @@ pub enum Payload {
     NotifyFinalized(Finalized),
     #[serde(rename = "afg.authority_set")]
     AfgAuthoritySet(AfgAuthoritySet),
+    #[serde(rename = "sysinfo.hwbench")]
+    HwBench(NodeHwBench),
 }
 
 impl From<Payload> for internal::Payload {
@@ -86,6 +88,7 @@ impl From<Payload> for internal::Payload {
             Payload::BlockImport(m) => internal::Payload::BlockImport(m.into()),
             Payload::NotifyFinalized(m) => internal::Payload::NotifyFinalized(m.into()),
             Payload::AfgAuthoritySet(m) => internal::Payload::AfgAuthoritySet(m.into()),
+            Payload::HwBench(m) => internal::Payload::HwBench(m.into()),
         }
     }
 }
@@ -184,6 +187,59 @@ impl From<Block> for node_types::Block {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+pub struct NodeSysInfo {
+    pub cpu: Option<Box<str>>,
+    pub memory: Option<u64>,
+    pub core_count: Option<u32>,
+    pub linux_kernel: Option<Box<str>>,
+    pub linux_distro: Option<Box<str>>,
+    pub is_virtual_machine: Option<bool>,
+}
+
+impl From<NodeSysInfo> for node_types::NodeSysInfo {
+    fn from(sysinfo: NodeSysInfo) -> Self {
+        node_types::NodeSysInfo {
+            cpu: sysinfo.cpu,
+            memory: sysinfo.memory,
+            core_count: sysinfo.core_count,
+            linux_kernel: sysinfo.linux_kernel,
+            linux_distro: sysinfo.linux_distro,
+            is_virtual_machine: sysinfo.is_virtual_machine,
+        }
+    }
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct NodeHwBench {
+    pub cpu_hashrate_score: u64,
+    pub memory_memcpy_score: u64,
+    pub disk_sequential_write_score: Option<u64>,
+    pub disk_random_write_score: Option<u64>,
+}
+
+impl From<NodeHwBench> for node_types::NodeHwBench {
+    fn from(hwbench: NodeHwBench) -> Self {
+        node_types::NodeHwBench {
+            cpu_hashrate_score: hwbench.cpu_hashrate_score,
+            memory_memcpy_score: hwbench.memory_memcpy_score,
+            disk_sequential_write_score: hwbench.disk_sequential_write_score,
+            disk_random_write_score: hwbench.disk_random_write_score,
+        }
+    }
+}
+
+impl From<NodeHwBench> for internal::NodeHwBench {
+    fn from(msg: NodeHwBench) -> Self {
+        internal::NodeHwBench {
+            cpu_hashrate_score: msg.cpu_hashrate_score,
+            memory_memcpy_score: msg.memory_memcpy_score,
+            disk_sequential_write_score: msg.disk_sequential_write_score,
+            disk_random_write_score: msg.disk_random_write_score,
+        }
+    }
+}
+
+#[derive(Deserialize, Debug, Clone)]
 pub struct NodeDetails {
     pub chain: Box<str>,
     pub name: Box<str>,
@@ -192,10 +248,30 @@ pub struct NodeDetails {
     pub validator: Option<Box<str>>,
     pub network_id: node_types::NetworkId,
     pub startup_time: Option<Box<str>>,
+    pub target_os: Option<Box<str>>,
+    pub target_arch: Option<Box<str>>,
+    pub target_env: Option<Box<str>>,
+    pub sysinfo: Option<NodeSysInfo>,
 }
 
 impl From<NodeDetails> for node_types::NodeDetails {
-    fn from(details: NodeDetails) -> Self {
+    fn from(mut details: NodeDetails) -> Self {
+        // Migrate old-style `version` to the split metrics.
+        // TODO: Remove this once everyone updates their nodes.
+        if details.target_os.is_none()
+            && details.target_arch.is_none()
+            && details.target_env.is_none()
+        {
+            if let Some((version, target_arch, target_os, target_env)) =
+                split_old_style_version(&details.version)
+            {
+                details.target_arch = Some(target_arch.into());
+                details.target_os = Some(target_os.into());
+                details.target_env = Some(target_env.into());
+                details.version = version.into();
+            }
+        }
+
         node_types::NodeDetails {
             chain: details.chain,
             name: details.name,
@@ -204,12 +280,62 @@ impl From<NodeDetails> for node_types::NodeDetails {
             validator: details.validator,
             network_id: details.network_id,
             startup_time: details.startup_time,
+            target_os: details.target_os,
+            target_arch: details.target_arch,
+            target_env: details.target_env,
+            sysinfo: details.sysinfo.map(|sysinfo| sysinfo.into()),
         }
     }
 }
 
 type NodeMessageId = u64;
 type BlockNumber = u64;
+
+fn is_version_or_hash(name: &str) -> bool {
+    name.bytes().all(|byte| {
+        byte.is_ascii_digit()
+            || byte == b'.'
+            || byte == b'a'
+            || byte == b'b'
+            || byte == b'c'
+            || byte == b'd'
+            || byte == b'e'
+            || byte == b'f'
+    })
+}
+
+/// Split an old style version string into its version + target_arch + target_os + target_arch parts.
+fn split_old_style_version(version_and_target: &str) -> Option<(&str, &str, &str, &str)> {
+    // Old style versions are composed of the following parts:
+    //    $version-$commit_hash-$arch-$os-$env
+    // where $commit_hash and $env are optional.
+    //
+    // For example these are all valid:
+    //   0.9.17-75dd6c7d0-x86_64-linux-gnu
+    //   0.9.17-75dd6c7d0-x86_64-linux
+    //   0.9.17-x86_64-linux-gnu
+    //   0.9.17-x86_64-linux
+    //   2.0.0-alpha.5-da487d19d-x86_64-linux
+
+    let mut iter = version_and_target.rsplit('-').take(3).skip(2);
+
+    // This will one of these: $arch, $commit_hash, $version
+    let item = iter.next()?;
+
+    let target_offset = if is_version_or_hash(item) {
+        item.as_ptr() as usize + item.len() + 1
+    } else {
+        item.as_ptr() as usize
+    } - version_and_target.as_ptr() as usize;
+
+    let version = version_and_target.get(0..target_offset - 1)?;
+    let mut target = version_and_target.get(target_offset..)?.split('-');
+    let target_arch = target.next()?;
+    let target_os = target.next()?;
+    let target_env = target.next().unwrap_or("");
+
+    Some((version, target_arch, target_os, target_env))
+}
 
 #[cfg(test)]
 mod tests {
@@ -278,5 +404,47 @@ mod tests {
             ),
             "message did not match the expected output",
         );
+    }
+
+    #[test]
+    fn split_old_style_version_works() {
+        let (version, target_arch, target_os, target_env) =
+            split_old_style_version("0.9.17-75dd6c7d0-x86_64-linux-gnu").unwrap();
+        assert_eq!(version, "0.9.17-75dd6c7d0");
+        assert_eq!(target_arch, "x86_64");
+        assert_eq!(target_os, "linux");
+        assert_eq!(target_env, "gnu");
+
+        let (version, target_arch, target_os, target_env) =
+            split_old_style_version("0.9.17-75dd6c7d0-x86_64-linux").unwrap();
+        assert_eq!(version, "0.9.17-75dd6c7d0");
+        assert_eq!(target_arch, "x86_64");
+        assert_eq!(target_os, "linux");
+        assert_eq!(target_env, "");
+
+        let (version, target_arch, target_os, target_env) =
+            split_old_style_version("0.9.17-x86_64-linux-gnu").unwrap();
+        assert_eq!(version, "0.9.17");
+        assert_eq!(target_arch, "x86_64");
+        assert_eq!(target_os, "linux");
+        assert_eq!(target_env, "gnu");
+
+        let (version, target_arch, target_os, target_env) =
+            split_old_style_version("0.9.17-x86_64-linux").unwrap();
+        assert_eq!(version, "0.9.17");
+        assert_eq!(target_arch, "x86_64");
+        assert_eq!(target_os, "linux");
+        assert_eq!(target_env, "");
+
+        let (version, target_arch, target_os, target_env) =
+            split_old_style_version("2.0.0-alpha.5-da487d19d-x86_64-linux").unwrap();
+        assert_eq!(version, "2.0.0-alpha.5-da487d19d");
+        assert_eq!(target_arch, "x86_64");
+        assert_eq!(target_os, "linux");
+        assert_eq!(target_env, "");
+
+        assert_eq!(split_old_style_version(""), None);
+        assert_eq!(split_old_style_version("a"), None);
+        assert_eq!(split_old_style_version("a-b"), None);
     }
 }

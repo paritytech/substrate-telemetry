@@ -362,6 +362,11 @@ export class Connection {
           break;
         }
 
+        case ACTIONS.ChainStatsUpdate: {
+          this.appUpdate({ chainStats: message.payload });
+          break;
+        }
+
         default: {
           break;
         }

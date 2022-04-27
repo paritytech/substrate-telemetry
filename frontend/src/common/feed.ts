@@ -37,6 +37,7 @@ import {
   ChainLabel,
   GenesisHash,
   AuthoritySetInfo,
+  ChainStats,
 } from './types';
 
 export const ACTIONS = {
@@ -62,6 +63,7 @@ export const ACTIONS = {
   AfgAuthoritySet: 0x13 as 0x13,
   StaleNode: 0x14 as 0x14,
   NodeIO: 0x15 as 0x15,
+  ChainStatsUpdate: 0x16 as 0x16,
 };
 
 export type Action = typeof ACTIONS[keyof typeof ACTIONS];
@@ -190,6 +192,11 @@ export namespace Variants {
     action: typeof ACTIONS.StaleNode;
     payload: NodeId;
   }
+
+  export interface ChainStatsUpdate extends MessageBase {
+    action: typeof ACTIONS.ChainStatsUpdate;
+    payload: ChainStats;
+  }
 }
 
 export type Message =
@@ -214,7 +221,8 @@ export type Message =
   | Variants.AfgAuthoritySet
   | Variants.StaleNodeMessage
   | Variants.PongMessage
-  | Variants.NodeIOMessage;
+  | Variants.NodeIOMessage
+  | Variants.ChainStatsUpdate;
 
 /**
  * Data type to be sent to the feed. Passing through strings means we can only serialize once,

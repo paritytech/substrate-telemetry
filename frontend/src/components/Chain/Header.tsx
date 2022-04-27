@@ -28,6 +28,7 @@ import listIcon from '../../icons/list-alt-regular.svg';
 import worldIcon from '../../icons/location.svg';
 import settingsIcon from '../../icons/settings.svg';
 import consensusIcon from '../../icons/cube-alt.svg';
+import statsIcon from '../../icons/graph.svg';
 
 import './Header.css';
 
@@ -87,6 +88,14 @@ export class Header extends React.Component<Header.Props, {}> {
             label="Map"
             display="map"
             tab="map"
+            current={currentTab}
+            setDisplay={setDisplay}
+          />
+          <Tab
+            icon={statsIcon}
+            label="Stats"
+            display="stats"
+            tab="stats"
             current={currentTab}
             setDisplay={setDisplay}
           />

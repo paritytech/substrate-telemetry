@@ -122,6 +122,7 @@ actions! {
     // We maintain existing IDs for backward compatibility.
     20: StaleNode,
     21: NodeIOUpdate<'_>,
+    22: ChainStatsUpdate<'_>,
 }
 
 #[derive(Serialize)]
@@ -201,4 +202,31 @@ impl FeedMessageWrite for AddedNode<'_> {
             &node.startup_time(),
         ));
     }
+}
+
+#[derive(Serialize)]
+pub struct ChainStatsUpdate<'a>(pub &'a ChainStats);
+
+#[derive(Serialize, PartialEq, Eq, Default)]
+pub struct Ranking<K> {
+    pub list: Vec<(K, u64)>,
+    pub other: u64,
+    pub unknown: u64,
+}
+
+#[derive(Serialize, PartialEq, Eq, Default)]
+pub struct ChainStats {
+    pub version: Ranking<String>,
+    pub target_os: Ranking<String>,
+    pub target_arch: Ranking<String>,
+    pub cpu: Ranking<String>,
+    pub memory: Ranking<(u32, Option<u32>)>,
+    pub core_count: Ranking<u32>,
+    pub linux_kernel: Ranking<String>,
+    pub linux_distro: Ranking<String>,
+    pub is_virtual_machine: Ranking<bool>,
+    pub cpu_hashrate_score: Ranking<(u32, Option<u32>)>,
+    pub memory_memcpy_score: Ranking<(u32, Option<u32>)>,
+    pub disk_sequential_write_score: Ranking<(u32, Option<u32>)>,
+    pub disk_random_write_score: Ranking<(u32, Option<u32>)>,
 }

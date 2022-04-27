@@ -60,6 +60,7 @@ pub enum Payload {
     BlockImport(Block),
     NotifyFinalized(Finalized),
     AfgAuthoritySet(AfgAuthoritySet),
+    HwBench(NodeHwBench),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -91,6 +92,14 @@ pub struct AfgAuthoritySet {
     pub authority_id: Box<str>,
     pub authorities: Box<str>,
     pub authority_set_id: Box<str>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct NodeHwBench {
+    pub cpu_hashrate_score: u64,
+    pub memory_memcpy_score: u64,
+    pub disk_sequential_write_score: Option<u64>,
+    pub disk_random_write_score: Option<u64>,
 }
 
 impl Payload {
@@ -145,9 +154,13 @@ mod tests {
                     name: "foo".into(),
                     implementation: "foo".into(),
                     version: "foo".into(),
+                    target_arch: Some("x86_64".into()),
+                    target_os: Some("linux".into()),
+                    target_env: Some("env".into()),
                     validator: None,
                     network_id: ArrayString::new(),
                     startup_time: None,
+                    sysinfo: None,
                 },
             }),
         });

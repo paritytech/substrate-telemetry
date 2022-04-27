@@ -21,10 +21,13 @@ use common::{id_type, time, DenseMap, MostSeen, NumStats};
 use once_cell::sync::Lazy;
 use std::collections::HashSet;
 use std::str::FromStr;
+use std::time::{Duration, Instant};
 
-use crate::feed_message::{self, FeedMessageSerializer};
+use crate::feed_message::{self, ChainStats, FeedMessageSerializer};
 use crate::find_location;
 
+use super::chain_stats::ChainStatsCollator;
+use super::counter::CounterValue;
 use super::node::Node;
 
 id_type! {
@@ -35,6 +38,7 @@ id_type! {
 pub type Label = Box<str>;
 
 const STALE_TIMEOUT: u64 = 2 * 60 * 1000; // 2 minutes
+const STATS_UPDATE_INTERVAL: Duration = Duration::from_secs(5);
 
 pub struct Chain {
     /// Labels that nodes use for this chain. We keep track of
@@ -56,6 +60,12 @@ pub struct Chain {
     genesis_hash: BlockHash,
     /// Maximum number of nodes allowed to connect from this chain
     max_nodes: usize,
+    /// Collator for the stats.
+    stats_collator: ChainStatsCollator,
+    /// Stats for this chain.
+    stats: ChainStats,
+    /// Timestamp of when the stats were last regenerated.
+    stats_last_regenerated: Instant,
 }
 
 pub enum AddNodeResult {
@@ -105,6 +115,9 @@ impl Chain {
             timestamp: None,
             genesis_hash,
             max_nodes,
+            stats_collator: Default::default(),
+            stats: Default::default(),
+            stats_last_regenerated: Instant::now(),
         }
     }
 
@@ -119,7 +132,11 @@ impl Chain {
             return AddNodeResult::Overquota;
         }
 
-        let node_chain_label = &node.details().chain;
+        let details = node.details();
+        self.stats_collator
+            .add_or_remove_node(details, None, CounterValue::Increment);
+
+        let node_chain_label = &details.chain;
         let label_result = self.labels.insert(node_chain_label);
         let node_id = self.nodes.add(node);
 
@@ -139,6 +156,10 @@ impl Chain {
                 }
             }
         };
+
+        let details = node.details();
+        self.stats_collator
+            .add_or_remove_node(details, node.hwbench(), CounterValue::Decrement);
 
         let node_chain_label = &node.details().chain;
         let label_result = self.labels.remove(node_chain_label);
@@ -181,6 +202,19 @@ impl Chain {
                     }
                     return;
                 }
+                Payload::HwBench(ref hwbench) => {
+                    let new_hwbench = common::node_types::NodeHwBench {
+                        cpu_hashrate_score: hwbench.cpu_hashrate_score,
+                        memory_memcpy_score: hwbench.memory_memcpy_score,
+                        disk_sequential_write_score: hwbench.disk_sequential_write_score,
+                        disk_random_write_score: hwbench.disk_random_write_score,
+                    };
+                    let old_hwbench = node.update_hwbench(new_hwbench);
+                    self.stats_collator
+                        .update_hwbench(old_hwbench.as_ref(), CounterValue::Decrement);
+                    self.stats_collator
+                        .update_hwbench(node.hwbench(), CounterValue::Increment);
+                }
                 _ => {}
             }
 
@@ -210,6 +244,7 @@ impl Chain {
         let nodes_len = self.nodes.len();
 
         self.update_stale_nodes(now, feed);
+        self.regenerate_stats_if_necessary(feed);
 
         let node = match self.nodes.get_mut(nid) {
             Some(node) => node,
@@ -300,6 +335,21 @@ impl Chain {
         }
     }
 
+    fn regenerate_stats_if_necessary(&mut self, feed: &mut FeedMessageSerializer) {
+        let now = Instant::now();
+        let elapsed = now - self.stats_last_regenerated;
+        if elapsed < STATS_UPDATE_INTERVAL {
+            return;
+        }
+
+        self.stats_last_regenerated = now;
+        let new_stats = self.stats_collator.generate();
+        if new_stats != self.stats {
+            self.stats = new_stats;
+            feed.push(feed_message::ChainStatsUpdate(&self.stats));
+        }
+    }
+
     pub fn update_node_location(
         &mut self,
         node_id: ChainNodeId,
@@ -339,5 +389,8 @@ impl Chain {
     }
     pub fn genesis_hash(&self) -> BlockHash {
         self.genesis_hash
+    }
+    pub fn stats(&self) -> &ChainStats {
+        &self.stats
     }
 }
