@@ -33,6 +33,7 @@ import crabIcon from '../../../icons/crab.svg';
 import darwiniaIcon from '../../../icons/darwinia.svg';
 import turingIcon from '../../../icons/turingnetwork.svg';
 import dothereumIcon from '../../../icons/dothereum.svg';
+import kagomeIcon from '../../../icons/kagome.svg';
 import katalchainIcon from '../../../icons/katalchain.svg';
 import bifrostIcon from '../../../icons/bifrost.svg';
 import totemIcon from '../../../icons/totem.svg';
@@ -57,6 +58,7 @@ const ICONS = {
   Darwinia: darwiniaIcon,
   'turing-node': turingIcon,
   dothereum: dothereumIcon,
+  'Kagome Node': kagomeIcon,
   katalchain: katalchainIcon,
   'bifrost-node': bifrostIcon,
   'totem-meccano-node': totemIcon,
