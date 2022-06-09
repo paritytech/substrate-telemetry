@@ -30,10 +30,7 @@ use std::sync::{
     atomic::{AtomicU64, Ordering},
     Arc,
 };
-use std::{
-    net::{IpAddr, Ipv4Addr},
-    str::FromStr,
-};
+use std::{net::IpAddr, str::FromStr};
 
 /// Incoming messages come via subscriptions, and end up looking like this.
 #[derive(Clone, Debug)]
@@ -171,7 +168,7 @@ pub struct InnerLoop {
     chain_to_feed_conn_ids: MultiMapUnique<BlockHash, ConnId>,
 
     /// Send messages here to make geographical location requests.
-    tx_to_locator: flume::Sender<(NodeId, Ipv4Addr)>,
+    tx_to_locator: flume::Sender<(NodeId, IpAddr)>,
 
     /// How big can the queue of messages coming in to the aggregator get before messages
     /// are prioritised and dropped to try and get back on track.
@@ -181,7 +178,7 @@ pub struct InnerLoop {
 impl InnerLoop {
     /// Create a new inner loop handler with the various state it needs.
     pub fn new(
-        tx_to_locator: flume::Sender<(NodeId, Ipv4Addr)>,
+        tx_to_locator: flume::Sender<(NodeId, IpAddr)>,
         denylist: Vec<String>,
         max_queue_len: usize,
         max_third_party_nodes: usize,
@@ -380,10 +377,7 @@ impl InnerLoop {
                         self.finalize_and_broadcast_to_all_feeds(feed_messages_for_all);
 
                         // Ask for the grographical location of the node.
-                        // Currently we only geographically locate IPV4 addresses so ignore IPV6.
-                        if let IpAddr::V4(ip_v4) = ip {
-                            let _ = self.tx_to_locator.send((node_id, ip_v4));
-                        }
+                        let _ = self.tx_to_locator.send((node_id, ip));
                     }
                 }
             }

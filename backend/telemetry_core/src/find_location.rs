@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::net::Ipv4Addr;
+use std::net::{IpAddr, Ipv4Addr};
 use std::sync::Arc;
 
 use futures::{Sink, SinkExt};
@@ -29,7 +29,7 @@ pub type Location = Option<Arc<NodeLocation>>;
 
 /// This is responsible for taking an IP address and attempting
 /// to find a geographical location from this
-pub fn find_location<Id, R>(response_chan: R) -> flume::Sender<(Id, Ipv4Addr)>
+pub fn find_location<Id, R>(response_chan: R) -> flume::Sender<(Id, IpAddr)>
 where
     R: Sink<(Id, Option<Arc<NodeLocation>>)> + Unpin + Send + Clone + 'static,
     Id: Clone + Send + 'static,
@@ -37,11 +37,11 @@ where
     let (tx, rx) = flume::unbounded();
 
     // cache entries
-    let mut cache: FxHashMap<Ipv4Addr, Arc<NodeLocation>> = FxHashMap::default();
+    let mut cache: FxHashMap<IpAddr, Arc<NodeLocation>> = FxHashMap::default();
 
     // Default entry for localhost
     cache.insert(
-        Ipv4Addr::new(127, 0, 0, 1),
+        Ipv4Addr::new(127, 0, 0, 1).into(),
         Arc::new(NodeLocation {
             latitude: 52.516_6667,
             longitude: 13.4,
@@ -75,14 +75,14 @@ where
 #[derive(Debug, Clone)]
 struct Locator {
     city: Arc<maxminddb::Reader<&'static [u8]>>,
-    cache: Arc<RwLock<FxHashMap<Ipv4Addr, Arc<NodeLocation>>>>,
+    cache: Arc<RwLock<FxHashMap<IpAddr, Arc<NodeLocation>>>>,
 }
 
 impl Locator {
     /// taken from here: https://github.com/P3TERX/GeoLite.mmdb/releases/tag/2022.06.07
     const CITY_DATA: &'static [u8] = include_bytes!("GeoLite2-City.mmdb");
 
-    pub fn new(cache: FxHashMap<Ipv4Addr, Arc<NodeLocation>>) -> Self {
+    pub fn new(cache: FxHashMap<IpAddr, Arc<NodeLocation>>) -> Self {
         Self {
             city: GeoIpReader::from_source(Self::CITY_DATA)
                 .map(Arc::new)
@@ -91,7 +91,7 @@ impl Locator {
         }
     }
 
-    pub fn locate(&self, ip: Ipv4Addr) -> Option<Arc<NodeLocation>> {
+    pub fn locate(&self, ip: IpAddr) -> Option<Arc<NodeLocation>> {
         // Return location quickly if it's cached:
         let cached_loc = {
             let cache_reader = self.cache.read();

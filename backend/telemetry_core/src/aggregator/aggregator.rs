@@ -19,7 +19,7 @@ use crate::find_location::find_location;
 use crate::state::NodeId;
 use common::id_type;
 use futures::{future, Sink, SinkExt};
-use std::net::Ipv4Addr;
+use std::net::IpAddr;
 use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
 
@@ -94,7 +94,7 @@ impl Aggregator {
     /// any more, this task will gracefully end.
     async fn handle_messages(
         rx_from_external: flume::Receiver<inner_loop::ToAggregator>,
-        tx_to_aggregator: flume::Sender<(NodeId, Ipv4Addr)>,
+        tx_to_aggregator: flume::Sender<(NodeId, IpAddr)>,
         max_queue_len: usize,
         denylist: Vec<String>,
         max_third_party_nodes: usize,
