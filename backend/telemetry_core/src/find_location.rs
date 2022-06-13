@@ -50,17 +50,19 @@ where
     );
 
     // Create a locator with our cache. This is used to obtain locations.
-    let locator = Arc::new(Locator::new(cache));
+    let locator = Locator::new(cache);
 
     // Spawn a loop to handle location requests
     tokio::spawn(async move {
         loop {
             while let Ok((id, ip_address)) = rx.recv_async().await {
                 let mut response_chan = response_chan.clone();
-                let locator = Arc::clone(&locator);
+                let locator = locator.clone();
 
                 tokio::spawn(async move {
-                    let location = locator.locate(ip_address);
+                    let location = tokio::task::spawn_blocking(move || locator.locate(ip_address))
+                        .await
+                        .expect("Locate never panics");
                     let _ = response_chan.send((id, location)).await;
                 });
             }
