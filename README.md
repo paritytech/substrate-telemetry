@@ -97,7 +97,7 @@ polkadot --dev --telemetry-url 'ws://localhost:8001/submit 0'
 To build the backend docker image, navigate into the `backend` folder of this repository and run:
 
 ```
-docker build -t substrate-telemetry-backend .
+docker build -t parity/substrate-telemetry-backend .
 ```
 
 The backend image contains both the `telemetry_core` and `telemetry_shard` binaries.
@@ -105,7 +105,7 @@ The backend image contains both the `telemetry_core` and `telemetry_shard` binar
 To build the frontend docker image, navigate into the `frontend` folder and run:
 
 ```
-docker build -t substrate-telemetry-frontend .
+docker build -t parity/substrate-telemetry-frontend .
 ```
 
 ### Run the backend and frontend using `docker-compose`
@@ -116,7 +116,7 @@ To connect a substrate node and have it send telemetry to this running instance,
 
 ### Run the backend and frontend using `docker`
 
-If you'd like to get things running manually using Docker, you can do the following. This assumes that you've built the images as per the above, and have two images named `substrate-telemetry-backend` and `substrate-telemetry-frontend`.
+If you'd like to get things running manually using Docker, you can do the following. This assumes that you've built the images as per the above, and have two images named `parity/substrate-telemetry-backend` and `parity/substrate-telemetry-frontend`.
 
 1. Create a new shared network so that the various containers can communicate with eachother:
 
@@ -184,15 +184,6 @@ docker run --rm -it --network=telemetry \
 You should now see your node showing up in your local [telemetry frontend](http://localhost:3000/):
 
 ![image](doc/screenshot01.png)
-
-### Build & Publish the Frontend & Backend docker images
-
-The building process is standard. You just need to notice that the `Dockerfile`s are in `./frontend/` and `./backend` and tell docker about it. The context must remain the repository's root though. This is all done for you in the following scripts:
-
-```sh
-DOCKER_USER=$USER ./scripts/build-docker-frontend.sh
-DOCKER_USER=$USER ./scripts/build-docker-backend.sh
-```
 
 ## Deployment
 
