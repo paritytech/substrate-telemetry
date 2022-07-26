@@ -185,15 +185,6 @@ You should now see your node showing up in your local [telemetry frontend](http:
 
 ![image](doc/screenshot01.png)
 
-### Build & Publish the Frontend & Backend docker images
-
-The building process is standard. You just need to notice that the `Dockerfile`s are in `./frontend/` and `./backend` and tell docker about it. The context must remain the repository's root though. This is all done for you in the following scripts:
-
-```sh
-DOCKER_USER=$USER ./scripts/build-docker-frontend.sh
-DOCKER_USER=$USER ./scripts/build-docker-backend.sh
-```
-
 ## Deployment
 
 This section covers the internal deployment of Substrate Telemetry to our staging and live environments.
