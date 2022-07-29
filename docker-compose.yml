@@ -16,6 +16,8 @@ services:
       - 3000:8000
     expose:
       - 3000
+    restart: unless-stopped
+
   telemetry-backend-shard:
     build:
       dockerfile: Dockerfile
@@ -25,11 +27,13 @@ services:
       'telemetry_shard',
       '--listen', '0.0.0.0:8001',
       '--core', 'http://telemetry-backend-core:8000/shard_submit'
-    ]
+      ]
     ports:
       - 8001:8001
     expose:
       - 8001
+    restart: unless-stopped
+
   telemetry-backend-core:
     build:
       dockerfile: Dockerfile
@@ -38,8 +42,10 @@ services:
     command: [
       'telemetry_core',
       '--listen', '0.0.0.0:8000'
-    ]
+      ]
     ports:
       - 8000:8000
     expose:
       - 8000
+    restart: unless-stopped
+    
