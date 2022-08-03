@@ -20,20 +20,21 @@ use soketto::handshake::{Client, ServerResponse};
 use std::sync::Arc;
 use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::net::TcpStream;
-use tokio_util::compat::TokioAsyncReadCompatExt;
-use tokio_rustls::{rustls, TlsConnector};
 use tokio_rustls::rustls::{OwnedTrustAnchor, ServerName};
+use tokio_rustls::{rustls, TlsConnector};
+use tokio_util::compat::TokioAsyncReadCompatExt;
 
 use super::{
     receiver::{Receiver, RecvMessage},
     sender::{Sender, SentMessage},
 };
 
-pub trait AsyncReadWrite : AsyncRead + AsyncWrite + Unpin + Send {}
-impl <T: AsyncRead + AsyncWrite + Unpin + Send> AsyncReadWrite for T {}
+pub trait AsyncReadWrite: AsyncRead + AsyncWrite + Unpin + Send {}
+impl<T: AsyncRead + AsyncWrite + Unpin + Send> AsyncReadWrite for T {}
 
 /// The send side of a Soketto WebSocket connection
-pub type RawSender = soketto::connection::Sender<tokio_util::compat::Compat<Box<dyn AsyncReadWrite>>>;
+pub type RawSender =
+    soketto::connection::Sender<tokio_util::compat::Compat<Box<dyn AsyncReadWrite>>>;
 
 /// The receive side of a Soketto WebSocket connection
 pub type RawReceiver =
@@ -245,7 +246,8 @@ pub async fn connect(uri: &http::Uri) -> Result<Connection, ConnectError> {
     let socket = TcpStream::connect((host, port)).await?;
     socket.set_nodelay(true).expect("socket set_nodelay failed");
     // wrap TCP stream with TLS if schema is https or wss
-    let socket = may_connect_tls(socket, host.clone(),scheme == "https" || scheme == "wss").await?;
+    let socket =
+        may_connect_tls(socket, host.clone(), scheme == "https" || scheme == "wss").await?;
 
     // Establish a WS connection:
     let mut client = Client::new(socket.compat(), host, &path);
@@ -265,25 +267,29 @@ pub async fn connect(uri: &http::Uri) -> Result<Connection, ConnectError> {
     })
 }
 
-async fn may_connect_tls(socket: TcpStream, host: &str, use_https: bool) -> io::Result<Box<dyn AsyncReadWrite>> {
-    if !use_https { return Ok(Box::new(socket))};
+async fn may_connect_tls(
+    socket: TcpStream,
+    host: &str,
+    use_https: bool,
+) -> io::Result<Box<dyn AsyncReadWrite>> {
+    if !use_https {
+        return Ok(Box::new(socket));
+    };
     let mut root_cert_store = rustls::RootCertStore::empty();
-    root_cert_store.add_server_trust_anchors(webpki_roots::TLS_SERVER_ROOTS.0.iter().map(
-        |ta| {
-            OwnedTrustAnchor::from_subject_spki_name_constraints(
-                ta.subject,
-                ta.spki,
-                ta.name_constraints,
-            )
-        },
-    ));
+    root_cert_store.add_server_trust_anchors(webpki_roots::TLS_SERVER_ROOTS.0.iter().map(|ta| {
+        OwnedTrustAnchor::from_subject_spki_name_constraints(
+            ta.subject,
+            ta.spki,
+            ta.name_constraints,
+        )
+    }));
     let config = rustls::ClientConfig::builder()
         .with_safe_defaults()
         .with_root_certificates(root_cert_store)
         .with_no_client_auth();
     let connector = TlsConnector::from(Arc::new(config));
-    let domain = ServerName::try_from(host).
-        map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "invalid dns name"))?;
+    let domain = ServerName::try_from(host)
+        .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "invalid dns name"))?;
     let socket = connector.connect(domain, socket).await?;
     Ok(Box::new(socket))
 }
