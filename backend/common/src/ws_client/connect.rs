@@ -1,4 +1,3 @@
-use std::io;
 // Source code for the Substrate Telemetry Server.
 // Copyright (C) 2021 Parity Technologies (UK) Ltd.
 //
@@ -17,6 +16,7 @@ use std::io;
 use super::on_close::OnClose;
 use futures::{channel, StreamExt};
 use soketto::handshake::{Client, ServerResponse};
+use std::io;
 use std::sync::Arc;
 use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::net::TcpStream;
@@ -246,8 +246,7 @@ pub async fn connect(uri: &http::Uri) -> Result<Connection, ConnectError> {
     let socket = TcpStream::connect((host, port)).await?;
     socket.set_nodelay(true).expect("socket set_nodelay failed");
     // wrap TCP stream with TLS if schema is https or wss
-    let socket =
-        may_connect_tls(socket, host.clone(), scheme == "https" || scheme == "wss").await?;
+    let socket = may_connect_tls(socket, host, scheme == "https" || scheme == "wss").await?;
 
     // Establish a WS connection:
     let mut client = Client::new(socket.compat(), host, &path);
