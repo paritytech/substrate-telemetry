@@ -90,8 +90,6 @@ pub struct Finalized {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AfgAuthoritySet {
     pub authority_id: Box<str>,
-    pub authorities: Box<str>,
-    pub authority_set_id: Box<str>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -207,8 +205,6 @@ mod tests {
         bincode_can_serialize_and_deserialize(NodeMessage::V1 {
             payload: Payload::AfgAuthoritySet(AfgAuthoritySet {
                 authority_id: "foo".into(),
-                authorities: "foo".into(),
-                authority_set_id: "foo".into(),
             }),
         });
     }

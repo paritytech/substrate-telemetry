@@ -156,16 +156,12 @@ impl From<Finalized> for internal::Finalized {
 #[derive(Deserialize, Debug)]
 pub struct AfgAuthoritySet {
     pub authority_id: Box<str>,
-    pub authorities: Box<str>,
-    pub authority_set_id: Box<str>,
 }
 
 impl From<AfgAuthoritySet> for internal::AfgAuthoritySet {
     fn from(msg: AfgAuthoritySet) -> Self {
         internal::AfgAuthoritySet {
             authority_id: msg.authority_id,
-            authorities: msg.authorities,
-            authority_set_id: msg.authority_set_id,
         }
     }
 }

@@ -87,6 +87,7 @@ async fn run_soak_test(opts: SoakTestOpts) {
         },
         CoreOpts {
             worker_threads: opts.core_worker_threads,
+            num_aggregators: opts.core_num_aggregators,
             ..Default::default()
         },
         ShardOpts {
@@ -265,7 +266,7 @@ fn chain_names(total: usize) -> impl Iterator<Item = String> {
 /// General arguments that are used to start a soak test. Run `soak_test` as
 /// instructed by its documentation for full control over what is ran, or run
 /// preconfigured variants.
-#[derive(StructOpt, Debug)]
+#[derive(StructOpt)]
 struct SoakTestOpts {
     /// The number of shards to run this test with
     #[structopt(long)]
