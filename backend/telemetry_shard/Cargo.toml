@@ -23,7 +23,7 @@ simple_logger = "1.11.0"
 soketto = "0.6.0"
 structopt = "0.3.21"
 thiserror = "1.0.25"
-tokio = { version = "1.10.1", features = ["full"] }
+tokio = { version = "1.13.1", features = ["full"] }
 tokio-util = { version = "0.6", features = ["compat"] }
 
 [target.'cfg(not(target_env = "msvc"))'.dependencies]

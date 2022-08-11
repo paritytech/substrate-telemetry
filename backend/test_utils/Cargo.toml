@@ -14,7 +14,7 @@ log = "0.4.14"
 serde_json = "1.0.64"
 soketto = "0.6.0"
 thiserror = "1.0.25"
-tokio = { version = "1.10.1", features = ["full"] }
+tokio = { version = "1.13.1", features = ["full"] }
 tokio-util = { version = "0.6.7", features = ["full"] }
 common = { path = "../common" }
 time = { version = "0.3.0", features = ["formatting"] }
