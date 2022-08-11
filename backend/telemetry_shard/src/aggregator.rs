@@ -105,7 +105,7 @@ impl Aggregator {
     pub async fn spawn(telemetry_uri: http::Uri) -> anyhow::Result<Aggregator> {
         let (tx_to_aggregator, rx_from_external) = flume::bounded(10);
 
-        // Establish a resiliant connection to the core (this retries as needed):
+        // Establish a resilient connection to the core (this retries as needed):
         let (tx_to_telemetry_core, rx_from_telemetry_core) =
             create_ws_connection_to_core(telemetry_uri).await;
 

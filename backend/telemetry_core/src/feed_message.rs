@@ -45,7 +45,7 @@ where
 }
 
 pub struct FeedMessageSerializer {
-    /// Current buffer,
+    /// Current buffer.
     buffer: Vec<u8>,
 }
 

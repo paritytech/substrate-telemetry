@@ -279,7 +279,7 @@ where
     let mut stale_interval = tokio::time::interval(stale_node_timeout / 2);
 
     // Our main select loop atomically receives and handles telemetry messages from the node,
-    // and periodically checks for stale connections to keep our ndoe state tidy.
+    // and periodically checks for stale connections to keep our node state tidy.
     loop {
         tokio::select! {
             // We periodically check for stale message IDs and remove nodes associated with

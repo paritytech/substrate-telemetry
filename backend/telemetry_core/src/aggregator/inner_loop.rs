@@ -144,7 +144,7 @@ impl FromStr for FromFeedWebsocket {
     }
 }
 
-/// The aggregator can these messages back to a feed connection.
+/// The aggregator can send these messages back to a feed connection.
 #[derive(Clone, Debug)]
 pub enum ToFeedWebsocket {
     Bytes(bytes::Bytes),
@@ -376,7 +376,7 @@ impl InnerLoop {
                         ));
                         self.finalize_and_broadcast_to_all_feeds(feed_messages_for_all);
 
-                        // Ask for the grographical location of the node.
+                        // Ask for the geographical location of the node.
                         let _ = self.tx_to_locator.send((node_id, ip));
                     }
                 }
@@ -548,7 +548,7 @@ impl InnerLoop {
                     let _ = feed_channel.send(ToFeedWebsocket::Bytes(bytes));
                 }
 
-                // Actually make a note of the new chain subsciption:
+                // Actually make a note of the new chain subscription:
                 let new_genesis_hash = new_chain.genesis_hash();
                 self.chain_to_feed_conn_ids
                     .insert(new_genesis_hash, feed_conn_id);
