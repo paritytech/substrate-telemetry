@@ -31,7 +31,7 @@ pub type Location = Option<Arc<NodeLocation>>;
 /// to find a geographical location from this
 pub fn find_location<Id, R>(response_chan: R) -> flume::Sender<(Id, IpAddr)>
 where
-    R: Sink<(Id, Option<Arc<NodeLocation>>)> + Unpin + Send + Clone + 'static,
+    R: Sink<(Id, IpAddr, Option<Arc<NodeLocation>>)> + Unpin + Send + Clone + 'static,
     Id: Clone + Send + 'static,
 {
     let (tx, rx) = flume::unbounded();
@@ -63,7 +63,7 @@ where
                     let location = tokio::task::spawn_blocking(move || locator.locate(ip_address))
                         .await
                         .expect("Locate never panics");
-                    let _ = response_chan.send((id, location)).await;
+                    let _ = response_chan.send((id, ip_address, location)).await;
                 });
             }
         }

@@ -37,7 +37,7 @@ use std::{net::IpAddr, str::FromStr};
 pub enum ToAggregator {
     FromShardWebsocket(ConnId, FromShardWebsocket),
     FromFeedWebsocket(ConnId, FromFeedWebsocket),
-    FromFindLocation(NodeId, find_location::Location),
+    FromFindLocation(NodeId, IpAddr, find_location::Location),
     /// Hand back some metrics. The provided sender is expected not to block when
     /// a message is sent into it.
     GatherMetrics(flume::Sender<Metrics>),
@@ -217,8 +217,8 @@ impl InnerLoop {
                     ToAggregator::FromShardWebsocket(shard_conn_id, msg) => {
                         self.handle_from_shard(shard_conn_id, msg)
                     }
-                    ToAggregator::FromFindLocation(node_id, location) => {
-                        self.handle_from_find_location(node_id, location)
+                    ToAggregator::FromFindLocation(node_id, ip, location) => {
+                        self.handle_from_find_location(node_id, ip, location)
                     }
                     ToAggregator::GatherMetrics(tx) => self.handle_gather_metrics(
                         tx,
@@ -287,7 +287,12 @@ impl InnerLoop {
     }
 
     /// Handle messages that come from the node geographical locator.
-    fn handle_from_find_location(&mut self, node_id: NodeId, location: find_location::Location) {
+    fn handle_from_find_location(
+        &mut self,
+        node_id: NodeId,
+        node_ip: IpAddr,
+        location: find_location::Location,
+    ) {
         self.node_state
             .update_node_location(node_id, location.clone());
 
@@ -298,7 +303,7 @@ impl InnerLoop {
                 loc.latitude,
                 loc.longitude,
                 &loc.city,
-                None,
+                Some(&*node_ip.to_string()),
             ));
 
             let chain_genesis_hash = self
