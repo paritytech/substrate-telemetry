@@ -44,6 +44,8 @@ pub struct AggregatorOpts {
     /// How many nodes from third party chains are allowed to connect
     /// before we prevent connections from them.
     pub max_third_party_nodes: usize,
+    /// Flag to expose the node's ip address to the feed subscribers.
+    pub expose_ip: bool,
 }
 
 struct AggregatorInternal {
@@ -66,9 +68,11 @@ impl Aggregator {
 
         // Kick off a locator task to locate nodes, which hands back a channel to make location requests
         let tx_to_locator = find_location(tx_to_aggregator.clone().into_sink().with(
-            |(node_id, ip, msg)| {
+            move |(node_id, ip, msg)| {
                 future::ok::<_, flume::SendError<_>>(inner_loop::ToAggregator::FromFindLocation(
-                    node_id, ip, msg,
+                    node_id,
+                    if opts.expose_ip { Some(ip) } else { None },
+                    msg,
                 ))
             },
         ));
