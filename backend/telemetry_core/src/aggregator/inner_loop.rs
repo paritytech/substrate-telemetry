@@ -298,6 +298,7 @@ impl InnerLoop {
                 loc.latitude,
                 loc.longitude,
                 &loc.city,
+                None,
             ));
 
             let chain_genesis_hash = self
