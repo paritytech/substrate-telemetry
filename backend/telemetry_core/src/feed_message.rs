@@ -140,13 +140,7 @@ pub struct AddedNode<'a>(pub FeedNodeId, pub &'a Node);
 pub struct RemovedNode(pub FeedNodeId);
 
 #[derive(Serialize)]
-pub struct LocatedNode<'a>(
-    pub FeedNodeId,
-    pub f32,
-    pub f32,
-    pub &'a str,
-    pub Option<&'a str>,
-);
+pub struct LocatedNode<'a>(pub FeedNodeId, pub f32, pub f32, pub &'a str);
 
 #[derive(Serialize)]
 pub struct ImportedBlock<'a>(pub FeedNodeId, pub &'a BlockDetails);

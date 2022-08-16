@@ -16,8 +16,8 @@
 
 use super::aggregator::ConnId;
 use crate::feed_message::{self, FeedMessageSerializer};
-use crate::find_location;
 use crate::state::{self, NodeId, State};
+use crate::{find_location, AggregatorOpts};
 use bimap::BiMap;
 use common::{
     internal_messages::{self, MuteReason, ShardNodeId},
@@ -37,7 +37,7 @@ use std::{net::IpAddr, str::FromStr};
 pub enum ToAggregator {
     FromShardWebsocket(ConnId, FromShardWebsocket),
     FromFeedWebsocket(ConnId, FromFeedWebsocket),
-    FromFindLocation(NodeId, Option<IpAddr>, find_location::Location),
+    FromFindLocation(NodeId, find_location::Location),
     /// Hand back some metrics. The provided sender is expected not to block when
     /// a message is sent into it.
     GatherMetrics(flume::Sender<Metrics>),
@@ -173,24 +173,23 @@ pub struct InnerLoop {
     /// How big can the queue of messages coming in to the aggregator get before messages
     /// are prioritised and dropped to try and get back on track.
     max_queue_len: usize,
+
+    /// Flag to expose the node's ip address to the feed subscribers.
+    expose_node_ips: bool,
 }
 
 impl InnerLoop {
     /// Create a new inner loop handler with the various state it needs.
-    pub fn new(
-        tx_to_locator: flume::Sender<(NodeId, IpAddr)>,
-        denylist: Vec<String>,
-        max_queue_len: usize,
-        max_third_party_nodes: usize,
-    ) -> Self {
+    pub fn new(tx_to_locator: flume::Sender<(NodeId, IpAddr)>, opts: AggregatorOpts) -> Self {
         InnerLoop {
-            node_state: State::new(denylist, max_third_party_nodes),
+            node_state: State::new(opts.denylist, opts.max_third_party_nodes),
             node_ids: BiMap::new(),
             feed_channels: HashMap::new(),
             shard_channels: HashMap::new(),
             chain_to_feed_conn_ids: MultiMapUnique::new(),
             tx_to_locator,
-            max_queue_len,
+            max_queue_len: opts.max_queue_len,
+            expose_node_ips: opts.expose_node_ips,
         }
     }
 
@@ -217,8 +216,8 @@ impl InnerLoop {
                     ToAggregator::FromShardWebsocket(shard_conn_id, msg) => {
                         self.handle_from_shard(shard_conn_id, msg)
                     }
-                    ToAggregator::FromFindLocation(node_id, maybe_ip, location) => {
-                        self.handle_from_find_location(node_id, maybe_ip, location)
+                    ToAggregator::FromFindLocation(node_id, location) => {
+                        self.handle_from_find_location(node_id, location)
                     }
                     ToAggregator::GatherMetrics(tx) => self.handle_gather_metrics(
                         tx,
@@ -287,12 +286,7 @@ impl InnerLoop {
     }
 
     /// Handle messages that come from the node geographical locator.
-    fn handle_from_find_location(
-        &mut self,
-        node_id: NodeId,
-        maybe_ip: Option<IpAddr>,
-        location: find_location::Location,
-    ) {
+    fn handle_from_find_location(&mut self, node_id: NodeId, location: find_location::Location) {
         self.node_state
             .update_node_location(node_id, location.clone());
 
@@ -303,7 +297,6 @@ impl InnerLoop {
                 loc.latitude,
                 loc.longitude,
                 &loc.city,
-                maybe_ip.map(|ip| ip.to_string()).as_deref(),
             ));
 
             let chain_genesis_hash = self
@@ -329,9 +322,11 @@ impl InnerLoop {
             FromShardWebsocket::Add {
                 local_id,
                 ip,
-                node,
+                mut node,
                 genesis_hash,
             } => {
+                // Conditionally modify the node's details to include the IP address.
+                node.ip = self.expose_node_ips.then_some(ip.to_string().into());
                 match self.node_state.add_node(genesis_hash, node) {
                     state::AddNodeResult::ChainOnDenyList => {
                         if let Some(shard_conn) = self.shard_channels.get_mut(&shard_conn_id) {

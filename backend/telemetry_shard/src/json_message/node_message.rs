@@ -248,6 +248,7 @@ pub struct NodeDetails {
     pub target_arch: Option<Box<str>>,
     pub target_env: Option<Box<str>>,
     pub sysinfo: Option<NodeSysInfo>,
+    pub ip: Option<Box<str>>,
 }
 
 impl From<NodeDetails> for node_types::NodeDetails {
@@ -280,6 +281,7 @@ impl From<NodeDetails> for node_types::NodeDetails {
             target_arch: details.target_arch,
             target_env: details.target_env,
             sysinfo: details.sysinfo.map(|sysinfo| sysinfo.into()),
+            ip: details.ip,
         }
     }
 }

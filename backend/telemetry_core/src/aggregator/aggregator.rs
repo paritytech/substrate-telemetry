@@ -45,7 +45,7 @@ pub struct AggregatorOpts {
     /// before we prevent connections from them.
     pub max_third_party_nodes: usize,
     /// Flag to expose the node's ip address to the feed subscribers.
-    pub expose_ip: bool,
+    pub expose_node_ips: bool,
 }
 
 struct AggregatorInternal {
@@ -67,23 +67,18 @@ impl Aggregator {
         let (tx_to_aggregator, rx_from_external) = flume::unbounded();
 
         // Kick off a locator task to locate nodes, which hands back a channel to make location requests
-        let tx_to_locator = find_location(tx_to_aggregator.clone().into_sink().with(
-            move |(node_id, ip, msg)| {
+        let tx_to_locator =
+            find_location(tx_to_aggregator.clone().into_sink().with(|(node_id, msg)| {
                 future::ok::<_, flume::SendError<_>>(inner_loop::ToAggregator::FromFindLocation(
-                    node_id,
-                    if opts.expose_ip { Some(ip) } else { None },
-                    msg,
+                    node_id, msg,
                 ))
-            },
-        ));
+            }));
 
         // Handle any incoming messages in our handler loop:
         tokio::spawn(Aggregator::handle_messages(
             rx_from_external,
             tx_to_locator,
-            opts.max_queue_len,
-            opts.denylist,
-            opts.max_third_party_nodes,
+            opts,
         ));
 
         // Return a handle to our aggregator:
@@ -100,18 +95,11 @@ impl Aggregator {
     async fn handle_messages(
         rx_from_external: flume::Receiver<inner_loop::ToAggregator>,
         tx_to_aggregator: flume::Sender<(NodeId, IpAddr)>,
-        max_queue_len: usize,
-        denylist: Vec<String>,
-        max_third_party_nodes: usize,
+        opts: AggregatorOpts,
     ) {
-        inner_loop::InnerLoop::new(
-            tx_to_aggregator,
-            denylist,
-            max_queue_len,
-            max_third_party_nodes,
-        )
-        .handle(rx_from_external)
-        .await;
+        inner_loop::InnerLoop::new(tx_to_aggregator, opts)
+            .handle(rx_from_external)
+            .await;
     }
 
     /// Gather metrics from our aggregator loop

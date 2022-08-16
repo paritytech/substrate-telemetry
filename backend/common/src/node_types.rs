@@ -42,6 +42,7 @@ pub struct NodeDetails {
     pub target_arch: Option<Box<str>>,
     pub target_env: Option<Box<str>>,
     pub sysinfo: Option<NodeSysInfo>,
+    pub ip: Option<Box<str>>,
 }
 
 /// Hardware and software information for the node.

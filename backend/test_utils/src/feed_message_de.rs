@@ -50,7 +50,6 @@ pub enum FeedMessage {
         lat: f32,
         long: f32,
         city: String,
-        ip: Option<String>,
     },
     ImportedBlock {
         node_id: usize,
@@ -220,13 +219,12 @@ impl FeedMessage {
             }
             // LocatedNode
             5 => {
-                let (node_id, lat, long, city, ip) = serde_json::from_str(raw_val.get())?;
+                let (node_id, lat, long, city) = serde_json::from_str(raw_val.get())?;
                 FeedMessage::LocatedNode {
                     node_id,
                     lat,
                     long,
                     city,
-                    ip,
                 }
             }
             // ImportedBlock

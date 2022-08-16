@@ -84,7 +84,7 @@ struct Opts {
     max_third_party_nodes: usize,
     /// Flag to expose the node's ip address to the feed subscribers.
     #[structopt(long)]
-    expose_ip: bool,
+    pub expose_node_ips: bool,
 }
 
 fn main() {
@@ -135,7 +135,7 @@ async fn start_server(num_aggregators: usize, opts: Opts) -> anyhow::Result<()> 
             max_queue_len: aggregator_queue_len,
             denylist: opts.denylist,
             max_third_party_nodes: opts.max_third_party_nodes,
-            expose_ip: opts.expose_ip,
+            expose_node_ips: opts.expose_node_ips,
         },
     )
     .await?;
