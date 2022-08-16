@@ -189,6 +189,7 @@ impl FeedMessageWrite for AddedNode<'_> {
             &details.version,
             &details.validator,
             &details.network_id,
+            &details.ip,
         );
 
         ser.write(&(

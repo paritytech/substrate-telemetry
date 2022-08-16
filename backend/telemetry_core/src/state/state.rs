@@ -300,6 +300,7 @@ mod test {
             network_id: NetworkId::new(),
             startup_time: None,
             sysinfo: None,
+            ip: None,
         }
     }
 

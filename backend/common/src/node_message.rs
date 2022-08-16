@@ -159,6 +159,7 @@ mod tests {
                     network_id: ArrayString::new(),
                     startup_time: None,
                     sysinfo: None,
+                    ip: Some("127.0.0.1".into()),
                 },
             }),
         });

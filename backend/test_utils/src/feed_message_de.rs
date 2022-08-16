@@ -134,6 +134,7 @@ pub struct NodeDetails {
     pub version: String,
     pub validator: Option<String>,
     pub network_id: Option<String>,
+    pub ip: Option<String>,
 }
 
 impl FeedMessage {
@@ -185,7 +186,7 @@ impl FeedMessage {
             3 => {
                 let (
                     node_id,
-                    (name, implementation, version, validator, network_id),
+                    (name, implementation, version, validator, network_id, ip),
                     stats,
                     io,
                     hardware,
@@ -205,6 +206,7 @@ impl FeedMessage {
                         version,
                         validator,
                         network_id,
+                        ip,
                     },
                     stats,
                     block_details,
