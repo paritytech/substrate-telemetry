@@ -174,7 +174,7 @@ pub struct InnerLoop {
     /// are prioritised and dropped to try and get back on track.
     max_queue_len: usize,
 
-    /// Flag to expose the node's ip address to the feed subscribers.
+    /// Flag to expose the IP addresses of all connected nodes to the feed subscribers.
     expose_node_ips: bool,
 }
 

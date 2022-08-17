@@ -44,7 +44,7 @@ pub struct AggregatorOpts {
     /// How many nodes from third party chains are allowed to connect
     /// before we prevent connections from them.
     pub max_third_party_nodes: usize,
-    /// Flag to expose the node's ip address to the feed subscribers.
+    /// Flag to expose the IP addresses of all connected nodes to the feed subscribers.
     pub expose_node_ips: bool,
 }
 
