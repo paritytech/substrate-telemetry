@@ -55,7 +55,8 @@ export type NodeDetails = [
   NodeImplementation,
   NodeVersion,
   Maybe<Address>,
-  Maybe<NetworkId>
+  Maybe<NetworkId>,
+  Maybe<string>
 ];
 export type NodeStats = [PeerCount, TransactionCount];
 export type NodeIO = [Array<Bytes>];
