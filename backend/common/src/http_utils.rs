@@ -76,7 +76,7 @@ where
         );
     }
 
-    // Just a little ceremony we need to go to to return the correct response key:
+    // Just a little ceremony to return the correct response key:
     let mut accept_key_buf = [0; 32];
     let accept_key = generate_websocket_accept_key(key.as_bytes(), &mut accept_key_buf);
 

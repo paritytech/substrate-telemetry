@@ -45,7 +45,7 @@ where
 }
 
 pub struct FeedMessageSerializer {
-    /// Current buffer,
+    /// Current buffer.
     buffer: Vec<u8>,
 }
 
@@ -189,6 +189,7 @@ impl FeedMessageWrite for AddedNode<'_> {
             &details.version,
             &details.validator,
             &details.network_id,
+            &details.ip,
         );
 
         ser.write(&(

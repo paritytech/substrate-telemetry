@@ -44,6 +44,8 @@ pub struct AggregatorOpts {
     /// How many nodes from third party chains are allowed to connect
     /// before we prevent connections from them.
     pub max_third_party_nodes: usize,
+    /// Flag to expose the IP addresses of all connected nodes to the feed subscribers.
+    pub expose_node_ips: bool,
 }
 
 struct AggregatorInternal {
@@ -76,9 +78,7 @@ impl Aggregator {
         tokio::spawn(Aggregator::handle_messages(
             rx_from_external,
             tx_to_locator,
-            opts.max_queue_len,
-            opts.denylist,
-            opts.max_third_party_nodes,
+            opts,
         ));
 
         // Return a handle to our aggregator:
@@ -95,18 +95,11 @@ impl Aggregator {
     async fn handle_messages(
         rx_from_external: flume::Receiver<inner_loop::ToAggregator>,
         tx_to_aggregator: flume::Sender<(NodeId, IpAddr)>,
-        max_queue_len: usize,
-        denylist: Vec<String>,
-        max_third_party_nodes: usize,
+        opts: AggregatorOpts,
     ) {
-        inner_loop::InnerLoop::new(
-            tx_to_aggregator,
-            denylist,
-            max_queue_len,
-            max_third_party_nodes,
-        )
-        .handle(rx_from_external)
-        .await;
+        inner_loop::InnerLoop::new(tx_to_aggregator, opts)
+            .handle(rx_from_external)
+            .await;
     }
 
     /// Gather metrics from our aggregator loop

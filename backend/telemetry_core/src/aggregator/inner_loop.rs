@@ -16,8 +16,8 @@
 
 use super::aggregator::ConnId;
 use crate::feed_message::{self, FeedMessageSerializer};
-use crate::find_location;
 use crate::state::{self, NodeId, State};
+use crate::{find_location, AggregatorOpts};
 use bimap::BiMap;
 use common::{
     internal_messages::{self, MuteReason, ShardNodeId},
@@ -144,7 +144,7 @@ impl FromStr for FromFeedWebsocket {
     }
 }
 
-/// The aggregator can these messages back to a feed connection.
+/// The aggregator can send these messages back to a feed connection.
 #[derive(Clone, Debug)]
 pub enum ToFeedWebsocket {
     Bytes(bytes::Bytes),
@@ -173,24 +173,23 @@ pub struct InnerLoop {
     /// How big can the queue of messages coming in to the aggregator get before messages
     /// are prioritised and dropped to try and get back on track.
     max_queue_len: usize,
+
+    /// Flag to expose the IP addresses of all connected nodes to the feed subscribers.
+    expose_node_ips: bool,
 }
 
 impl InnerLoop {
     /// Create a new inner loop handler with the various state it needs.
-    pub fn new(
-        tx_to_locator: flume::Sender<(NodeId, IpAddr)>,
-        denylist: Vec<String>,
-        max_queue_len: usize,
-        max_third_party_nodes: usize,
-    ) -> Self {
+    pub fn new(tx_to_locator: flume::Sender<(NodeId, IpAddr)>, opts: AggregatorOpts) -> Self {
         InnerLoop {
-            node_state: State::new(denylist, max_third_party_nodes),
+            node_state: State::new(opts.denylist, opts.max_third_party_nodes),
             node_ids: BiMap::new(),
             feed_channels: HashMap::new(),
             shard_channels: HashMap::new(),
             chain_to_feed_conn_ids: MultiMapUnique::new(),
             tx_to_locator,
-            max_queue_len,
+            max_queue_len: opts.max_queue_len,
+            expose_node_ips: opts.expose_node_ips,
         }
     }
 
@@ -323,9 +322,11 @@ impl InnerLoop {
             FromShardWebsocket::Add {
                 local_id,
                 ip,
-                node,
+                mut node,
                 genesis_hash,
             } => {
+                // Conditionally modify the node's details to include the IP address.
+                node.ip = self.expose_node_ips.then_some(ip.to_string().into());
                 match self.node_state.add_node(genesis_hash, node) {
                     state::AddNodeResult::ChainOnDenyList => {
                         if let Some(shard_conn) = self.shard_channels.get_mut(&shard_conn_id) {
@@ -376,7 +377,7 @@ impl InnerLoop {
                         ));
                         self.finalize_and_broadcast_to_all_feeds(feed_messages_for_all);
 
-                        // Ask for the grographical location of the node.
+                        // Ask for the geographical location of the node.
                         let _ = self.tx_to_locator.send((node_id, ip));
                     }
                 }
@@ -548,7 +549,7 @@ impl InnerLoop {
                     let _ = feed_channel.send(ToFeedWebsocket::Bytes(bytes));
                 }
 
-                // Actually make a note of the new chain subsciption:
+                // Actually make a note of the new chain subscription:
                 let new_genesis_hash = new_chain.genesis_hash();
                 self.chain_to_feed_conn_ids
                     .insert(new_genesis_hash, feed_conn_id);

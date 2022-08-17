@@ -73,7 +73,7 @@ where
 }
 
 /// This struct can be used to make location requests, given
-/// an IPV4 address.
+/// an IPV4 or IPV6 address.
 #[derive(Debug, Clone)]
 struct Locator {
     city: Arc<maxminddb::Reader<&'static [u8]>>,

@@ -41,11 +41,11 @@ impl NodeId {
     }
 }
 
-/// Our state constains node and chain information
+/// Our state contains node and chain information
 pub struct State {
     chains: DenseMap<ChainId, Chain>,
 
-    // Find the right chain given various details.
+    /// Find the right chain given various details.
     chains_by_genesis_hash: HashMap<BlockHash, ChainId>,
 
     /// Chain labels that we do not want to allow connecting.
@@ -56,7 +56,7 @@ pub struct State {
     max_third_party_nodes: usize,
 }
 
-/// Adding a node to a chain leads to this node_idult
+/// Adding a node to a chain leads to this result.
 pub enum AddNodeResult<'a> {
     /// The chain is on the "deny list", so we can't add the node
     ChainOnDenyList,
@@ -300,6 +300,7 @@ mod test {
             network_id: NetworkId::new(),
             startup_time: None,
             sysinfo: None,
+            ip: None,
         }
     }
 
