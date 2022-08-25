@@ -17,9 +17,9 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
-defaults:
-  run:
-    working-directory: ./backend
+# defaults:
+#   run:
+#     working-directory: ./backend
 
 jobs:
 #   fmt:
