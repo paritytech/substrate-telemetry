@@ -1,0 +1,41 @@
+name: Backend CI - cargo fmt
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/backend*'
+      - 'backend/**'
+      - '!frontend/**'
+  pull_request:
+    paths:
+      - '.github/workflows/backend*'
+      - 'backend/**'
+      - '!frontend/**'
+
+env:
+  CARGO_TERM_COLOR: always
+
+defaults:
+  run:
+    working-directory: ./backend
+
+jobs:
+  fmt:
+    name: Run rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Install Rust stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: clippy, rustfmt
+
+      - name: Cargo fmt
+        run: cargo fmt --verbose --all -- --check
