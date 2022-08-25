@@ -98,7 +98,7 @@ jobs:
 
   tests:
     name: Run tests
-    needs: docs
+    # needs: docs
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
