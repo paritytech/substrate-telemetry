@@ -57,16 +57,12 @@ jobs:
           override: true
           components: clippy, rustfmt
 
-      - name: Rust Cache
-        uses: Swatinem/rust-cache@6720f05bc48b77f96918929a9019fb2203ff71f8 # v2.0.0
-        with:
-          workspaces: backend
-
       - name: Cargo fmt
         run: cargo fmt --all -- --check
 
   docs:
     name: Check Documentation
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -89,6 +85,7 @@ jobs:
 
   tests:
     name: Run tests
+    needs: docs
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
