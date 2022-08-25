@@ -1,11 +1,11 @@
 name: Backend CI
 
 on:
-  push:
-    paths:
-      - '.github/workflows/backend.yml'
-      - 'backend/**'
-      - '!frontend/**'
+  # push:
+  #   paths:
+  #     - '.github/workflows/backend.yml'
+  #     - 'backend/**'
+  #     - '!frontend/**'
   pull_request:
     paths:
       - '.github/workflows/backend.yml'
@@ -44,7 +44,6 @@ jobs:
 
   fmt:
     name: Run rustfmt
-    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -58,10 +57,10 @@ jobs:
           override: true
           components: clippy, rustfmt
 
-      - name: Rust Cache
-        uses: Swatinem/rust-cache@6720f05bc48b77f96918929a9019fb2203ff71f8 # v2.0.0
-        with:
-          workspaces: backend
+      # - name: Rust Cache
+      #   uses: Swatinem/rust-cache@6720f05bc48b77f96918929a9019fb2203ff71f8 # v2.0.0
+      #   with:
+      #     workspaces: backend
 
       - name: Cargo fmt
         run: cargo fmt --verbose --all -- --check
