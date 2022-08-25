@@ -2,15 +2,15 @@ name: Backend CI - docs
 
 on:
   push:
-    # branches:
-    #   - master
+    branches:
+      - master
     paths:
-      - '.github/workflows/backend.yml'
+      - '.github/workflows/backend*'
       - 'backend/**'
       - '!frontend/**'
   pull_request:
     paths:
-      - '.github/workflows/backend.yml'
+      - '.github/workflows/backend*'
       - 'backend/**'
       - '!frontend/**'
 
