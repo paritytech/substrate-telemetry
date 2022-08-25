@@ -37,7 +37,7 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@6720f05bc48b77f96918929a9019fb2203ff71f8 # v2.0.0
         with:
-          working-directory: backend
+          workspaces: backend
 
       - name: Build
         run: cargo check --all-targets
@@ -60,7 +60,7 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@6720f05bc48b77f96918929a9019fb2203ff71f8 # v2.0.0
         with:
-          working-directory: backend
+          workspaces: backend
 
       - name: Cargo fmt
         run: cargo fmt --all -- --check
@@ -82,7 +82,7 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@6720f05bc48b77f96918929a9019fb2203ff71f8 # v2.0.0
         with:
-          working-directory: backend
+          workspaces: backend
 
       - name: Check internal documentation links
         run: RUSTDOCFLAGS="--deny broken_intra_doc_links" cargo doc --verbose --workspace --no-deps --document-private-items
@@ -104,7 +104,7 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@6720f05bc48b77f96918929a9019fb2203ff71f8 # v2.0.0
         with:
-          working-directory: backend
+          workspaces: backend
 
       - name: Cargo test
         run: cargo test --verbose --jobs 1
