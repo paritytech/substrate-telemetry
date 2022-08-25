@@ -1,14 +1,16 @@
-name: Backend CI - docs
+name: Backend CI - cargo doc
 
 on:
-  # push:
-  #   paths:
-  #     - '.github/workflows/backend.yml'
-  #     - 'backend/**'
-  #     - '!frontend/**'
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/backend*'
+      - 'backend/**'
+      - '!frontend/**'
   pull_request:
     paths:
-      - '.github/workflows/backend.yml'
+      - '.github/workflows/backend*'
       - 'backend/**'
       - '!frontend/**'
 
@@ -20,56 +22,8 @@ defaults:
     working-directory: ./backend
 
 jobs:
-#   fmt:
-#     name: Run rustfmt
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout sources
-#         uses: actions/checkout@v3
-
-#       - name: Install Rust stable toolchain
-#         uses: actions-rs/toolchain@v1
-#         with:
-#           profile: minimal
-#           toolchain: stable
-#           override: true
-#           components: clippy, rustfmt
-
-#       # - name: Rust Cache
-#       #   uses: Swatinem/rust-cache@6720f05bc48b77f96918929a9019fb2203ff71f8 # v2.0.0
-#       #   with:
-#       #     workspaces: backend
-
-#       - name: Cargo fmt
-#         run: cargo fmt --verbose --all -- --check
-
-#   build:
-#     name: Check Code
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout sources
-#         uses: actions/checkout@v3
-
-#       - name: Install Rust stable toolchain
-#         uses: actions-rs/toolchain@v1
-#         with:
-#           profile: minimal
-#           toolchain: stable
-#           override: true
-
-#       - name: Rust Cache
-#         uses: Swatinem/rust-cache@6720f05bc48b77f96918929a9019fb2203ff71f8 # v2.0.0
-#         with:
-#           workspaces: backend
-
-#       - name: Build
-#         run: cargo check --all-targets --verbose
-
-
-
   docs:
     name: Check Documentation
-    # needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -89,26 +43,3 @@ jobs:
 
       - name: Check internal documentation links
         run: RUSTDOCFLAGS="--deny broken_intra_doc_links" cargo doc --verbose --workspace --no-deps --document-private-items
-
-  # tests:
-  #   name: Run tests
-  #   needs: docs
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout sources
-  #       uses: actions/checkout@v3
-
-  #     - name: Install Rust stable toolchain
-  #       uses: actions-rs/toolchain@v1
-  #       with:
-  #         profile: minimal
-  #         toolchain: stable
-  #         override: true
-
-  #     - name: Rust Cache
-  #       uses: Swatinem/rust-cache@6720f05bc48b77f96918929a9019fb2203ff71f8 # v2.0.0
-  #       with:
-  #         workspaces: backend
-
-  #     - name: Cargo test
-  #       run: cargo test --verbose --jobs 1
