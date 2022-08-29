@@ -464,23 +464,30 @@ where
                     .await
                 {
                     Err(_) => {
-                        log::warn!("Closing feed websocket that was too slow to keep up (too slow to send messages)");
+                        log::debug!("Closing feed websocket that was too slow to keep up (too slow to send messages)");
+                        break 'outer;
+                    }
+                    Ok(Err(soketto::connection::Error::Closed)) => {
                         break 'outer;
                     }
                     Ok(Err(e)) => {
-                        log::warn!("Closing feed websocket due to error sending data: {}", e);
+                        log::debug!("Closing feed websocket due to error sending data: {}", e);
                         break 'outer;
                     }
                     Ok(_) => {}
                 }
             }
+
             match tokio::time::timeout_at(message_send_deadline, ws_send.flush()).await {
                 Err(_) => {
-                    log::warn!("Closing feed websocket that was too slow to keep up (too slow to flush messages)");
+                    log::debug!("Closing feed websocket that was too slow to keep up (too slow to flush messages)");
+                    break;
+                }
+                Ok(Err(soketto::connection::Error::Closed)) => {
                     break;
                 }
                 Ok(Err(e)) => {
-                    log::warn!("Closing feed websocket due to error flushing data: {}", e);
+                    log::debug!("Closing feed websocket due to error flushing data: {}", e);
                     break;
                 }
                 Ok(_) => {}
