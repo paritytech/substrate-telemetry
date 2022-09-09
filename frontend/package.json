@@ -6,32 +6,32 @@
   "description": "Polkadot Telemetry frontend",
   "scripts": {
     "precommit": "lint-staged",
-    "start": "react-scripts-ts start",
-    "build": "react-scripts-ts build",
+    "start": "react-scripts start",
+    "build": "react-scripts build",
     "test": "TS_NODE_PROJECT=tsconfig.test.json tape -r ts-node/register test/**/*spec.ts",
     "test:coverage": "nyc yarn test",
-    "eject": "react-scripts-ts eject",
+    "eject": "react-scripts eject",
     "pretty:check": "prettier --check src/**/*.{ts,tsx}",
     "pretty:fix": "prettier --write src",
     "clean": "rm -rf node_modules build .nyc ./tmp/env-config.js report*.json yarn-error.log"
   },
   "dependencies": {
-    "@polkadot/util-crypto": "^2.8.1",
+    "@polkadot/util-crypto": "^10.1.7",
     "@types/react-measure": "^2.0.6",
-    "blakejs": "^1.1.0",
-    "husky": "^4.2.5",
-    "lint-staged": "^10.1.7",
-    "react": "^17.0.1",
-    "react-dom": "^17.0.1",
-    "react-measure": "^2.3.0",
-    "react-scripts-ts": "3.1.0",
+    "blakejs": "^1.2.0",
+    "husky": "^8.0.1",
+    "lint-staged": "^13.0.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-measure": "^2.5.2",
+    "react-scripts": "5.0.1",
     "stable": "^0.1.8",
     "tslint": "^6.1.1"
   },
   "devDependencies": {
-    "@types/node": "^13.13.2",
-    "@types/react": "^16.9.34",
-    "@types/react-dom": "^16.9.6",
+    "@types/node": "^16.11.58",
+    "@types/react": "^18.0.18",
+    "@types/react-dom": "^18.0.6",
     "@types/tape": "^4.13.0",
     "babel-preset-env": "^1.7.0",
     "babel-preset-react": "^6.24.1",
@@ -51,15 +51,16 @@
       "pretty:fix"
     ]
   },
-  "resolutions": {
-    "chalk": "^2.4.2",
-    "node-forge": ">=0.10.0",
-    "yargs-parser": ">=13.1.2",
-    "dot-prop": ">=4.2.1",
-    "lodash": ">=4.17.19",
-    "serialize-javascript": ">=3.1.0",
-    "js-yaml": ">=3.13.1",
-    "webpack-dev-server": "^2.11.4",
-    "mem": ">=4.0.0"
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }
