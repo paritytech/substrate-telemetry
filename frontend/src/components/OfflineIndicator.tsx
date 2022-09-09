@@ -21,14 +21,12 @@ import { State } from '../state';
 import offlineIcon from '../icons/zap.svg';
 import upgradeIcon from '../icons/flame.svg';
 
-export namespace OfflineIndicator {
-  export interface Props {
-    status: State['status'];
-  }
+interface OfflineIndicatorProps {
+  status: State['status'];
 }
 
 export function OfflineIndicator(
-  props: OfflineIndicator.Props
+  props: OfflineIndicatorProps
 ): React.ReactElement<any> | null {
   switch (props.status) {
     case 'online':

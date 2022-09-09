@@ -16,27 +16,25 @@
 
 import * as React from 'react';
 import { Types, Maybe } from '../common';
-import { Tooltip } from './';
+import { Tooltip, TooltipUpdateCallback } from './';
 
 import './Sparkline.css';
 
-export namespace Sparkline {
-  export interface Props {
-    stroke: number;
-    width: number;
-    height: number;
-    values: number[];
-    stamps?: Types.Timestamp[];
-    minScale?: number;
-    format?: (value: number, stamp: Maybe<Types.Timestamp>) => string;
-  }
+interface SparklineProps {
+  stroke: number;
+  width: number;
+  height: number;
+  values: number[];
+  stamps?: Types.Timestamp[];
+  minScale?: number;
+  format?: (value: number, stamp: Maybe<Types.Timestamp>) => string;
 }
 
-export class Sparkline extends React.Component<Sparkline.Props, {}> {
+export class Sparkline extends React.Component<SparklineProps, {}> {
   private cursor: SVGPathElement;
-  private update: Tooltip.UpdateCallback;
+  private update: TooltipUpdateCallback;
 
-  public shouldComponentUpdate(nextProps: Sparkline.Props): boolean {
+  public shouldComponentUpdate(nextProps: SparklineProps): boolean {
     const { stroke, width, height, minScale, format, values } = this.props;
 
     return (
@@ -93,7 +91,7 @@ export class Sparkline extends React.Component<Sparkline.Props, {}> {
     this.cursor = cursor;
   };
 
-  private onTooltipInit = (update: Tooltip.UpdateCallback) => {
+  private onTooltipInit = (update: TooltipUpdateCallback) => {
     this.update = update;
   };
 

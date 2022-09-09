@@ -197,12 +197,10 @@ function generate(address: string, isSixPoint = false): Circle[] {
   );
 }
 
-export namespace PolkadotIcon {
-  export interface Props {
-    account: string;
-    size: number;
-    className?: string;
-  }
+interface PolkadotIconProps {
+  account: string;
+  size: number;
+  className?: string;
 }
 
 const rendered = new Set<string>();
@@ -233,8 +231,8 @@ function renderShadowIcon(account: string) {
   }
 }
 
-export class PolkadotIcon extends React.Component<PolkadotIcon.Props, {}> {
-  public shouldComponentUpdate(nextProps: PolkadotIcon.Props) {
+export class PolkadotIcon extends React.Component<PolkadotIconProps, {}> {
+  public shouldComponentUpdate(nextProps: PolkadotIconProps) {
     return (
       this.props.account !== nextProps.account ||
       this.props.size !== nextProps.size

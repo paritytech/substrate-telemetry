@@ -42,24 +42,17 @@ import {
 
 import './Row.css';
 
-export namespace Row {
-  export interface Props {
-    node: Node;
-    pins: PersistentSet<Types.NodeName>;
-    columns: Column[];
-  }
-
-  export interface State {
-    update: number;
-  }
-}
-
-interface HeaderProps {
+interface RowProps {
+  node: Node;
+  pins: PersistentSet<Types.NodeName>;
   columns: Column[];
-  sortBy: Persistent<Maybe<number>>;
 }
 
-export class Row extends React.Component<Row.Props, Row.State> {
+interface RowState {
+  update: number;
+}
+
+export class Row extends React.Component<RowProps, RowState> {
   public static readonly columns: Column[] = [
     NameColumn,
     ValidatorColumn,
@@ -83,7 +76,7 @@ export class Row extends React.Component<Row.Props, Row.State> {
 
   private renderedChangeRef = 0;
 
-  public shouldComponentUpdate(nextProps: Row.Props): boolean {
+  public shouldComponentUpdate(nextProps: RowProps): boolean {
     return (
       this.props.node.id !== nextProps.node.id ||
       this.renderedChangeRef !== nextProps.node.changeRef

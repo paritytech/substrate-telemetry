@@ -18,15 +18,13 @@ import * as React from 'react';
 import './Tile.css';
 import { timestamp, Types } from '../common';
 
-export namespace Ago {
-  export interface Props {
-    when: Types.Timestamp;
-    justTime?: boolean;
-  }
+interface AgoProps {
+  when: Types.Timestamp;
+  justTime?: boolean;
+}
 
-  export interface State {
-    now: Types.Timestamp;
-  }
+interface AgoState {
+  now: Types.Timestamp;
 }
 
 const tickers = new Map<Ago, (ts: Types.Timestamp) => void>();
@@ -43,20 +41,14 @@ function tick() {
 
 tick();
 
-export namespace Ago {
-  export interface State {
-    now: Types.Timestamp;
-  }
-}
-
-export class Ago extends React.Component<Ago.Props, Ago.State> {
+export class Ago extends React.Component<AgoProps, AgoState> {
   public static timeDiff = 0 as Types.Milliseconds;
 
-  public state: Ago.State;
+  public state: AgoState;
 
   private agoStr: string;
 
-  constructor(props: Ago.Props) {
+  constructor(props: AgoProps) {
     super(props);
 
     this.state = {
@@ -65,7 +57,7 @@ export class Ago extends React.Component<Ago.Props, Ago.State> {
     this.agoStr = this.stringify(props.when, this.state.now);
   }
 
-  public shouldComponentUpdate(nextProps: Ago.Props, nextState: Ago.State) {
+  public shouldComponentUpdate(nextProps: AgoProps, nextState: AgoState) {
     const nextAgoStr = this.stringify(nextProps.when, nextState.now);
 
     if (this.agoStr !== nextAgoStr) {

@@ -23,20 +23,12 @@ import { PersistentObject } from '../../persist';
 
 import './Settings.css';
 
-export namespace Settings {
-  export type Display = 'list' | 'map' | 'settings';
 
-  export interface Props {
-    settings: PersistentObject<AppState.Settings>;
-  }
-
-  export interface State {
-    display: Display;
-    filter: Maybe<string>;
-  }
+interface SettingsProps {
+  settings: PersistentObject<AppState.Settings>;
 }
 
-export class Settings extends React.Component<Settings.Props, {}> {
+export class Settings extends React.Component<SettingsProps, {}> {
   public render() {
     const { settings } = this.props;
 

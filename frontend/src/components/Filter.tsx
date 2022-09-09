@@ -23,19 +23,17 @@ import searchIcon from '../icons/search.svg';
 
 import './Filter.css';
 
-export namespace Filter {
-  export interface Props {
-    onChange: (value: Maybe<(node: Node) => boolean>) => void;
-  }
+interface FilterProps {
+  onChange: (value: Maybe<(node: Node) => boolean>) => void;
+}
 
-  export interface State {
-    value: string;
-  }
+interface FilterState {
+  value: string;
 }
 
 const ESCAPE_KEY = 27;
 
-export class Filter extends React.Component<Filter.Props, {}> {
+export class Filter extends React.Component<FilterProps, {}> {
   public state = {
     value: '',
   };
@@ -51,8 +49,8 @@ export class Filter extends React.Component<Filter.Props, {}> {
   }
 
   public shouldComponentUpdate(
-    nextProps: Filter.Props,
-    nextState: Filter.State
+    nextProps: FilterProps,
+    nextState: FilterState
   ): boolean {
     return (
       this.props.onChange !== nextProps.onChange ||

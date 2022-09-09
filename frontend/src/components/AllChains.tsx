@@ -21,15 +21,13 @@ import { ChainData } from '../state';
 
 import './AllChains.css';
 
-export namespace AllChains {
-  export interface Props {
-    chains: ChainData[];
-    subscribed: Maybe<Types.GenesisHash>;
-    connection: Promise<Connection>;
-  }
+interface AllChainsProps {
+  chains: ChainData[];
+  subscribed: Maybe<Types.GenesisHash>;
+  connection: Promise<Connection>;
 }
 
-export function AllChains(props: AllChains.Props) {
+export function AllChains(props: AllChainsProps) {
   const { chains, subscribed, connection } = props;
   const [filterText, setFilterText] = React.useState('');
   const [sortBy, setSortBy] = React.useState(SortBy.NumberOfNodes);

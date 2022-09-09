@@ -23,12 +23,8 @@ import { Ranking, Range } from '../../common/types';
 
 import './Stats.css';
 
-export namespace Stats {
-  export type Display = 'list' | 'map' | 'Stats';
-
-  export interface Props {
-    appState: Readonly<AppState>;
-  }
+interface StatsProps {
+  appState: Readonly<AppState>;
 }
 
 function displayPercentage(percent: number): string {
@@ -138,7 +134,7 @@ function formatScore(value: Range): string {
   return (min / 100).toFixed(1) + 'x';
 }
 
-export class Stats extends React.Component<Stats.Props, {}> {
+export class Stats extends React.Component<StatsProps, {}> {
   public render() {
     const { appState } = this.props;
 

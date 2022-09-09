@@ -19,21 +19,15 @@ import { Maybe } from '../common';
 
 import './Tooltip.css';
 
-export namespace Tooltip {
-  export interface Props {
-    text: string;
-    copy?: (cb: CopyCallback) => void;
-    position?: 'left' | 'right' | 'center';
-    onInit?: (update: UpdateCallback) => void;
-  }
-
-  export interface State {
-    copied: boolean;
-  }
-
-  export type UpdateCallback = (text: string) => void;
-  export type CopyCallback = Maybe<() => void>;
+interface TooltipProps {
+  text: string;
+  copy?: (cb: TooltipCopyCallback) => void;
+  position?: 'left' | 'right' | 'center';
+  onInit?: (update: TooltipUpdateCallback) => void;
 }
+
+export type TooltipUpdateCallback = (text: string) => void;
+export type TooltipCopyCallback = Maybe<() => void>;
 
 function copyToClipboard(text: string) {
   const el = document.createElement('textarea');
@@ -49,7 +43,7 @@ export function Tooltip({
   position,
   copy,
   onInit,
-}: Tooltip.Props): JSX.Element {
+}: TooltipProps): JSX.Element {
   const [copied, setCopied] = React.useState<boolean>(false);
   const [timer, setTimer] = React.useState<NodeJS.Timer | null>(null);
   const el = React.useRef<HTMLDivElement>(null);
