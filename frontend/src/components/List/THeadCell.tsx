@@ -30,7 +30,7 @@ interface THeadCellProps {
   sortBy: Persistent<Maybe<number>>;
 }
 
-export class THeadCell extends React.Component<THeadCellProps, {}> {
+export class THeadCell extends React.Component<THeadCellProps> {
   public render() {
     const { column, index, last } = this.props;
     const { icon, width, label } = column;

@@ -37,7 +37,7 @@ const AVERAGE_TAB_WIDTH = 160;
 // Milliseconds, sets the minimum time between the renders
 const RENDER_THROTTLE = 1000;
 
-export class Chains extends React.Component<ChainsProps, {}> {
+export class Chains extends React.Component<ChainsProps> {
   private lastRender = performance.now();
   private clicked: Maybe<Types.GenesisHash>;
   private subscribedChainInView = false;
@@ -66,7 +66,7 @@ export class Chains extends React.Component<ChainsProps, {}> {
 
     const allChainsHref = subscribedHash
       ? `#all-chains/${subscribedHash}`
-      : `#all-chains`;
+      : '#all-chains';
 
     const subscribedChain =
       subscribedData && !this.subscribedChainInView ? (
@@ -91,6 +91,7 @@ export class Chains extends React.Component<ChainsProps, {}> {
           href="https://github.com/paritytech/substrate-telemetry"
           target="_blank"
           title="Fork Me!"
+          rel="noreferrer"
         >
           <Icon src={githubIcon} />
         </a>

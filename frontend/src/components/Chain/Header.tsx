@@ -27,7 +27,6 @@ import lastTimeIcon from '../../icons/watch.svg';
 import listIcon from '../../icons/list-alt-regular.svg';
 import worldIcon from '../../icons/location.svg';
 import settingsIcon from '../../icons/settings.svg';
-import consensusIcon from '../../icons/cube-alt.svg';
 import statsIcon from '../../icons/graph.svg';
 
 import './Header.css';
@@ -41,7 +40,7 @@ interface HeaderProps {
   setDisplay: (display: ChainDisplay) => void;
 }
 
-export class Header extends React.Component<HeaderProps, {}> {
+export class Header extends React.Component<HeaderProps> {
   public shouldComponentUpdate(nextProps: HeaderProps) {
     return (
       this.props.best !== nextProps.best ||

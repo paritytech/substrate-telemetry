@@ -20,7 +20,7 @@ import { Node } from '../../../state';
 import { Truncate, Tooltip } from '../../';
 import icon from '../../../icons/server.svg';
 
-export class NameColumn extends React.Component<Column.Props, {}> {
+export class NameColumn extends React.Component<Column.Props> {
   public static readonly label = 'Node';
   public static readonly icon = icon;
   public static readonly setting = null;

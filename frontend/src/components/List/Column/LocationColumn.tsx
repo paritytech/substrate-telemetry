@@ -21,7 +21,7 @@ import { Node } from '../../../state';
 import { Truncate, Tooltip } from '../../';
 import icon from '../../../icons/location.svg';
 
-export class LocationColumn extends React.Component<Column.Props, {}> {
+export class LocationColumn extends React.Component<Column.Props> {
   public static readonly label = 'Location';
   public static readonly icon = icon;
   public static readonly width = 140;

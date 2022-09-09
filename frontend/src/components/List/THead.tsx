@@ -26,7 +26,7 @@ interface THeadProps {
   sortBy: Persistent<Maybe<number>>;
 }
 
-export class THead extends React.Component<THeadProps, {}> {
+export class THead extends React.Component<THeadProps> {
   private sortBy: Maybe<number>;
 
   constructor(props: THeadProps) {

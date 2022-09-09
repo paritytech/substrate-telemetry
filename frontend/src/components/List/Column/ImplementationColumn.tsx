@@ -69,7 +69,7 @@ const ICONS = {
 };
 const SEMVER_PATTERN = /^\d+\.\d+\.\d+/;
 
-export class ImplementationColumn extends React.Component<Column.Props, {}> {
+export class ImplementationColumn extends React.Component<Column.Props> {
   public static readonly label = 'Implementation';
   public static readonly icon = icon;
   public static readonly width = 90;

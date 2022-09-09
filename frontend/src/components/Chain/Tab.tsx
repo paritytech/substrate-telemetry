@@ -30,7 +30,7 @@ interface TabProps {
   setDisplay: (display: ChainDisplay) => void;
 }
 
-export class Tab extends React.Component<TabProps, {}> {
+export class Tab extends React.Component<TabProps> {
   public render() {
     const { label, icon, display, current } = this.props;
     const highlight = display === current;

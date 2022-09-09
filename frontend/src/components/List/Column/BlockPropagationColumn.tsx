@@ -21,7 +21,7 @@ import { Node } from '../../../state';
 import { milliOrSecond } from '../../../utils';
 import icon from '../../../icons/dashboard.svg';
 
-export class BlockPropagationColumn extends React.Component<Column.Props, {}> {
+export class BlockPropagationColumn extends React.Component<Column.Props> {
   public static readonly label = 'Block Propagation Time';
   public static readonly icon = icon;
   public static readonly width = 58;

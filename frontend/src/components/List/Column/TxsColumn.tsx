@@ -19,7 +19,7 @@ import { Column } from './';
 import { Node } from '../../../state';
 import icon from '../../../icons/inbox.svg';
 
-export class TxsColumn extends React.Component<Column.Props, {}> {
+export class TxsColumn extends React.Component<Column.Props> {
   public static readonly label = 'Transactions in Queue';
   public static readonly icon = icon;
   public static readonly width = 26;

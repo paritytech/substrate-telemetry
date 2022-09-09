@@ -22,7 +22,7 @@ import { Truncate } from '../../';
 import { Tooltip } from '../../';
 import icon from '../../../icons/fingerprint.svg';
 
-export class NetworkIdColumn extends React.Component<Column.Props, {}> {
+export class NetworkIdColumn extends React.Component<Column.Props> {
   public static readonly label = 'Network ID';
   public static readonly icon = icon;
   public static readonly width = 90;

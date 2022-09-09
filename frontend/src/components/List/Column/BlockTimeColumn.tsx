@@ -20,7 +20,7 @@ import { Node } from '../../../state';
 import { secondsWithPrecision } from '../../../utils';
 import icon from '../../../icons/history.svg';
 
-export class BlockTimeColumn extends React.Component<Column.Props, {}> {
+export class BlockTimeColumn extends React.Component<Column.Props> {
   public static readonly label = 'Block Time';
   public static readonly icon = icon;
   public static readonly width = 80;

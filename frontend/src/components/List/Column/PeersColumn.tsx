@@ -19,7 +19,7 @@ import { Column } from './';
 import { Node } from '../../../state';
 import icon from '../../../icons/broadcast.svg';
 
-export class PeersColumn extends React.Component<Column.Props, {}> {
+export class PeersColumn extends React.Component<Column.Props> {
   public static readonly label = 'Peer Count';
   public static readonly icon = icon;
   public static readonly width = 26;

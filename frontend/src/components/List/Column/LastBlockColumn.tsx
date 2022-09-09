@@ -20,7 +20,7 @@ import { Node } from '../../../state';
 import { Ago } from '../../';
 import icon from '../../../icons/watch.svg';
 
-export class LastBlockColumn extends React.Component<Column.Props, {}> {
+export class LastBlockColumn extends React.Component<Column.Props> {
   public static readonly label = 'Last Block Time';
   public static readonly icon = icon;
   public static readonly width = 100;

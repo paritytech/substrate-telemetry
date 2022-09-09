@@ -15,9 +15,9 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import * as React from 'react';
-import { Types, Maybe } from '../../common';
+import { Types } from '../../common';
 import { Node } from '../../state';
-import { Persistent, PersistentSet } from '../../persist';
+import { PersistentSet } from '../../persist';
 import {
   Column,
   NameColumn,

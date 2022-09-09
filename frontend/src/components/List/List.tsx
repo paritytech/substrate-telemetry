@@ -40,7 +40,7 @@ interface ListProps {
 // of the `List`, so that we can maximize re-using DOM elements.
 type Key = number;
 
-export class List extends React.Component<ListProps, {}> {
+export class List extends React.Component<ListProps> {
   public state = {
     filter: null,
     viewportHeight: viewport().height,

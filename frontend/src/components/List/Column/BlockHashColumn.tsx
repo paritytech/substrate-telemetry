@@ -21,7 +21,7 @@ import { Node } from '../../../state';
 import { Truncate, Tooltip, TooltipCopyCallback } from '../../';
 import icon from '../../../icons/file-binary.svg';
 
-export class BlockHashColumn extends React.Component<Column.Props, {}> {
+export class BlockHashColumn extends React.Component<Column.Props> {
   public static readonly label = 'Block Hash';
   public static readonly icon = icon;
   public static readonly width = 154;

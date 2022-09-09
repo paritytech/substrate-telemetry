@@ -33,7 +33,7 @@ interface FilterState {
 
 const ESCAPE_KEY = 27;
 
-export class Filter extends React.Component<FilterProps, {}> {
+export class Filter extends React.Component<FilterProps, FilterState> {
   public state = {
     value: '',
   };

@@ -20,7 +20,7 @@ import { Node } from '../../../state';
 import { Ago } from '../../';
 import icon from '../../../icons/pulse.svg';
 
-export class UptimeColumn extends React.Component<Column.Props, {}> {
+export class UptimeColumn extends React.Component<Column.Props> {
   public static readonly label = 'Node Uptime';
   public static readonly icon = icon;
   public static readonly width = 58;

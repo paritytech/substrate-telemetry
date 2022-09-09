@@ -30,12 +30,12 @@ interface SparklineProps {
   format?: (value: number, stamp: Maybe<Types.Timestamp>) => string;
 }
 
-export class Sparkline extends React.Component<SparklineProps, {}> {
+export class Sparkline extends React.Component<SparklineProps> {
   private cursor: SVGPathElement;
   private update: TooltipUpdateCallback;
 
   public shouldComponentUpdate(nextProps: SparklineProps): boolean {
-    const { stroke, width, height, minScale, format, values } = this.props;
+    const { stroke, width, height, format, values } = this.props;
 
     return (
       values !== nextProps.values ||

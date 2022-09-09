@@ -89,7 +89,7 @@ export class Chain extends React.Component<ChainProps, ChainState> {
       return <Settings settings={this.props.settings} />;
     }
 
-    const { appState, appUpdate, connection, pins, sortBy } = this.props;
+    const { appState, appUpdate, pins, sortBy } = this.props;
 
     if (display === 'list') {
       return (

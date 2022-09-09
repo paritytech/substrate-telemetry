@@ -21,7 +21,7 @@ interface TruncateProps {
   chars?: number;
 }
 
-export class Truncate extends React.Component<TruncateProps, {}> {
+export class Truncate extends React.Component<TruncateProps> {
   public shouldComponentUpdate(nextProps: TruncateProps): boolean {
     return this.props.text !== nextProps.text;
   }

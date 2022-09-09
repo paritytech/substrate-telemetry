@@ -21,7 +21,7 @@ import { Node } from '../../../state';
 import { Tooltip, PolkadotIcon, TooltipCopyCallback } from '../../';
 import icon from '../../../icons/shield.svg';
 
-export class ValidatorColumn extends React.Component<Column.Props, {}> {
+export class ValidatorColumn extends React.Component<Column.Props> {
   public static readonly label = 'Validator';
   public static readonly icon = icon;
   public static readonly width = 16;

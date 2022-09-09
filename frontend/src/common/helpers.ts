@@ -45,14 +45,12 @@ export type Maybe<T> = T | null | undefined;
  * Asynchronous sleep
  */
 export function sleep(time: Milliseconds): Promise<void> {
-  return new Promise<void>((resolve, _reject) => {
+  return new Promise<void>((resolve) => {
     setTimeout(() => resolve(), time);
   });
 }
 
 export const timestamp = Date.now as () => Timestamp;
-
-export function noop() {}
 
 /**
  * Keep track of last N numbers pushed onto internal stack.

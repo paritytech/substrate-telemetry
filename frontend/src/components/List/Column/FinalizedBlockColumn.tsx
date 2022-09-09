@@ -20,7 +20,7 @@ import { Node } from '../../../state';
 import { formatNumber } from '../../../utils';
 import icon from '../../../icons/cube-alt.svg';
 
-export class FinalizedBlockColumn extends React.Component<Column.Props, {}> {
+export class FinalizedBlockColumn extends React.Component<Column.Props> {
   public static readonly label = 'Finalized Block';
   public static readonly icon = icon;
   public static readonly width = 88;

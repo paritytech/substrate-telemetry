@@ -228,7 +228,7 @@ export type Message =
  * Data type to be sent to the feed. Passing through strings means we can only serialize once,
  * no matter how many feed clients are listening in.
  */
-export interface SquashedMessages extends Array<Action | Payload> {}
+export type SquashedMessages = Array<Action | Payload>;
 export type Data = Stringified<SquashedMessages>;
 
 /**

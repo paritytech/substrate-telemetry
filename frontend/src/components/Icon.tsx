@@ -65,7 +65,7 @@ function renderShadowIcon(src: string): string {
   return symbol;
 }
 
-export class Icon extends React.Component<IconProps, {}> {
+export class Icon extends React.Component<IconProps> {
   public props: IconProps;
 
   public shouldComponentUpdate(nextProps: IconProps) {

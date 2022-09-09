@@ -28,7 +28,7 @@ interface SettingProps {
   settings: PersistentObject<State.Settings>;
 }
 
-export class Setting extends React.Component<SettingProps, {}> {
+export class Setting extends React.Component<SettingProps> {
   public render() {
     const { icon, label, setting, settings } = this.props;
 

@@ -26,11 +26,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
 
 .Chains-extra-subscribed-chain {
-  position:  absolute;
+  position: absolute;
   right: 80px;
   top: 0px;
   background: #e6007a;
-  background: linear-gradient(90deg, rgba(0,0,0,0) 0px, #e6007a 30px, #e6007a 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0) 0px,
+    #e6007a 30px,
+    #e6007a 100%
+  );
   z-index: 1;
   padding-left: 34px;
 }

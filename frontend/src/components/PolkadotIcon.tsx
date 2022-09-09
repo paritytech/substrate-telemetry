@@ -74,9 +74,7 @@ const OUTER_CIRCLE: Circle = {
   fill: '#eee',
 };
 
-function getRotation(
-  isSixPoint: boolean
-): {
+function getRotation(isSixPoint: boolean): {
   r: number;
   ro2: number;
   r3o4: number;
@@ -184,16 +182,14 @@ function generate(address: string, isSixPoint = false): Circle[] {
   }
 
   return [OUTER_CIRCLE].concat(
-    getCircleXY(isSixPoint).map(
-      ([cx, cy], index): Circle => {
-        return {
-          cx,
-          cy,
-          r: Z,
-          fill: colors[index] || 'rgb(255,255,255)',
-        };
-      }
-    )
+    getCircleXY(isSixPoint).map(([cx, cy], index): Circle => {
+      return {
+        cx,
+        cy,
+        r: Z,
+        fill: colors[index] || 'rgb(255,255,255)',
+      };
+    })
   );
 }
 
@@ -231,7 +227,7 @@ function renderShadowIcon(account: string) {
   }
 }
 
-export class PolkadotIcon extends React.Component<PolkadotIconProps, {}> {
+export class PolkadotIcon extends React.Component<PolkadotIconProps> {
   public shouldComponentUpdate(nextProps: PolkadotIconProps) {
     return (
       this.props.account !== nextProps.account ||
