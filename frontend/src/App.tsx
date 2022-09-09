@@ -29,7 +29,6 @@ import {
   comparePinnedChains,
 } from './state';
 import { getHashData } from './utils';
-import stable from 'stable';
 
 import './App.css';
 
@@ -225,18 +224,15 @@ export default class App extends React.Component<{}, {}> {
       return this.chainsCache;
     }
 
-    this.chainsCache = stable.inplace(
-      Array.from(this.appState.chains.values()),
-      (a, b) => {
-        const pinned = comparePinnedChains(a.genesisHash, b.genesisHash);
+    this.chainsCache = Array.from(this.appState.chains.values()).sort((a, b) => {
+      const pinned = comparePinnedChains(a.genesisHash, b.genesisHash);
 
-        if (pinned !== 0) {
-          return pinned;
-        }
-
-        return b.nodeCount - a.nodeCount;
+      if (pinned !== 0) {
+        return pinned;
       }
-    );
+
+      return b.nodeCount - a.nodeCount;
+    });
 
     return this.chainsCache;
   }

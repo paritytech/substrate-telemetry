@@ -11,7 +11,7 @@
     ],
     "sourceMap": true,
     "allowJs": false,
-    "jsx": "react-jsx",
+    "jsx": "react",
     "rootDir": "src",
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
