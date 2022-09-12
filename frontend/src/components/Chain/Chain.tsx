@@ -17,7 +17,11 @@
 import * as React from 'react';
 import { Connection } from '../../Connection';
 import { Types, Maybe } from '../../common';
-import { State as AppState, Update as AppUpdate, StateSettings } from '../../state';
+import {
+  State as AppState,
+  Update as AppUpdate,
+  StateSettings,
+} from '../../state';
 import { getHashData } from '../../utils';
 import { Header } from './';
 import { List, Map, Settings, Stats } from '../';

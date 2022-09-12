@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import * as React from 'react';
-import { ColumnProps,formatBytes, BANDWIDTH_SCALE } from './';
+import { ColumnProps, formatBytes, BANDWIDTH_SCALE } from './';
 import { Node } from '../../../state';
 import { Sparkline } from '../../';
 import icon from '../../../icons/git-branch.svg';
