@@ -16,7 +16,7 @@
 
 import * as React from 'react';
 import { Icon } from '../';
-import { State } from '../../state';
+import { StateSettings } from '../../state';
 import { PersistentObject } from '../../persist';
 
 import './Setting.css';
@@ -24,8 +24,8 @@ import './Setting.css';
 interface SettingProps {
   icon: string;
   label: string;
-  setting: keyof State.Settings;
-  settings: PersistentObject<State.Settings>;
+  setting: keyof StateSettings;
+  settings: PersistentObject<StateSettings>;
 }
 
 export class Setting extends React.Component<SettingProps> {

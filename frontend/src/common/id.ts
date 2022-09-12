@@ -24,6 +24,7 @@ export type Id<T> = Opaque<number, T>;
 /**
  * Higher order function producing new auto-incremented `Id`s.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function idGenerator<I extends Id<any>>(): () => I {
   let current = 0;
 

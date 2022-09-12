@@ -108,6 +108,7 @@ export class Filter extends React.Component<FilterProps, FilterState> {
       return;
     }
     // Ignore events dispatched to other elements that want to use it
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (['INPUT', 'TEXTAREA'].includes((event.target as any)?.tagName)) {
       return;
     }

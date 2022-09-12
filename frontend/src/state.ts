@@ -237,31 +237,24 @@ export function bindState(bind: React.Component, state: State): Update {
   };
 }
 
-export namespace State {
-  export interface Settings {
-    location: boolean;
-    validator: boolean;
-    implementation: boolean;
-    networkId: boolean;
-    peers: boolean;
-    txs: boolean;
-    upload: boolean;
-    download: boolean;
-    stateCacheSize: boolean;
-    blocknumber: boolean;
-    blockhash: boolean;
-    finalized: boolean;
-    finalizedhash: boolean;
-    blocktime: boolean;
-    blockpropagation: boolean;
-    blocklasttime: boolean;
-    uptime: boolean;
-  }
-
-  export interface SortBy {
-    column: string;
-    reverse: boolean;
-  }
+export interface StateSettings {
+  location: boolean;
+  validator: boolean;
+  implementation: boolean;
+  networkId: boolean;
+  peers: boolean;
+  txs: boolean;
+  upload: boolean;
+  download: boolean;
+  stateCacheSize: boolean;
+  blocknumber: boolean;
+  blockhash: boolean;
+  finalized: boolean;
+  finalizedhash: boolean;
+  blocktime: boolean;
+  blockpropagation: boolean;
+  blocklasttime: boolean;
+  uptime: boolean;
 }
 
 export interface State {
@@ -275,7 +268,7 @@ export interface State {
   subscribed: Maybe<Types.GenesisHash>;
   chains: Map<Types.GenesisHash, ChainData>;
   nodes: SortedCollection<Node>;
-  settings: Readonly<State.Settings>;
+  settings: Readonly<StateSettings>;
   pins: Readonly<Set<Types.NodeName>>;
   sortBy: Readonly<Maybe<number>>;
   selectedColumns: Column[];

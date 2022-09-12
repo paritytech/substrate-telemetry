@@ -469,6 +469,7 @@ export class Connection {
     let data: FeedMessage.Data;
 
     if (typeof event.data === 'string') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data = event.data as any as FeedMessage.Data;
     } else {
       const u8aData = new Uint8Array(event.data);
@@ -480,6 +481,7 @@ export class Connection {
 
       const str = Connection.utf8decoder.decode(event.data);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data = str as any as FeedMessage.Data;
     }
 

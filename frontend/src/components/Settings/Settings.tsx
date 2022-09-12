@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import * as React from 'react';
-import { State as AppState } from '../../state';
+import { StateSettings } from '../../state';
 import { Setting } from './';
 import { Row } from '../List';
 import { PersistentObject } from '../../persist';
@@ -23,7 +23,7 @@ import { PersistentObject } from '../../persist';
 import './Settings.css';
 
 interface SettingsProps {
-  settings: PersistentObject<AppState.Settings>;
+  settings: PersistentObject<StateSettings>;
 }
 
 export class Settings extends React.Component<SettingsProps> {

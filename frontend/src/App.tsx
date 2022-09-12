@@ -27,6 +27,7 @@ import {
   Node,
   ChainData,
   comparePinnedChains,
+  StateSettings,
 } from './state';
 import { getHashData } from './utils';
 
@@ -37,7 +38,7 @@ export default class App extends React.Component {
   // Custom state for finer control over updates
   private readonly appState: Readonly<State>;
   private readonly appUpdate: Update;
-  private readonly settings: PersistentObject<State.Settings>;
+  private readonly settings: PersistentObject<StateSettings>;
   private readonly pins: PersistentSet<Types.NodeName>;
   private readonly sortBy: Persistent<Maybe<number>>;
   private readonly connection: Promise<Connection>;
@@ -239,7 +240,7 @@ export default class App extends React.Component {
     return this.chainsCache;
   }
 
-  private selectedColumns(settings: State.Settings): Column[] {
+  private selectedColumns(settings: StateSettings): Column[] {
     return Row.columns.filter(
       ({ setting }) => setting == null || settings[setting]
     );

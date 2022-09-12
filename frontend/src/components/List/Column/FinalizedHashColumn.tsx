@@ -16,12 +16,12 @@
 
 import * as React from 'react';
 import { Maybe } from '../../../common';
-import { Column } from './';
+import { ColumnProps } from './';
 import { Node } from '../../../state';
 import { Truncate, Tooltip, TooltipCopyCallback } from '../../';
 import icon from '../../../icons/file-binary.svg';
 
-export class FinalizedHashColumn extends React.Component<Column.Props> {
+export class FinalizedHashColumn extends React.Component<ColumnProps> {
   public static readonly label = 'Finalized Block Hash';
   public static readonly icon = icon;
   public static readonly width = 154;
@@ -32,7 +32,7 @@ export class FinalizedHashColumn extends React.Component<Column.Props> {
   private data: Maybe<string>;
   private copy: Maybe<TooltipCopyCallback>;
 
-  public shouldComponentUpdate(nextProps: Column.Props) {
+  public shouldComponentUpdate(nextProps: ColumnProps) {
     return this.data !== nextProps.node.finalizedHash;
   }
 

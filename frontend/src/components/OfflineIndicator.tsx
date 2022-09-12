@@ -27,6 +27,7 @@ interface OfflineIndicatorProps {
 
 export function OfflineIndicator(
   props: OfflineIndicatorProps
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): React.ReactElement<any> | null {
   switch (props.status) {
     case 'online':
