@@ -18,7 +18,7 @@ export abstract class Stringified<T> {
   public __PHANTOM__: T;
 }
 
-export const parse = (JSON.parse as any) as <T>(val: Stringified<T>) => T;
-export const stringify = (JSON.stringify as any) as <T>(
-  val: T
-) => Stringified<T>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const parse = JSON.parse as any as <T>(val: Stringified<T>) => T;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const stringify = JSON.stringify as any as <T>(val: T) => Stringified<T>;

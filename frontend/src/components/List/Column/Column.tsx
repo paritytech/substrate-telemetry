@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import * as React from 'react';
 import { Types, Maybe, timestamp } from '../../../common';
 import { Node } from '../../../state';
 
@@ -61,41 +60,39 @@ export type Column =
   | typeof LastBlockColumn
   | typeof UptimeColumn;
 
-export namespace Column {
-  export interface Props {
-    node: Node;
+export interface ColumnProps {
+  node: Node;
+}
+
+export function formatBytes(
+  bytes: number,
+  stamp: Maybe<Types.Timestamp>
+): string {
+  const ago = stamp ? ` (${formatStamp(stamp)})` : '';
+
+  if (bytes >= 1024 * 1024 * 1024) {
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB${ago}`;
+  } else if (bytes >= 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB${ago}`;
+  } else if (bytes >= 1000) {
+    return `${(bytes / 1024).toFixed(1)} kB${ago}`;
+  } else {
+    return `${bytes} B${ago}`;
   }
+}
 
-  export function formatBytes(
-    bytes: number,
-    stamp: Maybe<Types.Timestamp>
-  ): string {
-    const ago = stamp ? ` (${formatStamp(stamp)})` : '';
+export function formatBandwidth(
+  bps: number,
+  stamp: Maybe<Types.Timestamp>
+): string {
+  const ago = stamp ? ` (${formatStamp(stamp)})` : '';
 
-    if (bytes >= 1024 * 1024 * 1024) {
-      return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB${ago}`;
-    } else if (bytes >= 1024 * 1024) {
-      return `${(bytes / (1024 * 1024)).toFixed(1)} MB${ago}`;
-    } else if (bytes >= 1000) {
-      return `${(bytes / 1024).toFixed(1)} kB${ago}`;
-    } else {
-      return `${bytes} B${ago}`;
-    }
-  }
-
-  export function formatBandwidth(
-    bps: number,
-    stamp: Maybe<Types.Timestamp>
-  ): string {
-    const ago = stamp ? ` (${formatStamp(stamp)})` : '';
-
-    if (bps >= 1024 * 1024) {
-      return `${(bps / (1024 * 1024)).toFixed(1)} MB/s${ago}`;
-    } else if (bps >= 1000) {
-      return `${(bps / 1024).toFixed(1)} kB/s${ago}`;
-    } else {
-      return `${bps | 0} B/s${ago}`;
-    }
+  if (bps >= 1024 * 1024) {
+    return `${(bps / (1024 * 1024)).toFixed(1)} MB/s${ago}`;
+  } else if (bps >= 1000) {
+    return `${(bps / 1024).toFixed(1)} kB/s${ago}`;
+  } else {
+    return `${bps | 0} B/s${ago}`;
   }
 }
 

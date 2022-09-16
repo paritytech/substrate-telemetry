@@ -15,12 +15,12 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import * as React from 'react';
-import { Column } from './';
+import { ColumnProps } from './';
 import { Node } from '../../../state';
 import { secondsWithPrecision } from '../../../utils';
 import icon from '../../../icons/history.svg';
 
-export class BlockTimeColumn extends React.Component<Column.Props, {}> {
+export class BlockTimeColumn extends React.Component<ColumnProps> {
   public static readonly label = 'Block Time';
   public static readonly icon = icon;
   public static readonly width = 80;
@@ -30,7 +30,7 @@ export class BlockTimeColumn extends React.Component<Column.Props, {}> {
 
   private data = 0;
 
-  public shouldComponentUpdate(nextProps: Column.Props) {
+  public shouldComponentUpdate(nextProps: ColumnProps) {
     return this.data !== nextProps.node.blockTime;
   }
 

@@ -25,13 +25,11 @@ import githubIcon from '../icons/mark-github.svg';
 import listIcon from '../icons/kebab-horizontal.svg';
 import './Chains.css';
 
-export namespace Chains {
-  export interface Props {
-    chains: ChainData[];
-    subscribedHash: Maybe<Types.GenesisHash>;
-    subscribedData: Maybe<ChainData>;
-    connection: Promise<Connection>;
-  }
+interface ChainsProps {
+  chains: ChainData[];
+  subscribedHash: Maybe<Types.GenesisHash>;
+  subscribedData: Maybe<ChainData>;
+  connection: Promise<Connection>;
 }
 
 // Average tab width in pixels
@@ -39,12 +37,12 @@ const AVERAGE_TAB_WIDTH = 160;
 // Milliseconds, sets the minimum time between the renders
 const RENDER_THROTTLE = 1000;
 
-export class Chains extends React.Component<Chains.Props, {}> {
+export class Chains extends React.Component<ChainsProps> {
   private lastRender = performance.now();
   private clicked: Maybe<Types.GenesisHash>;
   private subscribedChainInView = false;
 
-  public shouldComponentUpdate(nextProps: Chains.Props) {
+  public shouldComponentUpdate(nextProps: ChainsProps) {
     if (nextProps.subscribedHash !== this.clicked) {
       this.clicked = nextProps.subscribedHash;
     }
@@ -68,7 +66,7 @@ export class Chains extends React.Component<Chains.Props, {}> {
 
     const allChainsHref = subscribedHash
       ? `#all-chains/${subscribedHash}`
-      : `#all-chains`;
+      : '#all-chains';
 
     const subscribedChain =
       subscribedData && !this.subscribedChainInView ? (
@@ -93,6 +91,7 @@ export class Chains extends React.Component<Chains.Props, {}> {
           href="https://github.com/paritytech/substrate-telemetry"
           target="_blank"
           title="Fork Me!"
+          rel="noreferrer"
         >
           <Icon src={githubIcon} />
         </a>

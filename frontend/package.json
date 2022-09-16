@@ -6,44 +6,45 @@
   "description": "Polkadot Telemetry frontend",
   "scripts": {
     "precommit": "lint-staged",
-    "start": "react-scripts-ts start",
-    "build": "react-scripts-ts build",
+    "start": "react-scripts start",
+    "build": "react-scripts build",
     "test": "TS_NODE_PROJECT=tsconfig.test.json tape -r ts-node/register test/**/*spec.ts",
     "test:coverage": "nyc yarn test",
-    "eject": "react-scripts-ts eject",
+    "eject": "react-scripts eject",
     "pretty:check": "prettier --check src/**/*.{ts,tsx}",
     "pretty:fix": "prettier --write src",
-    "clean": "rm -rf node_modules build .nyc ./tmp/env-config.js report*.json yarn-error.log"
+    "clean": "rm -rf node_modules build .nyc ./tmp/env-config.js report*.json yarn-error.log",
+    "lint": "eslint src"
   },
   "dependencies": {
-    "@polkadot/util-crypto": "^2.8.1",
+    "@polkadot/util-crypto": "^10.1.7",
     "@types/react-measure": "^2.0.6",
-    "blakejs": "^1.1.0",
-    "husky": "^4.2.5",
-    "lint-staged": "^10.1.7",
-    "react": "^17.0.1",
-    "react-dom": "^17.0.1",
-    "react-measure": "^2.3.0",
-    "react-scripts-ts": "3.1.0",
-    "stable": "^0.1.8",
-    "tslint": "^6.1.1"
+    "blakejs": "^1.2.0",
+    "husky": "^8.0.1",
+    "lint-staged": "^13.0.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-measure": "^2.5.2",
+    "react-scripts": "5.0.1"
   },
   "devDependencies": {
-    "@types/node": "^13.13.2",
-    "@types/react": "^16.9.34",
-    "@types/react-dom": "^16.9.6",
+    "@types/node": "^16.11.58",
+    "@types/react": "^18.0.18",
+    "@types/react-dom": "^18.0.6",
     "@types/tape": "^4.13.0",
-    "babel-preset-env": "^1.7.0",
-    "babel-preset-react": "^6.24.1",
+    "@typescript-eslint/eslint-plugin": "^5.36.2",
+    "@typescript-eslint/parser": "^5.36.2",
+    "eslint": "^8.23.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-react": "^7.31.8",
+    "eslint-plugin-react-hooks": "^4.6.0",
     "identity-obj-proxy": "^3.0.0",
     "istanbul": "^0.4.5",
     "nyc": "^15.0.1",
     "prettier": "^2.0.5",
     "tape": "^4.13.2",
     "ts-node": "^8.9.0",
-    "tslint": "^6.1.1",
-    "tslint-config-prettier": "^1.18.0",
-    "tslint-plugin-prettier": "^2.3.0",
     "typescript": "^4.4.2"
   },
   "lint-staged": {
@@ -51,15 +52,18 @@
       "pretty:fix"
     ]
   },
-  "resolutions": {
-    "chalk": "^2.4.2",
-    "node-forge": ">=0.10.0",
-    "yargs-parser": ">=13.1.2",
-    "dot-prop": ">=4.2.1",
-    "lodash": ">=4.17.19",
-    "serialize-javascript": ">=3.1.0",
-    "js-yaml": ">=3.13.1",
-    "webpack-dev-server": "^2.11.4",
-    "mem": ">=4.0.0"
+  "browserslist": {
+    "production": [
+      "chrome >= 67",
+      "edge >= 79",
+      "firefox >= 68",
+      "opera >= 54",
+      "safari >= 14"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }

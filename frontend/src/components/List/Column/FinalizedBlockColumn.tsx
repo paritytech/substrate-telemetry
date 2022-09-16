@@ -15,12 +15,12 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import * as React from 'react';
-import { Column } from './';
+import { ColumnProps } from './';
 import { Node } from '../../../state';
 import { formatNumber } from '../../../utils';
 import icon from '../../../icons/cube-alt.svg';
 
-export class FinalizedBlockColumn extends React.Component<Column.Props, {}> {
+export class FinalizedBlockColumn extends React.Component<ColumnProps> {
   public static readonly label = 'Finalized Block';
   public static readonly icon = icon;
   public static readonly width = 88;
@@ -29,7 +29,7 @@ export class FinalizedBlockColumn extends React.Component<Column.Props, {}> {
 
   private data = 0;
 
-  public shouldComponentUpdate(nextProps: Column.Props) {
+  public shouldComponentUpdate(nextProps: ColumnProps) {
     return this.data !== nextProps.node.finalized;
   }
 

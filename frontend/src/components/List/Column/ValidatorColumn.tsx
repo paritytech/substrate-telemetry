@@ -16,12 +16,12 @@
 
 import * as React from 'react';
 import { Maybe } from '../../../common';
-import { Column } from './';
+import { ColumnProps } from './';
 import { Node } from '../../../state';
-import { Tooltip, PolkadotIcon } from '../../';
+import { Tooltip, PolkadotIcon, TooltipCopyCallback } from '../../';
 import icon from '../../../icons/shield.svg';
 
-export class ValidatorColumn extends React.Component<Column.Props, {}> {
+export class ValidatorColumn extends React.Component<ColumnProps> {
   public static readonly label = 'Validator';
   public static readonly icon = icon;
   public static readonly width = 16;
@@ -29,9 +29,9 @@ export class ValidatorColumn extends React.Component<Column.Props, {}> {
   public static readonly sortBy = ({ validator }: Node) => validator || '';
 
   private data: Maybe<string>;
-  private copy: Maybe<Tooltip.CopyCallback>;
+  private copy: Maybe<TooltipCopyCallback>;
 
-  public shouldComponentUpdate(nextProps: Column.Props) {
+  public shouldComponentUpdate(nextProps: ColumnProps) {
     return this.data !== nextProps.node.validator;
   }
 
@@ -56,7 +56,7 @@ export class ValidatorColumn extends React.Component<Column.Props, {}> {
     );
   }
 
-  private onCopy = (copy: Tooltip.CopyCallback) => {
+  private onCopy = (copy: TooltipCopyCallback) => {
     this.copy = copy;
   };
 

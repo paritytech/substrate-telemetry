@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import * as React from 'react';
-import { Column } from './';
+import { ColumnProps } from './';
 import { Node } from '../../../state';
 import { Tooltip, Icon } from '../../';
 import icon from '../../../icons/terminal.svg';
@@ -69,7 +69,7 @@ const ICONS = {
 };
 const SEMVER_PATTERN = /^\d+\.\d+\.\d+/;
 
-export class ImplementationColumn extends React.Component<Column.Props, {}> {
+export class ImplementationColumn extends React.Component<ColumnProps> {
   public static readonly label = 'Implementation';
   public static readonly icon = icon;
   public static readonly width = 90;
@@ -80,7 +80,7 @@ export class ImplementationColumn extends React.Component<Column.Props, {}> {
   private implementation: string;
   private version: string;
 
-  public shouldComponentUpdate(nextProps: Column.Props) {
+  public shouldComponentUpdate(nextProps: ColumnProps) {
     if (this.props.node === nextProps.node) {
       // Implementation can't change unless we got a new node
       return false;

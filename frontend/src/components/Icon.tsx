@@ -18,12 +18,10 @@ import * as React from 'react';
 import './Icon.css';
 import { getSVGShadowRoot, W3SVG } from '../utils';
 
-export namespace Icon {
-  export interface Props {
-    src: string;
-    className?: string;
-    onClick?: () => void;
-  }
+interface IconProps {
+  src: string;
+  className?: string;
+  onClick?: () => void;
 }
 
 const symbols = new Map<string, string>();
@@ -67,10 +65,10 @@ function renderShadowIcon(src: string): string {
   return symbol;
 }
 
-export class Icon extends React.Component<Icon.Props, {}> {
-  public props: Icon.Props;
+export class Icon extends React.Component<IconProps> {
+  public props: IconProps;
 
-  public shouldComponentUpdate(nextProps: Icon.Props) {
+  public shouldComponentUpdate(nextProps: IconProps) {
     return (
       this.props.src !== nextProps.src ||
       this.props.className !== nextProps.className

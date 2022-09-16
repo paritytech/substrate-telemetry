@@ -17,7 +17,11 @@
 import * as React from 'react';
 import { Connection } from '../../Connection';
 import { Types, Maybe } from '../../common';
-import { State as AppState, Update as AppUpdate } from '../../state';
+import {
+  State as AppState,
+  Update as AppUpdate,
+  StateSettings,
+} from '../../state';
 import { getHashData } from '../../utils';
 import { Header } from './';
 import { List, Map, Settings, Stats } from '../';
@@ -25,28 +29,26 @@ import { Persistent, PersistentObject, PersistentSet } from '../../persist';
 
 import './Chain.css';
 
-export namespace Chain {
-  export type Display = 'list' | 'map' | 'settings' | 'consensus' | 'stats';
+export type ChainDisplay = 'list' | 'map' | 'settings' | 'consensus' | 'stats';
 
-  export interface Props {
-    appState: Readonly<AppState>;
-    appUpdate: AppUpdate;
-    connection: Promise<Connection>;
-    settings: PersistentObject<AppState.Settings>;
-    pins: PersistentSet<Types.NodeName>;
-    sortBy: Persistent<Maybe<number>>;
-  }
-
-  export interface State {
-    display: Display;
-  }
+interface ChainProps {
+  appState: Readonly<AppState>;
+  appUpdate: AppUpdate;
+  connection: Promise<Connection>;
+  settings: PersistentObject<StateSettings>;
+  pins: PersistentSet<Types.NodeName>;
+  sortBy: Persistent<Maybe<number>>;
 }
 
-export class Chain extends React.Component<Chain.Props, Chain.State> {
-  constructor(props: Chain.Props) {
+interface ChainState {
+  display: ChainDisplay;
+}
+
+export class Chain extends React.Component<ChainProps, ChainState> {
+  constructor(props: ChainProps) {
     super(props);
 
-    let display: Chain.Display = 'list';
+    let display: ChainDisplay = 'list';
 
     switch (getHashData().tab) {
       case 'map':
@@ -91,7 +93,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
       return <Settings settings={this.props.settings} />;
     }
 
-    const { appState, appUpdate, connection, pins, sortBy } = this.props;
+    const { appState, appUpdate, pins, sortBy } = this.props;
 
     if (display === 'list') {
       return (
@@ -115,7 +117,7 @@ export class Chain extends React.Component<Chain.Props, Chain.State> {
     throw new Error('invalid `display`: ${display}');
   }
 
-  private setDisplay = (display: Chain.Display) => {
+  private setDisplay = (display: ChainDisplay) => {
     this.setState({ display });
   };
 }

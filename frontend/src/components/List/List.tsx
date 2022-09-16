@@ -29,25 +29,18 @@ const ROW_MARGIN = 5;
 
 import './List.css';
 
-export namespace List {
-  export interface Props {
-    appState: Readonly<AppState>;
-    appUpdate: AppUpdate;
-    pins: PersistentSet<Types.NodeName>;
-    sortBy: Persistent<Maybe<number>>;
-  }
-
-  export interface State {
-    filter: Maybe<(node: Node) => boolean>;
-    viewportHeight: number;
-  }
+interface ListProps {
+  appState: Readonly<AppState>;
+  appUpdate: AppUpdate;
+  pins: PersistentSet<Types.NodeName>;
+  sortBy: Persistent<Maybe<number>>;
 }
 
 // Helper for readability, used as `key` prop for each `Row`
 // of the `List`, so that we can maximize re-using DOM elements.
 type Key = number;
 
-export class List extends React.Component<List.Props, {}> {
+export class List extends React.Component<ListProps> {
   public state = {
     filter: null,
     viewportHeight: viewport().height,

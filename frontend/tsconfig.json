@@ -4,7 +4,11 @@
     "outDir": "build",
     "module": "esnext",
     "target": "ES2017",
-    "lib": ["es6", "dom"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "sourceMap": true,
     "allowJs": false,
     "jsx": "react",
@@ -25,5 +29,5 @@
     "skipLibCheck": true
   },
   "exclude": ["node_modules", "build"],
-  "include": ["src/**/*.ts", "src/**/*.tsx", "declarations/**/*.d.ts"]
+  "include": ["src", "declarations/**/*.d.ts"]
 }

@@ -23,16 +23,14 @@ import { Persistent } from '../../persist';
 import sortAscIcon from '../../icons/triangle-up.svg';
 import sortDescIcon from '../../icons/triangle-down.svg';
 
-export namespace THeadCell {
-  export interface Props {
-    column: Column;
-    index: number;
-    last: number;
-    sortBy: Persistent<Maybe<number>>;
-  }
+interface THeadCellProps {
+  column: Column;
+  index: number;
+  last: number;
+  sortBy: Persistent<Maybe<number>>;
 }
 
-export class THeadCell extends React.Component<THeadCell.Props, {}> {
+export class THeadCell extends React.Component<THeadCellProps> {
   public render() {
     const { column, index, last } = this.props;
     const { icon, width, label } = column;

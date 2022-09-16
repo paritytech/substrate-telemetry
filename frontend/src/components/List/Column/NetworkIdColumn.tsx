@@ -16,13 +16,13 @@
 
 import * as React from 'react';
 import { Maybe } from '../../../common';
-import { Column } from './';
+import { ColumnProps } from './';
 import { Node } from '../../../state';
 import { Truncate } from '../../';
 import { Tooltip } from '../../';
 import icon from '../../../icons/fingerprint.svg';
 
-export class NetworkIdColumn extends React.Component<Column.Props, {}> {
+export class NetworkIdColumn extends React.Component<ColumnProps> {
   public static readonly label = 'Network ID';
   public static readonly icon = icon;
   public static readonly width = 90;
@@ -31,7 +31,7 @@ export class NetworkIdColumn extends React.Component<Column.Props, {}> {
 
   private data: Maybe<string>;
 
-  public shouldComponentUpdate(nextProps: Column.Props) {
+  public shouldComponentUpdate(nextProps: ColumnProps) {
     return this.data !== nextProps.node.networkId;
   }
 

@@ -21,23 +21,21 @@ import { Persistent } from '../../persist';
 
 import './THead.css';
 
-export namespace THead {
-  export interface Props {
-    columns: Column[];
-    sortBy: Persistent<Maybe<number>>;
-  }
+interface THeadProps {
+  columns: Column[];
+  sortBy: Persistent<Maybe<number>>;
 }
 
-export class THead extends React.Component<THead.Props, {}> {
+export class THead extends React.Component<THeadProps> {
   private sortBy: Maybe<number>;
 
-  constructor(props: THead.Props) {
+  constructor(props: THeadProps) {
     super(props);
 
     this.sortBy = props.sortBy.get();
   }
 
-  public shouldComponentUpdate(nextProps: THead.Props) {
+  public shouldComponentUpdate(nextProps: THeadProps) {
     return this.sortBy !== nextProps.sortBy.get();
   }
 

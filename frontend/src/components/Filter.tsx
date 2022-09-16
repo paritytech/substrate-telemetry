@@ -23,19 +23,17 @@ import searchIcon from '../icons/search.svg';
 
 import './Filter.css';
 
-export namespace Filter {
-  export interface Props {
-    onChange: (value: Maybe<(node: Node) => boolean>) => void;
-  }
+interface FilterProps {
+  onChange: (value: Maybe<(node: Node) => boolean>) => void;
+}
 
-  export interface State {
-    value: string;
-  }
+interface FilterState {
+  value: string;
 }
 
 const ESCAPE_KEY = 27;
 
-export class Filter extends React.Component<Filter.Props, {}> {
+export class Filter extends React.Component<FilterProps, FilterState> {
   public state = {
     value: '',
   };
@@ -51,8 +49,8 @@ export class Filter extends React.Component<Filter.Props, {}> {
   }
 
   public shouldComponentUpdate(
-    nextProps: Filter.Props,
-    nextState: Filter.State
+    nextProps: FilterProps,
+    nextState: FilterState
   ): boolean {
     return (
       this.props.onChange !== nextProps.onChange ||
@@ -110,6 +108,7 @@ export class Filter extends React.Component<Filter.Props, {}> {
       return;
     }
     // Ignore events dispatched to other elements that want to use it
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (['INPUT', 'TEXTAREA'].includes((event.target as any)?.tagName)) {
       return;
     }

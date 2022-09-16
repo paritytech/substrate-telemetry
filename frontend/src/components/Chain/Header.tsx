@@ -17,7 +17,7 @@
 import * as React from 'react';
 import { Types, Maybe } from '../../common';
 import { formatNumber, secondsWithPrecision } from '../../utils';
-import { Tab, Chain } from './';
+import { Tab, ChainDisplay } from './';
 import { Tile, Ago } from '../';
 
 import blockIcon from '../../icons/cube.svg';
@@ -27,24 +27,21 @@ import lastTimeIcon from '../../icons/watch.svg';
 import listIcon from '../../icons/list-alt-regular.svg';
 import worldIcon from '../../icons/location.svg';
 import settingsIcon from '../../icons/settings.svg';
-import consensusIcon from '../../icons/cube-alt.svg';
 import statsIcon from '../../icons/graph.svg';
 
 import './Header.css';
 
-export namespace Header {
-  export interface Props {
-    best: Types.BlockNumber;
-    finalized: Types.BlockNumber;
-    blockTimestamp: Types.Timestamp;
-    blockAverage: Maybe<Types.Milliseconds>;
-    currentTab: Chain.Display;
-    setDisplay: (display: Chain.Display) => void;
-  }
+interface HeaderProps {
+  best: Types.BlockNumber;
+  finalized: Types.BlockNumber;
+  blockTimestamp: Types.Timestamp;
+  blockAverage: Maybe<Types.Milliseconds>;
+  currentTab: ChainDisplay;
+  setDisplay: (display: ChainDisplay) => void;
 }
 
-export class Header extends React.Component<Header.Props, {}> {
-  public shouldComponentUpdate(nextProps: Header.Props) {
+export class Header extends React.Component<HeaderProps> {
+  public shouldComponentUpdate(nextProps: HeaderProps) {
     return (
       this.props.best !== nextProps.best ||
       this.props.finalized !== nextProps.finalized ||

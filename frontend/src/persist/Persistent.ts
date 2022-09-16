@@ -43,7 +43,8 @@ export class Persistent<Data> {
 
     window.addEventListener('storage', (event) => {
       if (event.key === this.key) {
-        this.value = parse((event.newValue as any) as Stringified<Data>);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        this.value = parse(event.newValue as any as Stringified<Data>);
 
         this.onChange(this.value);
       }
@@ -58,7 +59,8 @@ export class Persistent<Data> {
     this.value = value;
     window.localStorage.setItem(
       this.key,
-      (stringify(this.value) as any) as string
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      stringify(this.value) as any as string
     );
     this.onChange(this.value);
   }

@@ -16,21 +16,19 @@
 
 import * as React from 'react';
 import { Icon } from '../';
-import { State } from '../../state';
+import { StateSettings } from '../../state';
 import { PersistentObject } from '../../persist';
 
 import './Setting.css';
 
-export namespace Setting {
-  export interface Props {
-    icon: string;
-    label: string;
-    setting: keyof State.Settings;
-    settings: PersistentObject<State.Settings>;
-  }
+interface SettingProps {
+  icon: string;
+  label: string;
+  setting: keyof StateSettings;
+  settings: PersistentObject<StateSettings>;
 }
 
-export class Setting extends React.Component<Setting.Props, {}> {
+export class Setting extends React.Component<SettingProps> {
   public render() {
     const { icon, label, setting, settings } = this.props;
 

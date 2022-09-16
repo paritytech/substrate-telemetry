@@ -26,7 +26,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
   display: inline-block;
 }
 
-.Icon svg, .Icon-symbol-root symbol {
+.Icon svg,
+.Icon-symbol-root symbol {
   width: 1em;
   height: 1em;
 }

@@ -15,24 +15,22 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import * as React from 'react';
-import { Chain } from './';
+import { ChainDisplay } from './';
 import { Icon } from '../';
 import { setHashData } from '../../utils';
 
 import './Tab.css';
 
-export namespace Tab {
-  export interface Props {
-    label: string;
-    icon: string;
-    display: Chain.Display;
-    current: string;
-    tab: string;
-    setDisplay: (display: Chain.Display) => void;
-  }
+interface TabProps {
+  label: string;
+  icon: string;
+  display: ChainDisplay;
+  current: string;
+  tab: string;
+  setDisplay: (display: ChainDisplay) => void;
 }
 
-export class Tab extends React.Component<Tab.Props, {}> {
+export class Tab extends React.Component<TabProps> {
   public render() {
     const { label, icon, display, current } = this.props;
     const highlight = display === current;

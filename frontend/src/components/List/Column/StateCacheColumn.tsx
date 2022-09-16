@@ -15,13 +15,12 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import * as React from 'react';
-import { Types, Maybe, timestamp } from '../../../common';
-import { Column, BANDWIDTH_SCALE } from './';
+import { ColumnProps, formatBytes, BANDWIDTH_SCALE } from './';
 import { Node } from '../../../state';
 import { Sparkline } from '../../';
 import icon from '../../../icons/git-branch.svg';
 
-export class StateCacheColumn extends React.Component<Column.Props, {}> {
+export class StateCacheColumn extends React.Component<ColumnProps> {
   public static readonly label = 'State Cache Size';
   public static readonly icon = icon;
   public static readonly width = 40;
@@ -31,7 +30,7 @@ export class StateCacheColumn extends React.Component<Column.Props, {}> {
 
   private data: Array<number> = [];
 
-  public shouldComponentUpdate(nextProps: Column.Props) {
+  public shouldComponentUpdate(nextProps: ColumnProps) {
     // Diffing by ref, as data is an immutable array
     return this.data !== nextProps.node.stateCacheSize;
   }
@@ -51,7 +50,7 @@ export class StateCacheColumn extends React.Component<Column.Props, {}> {
           width={44}
           height={16}
           stroke={1}
-          format={Column.formatBytes}
+          format={formatBytes}
           values={stateCacheSize}
           stamps={chartstamps}
           minScale={BANDWIDTH_SCALE}

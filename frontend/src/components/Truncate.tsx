@@ -16,15 +16,13 @@
 
 import * as React from 'react';
 
-export namespace Truncate {
-  export interface Props {
-    text: string;
-    chars?: number;
-  }
+interface TruncateProps {
+  text: string;
+  chars?: number;
 }
 
-export class Truncate extends React.Component<Truncate.Props, {}> {
-  public shouldComponentUpdate(nextProps: Truncate.Props): boolean {
+export class Truncate extends React.Component<TruncateProps> {
+  public shouldComponentUpdate(nextProps: TruncateProps): boolean {
     return this.props.text !== nextProps.text;
   }
 

@@ -15,28 +15,18 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import * as React from 'react';
-import { Maybe } from '../../common';
-import { State as AppState } from '../../state';
+import { StateSettings } from '../../state';
 import { Setting } from './';
 import { Row } from '../List';
 import { PersistentObject } from '../../persist';
 
 import './Settings.css';
 
-export namespace Settings {
-  export type Display = 'list' | 'map' | 'settings';
-
-  export interface Props {
-    settings: PersistentObject<AppState.Settings>;
-  }
-
-  export interface State {
-    display: Display;
-    filter: Maybe<string>;
-  }
+interface SettingsProps {
+  settings: PersistentObject<StateSettings>;
 }
 
-export class Settings extends React.Component<Settings.Props, {}> {
+export class Settings extends React.Component<SettingsProps> {
   public render() {
     const { settings } = this.props;
 
