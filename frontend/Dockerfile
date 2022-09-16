@@ -1,5 +1,5 @@
 #### BUILDER IMAGE  ####
-FROM docker.io/node:12 as builder
+FROM docker.io/node:14 as builder
 LABEL maintainer="Chevdor <chevdor@gmail.com>"
 LABEL description="Substrate Telemetry Frontend builder image"
 
