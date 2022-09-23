@@ -43,7 +43,7 @@ where
     cache.insert(
         Ipv4Addr::new(127, 0, 0, 1).into(),
         Arc::new(NodeLocation {
-            latitude: 52.516_6667,
+            latitude: 52.516_666,
             longitude: 13.4,
             city: "Berlin".into(),
         }),
@@ -103,7 +103,7 @@ impl Locator {
             return cached_loc;
         }
 
-        let City { city, location, .. } = self.city.lookup(ip.into()).ok()?;
+        let City { city, location, .. } = self.city.lookup(ip).ok()?;
         let city = city
             .as_ref()?
             .names

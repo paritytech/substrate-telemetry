@@ -104,8 +104,8 @@ pub async fn start_server(
     if let Ok(feed_host) = std::env::var("TELEMETRY_FEED_HOST") {
         let feed_host = feed_host.trim().into();
         let submit_hosts: Vec<_> = std::env::var("TELEMETRY_SUBMIT_HOSTS")
-            .map(|var| var.split(",").map(|var| var.trim().into()).collect())
-            .unwrap_or(Vec::new());
+            .map(|var| var.split(',').map(|var| var.trim().into()).collect())
+            .unwrap_or_default();
         return Server::start(server::StartOpts::ConnectToExisting {
             feed_host,
             submit_hosts,
@@ -117,7 +117,7 @@ pub async fn start_server(
 
     // Build the shard command
     let mut shard_command = std::env::var("TELEMETRY_SHARD_BIN")
-        .map(|val| Command::new(val))
+        .map(Command::new)
         .unwrap_or_else(|_| {
             commands::cargo_run_telemetry_shard(server_opts.release_mode)
                 .expect("must be in rust workspace to run shard command")
@@ -145,7 +145,7 @@ pub async fn start_server(
 
     // Build the core command
     let mut core_command = std::env::var("TELEMETRY_CORE_BIN")
-        .map(|val| Command::new(val))
+        .map(Command::new)
         .unwrap_or_else(|_| {
             commands::cargo_run_telemetry_core(server_opts.release_mode)
                 .expect("must be in rust workspace to run core command")

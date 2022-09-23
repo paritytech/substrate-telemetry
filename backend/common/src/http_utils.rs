@@ -134,7 +134,7 @@ fn generate_websocket_accept_key<'a>(key: &[u8], buf: &'a mut [u8; 32]) -> &'a [
     digest.update(KEY);
     let d = digest.finalize();
 
-    let n = base64::encode_config_slice(&d, base64::STANDARD, buf);
+    let n = base64::encode_config_slice(d, base64::STANDARD, buf);
     &buf[..n]
 }
 

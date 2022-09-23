@@ -229,8 +229,8 @@ async fn run_soak_test(opts: SoakTestOpts) {
 
 /// Return an iterator of `total` unique chain names.
 fn chain_names(total: usize) -> impl Iterator<Item = String> {
-    static CHAIN_STARTS: [&'static str; 5] = ["Polkadot", "Kusama", "Khala", "Wibble", "Moonbase"];
-    static CHAIN_ENDS: [&'static str; 6] = ["", " Testnet", " Main", "-Dev", "Alpha", "Beta"];
+    static CHAIN_STARTS: [&str; 5] = ["Polkadot", "Kusama", "Khala", "Wibble", "Moonbase"];
+    static CHAIN_ENDS: [&str; 6] = ["", " Testnet", " Main", "-Dev", "Alpha", "Beta"];
 
     let mut count = 0;
     let mut s_n = 0;

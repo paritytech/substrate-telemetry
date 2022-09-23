@@ -127,7 +127,7 @@ pub enum FeedMessage {
     },
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct NodeDetails {
     pub name: String,
     pub implementation: String,

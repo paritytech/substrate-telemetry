@@ -253,11 +253,7 @@ mod test {
         // Regardless of the exact time that's elapsed, we'll end up with buckets that
         // are exactly granularity spacing (or multiples of) apart.
         assert_eq!(
-            rolling_total
-                .averages()
-                .into_iter()
-                .copied()
-                .collect::<Vec<_>>(),
+            rolling_total.averages().iter().copied().collect::<Vec<_>>(),
             vec![
                 (start_time, 1),
                 (start_time + granularity, 2),

@@ -48,7 +48,7 @@ impl Stream for Receiver {
         mut self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Option<Self::Item>> {
-        self.inner.poll_next_unpin(cx).map_err(|e| e.into())
+        self.inner.poll_next_unpin(cx).map_err(|e| e)
     }
 }
 

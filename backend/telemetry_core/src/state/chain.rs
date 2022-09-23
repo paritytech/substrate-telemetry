@@ -197,8 +197,8 @@ impl Chain {
                 Payload::AfgAuthoritySet(authority) => {
                     // If our node validator address (and thus details) change, send an
                     // updated "add node" feed message:
-                    if node.set_validator_address(authority.authority_id.clone()) {
-                        feed.push(feed_message::AddedNode(nid.into(), &node));
+                    if node.set_validator_address(authority.authority_id) {
+                        feed.push(feed_message::AddedNode(nid.into(), node));
                     }
                     return;
                 }
@@ -370,7 +370,7 @@ impl Chain {
         self.nodes.as_slice()
     }
     pub fn label(&self) -> &str {
-        &self.labels.best()
+        self.labels.best()
     }
     pub fn node_count(&self) -> usize {
         self.nodes.len()

@@ -139,7 +139,7 @@ impl FromStr for FromFeedWebsocket {
             "subscribe" => Ok(FromFeedWebsocket::Subscribe {
                 chain: value.parse()?,
             }),
-            _ => return Err(anyhow::anyhow!("Command {} not recognised", cmd)),
+            _ => Err(anyhow::anyhow!("Command {} not recognised", cmd)),
         }
     }
 }
@@ -235,16 +235,16 @@ impl InnerLoop {
             // ignore node updates if we have too many messages to handle, in an attempt
             // to reduce the queue length back to something reasonable, lest it get out of
             // control and start consuming a load of memory.
-            if metered_tx.len() > max_queue_len {
-                if matches!(
+            if metered_tx.len() > max_queue_len
+                && matches!(
                     msg,
                     ToAggregator::FromShardWebsocket(.., FromShardWebsocket::Update { .. })
-                ) {
-                    // Note: this wraps on overflow (which is probably the best
-                    // behaviour for graphing it anyway)
-                    dropped_messages.fetch_add(1, Ordering::Relaxed);
-                    continue;
-                }
+                )
+            {
+                // Note: this wraps on overflow (which is probably the best
+                // behaviour for graphing it anyway)
+                dropped_messages.fetch_add(1, Ordering::Relaxed);
+                continue;
             }
 
             if let Err(e) = metered_tx.send(msg) {
@@ -359,7 +359,7 @@ impl InnerLoop {
                         let mut feed_messages_for_chain = FeedMessageSerializer::new();
                         feed_messages_for_chain.push(feed_message::AddedNode(
                             node_id.get_chain_node_id().into(),
-                            &details.node,
+                            details.node,
                         ));
                         self.finalize_and_broadcast_to_chain_feeds(
                             &genesis_hash,

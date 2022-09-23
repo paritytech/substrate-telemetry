@@ -103,7 +103,7 @@ pub fn benchmark_subscribe_speed(c: &mut Criterion) {
                 let start = Instant::now();
                 loop {
                     let msgs = feeds[0].1.recv_feed_messages_once().await.unwrap();
-                    if msgs.iter().find(|&m| m == &finished).is_some() {
+                    if msgs.iter().any(|m| m == &finished) {
                         break;
                     }
                 }

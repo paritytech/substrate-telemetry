@@ -68,7 +68,7 @@ where
 
     pub fn remove_by_details(&mut self, details: &Details) -> Option<Id> {
         self.mapping
-            .remove_by_right(&details)
+            .remove_by_right(details)
             .map(|(id, _)| id.into())
     }
 

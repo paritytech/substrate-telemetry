@@ -365,13 +365,11 @@ where
                 }
                 // Anything that's not an "Add" is an Update. The aggregator will ignore
                 // updates against a message_id that hasn't first been Added, above.
-                else {
-                    if let Some(last_seen) = allowed_message_ids.get_mut(&message_id) {
-                        *last_seen = Instant::now();
-                        if let Err(e) = tx_to_aggregator.send(FromWebsocket::Update { message_id, payload } ).await {
-                            log::error!("Failed to send node message to aggregator: {}", e);
-                            continue;
-                        }
+                else if let Some(last_seen) = allowed_message_ids.get_mut(&message_id) {
+                    *last_seen = Instant::now();
+                    if let Err(e) = tx_to_aggregator.send(FromWebsocket::Update { message_id, payload } ).await {
+                        log::error!("Failed to send node message to aggregator: {}", e);
+                        continue;
                     }
                 }
             }

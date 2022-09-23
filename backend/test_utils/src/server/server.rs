@@ -191,7 +191,7 @@ impl Server {
 
                 let pid = shards.add_with(|id| Process {
                     id,
-                    host: format!("{}", host),
+                    host: host.to_string(),
                     handle: None,
                     _channel_type: PhantomData,
                 });
@@ -222,7 +222,7 @@ impl Server {
                 let mut child_stdout = shard_process.stdout.take().expect("shard stdout");
                 let shard_port = utils::get_port(&mut child_stdout)
                     .await
-                    .map_err(|e| Error::ErrorObtainingPort(e))?;
+                    .map_err(Error::ErrorObtainingPort)?;
 
                 // Attempt to wait until we've received word that the shard is connected to the
                 // core before continuing. If we don't wait for this, the connection may happen
@@ -332,7 +332,7 @@ impl Server {
         let mut child_stdout = child.stdout.take().expect("core stdout");
         let core_port = utils::get_port(&mut child_stdout)
             .await
-            .map_err(|e| Error::ErrorObtainingPort(e))?;
+            .map_err(Error::ErrorObtainingPort)?;
 
         // Since we're piping stdout from the child process, we need somewhere for it to go
         // else the process will get stuck when it tries to produce output:

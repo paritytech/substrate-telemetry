@@ -132,7 +132,7 @@ impl Serialize for NodeIO {
 }
 
 /// Concise block details
-#[derive(Deserialize, Serialize, Debug, Clone, Copy, PartialEq)]
+#[derive(Deserialize, Serialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Block {
     pub hash: BlockHash,
     pub height: BlockNumber,
@@ -208,7 +208,7 @@ impl<'de> Deserialize<'de> for NodeLocation {
 }
 
 /// Verbose block details
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BlockDetails {
     pub block: Block,
     pub block_time: u64,
