@@ -279,12 +279,15 @@ where
                     genesis_hash,
                 } => FromShardWebsocket::Add {
                     ip,
-                    node,
+                    node: Box::new(node),
                     genesis_hash,
                     local_id,
                 },
                 internal_messages::FromShardAggregator::UpdateNode { payload, local_id } => {
-                    FromShardWebsocket::Update { local_id, payload }
+                    FromShardWebsocket::Update {
+                        local_id,
+                        payload: Box::new(payload),
+                    }
                 }
                 internal_messages::FromShardAggregator::RemoveNode { local_id } => {
                     FromShardWebsocket::Remove { local_id }

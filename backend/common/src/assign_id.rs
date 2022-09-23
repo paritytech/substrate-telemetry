@@ -31,6 +31,17 @@ pub struct AssignId<Id, Details> {
     _id_type: std::marker::PhantomData<Id>,
 }
 
+impl<Id, Details> Default for AssignId<Id, Details>
+where
+    Details: Eq + Hash,
+    Id: From<usize> + Copy,
+    usize: From<Id>,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<Id, Details> AssignId<Id, Details>
 where
     Details: Eq + Hash,

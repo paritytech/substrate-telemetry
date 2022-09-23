@@ -50,7 +50,7 @@ where
             // Throw away any pending messages from the incoming channel so that it
             // doesn't get filled up and begin blocking while we're looping and waiting
             // for a reconnection.
-            while let Ok(_) = rx_in.try_recv() {}
+            while rx_in.try_recv().is_ok() {}
 
             // Try to connect. If connection established, we serialize and forward messages
             // to/from the core. If the external channels break, we end for good. If the internal

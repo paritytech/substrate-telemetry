@@ -502,10 +502,10 @@ impl Command {
     }
 }
 
-impl Into<TokioCommand> for Command {
-    fn into(self) -> TokioCommand {
-        let mut cmd = TokioCommand::new(self.command);
-        cmd.args(self.args);
+impl From<Command> for TokioCommand {
+    fn from(Command { command, args }: Command) -> Self {
+        let mut cmd = Self::new(command);
+        cmd.args(args);
         cmd
     }
 }

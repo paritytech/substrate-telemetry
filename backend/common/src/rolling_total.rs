@@ -27,11 +27,17 @@ pub struct RollingTotalBuilder<Time: TimeSource = SystemTimeSource> {
     time_source: Time,
 }
 
+impl Default for RollingTotalBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RollingTotalBuilder {
     /// Build a [`RollingTotal`] struct. By default,
     /// the window_size is 10s, the granularity is 1s,
     /// and system time is used.
-    pub fn new() -> RollingTotalBuilder<SystemTimeSource> {
+    pub fn new() -> Self {
         Self {
             window_size_multiple: 10,
             granularity: Duration::from_secs(1),

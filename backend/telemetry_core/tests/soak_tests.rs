@@ -83,7 +83,6 @@ async fn run_soak_test(opts: SoakTestOpts) {
         ServerOpts {
             release_mode: true,
             log_output: opts.log_output,
-            ..Default::default()
         },
         CoreOpts {
             worker_threads: opts.core_worker_threads,

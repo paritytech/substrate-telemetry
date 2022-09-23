@@ -18,54 +18,27 @@ use super::commands;
 use crate::server::{self, Command, Server};
 
 /// Options for the server
+#[derive(Default)]
 pub struct ServerOpts {
     pub release_mode: bool,
     pub log_output: bool,
 }
 
-impl Default for ServerOpts {
-    fn default() -> Self {
-        Self {
-            release_mode: false,
-            log_output: false,
-        }
-    }
-}
-
 /// Additional options to pass to the core command.
+#[derive(Default)]
 pub struct CoreOpts {
     pub feed_timeout: Option<u64>,
     pub worker_threads: Option<usize>,
     pub num_aggregators: Option<usize>,
 }
 
-impl Default for CoreOpts {
-    fn default() -> Self {
-        Self {
-            feed_timeout: None,
-            worker_threads: None,
-            num_aggregators: None,
-        }
-    }
-}
-
 /// Additional options to pass to the shard command.
+#[derive(Default)]
 pub struct ShardOpts {
     pub max_nodes_per_connection: Option<usize>,
     pub max_node_data_per_second: Option<usize>,
     pub node_block_seconds: Option<u64>,
     pub worker_threads: Option<usize>,
-}
-
-impl Default for ShardOpts {
-    fn default() -> Self {
-        Self {
-            max_nodes_per_connection: None,
-            max_node_data_per_second: None,
-            node_block_seconds: None,
-            worker_threads: None,
-        }
-    }
 }
 
 /// Start a telemetry server. We'll use `cargo run` by default, but you can also provide

@@ -134,7 +134,7 @@ mod tests {
     // know whether things can (de)serialize to bincode or not at runtime without failing unless
     // we test the different types we want to (de)serialize ourselves. We just need to test each
     // type, not each variant.
-    fn bincode_can_serialize_and_deserialize<'de, T>(item: T)
+    fn bincode_can_serialize_and_deserialize<T>(item: T)
     where
         T: Serialize + serde::de::DeserializeOwned,
     {

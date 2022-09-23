@@ -55,13 +55,13 @@ pub enum FromShardWebsocket {
     Add {
         local_id: ShardNodeId,
         ip: std::net::IpAddr,
-        node: common::node_types::NodeDetails,
+        node: Box<common::node_types::NodeDetails>,
         genesis_hash: common::node_types::BlockHash,
     },
     /// Update/pass through details about a node.
     Update {
         local_id: ShardNodeId,
-        payload: node_message::Payload,
+        payload: Box<node_message::Payload>,
     },
     /// Tell the aggregator that a node has been removed when it disconnects.
     Remove { local_id: ShardNodeId },
@@ -327,7 +327,7 @@ impl InnerLoop {
             } => {
                 // Conditionally modify the node's details to include the IP address.
                 node.ip = self.expose_node_ips.then_some(ip.to_string().into());
-                match self.node_state.add_node(genesis_hash, node) {
+                match self.node_state.add_node(genesis_hash, *node) {
                     state::AddNodeResult::ChainOnDenyList => {
                         if let Some(shard_conn) = self.shard_channels.get_mut(&shard_conn_id) {
                             let _ = shard_conn.send(ToShardWebsocket::Mute {
@@ -411,7 +411,7 @@ impl InnerLoop {
 
                 let mut feed_message_serializer = FeedMessageSerializer::new();
                 self.node_state
-                    .update_node(node_id, payload, &mut feed_message_serializer);
+                    .update_node(node_id, *payload, &mut feed_message_serializer);
 
                 if let Some(chain) = self.node_state.get_chain_by_node_id(node_id) {
                     let genesis_hash = chain.genesis_hash();

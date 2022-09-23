@@ -23,6 +23,7 @@
 /// Items are keyed by an Id, which can be any type you wish, but
 /// must be convertible to/from a `usize`. This promotes using a
 /// custom Id type to talk about items in the map.
+#[derive(Default)]
 pub struct DenseMap<Id, T> {
     /// List of retired indexes that can be re-used
     retired: Vec<usize>,
@@ -108,6 +109,7 @@ where
             .filter_map(|(id, item)| Some((id.into(), item.as_mut()?)))
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub fn into_iter(self) -> impl Iterator<Item = (Id, T)> {
         self.items
             .into_iter()

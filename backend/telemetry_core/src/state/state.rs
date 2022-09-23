@@ -322,7 +322,7 @@ mod test {
         assert_eq!(&*add_node_result.old_chain_label, "");
         assert_eq!(add_node_result.new_chain_label, "Chain One");
         assert_eq!(add_node_result.chain_node_count, 1);
-        assert_eq!(add_node_result.has_chain_label_changed, true);
+        assert!(add_node_result.has_chain_label_changed);
 
         let add_result = state.add_node(chain1_genesis, node("A", "Chain One"));
 
@@ -336,7 +336,7 @@ mod test {
         assert_eq!(&*add_node_result.old_chain_label, "Chain One");
         assert_eq!(add_node_result.new_chain_label, "Chain One");
         assert_eq!(add_node_result.chain_node_count, 2);
-        assert_eq!(add_node_result.has_chain_label_changed, false);
+        assert!(!add_node_result.has_chain_label_changed);
     }
 
     #[test]

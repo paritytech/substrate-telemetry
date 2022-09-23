@@ -19,6 +19,7 @@ mod chain_stats;
 mod counter;
 mod node;
 
+#[allow(clippy::module_inception)]
 mod state;
 
 pub use node::Node;

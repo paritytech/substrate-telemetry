@@ -205,6 +205,7 @@ async fn start_server(opts: Opts) -> anyhow::Result<()> {
 }
 
 /// This takes care of handling messages from an established socket connection.
+#[allow(clippy::too_many_arguments)]
 async fn handle_node_websocket_connection<S>(
     real_addr: IpAddr,
     ws_send: http_utils::WsSender,
@@ -359,7 +360,7 @@ where
                     let _ = tx_to_aggregator.send(FromWebsocket::Add {
                         message_id,
                         ip: real_addr,
-                        node: info.node,
+                        node: Box::new(info.node),
                         genesis_hash: info.genesis_hash,
                     }).await;
                 }
@@ -367,6 +368,7 @@ where
                 // updates against a message_id that hasn't first been Added, above.
                 else if let Some(last_seen) = allowed_message_ids.get_mut(&message_id) {
                     *last_seen = Instant::now();
+                    let payload = Box::new(payload);
                     if let Err(e) = tx_to_aggregator.send(FromWebsocket::Update { message_id, payload } ).await {
                         log::error!("Failed to send node message to aggregator: {}", e);
                         continue;
