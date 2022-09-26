@@ -147,7 +147,7 @@ impl Stream for FeedReceiver {
         mut self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Option<Self::Item>> {
-        self.0.poll_next_unpin(cx).map_err(|e| e)
+        self.0.poll_next_unpin(cx)
     }
 }
 
