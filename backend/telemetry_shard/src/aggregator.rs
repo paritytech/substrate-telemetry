@@ -65,13 +65,13 @@ pub enum FromWebsocket {
     Add {
         message_id: node_message::NodeMessageId,
         ip: std::net::IpAddr,
-        node: common::node_types::NodeDetails,
+        node: Box<common::node_types::NodeDetails>,
         genesis_hash: BlockHash,
     },
     /// Update/pass through details about a node.
     Update {
         message_id: node_message::NodeMessageId,
-        payload: node_message::Payload,
+        payload: Box<node_message::Payload>,
     },
     /// remove a node with the given message ID
     Remove {
@@ -118,7 +118,11 @@ impl Aggregator {
                     Message::Disconnected => ToAggregator::DisconnectedFromTelemetryCore,
                     Message::Data(data) => ToAggregator::FromTelemetryCore(data),
                 };
-                if let Err(_) = tx_to_aggregator2.send_async(msg_to_aggregator).await {
+                if tx_to_aggregator2
+                    .send_async(msg_to_aggregator)
+                    .await
+                    .is_err()
+                {
                     // This will close the ws channels, which themselves log messages.
                     break;
                 }
@@ -217,7 +221,7 @@ impl Aggregator {
                     let _ = tx_to_telemetry_core
                         .send_async(FromShardAggregator::AddNode {
                             ip,
-                            node,
+                            node: *node,
                             genesis_hash,
                             local_id,
                         })
@@ -248,7 +252,10 @@ impl Aggregator {
 
                     // Send the message to the telemetry core with this local ID:
                     let _ = tx_to_telemetry_core
-                        .send_async(FromShardAggregator::UpdateNode { local_id, payload })
+                        .send_async(FromShardAggregator::UpdateNode {
+                            local_id,
+                            payload: *payload,
+                        })
                         .await;
                 }
                 ToAggregator::FromWebsocket(conn_id, FromWebsocket::Remove { message_id }) => {

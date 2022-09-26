@@ -279,12 +279,15 @@ where
                     genesis_hash,
                 } => FromShardWebsocket::Add {
                     ip,
-                    node,
+                    node: Box::new(node),
                     genesis_hash,
                     local_id,
                 },
                 internal_messages::FromShardAggregator::UpdateNode { payload, local_id } => {
-                    FromShardWebsocket::Update { local_id, payload }
+                    FromShardWebsocket::Update {
+                        local_id,
+                        payload: Box::new(payload),
+                    }
                 }
                 internal_messages::FromShardAggregator::RemoveNode { local_id } => {
                     FromShardWebsocket::Remove { local_id }
@@ -525,34 +528,34 @@ async fn return_prometheus_metrics(aggregator: AggregatorSet) -> Response<hyper:
     use std::fmt::Write;
     let mut s = String::new();
     for (idx, m) in metrics.iter().enumerate() {
-        let _ = write!(
+        let _ = writeln!(
             &mut s,
-            "telemetry_core_connected_feeds{{aggregator=\"{}\"}} {} {}\n",
+            "telemetry_core_connected_feeds{{aggregator=\"{}\"}} {} {}",
             idx, m.connected_feeds, m.timestamp_unix_ms
         );
-        let _ = write!(
+        let _ = writeln!(
             &mut s,
-            "telemetry_core_connected_nodes{{aggregator=\"{}\"}} {} {}\n",
+            "telemetry_core_connected_nodes{{aggregator=\"{}\"}} {} {}",
             idx, m.connected_nodes, m.timestamp_unix_ms
         );
-        let _ = write!(
+        let _ = writeln!(
             &mut s,
-            "telemetry_core_connected_shards{{aggregator=\"{}\"}} {} {}\n",
+            "telemetry_core_connected_shards{{aggregator=\"{}\"}} {} {}",
             idx, m.connected_shards, m.timestamp_unix_ms
         );
-        let _ = write!(
+        let _ = writeln!(
             &mut s,
-            "telemetry_core_chains_subscribed_to{{aggregator=\"{}\"}} {} {}\n",
+            "telemetry_core_chains_subscribed_to{{aggregator=\"{}\"}} {} {}",
             idx, m.chains_subscribed_to, m.timestamp_unix_ms
         );
-        let _ = write!(
+        let _ = writeln!(
             &mut s,
-            "telemetry_core_subscribed_feeds{{aggregator=\"{}\"}} {} {}\n",
+            "telemetry_core_subscribed_feeds{{aggregator=\"{}\"}} {} {}",
             idx, m.subscribed_feeds, m.timestamp_unix_ms
         );
-        let _ = write!(
+        let _ = writeln!(
             &mut s,
-            "telemetry_core_total_messages_to_feeds{{aggregator=\"{}\"}} {} {}\n",
+            "telemetry_core_total_messages_to_feeds{{aggregator=\"{}\"}} {} {}",
             idx, m.total_messages_to_feeds, m.timestamp_unix_ms
         );
         let _ = write!(

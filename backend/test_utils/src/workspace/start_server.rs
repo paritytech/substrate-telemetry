@@ -18,54 +18,27 @@ use super::commands;
 use crate::server::{self, Command, Server};
 
 /// Options for the server
+#[derive(Default)]
 pub struct ServerOpts {
     pub release_mode: bool,
     pub log_output: bool,
 }
 
-impl Default for ServerOpts {
-    fn default() -> Self {
-        Self {
-            release_mode: false,
-            log_output: false,
-        }
-    }
-}
-
 /// Additional options to pass to the core command.
+#[derive(Default)]
 pub struct CoreOpts {
     pub feed_timeout: Option<u64>,
     pub worker_threads: Option<usize>,
     pub num_aggregators: Option<usize>,
 }
 
-impl Default for CoreOpts {
-    fn default() -> Self {
-        Self {
-            feed_timeout: None,
-            worker_threads: None,
-            num_aggregators: None,
-        }
-    }
-}
-
 /// Additional options to pass to the shard command.
+#[derive(Default)]
 pub struct ShardOpts {
     pub max_nodes_per_connection: Option<usize>,
     pub max_node_data_per_second: Option<usize>,
     pub node_block_seconds: Option<u64>,
     pub worker_threads: Option<usize>,
-}
-
-impl Default for ShardOpts {
-    fn default() -> Self {
-        Self {
-            max_nodes_per_connection: None,
-            max_node_data_per_second: None,
-            node_block_seconds: None,
-            worker_threads: None,
-        }
-    }
 }
 
 /// Start a telemetry server. We'll use `cargo run` by default, but you can also provide
@@ -104,8 +77,8 @@ pub async fn start_server(
     if let Ok(feed_host) = std::env::var("TELEMETRY_FEED_HOST") {
         let feed_host = feed_host.trim().into();
         let submit_hosts: Vec<_> = std::env::var("TELEMETRY_SUBMIT_HOSTS")
-            .map(|var| var.split(",").map(|var| var.trim().into()).collect())
-            .unwrap_or(Vec::new());
+            .map(|var| var.split(',').map(|var| var.trim().into()).collect())
+            .unwrap_or_default();
         return Server::start(server::StartOpts::ConnectToExisting {
             feed_host,
             submit_hosts,
@@ -117,7 +90,7 @@ pub async fn start_server(
 
     // Build the shard command
     let mut shard_command = std::env::var("TELEMETRY_SHARD_BIN")
-        .map(|val| Command::new(val))
+        .map(Command::new)
         .unwrap_or_else(|_| {
             commands::cargo_run_telemetry_shard(server_opts.release_mode)
                 .expect("must be in rust workspace to run shard command")
@@ -145,7 +118,7 @@ pub async fn start_server(
 
     // Build the core command
     let mut core_command = std::env::var("TELEMETRY_CORE_BIN")
-        .map(|val| Command::new(val))
+        .map(Command::new)
         .unwrap_or_else(|_| {
             commands::cargo_run_telemetry_core(server_opts.release_mode)
                 .expect("must be in rust workspace to run core command")

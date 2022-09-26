@@ -125,11 +125,9 @@ impl ChainStatsCollator {
     ) {
         self.version.modify(Some(&*details.version), op);
 
-        self.target_os
-            .modify(details.target_os.as_ref().map(|value| &**value), op);
+        self.target_os.modify(details.target_os.as_deref(), op);
 
-        self.target_arch
-            .modify(details.target_arch.as_ref().map(|value| &**value), op);
+        self.target_arch.modify(details.target_arch.as_deref(), op);
 
         let sysinfo = details.sysinfo.as_ref();
         self.cpu.modify(

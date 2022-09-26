@@ -19,6 +19,7 @@ use common::node_types::BlockHash;
 use common::node_types::{Block, Timestamp};
 use common::{id_type, time, DenseMap, MostSeen, NumStats};
 use once_cell::sync::Lazy;
+use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::str::FromStr;
 use std::time::{Duration, Instant};
@@ -197,8 +198,8 @@ impl Chain {
                 Payload::AfgAuthoritySet(authority) => {
                     // If our node validator address (and thus details) change, send an
                     // updated "add node" feed message:
-                    if node.set_validator_address(authority.authority_id.clone()) {
-                        feed.push(feed_message::AddedNode(nid.into(), &node));
+                    if node.set_validator_address(authority.authority_id) {
+                        feed.push(feed_message::AddedNode(nid.into(), node));
                     }
                     return;
                 }
@@ -252,30 +253,34 @@ impl Chain {
         };
 
         if node.update_block(*block) {
-            if block.height > self.best.height {
-                self.best = *block;
-                log::debug!(
-                    "[{}] [nodes={}] new best block={}/{:?}",
-                    self.labels.best(),
-                    nodes_len,
-                    self.best.height,
-                    self.best.hash,
-                );
-                if let Some(timestamp) = self.timestamp {
-                    self.block_times.push(now.saturating_sub(timestamp));
-                    self.average_block_time = Some(self.block_times.average());
+            match block.height.cmp(&self.best.height) {
+                Ordering::Greater => {
+                    self.best = *block;
+                    log::debug!(
+                        "[{}] [nodes={}] new best block={}/{:?}",
+                        self.labels.best(),
+                        nodes_len,
+                        self.best.height,
+                        self.best.hash,
+                    );
+                    if let Some(timestamp) = self.timestamp {
+                        self.block_times.push(now.saturating_sub(timestamp));
+                        self.average_block_time = Some(self.block_times.average());
+                    }
+                    self.timestamp = Some(now);
+                    feed.push(feed_message::BestBlock(
+                        self.best.height,
+                        now,
+                        self.average_block_time,
+                    ));
+                    propagation_time = Some(0);
                 }
-                self.timestamp = Some(now);
-                feed.push(feed_message::BestBlock(
-                    self.best.height,
-                    now,
-                    self.average_block_time,
-                ));
-                propagation_time = Some(0);
-            } else if block.height == self.best.height {
-                if let Some(timestamp) = self.timestamp {
-                    propagation_time = Some(now.saturating_sub(timestamp));
+                Ordering::Equal => {
+                    if let Some(timestamp) = self.timestamp {
+                        propagation_time = Some(now.saturating_sub(timestamp))
+                    }
                 }
+                Ordering::Less => (),
             }
 
             if let Some(details) = node.update_details(now, propagation_time) {
@@ -370,7 +375,7 @@ impl Chain {
         self.nodes.as_slice()
     }
     pub fn label(&self) -> &str {
-        &self.labels.best()
+        self.labels.best()
     }
     pub fn node_count(&self) -> usize {
         self.nodes.len()

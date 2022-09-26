@@ -115,7 +115,7 @@ impl Connection {
                 let msg = match message_data {
                     soketto::Data::Binary(_) => Ok(RecvMessage::Binary(data)),
                     soketto::Data::Text(_) => String::from_utf8(data)
-                        .map(|s| RecvMessage::Text(s))
+                        .map(RecvMessage::Text)
                         .map_err(|e| e.into()),
                 };
 
@@ -249,7 +249,7 @@ pub async fn connect(uri: &http::Uri) -> Result<Connection, ConnectError> {
     let socket = may_connect_tls(socket, host, scheme == "https" || scheme == "wss").await?;
 
     // Establish a WS connection:
-    let mut client = Client::new(socket.compat(), host, &path);
+    let mut client = Client::new(socket.compat(), host, path);
     let (ws_to_connection, ws_from_connection) = match client.handshake().await? {
         ServerResponse::Accepted { .. } => client.into_builder().finish(),
         ServerResponse::Redirect { status_code, .. } => {

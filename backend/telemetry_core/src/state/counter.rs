@@ -40,7 +40,7 @@ where
     K: Sized + std::hash::Hash + Eq,
 {
     /// Either adds or removes a single occurence of a given `key`.
-    pub fn modify<'a, Q>(&mut self, key: Option<&'a Q>, op: CounterValue)
+    pub fn modify<Q>(&mut self, key: Option<&'_ Q>, op: CounterValue)
     where
         Q: ?Sized + std::hash::Hash + Eq,
         K: std::borrow::Borrow<Q>,

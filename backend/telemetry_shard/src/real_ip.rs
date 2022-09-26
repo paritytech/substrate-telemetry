@@ -90,9 +90,9 @@ fn pick_best_ip_from_options(
         })
         .or_else(|| {
             // fall back to X-Real-IP
-            real_ip.as_ref().and_then(|val| {
+            real_ip.as_ref().map(|val| {
                 let addr = val.trim();
-                Some((addr, Source::XRealIpHeader))
+                (addr, Source::XRealIpHeader)
             })
         })
         .and_then(|(ip, source)| {
@@ -129,9 +129,7 @@ fn get_first_addr_from_forwarded_header(value: &str) -> Option<&str> {
     let first_values = value.split(',').next()?;
 
     for pair in first_values.split(';') {
-        let mut parts = pair.trim().splitn(2, '=');
-        let key = parts.next()?;
-        let value = parts.next()?;
+        let (key, value) = pair.trim().split_once('=')?;
 
         if key.to_lowercase() == "for" {
             // trim double quotes if they surround the value:
@@ -148,7 +146,7 @@ fn get_first_addr_from_forwarded_header(value: &str) -> Option<&str> {
 }
 
 fn get_first_addr_from_x_forwarded_for_header(value: &str) -> Option<&str> {
-    value.split(",").map(|val| val.trim()).next()
+    value.split(',').map(|val| val.trim()).next()
 }
 
 #[cfg(test)]

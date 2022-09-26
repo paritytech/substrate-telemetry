@@ -592,14 +592,12 @@ async fn e2e_node_banned_if_it_sends_too_much_data() {
         node_tx.is_closed()
     }
 
-    assert_eq!(
-        try_send_data(1000, 10, 1000).await,
-        false,
+    assert!(
+        !try_send_data(1000, 10, 1000).await,
         "shouldn't be closed; we didn't exceed 10x threshold"
     );
-    assert_eq!(
+    assert!(
         try_send_data(999, 10, 1000).await,
-        true,
         "should be closed; we sent just over 10x the block threshold"
     );
 }

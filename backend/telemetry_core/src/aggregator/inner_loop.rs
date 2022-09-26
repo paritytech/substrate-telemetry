@@ -55,13 +55,13 @@ pub enum FromShardWebsocket {
     Add {
         local_id: ShardNodeId,
         ip: std::net::IpAddr,
-        node: common::node_types::NodeDetails,
+        node: Box<common::node_types::NodeDetails>,
         genesis_hash: common::node_types::BlockHash,
     },
     /// Update/pass through details about a node.
     Update {
         local_id: ShardNodeId,
-        payload: node_message::Payload,
+        payload: Box<node_message::Payload>,
     },
     /// Tell the aggregator that a node has been removed when it disconnects.
     Remove { local_id: ShardNodeId },
@@ -139,7 +139,7 @@ impl FromStr for FromFeedWebsocket {
             "subscribe" => Ok(FromFeedWebsocket::Subscribe {
                 chain: value.parse()?,
             }),
-            _ => return Err(anyhow::anyhow!("Command {} not recognised", cmd)),
+            _ => Err(anyhow::anyhow!("Command {} not recognised", cmd)),
         }
     }
 }
@@ -235,16 +235,16 @@ impl InnerLoop {
             // ignore node updates if we have too many messages to handle, in an attempt
             // to reduce the queue length back to something reasonable, lest it get out of
             // control and start consuming a load of memory.
-            if metered_tx.len() > max_queue_len {
-                if matches!(
+            if metered_tx.len() > max_queue_len
+                && matches!(
                     msg,
                     ToAggregator::FromShardWebsocket(.., FromShardWebsocket::Update { .. })
-                ) {
-                    // Note: this wraps on overflow (which is probably the best
-                    // behaviour for graphing it anyway)
-                    dropped_messages.fetch_add(1, Ordering::Relaxed);
-                    continue;
-                }
+                )
+            {
+                // Note: this wraps on overflow (which is probably the best
+                // behaviour for graphing it anyway)
+                dropped_messages.fetch_add(1, Ordering::Relaxed);
+                continue;
             }
 
             if let Err(e) = metered_tx.send(msg) {
@@ -327,7 +327,7 @@ impl InnerLoop {
             } => {
                 // Conditionally modify the node's details to include the IP address.
                 node.ip = self.expose_node_ips.then_some(ip.to_string().into());
-                match self.node_state.add_node(genesis_hash, node) {
+                match self.node_state.add_node(genesis_hash, *node) {
                     state::AddNodeResult::ChainOnDenyList => {
                         if let Some(shard_conn) = self.shard_channels.get_mut(&shard_conn_id) {
                             let _ = shard_conn.send(ToShardWebsocket::Mute {
@@ -359,7 +359,7 @@ impl InnerLoop {
                         let mut feed_messages_for_chain = FeedMessageSerializer::new();
                         feed_messages_for_chain.push(feed_message::AddedNode(
                             node_id.get_chain_node_id().into(),
-                            &details.node,
+                            details.node,
                         ));
                         self.finalize_and_broadcast_to_chain_feeds(
                             &genesis_hash,
@@ -411,7 +411,7 @@ impl InnerLoop {
 
                 let mut feed_message_serializer = FeedMessageSerializer::new();
                 self.node_state
-                    .update_node(node_id, payload, &mut feed_message_serializer);
+                    .update_node(node_id, *payload, &mut feed_message_serializer);
 
                 if let Some(chain) = self.node_state.get_chain_by_node_id(node_id) {
                     let genesis_hash = chain.genesis_hash();

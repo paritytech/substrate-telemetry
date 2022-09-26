@@ -19,6 +19,7 @@ use std::hash::Hash;
 /// A map where each key can contain multiple values. We enforce that a value
 /// only ever belongs to one key at a time (the latest key it was inserted
 /// against).
+#[derive(Default)]
 pub struct MultiMapUnique<K, V> {
     value_to_key: HashMap<V, K>,
     key_to_values: HashMap<K, HashSet<V>>,
