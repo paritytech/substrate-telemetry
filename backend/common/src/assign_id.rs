@@ -47,7 +47,9 @@ where
 
     pub fn assign_id(&mut self, details: Details) -> Id {
         let this_id = self.current_id;
-        self.current_id += 1;
+        // It's very unlikely we'll ever overflow the ID limit, but in case we do,
+        // a wrapping_add will almost certainly be fine:
+        self.current_id = self.current_id.wrapping_add(1);
         self.mapping.insert(this_id, details);
         this_id.into()
     }
