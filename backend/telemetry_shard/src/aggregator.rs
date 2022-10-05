@@ -261,9 +261,14 @@ impl Aggregator {
                     // Remove references to this single node:
                     to_local_id.remove_by_id(local_id);
                     muted.remove(&local_id);
-                    let _ = tx_to_telemetry_core
-                        .send_async(FromShardAggregator::RemoveNode { local_id })
-                        .await;
+
+                    // If we're not connected to the core, don't buffer up remove messages. The core will remove
+                    // all nodes associated with this shard anyway, so the remove message would be redundant.
+                    if connected_to_telemetry_core {
+                        let _ = tx_to_telemetry_core
+                            .send_async(FromShardAggregator::RemoveNode { local_id })
+                            .await;
+                    }
                 }
                 ToAggregator::FromWebsocket(disconnected_conn_id, FromWebsocket::Disconnected) => {
                     // Find all of the local IDs corresponding to the disconnected connection ID and
@@ -280,9 +285,14 @@ impl Aggregator {
                     for local_id in local_ids_disconnected {
                         to_local_id.remove_by_id(local_id);
                         muted.remove(&local_id);
-                        let _ = tx_to_telemetry_core
-                            .send_async(FromShardAggregator::RemoveNode { local_id })
-                            .await;
+
+                        // If we're not connected to the core, don't buffer up remove messages. The core will remove
+                        // all nodes associated with this shard anyway, so the remove message would be redundant.
+                        if connected_to_telemetry_core {
+                            let _ = tx_to_telemetry_core
+                                .send_async(FromShardAggregator::RemoveNode { local_id })
+                                .await;
+                        }
                     }
                 }
                 ToAggregator::FromTelemetryCore(FromTelemetryCore::Mute {

@@ -73,7 +73,10 @@ where
     }
 
     pub fn clear(&mut self) {
-        *self = AssignId::new();
+        // Leave the `current_id` as-is. Why? To avoid reusing IDs and risking
+        // race conditions where old messages can accidentally screw with new nodes
+        // that have been assigned the same ID.
+        self.mapping = BiMap::new();
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (Id, &Details)> {

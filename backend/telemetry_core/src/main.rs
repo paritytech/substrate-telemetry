@@ -251,10 +251,7 @@ where
                 break;
             }
             if let Err(e) = msg_info {
-                log::error!(
-                    "Shutting down websocket connection: Failed to receive data: {}",
-                    e
-                );
+                log::error!("Shutting down websocket connection: Failed to receive data: {e}");
                 break;
             }
 
@@ -262,10 +259,7 @@ where
                 match bincode::options().deserialize(&bytes) {
                     Ok(msg) => msg,
                     Err(e) => {
-                        log::error!(
-                            "Failed to deserialize message from shard; booting it: {}",
-                            e
-                        );
+                        log::error!("Failed to deserialize message from shard; booting it: {e}");
                         break;
                     }
                 };
@@ -292,7 +286,7 @@ where
             };
 
             if let Err(e) = tx_to_aggregator.send(aggregator_msg).await {
-                log::error!("Failed to send message to aggregator; closing shard: {}", e);
+                log::error!("Failed to send message to aggregator; closing shard: {e}");
                 break;
             }
         }
@@ -325,13 +319,10 @@ where
                 .expect("message to shard should serialize");
 
             if let Err(e) = ws_send.send_binary(bytes).await {
-                log::error!("Failed to send message to aggregator; closing shard: {}", e)
+                log::error!("Failed to send message to aggregator; closing shard: {e}")
             }
             if let Err(e) = ws_send.flush().await {
-                log::error!(
-                    "Failed to flush message to aggregator; closing shard: {}",
-                    e
-                )
+                log::error!("Failed to flush message to aggregator; closing shard: {e}")
             }
         }
 
@@ -374,7 +365,7 @@ where
         channel: tx_to_feed_conn,
     };
     if let Err(e) = tx_to_aggregator.send(init_msg).await {
-        log::error!("Error sending message to aggregator: {}", e);
+        log::error!("Error sending message to aggregator: {e}");
         return (tx_to_aggregator, ws_send);
     }
 
@@ -399,10 +390,7 @@ where
                 break;
             }
             if let Err(e) = msg_info {
-                log::error!(
-                    "Shutting down websocket connection: Failed to receive data: {}",
-                    e
-                );
+                log::error!("Shutting down websocket connection: Failed to receive data: {e}");
                 break;
             }
 
@@ -416,16 +404,12 @@ where
             let cmd = match FromFeedWebsocket::from_str(&text) {
                 Ok(cmd) => cmd,
                 Err(e) => {
-                    log::warn!(
-                        "Ignoring invalid command '{}' from the frontend: {}",
-                        text,
-                        e
-                    );
+                    log::warn!("Ignoring invalid command '{text}' from the frontend: {e}");
                     continue;
                 }
             };
             if let Err(e) = tx_to_aggregator.send(cmd).await {
-                log::error!("Failed to send message to aggregator; closing feed: {}", e);
+                log::error!("Failed to send message to aggregator; closing feed: {e}");
                 break;
             }
         }

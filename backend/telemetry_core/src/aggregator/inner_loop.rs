@@ -248,7 +248,7 @@ impl InnerLoop {
             }
 
             if let Err(e) = metered_tx.send(msg) {
-                log::error!("Cannot send message into aggregator: {}", e);
+                log::error!("Cannot send message into aggregator: {e}");
                 break;
             }
         }
@@ -386,10 +386,11 @@ impl InnerLoop {
                 let node_id = match self.node_ids.remove_by_right(&(shard_conn_id, local_id)) {
                     Some((node_id, _)) => node_id,
                     None => {
-                        log::error!(
-                            "Cannot find ID for node with shard/connectionId of {:?}/{:?}",
-                            shard_conn_id,
-                            local_id
+                        // It's possible that some race between removing and disconnecting shards might lead to
+                        // more than one remove message for the same node. This isn't really a problem, but we
+                        // hope it won't happen so make a note if it does:
+                        log::debug!(
+                            "Remove: Cannot find ID for node with shard/connectionId of {shard_conn_id:?}/{local_id:?}"
                         );
                         return;
                     }
@@ -401,9 +402,7 @@ impl InnerLoop {
                     Some(id) => *id,
                     None => {
                         log::error!(
-                            "Cannot find ID for node with shard/connectionId of {:?}/{:?}",
-                            shard_conn_id,
-                            local_id
+                            "Update: Cannot find ID for node with shard/connectionId of {shard_conn_id:?}/{local_id:?}"
                         );
                         return;
                     }
@@ -606,7 +605,7 @@ impl InnerLoop {
         let removed_details = match self.node_state.remove_node(node_id) {
             Some(remove_details) => remove_details,
             None => {
-                log::error!("Could not find node {:?}", node_id);
+                log::error!("Could not find node {node_id:?}");
                 return;
             }
         };
