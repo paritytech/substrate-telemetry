@@ -47,7 +47,9 @@ where
 
     pub fn assign_id(&mut self, details: Details) -> Id {
         let this_id = self.current_id;
-        self.current_id += 1;
+        // It's very unlikely we'll ever overflow the ID limit, but in case we do,
+        // a wrapping_add will almost certainly be fine:
+        self.current_id = self.current_id.wrapping_add(1);
         self.mapping.insert(this_id, details);
         this_id.into()
     }
@@ -73,7 +75,10 @@ where
     }
 
     pub fn clear(&mut self) {
-        *self = AssignId::new();
+        // Leave the `current_id` as-is. Why? To avoid reusing IDs and risking
+        // race conditions where old messages can accidentally screw with new nodes
+        // that have been assigned the same ID.
+        self.mapping = BiMap::new();
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (Id, &Details)> {

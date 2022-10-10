@@ -239,7 +239,7 @@ where
         close_connection: close_connection_tx.clone(),
     };
     if let Err(e) = tx_to_aggregator.send(init_msg).await {
-        log::error!("Error sending message to aggregator: {}", e);
+        log::error!("Shutting down websocket connection from {real_addr:?}: Error sending message to aggregator: {e}");
         return (tx_to_aggregator, ws_send);
     }
 
@@ -254,7 +254,7 @@ where
                 // The close channel has fired, so end the loop. `ws_recv.receive_data` is
                 // *not* cancel safe, but since we're closing the connection we don't care.
                 _ = close_connection_rx.recv_async() => {
-                    log::info!("connection to {:?} being closed", real_addr);
+                    log::info!("connection to {real_addr:?} being closed");
                     break
                 },
                 // Receive data and relay it on to our main select loop below.
@@ -263,7 +263,7 @@ where
                         break;
                     }
                     if let Err(e) = msg_info {
-                        log::error!("Shutting down websocket connection: Failed to receive data: {}", e);
+                        log::error!("Shutting down websocket connection from {real_addr:?}: Failed to receive data: {e}");
                         break;
                     }
                     if ws_tx_atomic.unbounded_send(bytes).is_err() {
@@ -292,14 +292,14 @@ where
                     .collect();
 
                 for &message_id in &stale_ids {
-                    log::info!("Removing stale node with message ID {} from {:?}", message_id, real_addr);
+                    log::info!("Removing stale node with message ID {message_id} from {real_addr:?}");
                     allowed_message_ids.remove(&message_id);
                     let _ = tx_to_aggregator.send(FromWebsocket::Remove { message_id } ).await;
                 }
 
                 if !stale_ids.is_empty() && allowed_message_ids.is_empty() {
                     // End the entire connection if no recent messages came in for any ID.
-                    log::info!("Closing stale connection from {:?}", real_addr);
+                    log::info!("Closing stale connection from {real_addr:?}");
                     break;
                 }
             },
@@ -316,7 +316,7 @@ where
                 let this_bytes_per_second = rolling_total_bytes.total() / 10;
                 if this_bytes_per_second > bytes_per_second {
                     block_list.block_addr(real_addr, "Too much traffic");
-                    log::error!("Shutting down websocket connection: Too much traffic ({}bps averaged over last 10s)", this_bytes_per_second);
+                    log::error!("Shutting down websocket connection: Too much traffic ({this_bytes_per_second}bps averaged over last 10s)");
                     break;
                 }
 
@@ -327,7 +327,7 @@ where
                     Err(e) => {
                         let bytes: &[u8] = bytes.get(..512).unwrap_or_else(|| &bytes);
                         let msg_start = std::str::from_utf8(bytes).unwrap_or_else(|_| "INVALID UTF8");
-                        log::warn!("Failed to parse node message ({}): {}", msg_start, e);
+                        log::warn!("Failed to parse node message ({msg_start}): {e}");
                         continue;
                     },
                     #[cfg(not(debug))]
@@ -347,7 +347,7 @@ where
                 if let node_message::Payload::SystemConnected(info) = payload {
                     // Too many nodes seen on this connection? Ignore this one.
                     if allowed_message_ids.len() >= max_nodes_per_connection {
-                        log::info!("Ignoring new node from {:?} (we've hit the max of {} nodes per connection)", real_addr, max_nodes_per_connection);
+                        log::info!("Ignoring new node with ID {message_id} from {real_addr:?} (we've hit the max of {max_nodes_per_connection} nodes per connection)");
                         continue;
                     }
 
@@ -355,7 +355,7 @@ where
                     allowed_message_ids.insert(message_id, Instant::now());
 
                     // Tell the aggregator loop about the new node.
-                    log::info!("Adding node with message ID {} from {:?}", message_id, real_addr);
+                    log::info!("Adding node with message ID {message_id} from {real_addr:?}");
                     let _ = tx_to_aggregator.send(FromWebsocket::Add {
                         message_id,
                         ip: real_addr,
@@ -369,9 +369,12 @@ where
                     if let Some(last_seen) = allowed_message_ids.get_mut(&message_id) {
                         *last_seen = Instant::now();
                         if let Err(e) = tx_to_aggregator.send(FromWebsocket::Update { message_id, payload } ).await {
-                            log::error!("Failed to send node message to aggregator: {}", e);
+                            log::error!("Failed to send node message to aggregator: {e}");
                             continue;
                         }
+                    } else {
+                        log::info!("Ignoring message with ID {message_id} from {real_addr:?} (we've hit the max of {max_nodes_per_connection} nodes per connection)");
+                        continue;
                     }
                 }
             }
