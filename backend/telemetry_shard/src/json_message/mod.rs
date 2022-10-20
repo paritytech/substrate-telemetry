@@ -16,8 +16,10 @@
 
 //! This module contains the types we need to deserialize JSON messages from nodes
 
+mod alt_verifier;
 mod hash;
 mod node_message;
 
+pub use alt_verifier::*;
 pub use hash::Hash;
 pub use node_message::*;

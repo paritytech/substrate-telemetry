@@ -22,6 +22,15 @@
 use crate::node_types::{Block, BlockHash, BlockNumber, NodeDetails};
 use serde::{Deserialize, Serialize};
 
+/// The type of chain, the verifier will sync both layer1 and layer2.
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+pub enum ChainType {
+    /// The chain is layer1.
+    Layer1,
+    /// The chain is layer2 with app_id.
+    Layer2(u32),
+}
+
 pub type NodeMessageId = u64;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -61,6 +70,8 @@ pub enum Payload {
     NotifyFinalized(Finalized),
     AfgAuthoritySet(AfgAuthoritySet),
     HwBench(NodeHwBench),
+    VerifierNodeDetails(VerifierNodeDetails),
+    VerifierProcessFinalityBlock(VerifierProcessFinalityBlock),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -71,6 +82,7 @@ pub struct SystemConnected {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SystemInterval {
+    pub chain_type: Option<ChainType>,
     pub peers: Option<u64>,
     pub txcount: Option<u64>,
     pub bandwidth_upload: Option<f64>,
@@ -83,12 +95,14 @@ pub struct SystemInterval {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Finalized {
+    pub chain_type: Option<ChainType>,
     pub hash: BlockHash,
     pub height: Box<str>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AfgAuthoritySet {
+    pub chain_type: Option<ChainType>,
     pub authority_id: Box<str>,
 }
 
@@ -98,6 +112,26 @@ pub struct NodeHwBench {
     pub memory_memcpy_score: u64,
     pub disk_sequential_write_score: Option<u64>,
     pub disk_random_write_score: Option<u64>,
+}
+
+/// The Details info for a alt-verifier node.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct VerifierNodeDetails {
+    /// The layer1 chain 's genesis.
+    pub layer1_genesis_hash: BlockHash,
+    /// The layer2(producer) chain 's genesis.
+    pub layer2_genesis_hash: BlockHash,
+    /// The app id of the layer2 in layer1.
+    pub layer2_app_id: u32,
+    /// The verifier public key.
+    pub verifier: Box<str>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct VerifierProcessFinalityBlock {
+    pub hash: BlockHash,
+    pub number: u64,
+    pub expect_number: u64,
 }
 
 impl Payload {
@@ -169,6 +203,7 @@ mod tests {
     fn bincode_can_serialize_and_deserialize_node_message_system_interval() {
         bincode_can_serialize_and_deserialize(NodeMessage::V1 {
             payload: Payload::SystemInterval(SystemInterval {
+                chain_type: None,
                 peers: None,
                 txcount: None,
                 bandwidth_upload: None,
@@ -195,6 +230,7 @@ mod tests {
     fn bincode_can_serialize_and_deserialize_node_message_notify_finalized() {
         bincode_can_serialize_and_deserialize(NodeMessage::V1 {
             payload: Payload::NotifyFinalized(Finalized {
+                chain_type: None,
                 hash: BlockHash::zero(),
                 height: "foo".into(),
             }),
@@ -205,6 +241,7 @@ mod tests {
     fn bincode_can_serialize_and_deserialize_node_message_afg_authority_set() {
         bincode_can_serialize_and_deserialize(NodeMessage::V1 {
             payload: Payload::AfgAuthoritySet(AfgAuthoritySet {
+                chain_type: None,
                 authority_id: "foo".into(),
             }),
         });
