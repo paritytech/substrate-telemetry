@@ -96,7 +96,9 @@ impl From<Payload> for internal::Payload {
             Payload::AfgAuthoritySet(m) => internal::Payload::AfgAuthoritySet(m.into()),
             Payload::HwBench(m) => internal::Payload::HwBench(m.into()),
             Payload::VerifierNodeDetails(m) => internal::Payload::VerifierNodeDetails(m.into()),
-            Payload::VerifierProcessFinalityBlock(m) => internal::Payload::VerifierProcessFinalityBlock(m.into()),
+            Payload::VerifierProcessFinalityBlock(m) => {
+                internal::Payload::VerifierProcessFinalityBlock(m.into())
+            }
         }
     }
 }
@@ -176,8 +178,8 @@ pub struct AfgAuthoritySet {
 
 impl From<AfgAuthoritySet> for internal::AfgAuthoritySet {
     fn from(msg: AfgAuthoritySet) -> Self {
-        internal::AfgAuthoritySet{
-        chain_type: None,
+        internal::AfgAuthoritySet {
+            chain_type: None,
             authority_id: msg.authority_id,
         }
     }

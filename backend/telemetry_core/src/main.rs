@@ -16,6 +16,7 @@
 
 mod aggregator;
 mod feed_message;
+mod feed_verifier_message;
 mod find_location;
 mod state;
 use std::str::FromStr;

@@ -19,13 +19,15 @@
 
 use serde::Serialize;
 
+use crate::feed_verifier_message::*;
+
 use crate::state::Node;
 use common::node_types::{
     BlockDetails, BlockHash, BlockNumber, NodeHardware, NodeIO, NodeStats, Timestamp,
 };
 use serde_json::to_writer;
 
-type FeedNodeId = usize;
+pub type FeedNodeId = usize;
 
 pub trait FeedMessage {
     const ACTION: u8;
@@ -123,6 +125,20 @@ actions! {
     20: StaleNode,
     21: NodeIOUpdate<'_>,
     22: ChainStatsUpdate<'_>,
+    // The msgs for verifier messages
+    61: CommittedBlock,
+    62: ChallengedBlock,
+    63: Period<'_>,
+    // The msgs for verifier node messages
+    71: Layer1ImportedBlock<'_>,
+    72: Layer1FinalizedBlock,
+    73: Layer1NodeStatsUpdate<'_>,
+    74: Layer1NodeIOUpdate<'_>,
+    75: Layer2ImportedBlock<'_>,
+    76: Layer2FinalizedBlock,
+    77: Layer2NodeStatsUpdate<'_>,
+    78: Layer2NodeIOUpdate<'_>,
+    81: VerifierStats<'_>,
 }
 
 #[derive(Serialize)]

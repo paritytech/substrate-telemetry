@@ -1,6 +1,6 @@
 use super::hash::Hash;
-use serde::Deserialize;
 use common::node_message as internal;
+use serde::Deserialize;
 
 pub use internal::ChainType;
 
