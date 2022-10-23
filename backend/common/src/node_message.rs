@@ -19,7 +19,7 @@
 //! able to serialize these messages to bincode, and various serde attributes aren't compatible
 //! with this, hence this separate internal representation.
 
-use crate::node_types::{Block, BlockHash, BlockNumber, NodeDetails};
+use crate::node_types::{AppPeriod, Block, BlockHash, BlockNumber, DigestHash, NodeDetails};
 use serde::{Deserialize, Serialize};
 
 /// The type of chain, the verifier will sync both layer1 and layer2.
@@ -72,6 +72,8 @@ pub enum Payload {
     HwBench(NodeHwBench),
     VerifierNodeDetails(VerifierNodeDetails),
     VerifierProcessFinalityBlock(VerifierProcessFinalityBlock),
+    VerifierDetailsStats(VerifierDetailsStats),
+    VerifierPeriodStats(VerifierPeriodStats),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -134,6 +136,24 @@ pub struct VerifierProcessFinalityBlock {
     pub expect_number: u64,
 }
 
+/// The Details info for a alt-verifier node.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct VerifierDetailsStats {
+    pub submitted_digest: Option<DigestHash>,
+    pub submitted_block_number: Option<u64>,
+    pub submitted_block_hash: Option<BlockHash>,
+    pub challenged_digest: Option<DigestHash>,
+    pub challenged_block_number: Option<u64>,
+    pub challenged_block_hash: Option<BlockHash>,
+}
+
+/// The Details info for a alt-verifier node.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct VerifierPeriodStats {
+    pub submission: Option<AppPeriod>,
+    pub challenge: Option<AppPeriod>,
+}
+
 impl Payload {
     pub fn best_block(&self) -> Option<&Block> {
         match self {
@@ -153,6 +173,14 @@ impl Payload {
                 hash: finalized.hash,
                 height: finalized.height.parse().ok()?,
             }),
+            _ => None,
+        }
+    }
+
+    pub fn chain_type(&self) -> Option<&ChainType> {
+        match self {
+            Payload::SystemInterval(ref interval) => interval.chain_type.as_ref(),
+            Payload::NotifyFinalized(ref interval) => interval.chain_type.as_ref(),
             _ => None,
         }
     }

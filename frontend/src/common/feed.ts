@@ -38,6 +38,8 @@ import {
   GenesisHash,
   AuthoritySetInfo,
   ChainStats,
+  AppPeriod,
+  VerifierBlockInfos,
 } from './types';
 
 export const ACTIONS = {
@@ -64,6 +66,21 @@ export const ACTIONS = {
   StaleNode: 0x14 as const,
   NodeIO: 0x15 as const,
   ChainStatsUpdate: 0x16 as const,
+  CommittedBlock: 0x3d as const,
+  ChallengedBlock: 0x3e as const,
+  Period: 0x3f as const,
+  Layer1ImportedBlock: 0x47 as const,
+  Layer1FinalizedBlock: 0x48 as const,
+  Layer1NodeStatsUpdate: 0x49 as const,
+  Layer1NodeIOUpdate: 0x4a as const,
+  Layer2ImportedBlock: 0x4b as const,
+  Layer2FinalizedBlock: 0x4c as const,
+  Layer2NodeStatsUpdate: 0x4d as const,
+  Layer2NodeIOUpdate: 0x4e as const,
+  VerifierNodeSubmittedBlockStats: 0x51 as const,
+  VerifierNodeChallengedBlockStats: 0x52 as const,
+  VerifierNodeSubmissionPeriodStats: 0x53 as const,
+  VerifierNodeChallengePeriodStats: 0x54 as const,
 };
 
 export type Action = typeof ACTIONS[keyof typeof ACTIONS];
@@ -197,6 +214,83 @@ interface ChainStatsUpdate extends MessageBase {
   payload: ChainStats;
 }
 
+// for verifier
+interface CommittedBlock extends MessageBase {
+  action: typeof ACTIONS.CommittedBlock;
+  payload: [BlockNumber, BlockHash];
+}
+
+interface ChallengedBlock extends MessageBase {
+  action: typeof ACTIONS.ChallengedBlock;
+  payload: [BlockNumber, BlockHash];
+}
+
+interface Period extends MessageBase {
+  action: typeof ACTIONS.Period;
+  payload: [AppPeriod, AppPeriod];
+}
+
+interface Layer1ImportedBlockMessage extends MessageBase {
+  action: typeof ACTIONS.Layer1ImportedBlock;
+  payload: [NodeId, BlockDetails];
+}
+
+interface Layer1FinalizedBlockMessage extends MessageBase {
+  action: typeof ACTIONS.Layer1FinalizedBlock;
+  payload: [NodeId, BlockNumber, BlockHash];
+}
+
+interface Layer1NodeStatsMessage extends MessageBase {
+  action: typeof ACTIONS.Layer1NodeStatsUpdate;
+  payload: [NodeId, NodeStats];
+}
+
+interface Layer1NodeIOMessage extends MessageBase {
+  action: typeof ACTIONS.Layer1NodeIOUpdate;
+  payload: [NodeId, NodeIO];
+}
+
+interface Layer2ImportedBlockMessage extends MessageBase {
+  action: typeof ACTIONS.Layer2ImportedBlock;
+  payload: [NodeId, BlockDetails];
+}
+
+interface Layer2FinalizedBlockMessage extends MessageBase {
+  action: typeof ACTIONS.Layer2FinalizedBlock;
+  payload: [NodeId, BlockNumber, BlockHash];
+}
+
+interface Layer2NodeStatsMessage extends MessageBase {
+  action: typeof ACTIONS.Layer2NodeStatsUpdate;
+  payload: [NodeId, NodeStats];
+}
+
+interface Layer2NodeIOMessage extends MessageBase {
+  action: typeof ACTIONS.Layer2NodeIOUpdate;
+  payload: [NodeId, NodeIO];
+}
+
+interface VerifierNodeSubmittedBlockStats extends MessageBase {
+  action: typeof ACTIONS.VerifierNodeSubmittedBlockStats;
+  payload: [NodeId, VerifierBlockInfos];
+}
+
+interface VerifierNodeChallengedBlockStats extends MessageBase {
+  action: typeof ACTIONS.VerifierNodeChallengedBlockStats;
+  payload: [NodeId, VerifierBlockInfos];
+}
+
+interface VerifierNodeSubmissionPeriodStats extends MessageBase {
+  action: typeof ACTIONS.VerifierNodeSubmissionPeriodStats;
+  payload: [NodeId, AppPeriod];
+}
+
+interface VerifierNodeChallengePeriodStats extends MessageBase {
+  action: typeof ACTIONS.VerifierNodeChallengePeriodStats;
+  payload: [NodeId, AppPeriod];
+}
+
+
 export type Message =
   | FeedVersionMessage
   | BestBlockMessage
@@ -220,7 +314,22 @@ export type Message =
   | StaleNodeMessage
   | PongMessage
   | NodeIOMessage
-  | ChainStatsUpdate;
+  | ChainStatsUpdate
+  | CommittedBlock
+  | ChallengedBlock
+  | Period
+  | Layer1ImportedBlockMessage
+  | Layer1FinalizedBlockMessage
+  | Layer1NodeStatsMessage
+  | Layer1NodeIOMessage
+  | Layer2ImportedBlockMessage
+  | Layer2FinalizedBlockMessage
+  | Layer2NodeStatsMessage
+  | Layer2NodeIOMessage
+  | VerifierNodeSubmittedBlockStats
+  | VerifierNodeChallengedBlockStats
+  | VerifierNodeSubmissionPeriodStats
+  | VerifierNodeChallengePeriodStats;
 
 /**
  * Data type to be sent to the feed. Passing through strings means we can only serialize once,

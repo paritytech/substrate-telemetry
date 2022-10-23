@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use common::node_message::Payload;
-use common::node_types::BlockHash;
+use common::node_message::{ChainType, Payload};
 use common::node_types::{Block, Timestamp};
+use common::node_types::{BlockHash, VerifierBlockInfos};
 use common::{id_type, time, DenseMap, MostSeen, NumStats};
 use once_cell::sync::Lazy;
 use std::collections::HashSet;
@@ -183,15 +183,38 @@ impl Chain {
         if let Some(node) = self.nodes.get_mut(nid) {
             match payload {
                 Payload::SystemInterval(ref interval) => {
+                    let chain_type = payload.chain_type();
+
+                    match chain_type {
+                        Some(ChainType::Layer1) => {
+                            if let Some(stats) = node.update_stats(interval) {
+                                feed.push(feed_message::Layer1NodeStatsUpdate(nid.into(), stats));
+                            }
+                            if let Some(io) = node.update_io(interval) {
+                                feed.push(feed_message::Layer1NodeIOUpdate(nid.into(), io));
+                            }
+                        }
+                        Some(ChainType::Layer2(_)) => {
+                            if let Some(stats) = node.update_stats(interval) {
+                                feed.push(feed_message::Layer2NodeStatsUpdate(nid.into(), stats));
+                            }
+                            if let Some(io) = node.update_io(interval) {
+                                feed.push(feed_message::Layer2NodeIOUpdate(nid.into(), io));
+                            }
+                        }
+                        None => {
+                            if let Some(stats) = node.update_stats(interval) {
+                                feed.push(feed_message::NodeStatsUpdate(nid.into(), stats));
+                            }
+                            if let Some(io) = node.update_io(interval) {
+                                feed.push(feed_message::NodeIOUpdate(nid.into(), io));
+                            }
+                        }
+                    }
+
                     // Send a feed message if any of the relevant node details change:
                     if node.update_hardware(interval) {
                         feed.push(feed_message::Hardware(nid.into(), node.hardware()));
-                    }
-                    if let Some(stats) = node.update_stats(interval) {
-                        feed.push(feed_message::NodeStatsUpdate(nid.into(), stats));
-                    }
-                    if let Some(io) = node.update_io(interval) {
-                        feed.push(feed_message::NodeIOUpdate(nid.into(), io));
                     }
                 }
                 Payload::AfgAuthoritySet(authority) => {
@@ -215,23 +238,117 @@ impl Chain {
                     self.stats_collator
                         .update_hwbench(node.hwbench(), CounterValue::Increment);
                 }
+                Payload::VerifierDetailsStats(ref details) => {
+                    if let (
+                        Some(submitted_digest),
+                        Some(submitted_block_number),
+                        Some(submitted_block_hash),
+                    ) = (
+                        details.submitted_digest,
+                        details.submitted_block_number,
+                        details.submitted_block_hash,
+                    ) {
+                        let info = VerifierBlockInfos {
+                            digest: submitted_digest,
+                            block_number: submitted_block_number,
+                            block_hash: submitted_block_hash,
+                        };
+
+                        if node.update_verifier_submitted(info) {
+                            feed.push(feed_message::VerifierNodeSubmittedBlockStats(
+                                nid.into(),
+                                node.verifier_submitted(),
+                            ));
+                        }
+                    }
+
+                    if let (
+                        Some(challenged_digest),
+                        Some(challenged_block_number),
+                        Some(challenged_block_hash),
+                    ) = (
+                        details.challenged_digest,
+                        details.challenged_block_number,
+                        details.challenged_block_hash,
+                    ) {
+                        let info = VerifierBlockInfos {
+                            digest: challenged_digest,
+                            block_number: challenged_block_number,
+                            block_hash: challenged_block_hash,
+                        };
+
+                        if node.update_verifier_challenged(info) {
+                            feed.push(feed_message::VerifierNodeChallengedBlockStats(
+                                nid.into(),
+                                node.verifier_challenged(),
+                            ));
+                        }
+                    }
+                }
+                Payload::VerifierPeriodStats(ref period) => {
+                    if let Some(submission) = period.submission {
+                        if node.update_verifier_submission_period(submission) {
+                            feed.push(feed_message::VerifierNodeSubmissionPeriodStats(
+                                nid.into(),
+                                node.verifier_submission_period(),
+                            ));
+                        }
+                    }
+
+                    if let Some(challenge) = period.challenge {
+                        if node.update_verifier_challenge_period(challenge) {
+                            feed.push(feed_message::VerifierNodeChallengePeriodStats(
+                                nid.into(),
+                                node.verifier_challenge_period(),
+                            ));
+                        }
+                    }
+                }
                 _ => {}
             }
 
             if let Some(block) = payload.finalized_block() {
                 if let Some(finalized) = node.update_finalized(block) {
-                    feed.push(feed_message::FinalizedBlock(
-                        nid.into(),
-                        finalized.height,
-                        finalized.hash,
-                    ));
+                    match payload.chain_type() {
+                        Some(ChainType::Layer1) => {
+                            feed.push(feed_message::Layer1FinalizedBlock(
+                                nid.into(),
+                                finalized.height,
+                                finalized.hash,
+                            ));
+                        }
+                        Some(ChainType::Layer2(_)) => {
+                            feed.push(feed_message::Layer2FinalizedBlock(
+                                nid.into(),
+                                finalized.height,
+                                finalized.hash,
+                            ));
+                        }
+                        None => {
+                            feed.push(feed_message::FinalizedBlock(
+                                nid.into(),
+                                finalized.height,
+                                finalized.hash,
+                            ));
+                        }
+                    }
 
                     if finalized.height > self.finalized.height {
                         self.finalized = *finalized;
-                        feed.push(feed_message::BestFinalized(
-                            finalized.height,
-                            finalized.hash,
-                        ));
+                        match payload.chain_type() {
+                            Some(ChainType::Layer1) => {
+                                // TODO useless
+                            }
+                            Some(ChainType::Layer2(_)) => {
+                                // TODO useless
+                            }
+                            None => {
+                                feed.push(feed_message::BestFinalized(
+                                    finalized.height,
+                                    finalized.hash,
+                                ));
+                            }
+                        }
                     }
                 }
             }

@@ -17,8 +17,8 @@
 use crate::find_location;
 use common::node_message::SystemInterval;
 use common::node_types::{
-    Block, BlockDetails, NodeDetails, NodeHardware, NodeHwBench, NodeIO, NodeLocation, NodeStats,
-    Timestamp,
+    AppPeriod, Block, BlockDetails, NodeDetails, NodeHardware, NodeHwBench, NodeIO, NodeLocation,
+    NodeStats, Timestamp, VerifierBlockInfos, VerifierNodeDetails, VerifierStats,
 };
 use common::time;
 
@@ -50,6 +50,10 @@ pub struct Node {
     startup_time: Option<Timestamp>,
     /// Hardware benchmark results for the node
     hwbench: Option<NodeHwBench>,
+    /// The Static datas for verifier.
+    verifier_details: Option<VerifierNodeDetails>,
+    /// The State datas for verifier.
+    verifier_stats: VerifierStats,
 }
 
 impl Node {
@@ -71,6 +75,8 @@ impl Node {
             stale: false,
             startup_time,
             hwbench: None,
+            verifier_details: None,
+            verifier_stats: VerifierStats::default(),
         }
     }
 
@@ -236,5 +242,70 @@ impl Node {
 
     pub fn startup_time(&self) -> Option<Timestamp> {
         self.startup_time
+    }
+
+    pub fn verifier_details(&self) -> Option<&VerifierNodeDetails> {
+        self.verifier_details.as_ref()
+    }
+
+    pub fn update_verifier_details(&mut self, details: VerifierNodeDetails) -> bool {
+        if self.verifier_details.is_none() {
+            self.verifier_details = Some(details);
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn verifier_submitted(&self) -> &VerifierBlockInfos {
+        &self.verifier_stats.submitted
+    }
+
+    pub fn verifier_challenged(&self) -> &VerifierBlockInfos {
+        &self.verifier_stats.challenged
+    }
+
+    pub fn update_verifier_submitted(&mut self, info: VerifierBlockInfos) -> bool {
+        if self.verifier_stats.submitted.block_number < info.block_number {
+            self.verifier_stats.submitted = info;
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn update_verifier_challenged(&mut self, info: VerifierBlockInfos) -> bool {
+        if self.verifier_stats.challenged.block_number < info.block_number {
+            self.verifier_stats.challenged = info;
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn verifier_submission_period(&self) -> AppPeriod {
+        self.verifier_stats.submission_period
+    }
+
+    pub fn verifier_challenge_period(&self) -> AppPeriod {
+        self.verifier_stats.challenge_period
+    }
+
+    pub fn update_verifier_submission_period(&mut self, period: AppPeriod) -> bool {
+        if self.verifier_stats.submission_period < period {
+            self.verifier_stats.submission_period = period;
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn update_verifier_challenge_period(&mut self, period: AppPeriod) -> bool {
+        if self.verifier_stats.challenge_period < period {
+            self.verifier_stats.challenge_period = period;
+            true
+        } else {
+            false
+        }
     }
 }

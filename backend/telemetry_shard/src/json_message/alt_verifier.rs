@@ -45,3 +45,43 @@ impl From<VerifierProcessFinalityBlock> for internal::VerifierProcessFinalityBlo
         }
     }
 }
+
+/// The Details commit info for a alt-verifier node.
+#[derive(Deserialize, Debug, Clone)]
+pub struct VerifierDetailsStats {
+    pub submitted_digest: Option<Hash>,
+    pub submitted_block_number: Option<u64>,
+    pub submitted_block_hash: Option<Hash>,
+    pub challenged_digest: Option<Hash>,
+    pub challenged_block_number: Option<u64>,
+    pub challenged_block_hash: Option<Hash>,
+}
+
+impl From<VerifierDetailsStats> for internal::VerifierDetailsStats {
+    fn from(msg: VerifierDetailsStats) -> Self {
+        internal::VerifierDetailsStats {
+            submitted_digest: msg.submitted_digest.map(|d| d.into()),
+            submitted_block_number: msg.submitted_block_number,
+            submitted_block_hash: msg.submitted_block_hash.map(|d| d.into()),
+            challenged_digest: msg.challenged_digest.map(|d| d.into()),
+            challenged_block_number: msg.challenged_block_number,
+            challenged_block_hash: msg.challenged_block_hash.map(|d| d.into()),
+        }
+    }
+}
+
+/// The Details info for a alt-verifier node.
+#[derive(Deserialize, Debug, Clone)]
+pub struct VerifierPeriodStats {
+    pub submission: Option<u32>,
+    pub challenge: Option<u32>,
+}
+
+impl From<VerifierPeriodStats> for internal::VerifierPeriodStats {
+    fn from(msg: VerifierPeriodStats) -> Self {
+        internal::VerifierPeriodStats {
+            submission: msg.submission.map(|d| d.into()),
+            challenge: msg.challenge.map(|d| d.into()),
+        }
+    }
+}

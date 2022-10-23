@@ -20,7 +20,10 @@
 //! compatibility with the input data when we make changes to our internal data
 //! structures (for example, to support bincode better).
 use super::hash::Hash;
-use super::{ChainType, VerifierNodeDetails, VerifierProcessFinalityBlock};
+use super::{
+    ChainType, VerifierDetailsStats, VerifierNodeDetails, VerifierPeriodStats,
+    VerifierProcessFinalityBlock,
+};
 use common::node_message as internal;
 use common::node_types;
 use serde::Deserialize;
@@ -84,6 +87,10 @@ pub enum Payload {
     VerifierNodeDetails(VerifierNodeDetails),
     #[serde(rename = "verifier.process_finality_block")]
     VerifierProcessFinalityBlock(VerifierProcessFinalityBlock),
+    #[serde(rename = "verifier.details")]
+    VerifierDetailsStats(VerifierDetailsStats),
+    #[serde(rename = "verifier.period")]
+    VerifierPeriodStats(VerifierPeriodStats),
 }
 
 impl From<Payload> for internal::Payload {
@@ -99,6 +106,8 @@ impl From<Payload> for internal::Payload {
             Payload::VerifierProcessFinalityBlock(m) => {
                 internal::Payload::VerifierProcessFinalityBlock(m.into())
             }
+            Payload::VerifierDetailsStats(m) => internal::Payload::VerifierDetailsStats(m.into()),
+            Payload::VerifierPeriodStats(m) => internal::Payload::VerifierPeriodStats(m.into()),
         }
     }
 }

@@ -163,6 +163,7 @@ export class Connection {
     }
 
     for (const message of messages) {
+      console.log(message);
       switch (message.action) {
         case ACTIONS.FeedVersion: {
           if (message.payload !== VERSION) {

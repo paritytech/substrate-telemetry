@@ -43,6 +43,15 @@ export type Bytes = Opaque<number, 'Bytes'>;
 export type BytesPerSecond = Opaque<number, 'BytesPerSecond'>;
 export type NetworkId = Opaque<string, 'NetworkId'>;
 
+// for verifier
+export type AppPeriod = Opaque<number, 'AppPeriod'>;
+export type DigestHash = Opaque<string, 'DigestHash'>;
+export type VerifierBlockInfos = [
+  DigestHash,
+  BlockNumber,
+  BlockHash,
+];
+
 export type BlockDetails = [
   BlockNumber,
   BlockHash,

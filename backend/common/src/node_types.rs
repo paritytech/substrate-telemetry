@@ -28,6 +28,26 @@ pub type Timestamp = u64;
 pub use primitive_types::H256 as BlockHash;
 pub type NetworkId = ArrayString<64>;
 
+pub type AppPeriod = u32;
+pub type DigestHash = primitive_types::H256;
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct VerifierBlockInfos {
+    pub digest: DigestHash,
+    pub block_number: BlockNumber,
+    pub block_hash: BlockHash,
+}
+
+impl Default for VerifierBlockInfos {
+    fn default() -> Self {
+        Self {
+            digest: DigestHash::default(),
+            block_number: 0,
+            block_hash: BlockHash::default(),
+        }
+    }
+}
+
 /// Basic node details.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct NodeDetails {
@@ -73,6 +93,40 @@ pub struct NodeHwBench {
     pub disk_sequential_write_score: Option<u64>,
     /// Random disk write speed in MB/s.
     pub disk_random_write_score: Option<u64>,
+}
+
+/// The Details info for a alt-verifier node.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct VerifierNodeDetails {
+    /// The layer1 chain 's genesis.
+    pub layer1_genesis_hash: BlockHash,
+    /// The layer2(producer) chain 's genesis.
+    pub layer2_genesis_hash: BlockHash,
+    /// The app id of the layer2 in layer1.
+    pub layer2_app_id: u32,
+    /// The verifier public key.
+    pub verifier: Box<str>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct VerifierStats {
+    pub submission_period: AppPeriod,
+    pub challenge_period: AppPeriod,
+    pub waitting_submissions_count: u32,
+    pub submitted: VerifierBlockInfos,
+    pub challenged: VerifierBlockInfos,
+}
+
+impl Default for VerifierStats {
+    fn default() -> Self {
+        Self {
+            submission_period: 0,
+            challenge_period: 0,
+            waitting_submissions_count: 0,
+            submitted: VerifierBlockInfos::default(),
+            challenged: VerifierBlockInfos::default(),
+        }
+    }
 }
 
 /// A couple of node statistics.

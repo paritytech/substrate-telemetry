@@ -2,38 +2,26 @@
 //! send to subscribed feeds for alt-verifier (browsers).
 
 use crate::feed_message::*;
-use common::node_types::{BlockDetails, BlockHash, BlockNumber, NodeIO, NodeStats};
+use common::node_types::{
+    AppPeriod, BlockDetails, BlockHash, BlockNumber,  NodeIO, NodeStats,
+    VerifierBlockInfos,
+};
 use serde::{Deserialize, Serialize};
-
-pub type AppPeriod = u32;
-
-pub type DigestHash = primitive_types::H256;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct VerifierPeriodStats {
-    pub submission: AppPeriod,
-    pub challenge: AppPeriod,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct VerifierDetailsStats {
-    pub waitting_submissions_count: u32,
-    pub submitted_digest: DigestHash,
-    pub submitted_block_number: u64,
-    pub submitted_block_hash: BlockHash,
-    pub challenged_digest: DigestHash,
-    pub challenged_block_number: u64,
-    pub challenged_block_hash: BlockHash,
+    pub submission: Option<AppPeriod>,
+    pub challenge: Option<AppPeriod>,
 }
 
 #[derive(Serialize)]
-pub struct CommittedBlock(pub FeedNodeId, pub BlockNumber, pub BlockHash);
+pub struct CommittedBlock(pub BlockNumber, pub BlockHash);
 
 #[derive(Serialize)]
-pub struct ChallengedBlock(pub FeedNodeId, pub BlockNumber, pub BlockHash);
+pub struct ChallengedBlock( pub BlockNumber, pub BlockHash);
 
 #[derive(Serialize)]
-pub struct Period<'a>(pub FeedNodeId, pub &'a VerifierPeriodStats);
+pub struct Period(pub AppPeriod, pub AppPeriod);
 
 #[derive(Serialize)]
 pub struct Layer1ImportedBlock<'a>(pub FeedNodeId, pub &'a BlockDetails);
@@ -60,4 +48,13 @@ pub struct Layer2NodeStatsUpdate<'a>(pub FeedNodeId, pub &'a NodeStats);
 pub struct Layer2NodeIOUpdate<'a>(pub FeedNodeId, pub &'a NodeIO);
 
 #[derive(Serialize)]
-pub struct VerifierStats<'a>(pub FeedNodeId, pub &'a VerifierDetailsStats);
+pub struct VerifierNodeSubmittedBlockStats<'a>(pub FeedNodeId, pub &'a VerifierBlockInfos);
+
+#[derive(Serialize)]
+pub struct VerifierNodeChallengedBlockStats<'a>(pub FeedNodeId, pub &'a VerifierBlockInfos);
+
+#[derive(Serialize)]
+pub struct VerifierNodeSubmissionPeriodStats(pub FeedNodeId, pub AppPeriod);
+
+#[derive(Serialize)]
+pub struct VerifierNodeChallengePeriodStats(pub FeedNodeId, pub AppPeriod);

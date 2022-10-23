@@ -19,7 +19,7 @@
 
 use serde::Serialize;
 
-use crate::feed_verifier_message::*;
+pub use crate::feed_verifier_message::*;
 
 use crate::state::Node;
 use common::node_types::{
@@ -128,7 +128,7 @@ actions! {
     // The msgs for verifier messages
     61: CommittedBlock,
     62: ChallengedBlock,
-    63: Period<'_>,
+    63: Period,
     // The msgs for verifier node messages
     71: Layer1ImportedBlock<'_>,
     72: Layer1FinalizedBlock,
@@ -138,7 +138,10 @@ actions! {
     76: Layer2FinalizedBlock,
     77: Layer2NodeStatsUpdate<'_>,
     78: Layer2NodeIOUpdate<'_>,
-    81: VerifierStats<'_>,
+    81: VerifierNodeSubmittedBlockStats<'_>,
+    82: VerifierNodeChallengedBlockStats<'_>,
+    83: VerifierNodeSubmissionPeriodStats,
+    84: VerifierNodeChallengePeriodStats,
 }
 
 #[derive(Serialize)]
