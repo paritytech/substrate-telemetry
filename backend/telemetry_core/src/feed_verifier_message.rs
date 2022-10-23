@@ -3,8 +3,7 @@
 
 use crate::feed_message::*;
 use common::node_types::{
-    AppPeriod, BlockDetails, BlockHash, BlockNumber,  NodeIO, NodeStats,
-    VerifierBlockInfos,
+    AppPeriod, BlockDetails, BlockHash, BlockNumber, NodeIO, NodeStats, VerifierBlockInfos,
 };
 use serde::{Deserialize, Serialize};
 
@@ -15,10 +14,10 @@ pub struct VerifierPeriodStats {
 }
 
 #[derive(Serialize)]
-pub struct CommittedBlock(pub BlockNumber, pub BlockHash);
+pub struct SubmittedBlock(pub BlockNumber, pub BlockHash);
 
 #[derive(Serialize)]
-pub struct ChallengedBlock( pub BlockNumber, pub BlockHash);
+pub struct ChallengedBlock(pub BlockNumber, pub BlockHash);
 
 #[derive(Serialize)]
 pub struct Period(pub AppPeriod, pub AppPeriod);

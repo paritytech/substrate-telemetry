@@ -18,7 +18,7 @@ use super::node::Node;
 use crate::feed_message::{ChainStats, FeedMessageSerializer};
 use crate::find_location;
 use common::node_message::Payload;
-use common::node_types::{Block, BlockHash, NodeDetails, Timestamp};
+use common::node_types::{AppPeriod, Block, BlockHash, NodeDetails, Timestamp, VerifierBlockInfos};
 use common::{id_type, DenseMap};
 use std::collections::{HashMap, HashSet};
 use std::iter::IntoIterator;
@@ -279,6 +279,19 @@ impl<'a> StateChain<'a> {
     }
     pub fn stats(&self) -> &ChainStats {
         self.chain.stats()
+    }
+
+    pub fn submitted_block(&self) -> &VerifierBlockInfos {
+        &self.chain.submitted_block
+    }
+    pub fn challenged_block(&self) -> &VerifierBlockInfos {
+        &self.chain.challenged_block
+    }
+    pub fn submission_period(&self) -> AppPeriod {
+        self.chain.submission_period
+    }
+    pub fn challenge_period(&self) -> AppPeriod {
+        self.chain.challenge_period
     }
 }
 

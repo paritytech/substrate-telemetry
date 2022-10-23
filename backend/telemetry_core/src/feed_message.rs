@@ -126,7 +126,7 @@ actions! {
     21: NodeIOUpdate<'_>,
     22: ChainStatsUpdate<'_>,
     // The msgs for verifier messages
-    61: CommittedBlock,
+    61: SubmittedBlock,
     62: ChallengedBlock,
     63: Period,
     // The msgs for verifier node messages

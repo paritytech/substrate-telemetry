@@ -66,7 +66,7 @@ export const ACTIONS = {
   StaleNode: 0x14 as const,
   NodeIO: 0x15 as const,
   ChainStatsUpdate: 0x16 as const,
-  CommittedBlock: 0x3d as const,
+  SubmittedBlock: 0x3d as const,
   ChallengedBlock: 0x3e as const,
   Period: 0x3f as const,
   Layer1ImportedBlock: 0x47 as const,
@@ -215,8 +215,8 @@ interface ChainStatsUpdate extends MessageBase {
 }
 
 // for verifier
-interface CommittedBlock extends MessageBase {
-  action: typeof ACTIONS.CommittedBlock;
+interface SubmittedBlock extends MessageBase {
+  action: typeof ACTIONS.SubmittedBlock;
   payload: [BlockNumber, BlockHash];
 }
 
@@ -225,6 +225,7 @@ interface ChallengedBlock extends MessageBase {
   payload: [BlockNumber, BlockHash];
 }
 
+// First is submission period, second is challenge period.
 interface Period extends MessageBase {
   action: typeof ACTIONS.Period;
   payload: [AppPeriod, AppPeriod];
@@ -315,7 +316,7 @@ export type Message =
   | PongMessage
   | NodeIOMessage
   | ChainStatsUpdate
-  | CommittedBlock
+  | SubmittedBlock
   | ChallengedBlock
   | Period
   | Layer1ImportedBlockMessage

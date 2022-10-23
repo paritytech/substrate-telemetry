@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use common::node_message::{ChainType, Payload};
-use common::node_types::{Block, Timestamp};
+use common::node_types::{AppPeriod, Block, Timestamp};
 use common::node_types::{BlockHash, VerifierBlockInfos};
 use common::{id_type, time, DenseMap, MostSeen, NumStats};
 use once_cell::sync::Lazy;
@@ -66,6 +66,15 @@ pub struct Chain {
     stats: ChainStats,
     /// Timestamp of when the stats were last regenerated.
     stats_last_regenerated: Instant,
+
+    /// The submitted block datas
+    pub submitted_block: VerifierBlockInfos,
+    /// The challenged block datas
+    pub challenged_block: VerifierBlockInfos,
+    /// The submission period
+    pub submission_period: AppPeriod,
+    /// The challenge period
+    pub challenge_period: AppPeriod,
 }
 
 pub enum AddNodeResult {
@@ -118,6 +127,10 @@ impl Chain {
             stats_collator: Default::default(),
             stats: Default::default(),
             stats_last_regenerated: Instant::now(),
+            submitted_block: Default::default(),
+            challenged_block: Default::default(),
+            submission_period: 0,
+            challenge_period: 0,
         }
     }
 
@@ -419,6 +432,11 @@ impl Chain {
         let mut finalized = Block::zero();
         let mut timestamp = None;
 
+        let mut submitted_block = VerifierBlockInfos::default();
+        let mut challenged_block = VerifierBlockInfos::default();
+        let mut submission_period = 0;
+        let mut challenge_period = 0;
+
         for (nid, node) in self.nodes.iter_mut() {
             if !node.update_stale(threshold) {
                 if node.best().height > best.height {
@@ -429,11 +447,28 @@ impl Chain {
                 if node.finalized().height > finalized.height {
                     finalized = *node.finalized();
                 }
+
+                if node.verifier_submitted().block_number > submitted_block.block_number {
+                    submitted_block = node.verifier_submitted().clone();
+                }
+
+                if node.verifier_challenged().block_number > challenged_block.block_number {
+                    challenged_block = node.verifier_challenged().clone();
+                }
+
+                if node.verifier_submission_period() > submission_period {
+                    submission_period = node.verifier_submission_period();
+                }
+
+                if node.verifier_challenge_period() > challenge_period {
+                    challenge_period = node.verifier_challenge_period();
+                }
             } else {
                 feed.push(feed_message::StaleNode(nid.into()));
             }
         }
 
+        // TODO: maybe this is a bug.
         if self.best.height != 0 || self.finalized.height != 0 {
             self.best = best;
             self.finalized = finalized;
@@ -448,6 +483,31 @@ impl Chain {
             feed.push(feed_message::BestFinalized(
                 finalized.height,
                 finalized.hash,
+            ));
+        }
+
+        if submitted_block.block_number != 0 {
+            self.submitted_block = submitted_block;
+            feed.push(feed_message::SubmittedBlock(
+                self.submitted_block.block_number,
+                self.submitted_block.block_hash,
+            ));
+        }
+
+        if challenged_block.block_number != 0 {
+            self.challenged_block = challenged_block;
+            feed.push(feed_message::ChallengedBlock(
+                self.challenged_block.block_number,
+                self.challenged_block.block_hash,
+            ));
+        }
+
+        if submission_period != 0 || challenge_period != 0 {
+            self.submission_period = submission_period;
+            self.challenge_period = challenge_period;
+            feed.push(feed_message::Period(
+                self.submission_period,
+                self.challenge_period,
             ));
         }
     }

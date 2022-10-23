@@ -510,6 +510,21 @@ impl InnerLoop {
                     new_chain.finalized_block().hash,
                 ));
                 feed_serializer.push(feed_message::ChainStatsUpdate(new_chain.stats()));
+
+                // for verifier.
+                feed_serializer.push(feed_message::SubmittedBlock(
+                    new_chain.submitted_block().block_number,
+                    new_chain.submitted_block().block_hash,
+                ));
+                feed_serializer.push(feed_message::ChallengedBlock(
+                    new_chain.challenged_block().block_number,
+                    new_chain.challenged_block().block_hash,
+                ));
+                feed_serializer.push(feed_message::Period(
+                    new_chain.submission_period(),
+                    new_chain.challenge_period(),
+                ));
+
                 if let Some(bytes) = feed_serializer.into_finalized() {
                     let _ = feed_channel.send(ToFeedWebsocket::Bytes(bytes));
                 }
