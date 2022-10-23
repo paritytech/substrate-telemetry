@@ -267,6 +267,10 @@ impl Chain {
                             block_hash: submitted_block_hash,
                         };
 
+                        if self.submitted_block.block_number < info.block_number {
+                            self.submitted_block = info.clone();
+                        }
+
                         if node.update_verifier_submitted(info) {
                             feed.push(feed_message::VerifierNodeSubmittedBlockStats(
                                 nid.into(),
@@ -290,6 +294,10 @@ impl Chain {
                             block_hash: challenged_block_hash,
                         };
 
+                        if self.challenged_block.block_number < info.block_number {
+                            self.challenged_block = info.clone();
+                        }
+
                         if node.update_verifier_challenged(info) {
                             feed.push(feed_message::VerifierNodeChallengedBlockStats(
                                 nid.into(),
@@ -300,6 +308,10 @@ impl Chain {
                 }
                 Payload::VerifierPeriodStats(ref period) => {
                     if let Some(submission) = period.submission {
+                        if self.submission_period < submission {
+                            self.submission_period = submission;
+                        }
+
                         if node.update_verifier_submission_period(submission) {
                             feed.push(feed_message::VerifierNodeSubmissionPeriodStats(
                                 nid.into(),
@@ -309,6 +321,10 @@ impl Chain {
                     }
 
                     if let Some(challenge) = period.challenge {
+                        if self.challenge_period < challenge {
+                            self.challenge_period = challenge;
+                        }
+
                         if node.update_verifier_challenge_period(challenge) {
                             feed.push(feed_message::VerifierNodeChallengePeriodStats(
                                 nid.into(),
