@@ -306,18 +306,11 @@ async fn e2e_feed_ignore_duplicate_nodes() {
     let (_feed_tx, mut feed_rx) = server.get_core().connect_feed().await.unwrap();
 
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
-    assert_eq!(
-        feed_messages
-            .iter()
-            .filter(|&msg| msg
-                == &FeedMessage::AddedChain {
-                    name: "Local Testnet".to_owned(),
-                    genesis_hash: ghash(1),
-                    node_count: 1,
-                })
-            .count(),
-        1
-    );
+    assert!(feed_messages.contains(&FeedMessage::AddedChain {
+        name: "Local Testnet".to_owned(),
+        genesis_hash: ghash(1),
+        node_count: 1,
+    }));
 
     // Disconnect the node:
     node_tx.close().await.unwrap();
