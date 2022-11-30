@@ -40,7 +40,7 @@ To run the frontend make sure to grab the latest stable version of node and inst
 
 ```sh
 nvm install stable
-yarn
+(cd frontend && yarn)
 ```
 
 ### Terminal 1 & 2 - Backend
