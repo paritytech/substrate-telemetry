@@ -58,7 +58,7 @@ stages:
 # Pipeline Job Templates:
 .dockerize:               &dockerize
   stage:                  build
-  image:                  quay.io/buildah/stable
+  image:                  quay.io/buildah/stable:v1.27
   script:
     - |-
       echo building "$CONTAINER_REPO:$DOCKER_IMAGE_TAG"
