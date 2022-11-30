@@ -352,7 +352,11 @@ where
                     }
 
                     // Note of the message ID, allowing telemetry for it.
-                    allowed_message_ids.insert(message_id, Instant::now());
+                    let prev_join_time = allowed_message_ids.insert(message_id, Instant::now());
+                    if prev_join_time.is_some() {
+                        log::info!("Ignoring duplicate new node with ID {message_id} from {real_addr:?}");
+                        continue;
+                    }
 
                     // Tell the aggregator loop about the new node.
                     log::info!("Adding node with message ID {message_id} from {real_addr:?}");
