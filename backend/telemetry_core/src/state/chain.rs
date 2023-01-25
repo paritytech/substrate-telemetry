@@ -210,6 +210,9 @@ impl Chain {
                         disk_random_write_score: hwbench.disk_random_write_score,
                     };
                     let old_hwbench = node.update_hwbench(new_hwbench);
+                    // The `hwbench` for this node has changed, send an updated "add node".
+                    feed.push(feed_message::AddedNode(nid.into(), &node));
+
                     self.stats_collator
                         .update_hwbench(old_hwbench.as_ref(), CounterValue::Decrement);
                     self.stats_collator
