@@ -46,7 +46,7 @@ pub struct NodeDetails {
 }
 
 /// Hardware and software information for the node.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NodeSysInfo {
     /// The exact CPU model.
     pub cpu: Option<Box<str>>,
@@ -63,7 +63,7 @@ pub struct NodeSysInfo {
 }
 
 /// Hardware benchmark results for the node.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NodeHwBench {
     /// The CPU speed, as measured in how many MB/s it can hash using the BLAKE2b-256 hash.
     pub cpu_hashrate_score: u64,
