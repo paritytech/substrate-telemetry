@@ -25,4 +25,3 @@ describe('App.tsx', () => {
     root.render(<App />);
   });
 });
-

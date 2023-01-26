@@ -54,7 +54,7 @@ describe('sortedInsert', () => {
 
   it('indexes', () => {
     const cmp = (a: number, b: number) => a - b;
-    const into:number[] = [];
+    const into: number[] = [];
 
     expect(sortedInsert(5, into, cmp)).toStrictEqual(0);
     expect(into).toStrictEqual([5]);
@@ -91,10 +91,9 @@ describe('sortedInsert', () => {
       const index = (Math.random() * 1000) | 0;
       const item = array[index];
 
-      expect(sortedIndexOf(item, array, cmp)).toStrictEqual(array.indexOf(item));
+      expect(sortedIndexOf(item, array, cmp)).toStrictEqual(
+        array.indexOf(item)
+      );
     }
   });
 });
-
-
-
