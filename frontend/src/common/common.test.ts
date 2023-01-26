@@ -33,7 +33,7 @@ describe('sortedInsert', () => {
     assertInsert(7, [1, 2, 3, 4, 5, 6, 8, 9], [1, 2, 3, 4, 5, 6, 7, 8, 9]);
     assertInsert(8, [1, 2, 3, 4, 5, 6, 7, 9], [1, 2, 3, 4, 5, 6, 7, 8, 9]);
     assertInsert(9, [1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8, 9]);
-  })
+  });
 
   it('fuzz tests insert as expected', () => {
     const cmp = (a: number, b: number) => a - b;
@@ -88,7 +88,7 @@ describe('sortedInsert', () => {
     }
 
     for (let i = 0; i < 50; i++) {
-      let index = (Math.random() * 1000) | 0;
+      const index = (Math.random() * 1000) | 0;
       const item = array[index];
 
       expect(sortedIndexOf(item, array, cmp)).toStrictEqual(array.indexOf(item));

@@ -24,5 +24,5 @@ describe('App.tsx', () => {
     const root = createRoot(div);
     root.render(<App />);
   });
-})
+});
 
