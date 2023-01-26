@@ -20,7 +20,7 @@ primitive-types = { version = "0.12.1", features = ["serde"] }
 serde = { version = "1.0.126", features = ["derive"] }
 serde_json = "1.0.64"
 simple_logger = "4.0.0"
-soketto = "0.6.0"
+soketto = "0.7.1"
 structopt = "0.3.21"
 thiserror = "1.0.25"
 tokio = { version = "1.10.1", features = ["full"] }
