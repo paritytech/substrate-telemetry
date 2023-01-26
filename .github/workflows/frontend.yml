@@ -35,7 +35,10 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
 
-    - name: check
+    - name: Install
+      run: npm install
+
+    - name: Check
       run: npm run pretty:check
 
     - name: Test
