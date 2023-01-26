@@ -16,15 +16,15 @@ http = "0.2.4"
 hyper = "0.14.11"
 log = "0.4.14"
 num_cpus = "1.13.0"
-primitive-types = { version = "0.9.0", features = ["serde"] }
+primitive-types = { version = "0.12.1", features = ["serde"] }
 serde = { version = "1.0.126", features = ["derive"] }
 serde_json = "1.0.64"
-simple_logger = "1.11.0"
-soketto = "0.6.0"
+simple_logger = "4.0.0"
+soketto = "0.7.1"
 structopt = "0.3.21"
 thiserror = "1.0.25"
 tokio = { version = "1.10.1", features = ["full"] }
-tokio-util = { version = "0.6", features = ["compat"] }
+tokio-util = { version = "0.7.4", features = ["compat"] }
 
 [target.'cfg(not(target_env = "msvc"))'.dependencies]
-jemallocator = "0.3.2"
+jemallocator = "0.5.0"

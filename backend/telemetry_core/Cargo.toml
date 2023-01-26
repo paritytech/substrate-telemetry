@@ -20,28 +20,28 @@ log = "0.4.14"
 maxminddb = "0.23.0"
 num_cpus = "1.13.0"
 once_cell = "1.8.0"
-parking_lot = "0.11.1"
-primitive-types = { version = "0.9.0", features = ["serde"] }
+parking_lot = "0.12.1"
+primitive-types = { version = "0.12.1", features = ["serde"] }
 rayon = "1.5.1"
 reqwest = { version = "0.11.4", features = ["json"] }
 rustc-hash = "1.1.0"
 serde = { version = "1.0.126", features = ["derive"] }
 serde_json = "1.0.64"
-simple_logger = "1.11.0"
+simple_logger = "4.0.0"
 smallvec = "1.6.1"
-soketto = "0.6.0"
+soketto = "0.7.1"
 structopt = "0.3.21"
 thiserror = "1.0.25"
 tokio = { version = "1.10.1", features = ["full"] }
-tokio-util = { version = "0.6", features = ["compat"] }
+tokio-util = { version = "0.7.4", features = ["compat"] }
 
 [target.'cfg(not(target_env = "msvc"))'.dependencies]
-jemallocator = "0.3.2"
+jemallocator = "0.5.0"
 
 [dev-dependencies]
 shellwords = "1.1.0"
 test_utils = { path = "../test_utils" }
-criterion = { version = "0.3.4", features = ["async", "async_tokio"] }
+criterion = { version = "0.4.0", features = ["async", "async_tokio"] }
 
 [[bench]]
 name = "subscribe"

@@ -7,7 +7,7 @@ license = "GPL-3.0"
 
 [dependencies]
 anyhow = "1.0.42"
-base64 = { default-features = false, features = ["alloc"], version = "0.13" }
+base64 = { default-features = false, features = ["alloc"], version = "0.21" }
 bimap = "0.6.1"
 bytes = "1.0.1"
 flume = "0.10.8"
@@ -19,15 +19,15 @@ hyper = { version = "0.14.11", features = ["full"] }
 log = "0.4"
 num-traits = "0.2"
 pin-project-lite = "0.2.7"
-primitive-types = { version = "0.9.0", features = ["serde"] }
+primitive-types = { version = "0.12.1", features = ["serde"] }
 rustc-hash = "1.1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", features = ["raw_value"] }
-sha-1 = { default-features = false, version = "0.9" }
-soketto = "0.6.0"
+sha-1 = { default-features = false, version = "0.10.1" }
+soketto = "0.7.1"
 thiserror = "1.0.24"
 tokio = { version = "1.8.2", features = ["full"] }
-tokio-util = { version = "0.6", features = ["compat"] }
+tokio-util = { version = "0.7.4", features = ["compat"] }
 arrayvec = { version = "0.7.1", features = ["serde"] }
 tokio-rustls = "0.23.4"
 webpki-roots = "0.22.4"
