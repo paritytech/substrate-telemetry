@@ -66,6 +66,9 @@ pub struct Chain {
     stats: ChainStats,
     /// Timestamp of when the stats were last regenerated.
     stats_last_regenerated: Instant,
+    /// Flag to expose the node's details (IP address, SysInfo, HwBench) of all connected
+    /// nodes to the feed subscribers.
+    expose_node_details: bool,
 }
 
 pub enum AddNodeResult {
@@ -104,7 +107,7 @@ pub fn is_first_party_network(genesis_hash: &BlockHash) -> bool {
 
 impl Chain {
     /// Create a new chain with an initial label.
-    pub fn new(genesis_hash: BlockHash, max_nodes: usize) -> Self {
+    pub fn new(genesis_hash: BlockHash, max_nodes: usize, expose_node_details: bool) -> Self {
         Chain {
             labels: MostSeen::default(),
             nodes: DenseMap::new(),
@@ -118,6 +121,7 @@ impl Chain {
             stats_collator: Default::default(),
             stats: Default::default(),
             stats_last_regenerated: Instant::now(),
+            expose_node_details,
         }
     }
 
@@ -175,7 +179,6 @@ impl Chain {
         nid: ChainNodeId,
         payload: Payload,
         feed: &mut FeedMessageSerializer,
-        expose_node_details: bool,
     ) {
         if let Some(block) = payload.best_block() {
             self.handle_block(block, nid, feed);
@@ -199,11 +202,16 @@ impl Chain {
                     // If our node validator address (and thus details) change, send an
                     // updated "add node" feed message:
                     if node.set_validator_address(authority.authority_id.clone()) {
-                        feed.push(feed_message::AddedNode(
-                            nid.into(),
-                            &node,
-                            expose_node_details,
-                        ));
+                        // Prevent leaking the `HwBench` details when
+                        // - the `expose_node_details` is false;
+                        // - and we receive a `HwBench` payload before this `AfgAuthoritySet` payload
+                        if !self.expose_node_details {
+                            let old_hw = node.update_hwbench(None);
+                            feed.push(feed_message::AddedNode(nid.into(), &node));
+                            node.update_hwbench(old_hw);
+                        } else {
+                            feed.push(feed_message::AddedNode(nid.into(), &node));
+                        }
                     }
                     return;
                 }
@@ -214,16 +222,12 @@ impl Chain {
                         disk_sequential_write_score: hwbench.disk_sequential_write_score,
                         disk_random_write_score: hwbench.disk_random_write_score,
                     };
-                    let old_hwbench = node.update_hwbench(new_hwbench);
+                    let old_hwbench = node.update_hwbench(Some(new_hwbench));
                     // The `hwbench` for this node has changed, send an updated "add node".
                     // Note: There is no need to send this message if the details
                     // will not be serialized over the wire.
-                    if expose_node_details {
-                        feed.push(feed_message::AddedNode(
-                            nid.into(),
-                            &node,
-                            expose_node_details,
-                        ));
+                    if self.expose_node_details {
+                        feed.push(feed_message::AddedNode(nid.into(), &node));
                     }
 
                     self.stats_collator

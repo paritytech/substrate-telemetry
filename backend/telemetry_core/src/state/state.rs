@@ -54,6 +54,10 @@ pub struct State {
     /// How many nodes from third party chains are allowed to connect
     /// before we prevent connections from them.
     max_third_party_nodes: usize,
+
+    /// Flag to expose the node's details (IP address, SysInfo, HwBench) of all connected
+    /// nodes to the feed subscribers.
+    expose_node_details: bool,
 }
 
 /// Adding a node to a chain leads to this result.
@@ -112,6 +116,7 @@ impl State {
             chains_by_genesis_hash: HashMap::new(),
             denylist: denylist.into_iter().collect(),
             max_third_party_nodes,
+            expose_node_details: false,
         }
     }
 
@@ -152,7 +157,11 @@ impl State {
                     true => usize::MAX,
                     false => self.max_third_party_nodes,
                 };
-                let chain_id = self.chains.add(Chain::new(genesis_hash, max_nodes));
+                let chain_id = self.chains.add(Chain::new(
+                    genesis_hash,
+                    max_nodes,
+                    self.expose_node_details,
+                ));
                 self.chains_by_genesis_hash.insert(genesis_hash, chain_id);
                 chain_id
             }
@@ -218,7 +227,6 @@ impl State {
         NodeId(chain_id, chain_node_id): NodeId,
         payload: Payload,
         feed: &mut FeedMessageSerializer,
-        expose_node_details: bool,
     ) {
         let chain = match self.chains.get_mut(chain_id) {
             Some(chain) => chain,
@@ -228,7 +236,7 @@ impl State {
             }
         };
 
-        chain.update_node(chain_node_id, payload, feed, expose_node_details)
+        chain.update_node(chain_node_id, payload, feed)
     }
 
     /// Update the location for a node. Return `false` if the node was not found.

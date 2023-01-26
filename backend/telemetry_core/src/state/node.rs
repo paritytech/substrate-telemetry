@@ -118,8 +118,8 @@ impl Node {
         self.hwbench.as_ref()
     }
 
-    pub fn update_hwbench(&mut self, hwbench: NodeHwBench) -> Option<NodeHwBench> {
-        self.hwbench.replace(hwbench)
+    pub fn update_hwbench(&mut self, hwbench: Option<NodeHwBench>) -> Option<NodeHwBench> {
+        std::mem::replace(&mut self.hwbench, hwbench)
     }
 
     pub fn update_block(&mut self, block: Block) -> bool {
