@@ -1,5 +1,5 @@
 // Source code for the Substrate Telemetry Server.
-// Copyright (C) 2021 Parity Technologies (UK) Ltd.
+// Copyright (C) 2023 Parity Technologies (UK) Ltd.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,19 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-declare module '@fnando/sparkline' {
-  namespace sparkline {
-    export interface Options {
-      minScale?: number;
-      spotRadius?: number;
-      cursorWidth?: number;
-      interactive?: boolean;
-      onmousemove?: (event: MouseEvent, datapoint: { x: number, y: number, index: number, value: number });
-      onmouseout?: () => void;
-    }
-  }
+// This file runs some code before a jest test.
 
-  function sparkline(svg: SVGSVGElement, values: number[], options?: sparkline.Options): void;
+// polyfill TextEncoder/TextDecoder since they aren't in jsdom:
+const { TextEncoder, TextDecoder } = require('util');
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
 
-  export = sparkline;
-}
+// polyfill fetch since it's not in jsdom:
+require('whatwg-fetch');

@@ -14,15 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-export * from './helpers';
-export * from './id';
-export * from './stringify';
-export * from './SortedCollection';
+import * as React from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App';
 
-import * as Types from './types';
-import * as FeedMessage from './feed';
+describe('App.tsx', () => {
+  it('renders without crashing', () => {
+    const div = document.createElement('div');
+    const root = createRoot(div);
+    root.render(<App />);
+  });
+})
 
-export { Types, FeedMessage };
-
-// Increment this if breaking changes were made to types in `feed.ts`
-export const VERSION: Types.FeedVersion = 32 as Types.FeedVersion;

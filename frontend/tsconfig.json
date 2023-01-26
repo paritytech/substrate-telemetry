@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-    "outDir": "build",
-    "module": "esnext",
-    "target": "ES2017",
+    "outDir": "./build/",
+    "module": "es2020",
+    "target": "es2015",
     "lib": [
       "dom",
       "dom.iterable",

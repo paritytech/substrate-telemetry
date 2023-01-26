@@ -72,8 +72,8 @@ By default, `telemetry_core` will listen on 127.0.0.1:8000, and `telemetry_shard
 
 ```sh
 cd frontend
-yarn install
-yarn start
+npm install
+npm run start
 ```
 
 Once this is running, you'll be able to navigate to [http://localhost:3000](http://localhost:3000) to view the UI.
