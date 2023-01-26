@@ -59,8 +59,8 @@ export class Connection {
     // If env_config.js is generated and loaded in, it'll set this variable.
     // This is set up in the Dockerfile. Otherwise, we just connect to a
     // default URL.
-    if (window.process?.env?.[ENV_URL]) {
-      return process.env.SUBSTRATE_TELEMETRY_URL as string;
+    if (window.process_env?.[ENV_URL]) {
+      return window.process_env[ENV_URL] as string;
     }
 
     if (window.location.protocol === 'https:') {
