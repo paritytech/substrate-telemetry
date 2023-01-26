@@ -7,9 +7,9 @@ WORKDIR /opt/builder
 
 COPY . .
 
-RUN yarn install && \
-    yarn build && \
-    yarn cache clean
+RUN npm install && \
+    npm build && \
+    npm cache clean
 
 #### OUTPUT IMAGE ####
 FROM docker.io/nginx:stable-alpine

@@ -10,7 +10,7 @@
     "test": "jest",
     "pretty:check": "prettier --check src/**/*.{ts,tsx}",
     "pretty:fix": "prettier --write src",
-    "clean": "rm -rf node_modules build ./tmp/env-config.js report*.json yarn-error.log",
+    "clean": "rm -rf node_modules build ./tmp/env-config.js report*.json npm-error.log",
     "lint": "eslint src"
   },
   "dependencies": {
