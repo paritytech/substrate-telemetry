@@ -12,7 +12,6 @@ echo -n > $TARGET
 
 declare -a vars=(
   "SUBSTRATE_TELEMETRY_URL"
-  "SUBSTRATE_TELEMETRY_SAMPLE"
 )
 
 echo "window.process_env = {" >> $TARGET

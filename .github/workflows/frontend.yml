@@ -35,14 +35,14 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
 
-    - name: install
-      run: yarn install
+    - name: Install
+      run: npm install
 
-    - name: check
-      run: yarn pretty:check
+    - name: Check
+      run: npm run pretty:check
 
     - name: Test
-      run: yarn test
+      run: npm run test
 
     - name: Build
-      run: yarn build
+      run: npm run build

@@ -1,5 +1,5 @@
 // Source code for the Substrate Telemetry Server.
-// Copyright (C) 2021 Parity Technologies (UK) Ltd.
+// Copyright (C) 2023 Parity Technologies (UK) Ltd.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,10 +18,7 @@ import * as React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
-import { unregister } from './registerServiceWorker';
 
 const container = document.getElementById('root') as HTMLElement;
 const root = createRoot(container);
 root.render(<App />);
-
-unregister();

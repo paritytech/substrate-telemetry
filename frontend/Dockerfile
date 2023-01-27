@@ -1,5 +1,5 @@
 #### BUILDER IMAGE  ####
-FROM docker.io/node:14 as builder
+FROM docker.io/node:18 as builder
 LABEL maintainer="Chevdor <chevdor@gmail.com>"
 LABEL description="Substrate Telemetry Frontend builder image"
 
@@ -7,9 +7,7 @@ WORKDIR /opt/builder
 
 COPY . .
 
-RUN yarn install && \
-    yarn build && \
-    yarn cache clean
+RUN npm install && npm run build
 
 #### OUTPUT IMAGE ####
 FROM docker.io/nginx:stable-alpine

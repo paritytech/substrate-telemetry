@@ -1,5 +1,5 @@
 // Source code for the Substrate Telemetry Server.
-// Copyright (C) 2021 Parity Technologies (UK) Ltd.
+// Copyright (C) 2023 Parity Technologies (UK) Ltd.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,12 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import App from './App';
+// This file runs some code before a jest test.
 
-it('renders without crashing', () => {
-  const div = document.createElement('div');
-  ReactDOM.render(<App />, div);
-  ReactDOM.unmountComponentAtNode(div);
-});
+// polyfill TextEncoder/TextDecoder since they aren't in jsdom:
+const { TextEncoder, TextDecoder } = require('util');
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
+
+// polyfill fetch since it's not in jsdom:
+require('whatwg-fetch');

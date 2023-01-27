@@ -14,15 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-export * from './helpers';
-export * from './id';
-export * from './stringify';
-export * from './SortedCollection';
-
-import * as Types from './types';
-import * as FeedMessage from './feed';
-
-export { Types, FeedMessage };
-
-// Increment this if breaking changes were made to types in `feed.ts`
-export const VERSION: Types.FeedVersion = 32 as Types.FeedVersion;
+/** @type {import('ts-jest').JestConfigWithTsJest} */
+module.exports = {
+  preset: 'ts-jest',
+  testEnvironment: 'jsdom',
+  setupFiles: ['<rootDir>/setupJest.js'],
+  moduleNameMapper: {
+    "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/assets/mock.image.js",
+    "\\.(css|less|scss|sass)$": "<rootDir>/assets/mock.style.js"
+  },
+};
