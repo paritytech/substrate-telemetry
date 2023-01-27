@@ -189,14 +189,13 @@ impl FeedMessage {
             3 => {
                 let (
                     node_id,
-                    (name, implementation, version, validator, network_id, ip, sysinfo),
+                    (name, implementation, version, validator, network_id, ip, sysinfo, hwbench),
                     stats,
                     io,
                     hardware,
                     block_details,
                     location,
                     startup_time,
-                    hwbench,
                 ) = serde_json::from_str(raw_val.get())?;
 
                 // Give these two types but don't use the results:

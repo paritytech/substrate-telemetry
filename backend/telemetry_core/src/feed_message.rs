@@ -199,6 +199,7 @@ impl FeedMessageWrite for AddedNode<'_> {
             &details.network_id,
             &ip,
             &sys_info,
+            &hwbench,
         );
 
         ser.write(&(
@@ -210,7 +211,6 @@ impl FeedMessageWrite for AddedNode<'_> {
             node.block_details(),
             &node.location(),
             &node.startup_time(),
-            &hwbench,
         ));
     }
 }
