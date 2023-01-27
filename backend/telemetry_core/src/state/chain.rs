@@ -175,6 +175,7 @@ impl Chain {
         nid: ChainNodeId,
         payload: Payload,
         feed: &mut FeedMessageSerializer,
+        expose_node_details: bool,
     ) {
         if let Some(block) = payload.best_block() {
             self.handle_block(block, nid, feed);
@@ -198,7 +199,11 @@ impl Chain {
                     // If our node validator address (and thus details) change, send an
                     // updated "add node" feed message:
                     if node.set_validator_address(authority.authority_id.clone()) {
-                        feed.push(feed_message::AddedNode(nid.into(), &node));
+                        feed.push(feed_message::AddedNode(
+                            nid.into(),
+                            &node,
+                            expose_node_details,
+                        ));
                     }
                     return;
                 }
@@ -210,6 +215,17 @@ impl Chain {
                         disk_random_write_score: hwbench.disk_random_write_score,
                     };
                     let old_hwbench = node.update_hwbench(new_hwbench);
+                    // The `hwbench` for this node has changed, send an updated "add node".
+                    // Note: There is no need to send this message if the details
+                    // will not be serialized over the wire.
+                    if expose_node_details {
+                        feed.push(feed_message::AddedNode(
+                            nid.into(),
+                            &node,
+                            expose_node_details,
+                        ));
+                    }
+
                     self.stats_collator
                         .update_hwbench(old_hwbench.as_ref(), CounterValue::Decrement);
                     self.stats_collator

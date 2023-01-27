@@ -174,8 +174,9 @@ pub struct InnerLoop {
     /// are prioritised and dropped to try and get back on track.
     max_queue_len: usize,
 
-    /// Flag to expose the IP addresses of all connected nodes to the feed subscribers.
-    expose_node_ips: bool,
+    /// Flag to expose the node's details (IP address, SysInfo, HwBench) of all connected
+    /// nodes to the feed subscribers.
+    expose_node_details: bool,
 }
 
 impl InnerLoop {
@@ -189,7 +190,7 @@ impl InnerLoop {
             chain_to_feed_conn_ids: MultiMapUnique::new(),
             tx_to_locator,
             max_queue_len: opts.max_queue_len,
-            expose_node_ips: opts.expose_node_ips,
+            expose_node_details: opts.expose_node_details,
         }
     }
 
@@ -326,7 +327,7 @@ impl InnerLoop {
                 genesis_hash,
             } => {
                 // Conditionally modify the node's details to include the IP address.
-                node.ip = self.expose_node_ips.then_some(ip.to_string().into());
+                node.ip = self.expose_node_details.then_some(ip.to_string().into());
                 match self.node_state.add_node(genesis_hash, node) {
                     state::AddNodeResult::ChainOnDenyList => {
                         if let Some(shard_conn) = self.shard_channels.get_mut(&shard_conn_id) {
@@ -360,6 +361,7 @@ impl InnerLoop {
                         feed_messages_for_chain.push(feed_message::AddedNode(
                             node_id.get_chain_node_id().into(),
                             &details.node,
+                            self.expose_node_details,
                         ));
                         self.finalize_and_broadcast_to_chain_feeds(
                             &genesis_hash,
@@ -409,8 +411,12 @@ impl InnerLoop {
                 };
 
                 let mut feed_message_serializer = FeedMessageSerializer::new();
-                self.node_state
-                    .update_node(node_id, payload, &mut feed_message_serializer);
+                self.node_state.update_node(
+                    node_id,
+                    payload,
+                    &mut feed_message_serializer,
+                    self.expose_node_details,
+                );
 
                 if let Some(chain) = self.node_state.get_chain_by_node_id(node_id) {
                     let genesis_hash = chain.genesis_hash();
@@ -531,7 +537,11 @@ impl InnerLoop {
                             .iter()
                             .filter_map(|&(idx, n)| n.as_ref().map(|n| (idx, n)))
                         {
-                            feed_serializer.push(feed_message::AddedNode(node_id, node));
+                            feed_serializer.push(feed_message::AddedNode(
+                                node_id,
+                                node,
+                                self.expose_node_details,
+                            ));
                             feed_serializer.push(feed_message::FinalizedBlock(
                                 node_id,
                                 node.finalized().height,

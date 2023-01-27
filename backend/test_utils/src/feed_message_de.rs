@@ -16,7 +16,8 @@
 
 use anyhow::Context;
 use common::node_types::{
-    BlockDetails, BlockHash, BlockNumber, NodeLocation, NodeStats, Timestamp,
+    BlockDetails, BlockHash, BlockNumber, NodeHwBench, NodeLocation, NodeStats, NodeSysInfo,
+    Timestamp,
 };
 use serde_json::value::RawValue;
 
@@ -41,6 +42,7 @@ pub enum FeedMessage {
         block_details: BlockDetails,
         location: Option<NodeLocation>,
         startup_time: Option<Timestamp>,
+        hwbench: Option<NodeHwBench>,
     },
     RemovedNode {
         node_id: usize,
@@ -135,6 +137,7 @@ pub struct NodeDetails {
     pub validator: Option<String>,
     pub network_id: Option<String>,
     pub ip: Option<String>,
+    pub sysinfo: Option<NodeSysInfo>,
 }
 
 impl FeedMessage {
@@ -186,7 +189,7 @@ impl FeedMessage {
             3 => {
                 let (
                     node_id,
-                    (name, implementation, version, validator, network_id, ip),
+                    (name, implementation, version, validator, network_id, ip, sysinfo, hwbench),
                     stats,
                     io,
                     hardware,
@@ -207,11 +210,13 @@ impl FeedMessage {
                         validator,
                         network_id,
                         ip,
+                        sysinfo,
                     },
                     stats,
                     block_details,
                     location,
                     startup_time,
+                    hwbench,
                 }
             }
             // RemoveNode

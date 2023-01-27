@@ -82,9 +82,10 @@ struct Opts {
     /// How many nodes from third party chains are allowed to connect before we prevent connections from them.
     #[structopt(long, default_value = "1000")]
     max_third_party_nodes: usize,
-    /// Flag to expose the IP addresses of all connected nodes to the feed subscribers.
+    /// Flag to expose the node's details (IP address, SysInfo, HwBench) of all connected
+    /// nodes to the feed subscribers.
     #[structopt(long)]
-    pub expose_node_ips: bool,
+    pub expose_node_details: bool,
 }
 
 fn main() {
@@ -135,7 +136,7 @@ async fn start_server(num_aggregators: usize, opts: Opts) -> anyhow::Result<()> 
             max_queue_len: aggregator_queue_len,
             denylist: opts.denylist,
             max_third_party_nodes: opts.max_third_party_nodes,
-            expose_node_ips: opts.expose_node_ips,
+            expose_node_details: opts.expose_node_details,
         },
     )
     .await?;

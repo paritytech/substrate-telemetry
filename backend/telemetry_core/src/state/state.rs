@@ -218,6 +218,7 @@ impl State {
         NodeId(chain_id, chain_node_id): NodeId,
         payload: Payload,
         feed: &mut FeedMessageSerializer,
+        expose_node_details: bool,
     ) {
         let chain = match self.chains.get_mut(chain_id) {
             Some(chain) => chain,
@@ -227,7 +228,7 @@ impl State {
             }
         };
 
-        chain.update_node(chain_node_id, payload, feed)
+        chain.update_node(chain_node_id, payload, feed, expose_node_details)
     }
 
     /// Update the location for a node. Return `false` if the node was not found.

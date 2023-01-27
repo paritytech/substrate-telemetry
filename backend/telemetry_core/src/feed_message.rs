@@ -134,7 +134,7 @@ pub struct BestBlock(pub BlockNumber, pub Timestamp, pub Option<u64>);
 #[derive(Serialize)]
 pub struct BestFinalized(pub BlockNumber, pub BlockHash);
 
-pub struct AddedNode<'a>(pub FeedNodeId, pub &'a Node);
+pub struct AddedNode<'a>(pub FeedNodeId, pub &'a Node, pub bool);
 
 #[derive(Serialize)]
 pub struct RemovedNode(pub FeedNodeId);
@@ -180,16 +180,26 @@ pub struct StaleNode(pub FeedNodeId);
 
 impl FeedMessageWrite for AddedNode<'_> {
     fn write_to_feed(&self, ser: &mut FeedMessageSerializer) {
-        let AddedNode(nid, node) = self;
+        let AddedNode(nid, node, expose_node_details) = self;
 
         let details = node.details();
+        // Hide the ip, sysinfo and hwbench if the `expose_node_details` flag was not specified.
+        let node_hwbench = node.hwbench();
+        let (ip, sys_info, hwbench) = if *expose_node_details {
+            (&details.ip, &details.sysinfo, &node_hwbench)
+        } else {
+            (&None, &None, &None)
+        };
+
         let details = (
             &details.name,
             &details.implementation,
             &details.version,
             &details.validator,
             &details.network_id,
-            &details.ip,
+            &ip,
+            &sys_info,
+            &hwbench,
         );
 
         ser.write(&(
