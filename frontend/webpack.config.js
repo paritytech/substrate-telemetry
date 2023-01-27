@@ -33,7 +33,7 @@ module.exports = {
     ],
   },
   plugins: [
-    // Use our index.html as a starting point (to add lscript links etc to)
+    // Use our index.html as a starting point (to add script links etc to)
     // and make sure to use/copy over the favicon too.
     new HtmlWebpackPlugin({
       favicon: "./assets/favicon.svg",
