@@ -92,6 +92,25 @@ stages:
   tags:
     - kubernetes-parity-build
 
+.publish-docker-image-description:
+  stage:                  build
+  default:
+    - echo
+  variables:
+    CI_IMAGE:             paritytech/dockerhub-description
+    DOCKERHUB_REPOSITORY: parity/substrate-telemetry-$PRODUCT
+    DOCKER_USERNAME:      $Docker_Hub_User_Parity
+    DOCKER_PASSWORD:      $Docker_Hub_Pass_Parity
+    README_FILEPATH:      $CI_PROJECT_DIR/$PRODUCT/Dockerfile.README.md
+  rules:
+  - if: $CI_COMMIT_REF_NAME == "master"
+    changes:
+    - $PRODUCT/Dockerfile.README.md
+  script:
+    - cd / && sh entrypoint.sh
+  tags:
+    - kubernetes-parity-build
+
 .deploy:                  &deploy
   image:                  paritytech/kubetools:3.5.3
   script:
@@ -140,6 +159,18 @@ build-frontend:
     CONTAINER_REPO:       "docker.io/parity/substrate-telemetry-frontend"
     DOCKERFILE_DIRECTORY: "./frontend/"
   <<:                     *dockerize
+
+publish-backend-docker-image-description:
+  extends:                .publish-docker-image-description
+  variables:
+    PRODUCT:              backend
+    SHORT_DESCRIPTION:    "substrate-backend Docker Image."
+
+publish-frontend-docker-image-description:
+  extends:                .publish-docker-image-description
+  variables:
+    PRODUCT:              frontend
+    SHORT_DESCRIPTION:    "substrate-frontend Docker Image."
 
 # Manually build the docker images and deploy some commit to staging.
 deploy-commit-to-staging:
