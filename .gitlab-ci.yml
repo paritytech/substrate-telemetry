@@ -94,7 +94,7 @@ stages:
 
 .publish-docker-image-description:
   stage:                  build
-  default:
+  before_script:
     - echo
   variables:
     CI_IMAGE:             paritytech/dockerhub-description
