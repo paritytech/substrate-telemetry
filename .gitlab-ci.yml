@@ -161,13 +161,13 @@ build-frontend:
   <<:                     *dockerize
 
 publish-backend-docker-image-description:
-  extends:                .push-docker-image-description
+  extends:                .publish-docker-image-description
   variables:
     PRODUCT:              backend
     SHORT_DESCRIPTION:    "substrate-backend Docker Image."
 
 publish-frontend-docker-image-description:
-  extends:                .push-docker-image-description
+  extends:                .publish-docker-image-description
   variables:
     PRODUCT:              frontend
     SHORT_DESCRIPTION:    "substrate-frontend Docker Image."
