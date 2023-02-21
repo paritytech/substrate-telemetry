@@ -94,10 +94,10 @@ stages:
 
 .publish-docker-image-description:
   stage:                  build
+  image:                  paritytech/dockerhub-description
   before_script:
     - echo
   variables:
-    CI_IMAGE:             paritytech/dockerhub-description
     DOCKERHUB_REPOSITORY: parity/substrate-telemetry-$PRODUCT
     DOCKER_USERNAME:      $Docker_Hub_User_Parity
     DOCKER_PASSWORD:      $Docker_Hub_Pass_Parity
