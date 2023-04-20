@@ -28,6 +28,8 @@ variables:
   ## DO NOT SET THEM IN THIS FILE!! They've been mentioned here only for documentation purposes!
   FORCE_DEPLOY:               ""        # boolean: true or false - triggers the deploy-production stage
   FORCE_DOCKER_TAG:           ""        # choose an existing docker tag to be deployed (e.g. v1.2.3)
+  BUILDAH_IMAGE:              "quay.io/buildah/stable:v1.29"
+  BUILDAH_COMMAND:            "buildah --storage-driver overlay2"
 
 default:
   before_script:
@@ -58,17 +60,17 @@ stages:
 # Pipeline Job Templates:
 .dockerize:               &dockerize
   stage:                  build
-  image:                  quay.io/buildah/stable:v1.27
+  image:                  $BUILDAH_IMAGE
   script:
     - |-
       echo building "$CONTAINER_REPO:$DOCKER_IMAGE_TAG"
       if [[ $BUILD_LATEST_IMAGE ]]; then
-        buildah bud \
+        $BUILDAH_COMMAND build \
         --format=docker \
         --tag "$CONTAINER_REPO:$DOCKER_IMAGE_TAG" \
         --tag "$CONTAINER_REPO:latest" "$DOCKERFILE_DIRECTORY"
       else
-        buildah bud \
+        $BUILDAH_COMMAND build \
         --format=docker \
         --tag "$CONTAINER_REPO:$DOCKER_IMAGE_TAG" "$DOCKERFILE_DIRECTORY"
       fi
@@ -77,10 +79,10 @@ stages:
     - |-
       echo pushing "$CONTAINER_REPO:$DOCKER_IMAGE_TAG"
       if [[ $BUILD_LATEST_IMAGE ]]; then
-        buildah push --format=v2s2 "$CONTAINER_REPO:$DOCKER_IMAGE_TAG"
-        buildah push --format=v2s2 "$CONTAINER_REPO:latest"
+        $BUILDAH_COMMAND build --format=v2s2 "$CONTAINER_REPO:$DOCKER_IMAGE_TAG"
+        $BUILDAH_COMMAND build --format=v2s2 "$CONTAINER_REPO:latest"
       else
-        buildah push --format=v2s2 "$CONTAINER_REPO:$DOCKER_IMAGE_TAG"
+        $BUILDAH_COMMAND build --format=v2s2 "$CONTAINER_REPO:$DOCKER_IMAGE_TAG"
       fi
   rules:
     - if: '$FORCE_DOCKER_TAG'
