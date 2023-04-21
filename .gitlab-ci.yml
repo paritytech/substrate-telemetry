@@ -79,10 +79,10 @@ stages:
     - |-
       echo pushing "$CONTAINER_REPO:$DOCKER_IMAGE_TAG"
       if [[ $BUILD_LATEST_IMAGE ]]; then
-        $BUILDAH_COMMAND build --format=v2s2 "$CONTAINER_REPO:$DOCKER_IMAGE_TAG"
-        $BUILDAH_COMMAND build --format=v2s2 "$CONTAINER_REPO:latest"
+        $BUILDAH_COMMAND push --format=v2s2 "$CONTAINER_REPO:$DOCKER_IMAGE_TAG"
+        $BUILDAH_COMMAND push --format=v2s2 "$CONTAINER_REPO:latest"
       else
-        $BUILDAH_COMMAND build --format=v2s2 "$CONTAINER_REPO:$DOCKER_IMAGE_TAG"
+        $BUILDAH_COMMAND push --format=v2s2 "$CONTAINER_REPO:$DOCKER_IMAGE_TAG"
       fi
   rules:
     - if: '$FORCE_DOCKER_TAG'
