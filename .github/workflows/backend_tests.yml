@@ -37,7 +37,7 @@ jobs:
           override: true
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@060bda31e0be4f453bb6ed2d7e5427b31734ad01 # v2.3.0
+        uses: Swatinem/rust-cache@2656b87321093db1cb55fbd73183d195214fdfd1 # v2.5.0
         with:
           workspaces: backend
 
