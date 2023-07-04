@@ -26,17 +26,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
 
 .Row-pinned td:first-child {
-  border-left: 3px solid #e6007a;
+  border-left: 3px solid linear-gradient(to right, rgb(51, 140, 245), rgb(79, 209, 197));
   padding-left: 10px;
 }
 
 .Row-pinned td:last-child {
-  border-right: 3px solid #e6007a;
+  border-right: 3px solid linear-gradient(to right, rgb(51, 140, 245), rgb(79, 209, 197));
   padding-right: 10px;
 }
 
 .Row-pinned.Row-synced {
-  color: #e6007a;
+  color: linear-gradient(to right, rgb(51, 140, 245), rgb(79, 209, 197));
 }
 
 .Row-stale {

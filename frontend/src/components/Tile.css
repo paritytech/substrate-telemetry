@@ -50,6 +50,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
   font-size: 0.8em;
   padding: 0.1em;
   border-radius: 1.25em;
-  border: 2px solid #e6007a;
-  color: #e6007a;
+  border: 2px solid linear-gradient(to right, rgb(51, 140, 245), rgb(79, 209, 197));
+  color: linear-gradient(to right, rgb(51, 140, 245), rgb(79, 209, 197));
 }

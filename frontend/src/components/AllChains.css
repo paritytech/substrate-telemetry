@@ -68,8 +68,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
 
 .AllChains-controls-sortby-active {
-  background-color: #e6007a;
-  border-color: #e6007a;
+  background: linear-gradient(to right, rgb(51, 140, 245), rgb(79, 209, 197));
+  border-color: linear-gradient(to right, rgb(51, 140, 245), rgb(79, 209, 197));
   color: white;
 }
 
@@ -114,11 +114,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
 
 .AllChains-chain-selected {
-  background: #e6007a;
+  background: linear-gradient(to right, rgb(51, 140, 245), rgb(79, 209, 197));
   color: white;
 }
 
 .AllChains-chain-selected .AllChains-node-count {
   background: white;
-  color: #e6007a;
+  color: linear-gradient(to right, rgb(51, 140, 245), rgb(79, 209, 197));
 }
