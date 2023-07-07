@@ -17,10 +17,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
 .Chains {
-  background: linear-gradient(to right, rgb(51, 140, 245), rgb(79, 209, 197));
   color: #000;
   padding: 0 76px 0 16px;
-  height: 40px;
   min-width: 1350px;
   position: relative;
 }

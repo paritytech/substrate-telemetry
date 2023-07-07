@@ -28,6 +28,7 @@ import listIcon from '../../icons/list-alt-regular.svg';
 import worldIcon from '../../icons/location.svg';
 import settingsIcon from '../../icons/settings.svg';
 import statsIcon from '../../icons/graph.svg';
+import kasarImg from '../../assets/kasarLogo.png'
 
 import './Header.css';
 
@@ -57,6 +58,11 @@ export class Header extends React.Component<HeaderProps> {
 
     return (
       <div className="Header">
+        <img
+            src={kasarImg}
+            alt="Deoxys"
+            className='ImageIcon'
+        />
         <Tile icon={blockIcon} title="Best Block">
           #{formatNumber(best)}
         </Tile>

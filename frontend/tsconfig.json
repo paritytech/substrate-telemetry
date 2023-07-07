@@ -29,5 +29,5 @@
     "skipLibCheck": true
   },
   "exclude": ["node_modules", "build"],
-  "include": ["src", "declarations/**/*.d.ts"]
+  "include": ["src", "*.d.ts"]
 }

@@ -17,39 +17,49 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
 .Tile {
-  font-size: 2.5em;
+  font-size: 1.8em;  /* Increased text size */
   text-align: left;
-  width: 260px;
-  height: 100px;
+  width: 200px;
+  height: 80px;
   display: inline-block;
   position: relative;
+  align-items: center;
+  border-radius: 10px;
+  padding: 5px;
+  background: #e4956e;
+  color: black;
+  box-shadow: 0 10px 5px rgba(0,0,0,1), 0 px 10px rgba(0,0,0,1);
+  margin: 20px;
 }
 
 .Tile-label {
   position: absolute;
-  top: 24px;
-  left: 70px;
+  background-color: transparent;
+  padding: 2px;
+  left: 50px;
   right: 0;
-  font-size: 0.4em;
-  text-transform: uppercase;
+  font-size: 0.6em;  /* Increased text size */
+  font-weight: 600;  /* Increased text weight */
+  color: black;
 }
 
 .Tile-content {
   position: absolute;
-  bottom: 16px;
-  left: 70px;
+  bottom: 10px;
+  background-color: transparent;
+  padding: 2px;
+  left: 50px;
   right: 0;
-  font-weight: 300;
-  font-size: 0.75em;
+  font-weight: 600;  /* Increased text weight */
+  font-size: 0.6em;  /* Increased text size */
+  color: black;
 }
 
 .Tile .Icon {
   position: absolute;
-  left: 20px;
-  top: 15px;
-  font-size: 0.8em;
-  padding: 0.1em;
-  border-radius: 1.25em;
-  border: 2px solid linear-gradient(to right, rgb(51, 140, 245), rgb(79, 209, 197));
-  color: linear-gradient(to right, rgb(51, 140, 245), rgb(79, 209, 197));
+  background-color: transparent;
+  left: 15px;
+  font-size: 0.9em;  /* Increased text size */
+  color: black;
+  border: none;
 }

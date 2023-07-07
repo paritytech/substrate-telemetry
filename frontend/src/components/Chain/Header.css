@@ -18,9 +18,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 .Header {
   width: 100%;
-  height: 108px;
+  height: 200px;
   overflow: hidden;
-  background: #fff;
+  background-image: url('../../assets/deoxysBanner.jpg');
+  background-size: cover; /* Added */
+  background-position: center; /* Added - You may adjust as needed */
   color: #000;
   min-width: 1350px;
   position: relative;
@@ -29,7 +31,28 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 .Header-tabs {
   position: absolute;
   right: 5px;
-  bottom: 10px;
-  width: 200px;
-  text-align: right;
+  bottom: 30%;
+  width: 1250px;
+  text-align: left;
+  display: flex;
+  flex-direction: row;
+}
+
+
+.ImageIcon {
+  position: relative;
+  left: 20px;
+  width: 75px;
+  height: 75px;
+  border-radius: 50%;
+  font-size: 2.5em;
+  bottom: 12%;
+  margin-left: 10px;
+  margin-right: 50px;
+}
+
+.Header .Tiles {
+  position: absolute;
+  justify-content: center;
+  align-items: center;
 }
