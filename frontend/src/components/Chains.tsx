@@ -77,15 +77,6 @@ export class Chains extends React.Component<ChainsProps> {
 
     return (
       <div className="Chains">
-        {subscribedChain}
-        {renderedChains}
-        <a
-          className="Chains-all-chains"
-          href={allChainsHref}
-          title="All Chains"
-        >
-          <Icon src={listIcon} />
-        </a>
         <a
           className="Chains-fork-me"
           href="https://github.com/paritytech/substrate-telemetry"
