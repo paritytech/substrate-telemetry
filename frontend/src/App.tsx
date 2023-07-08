@@ -137,7 +137,7 @@ export default class App extends React.Component {
 
     Ago.timeDiff = timeDiff;
 
-    if (chains.length === 1) {
+    if (chains.length === 0) {
       return (
         <div className="App App-no-telemetry">
           <OfflineIndicator status={status} />
