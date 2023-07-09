@@ -50,9 +50,3 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
   margin-left: 10px;
   margin-right: 50px;
 }
-
-.Header .Tiles {
-  position: absolute;
-  justify-content: center;
-  align-items: center;
-}

@@ -77,7 +77,6 @@ export class Header extends React.Component<HeaderProps> {
         <Tile icon={lastTimeIcon} title="Last Block">
           <Ago when={blockTimestamp} />
         </Tile>
-        <div className="Header-tabs">
           <Tab
             icon={listIcon}
             label="List"
@@ -111,7 +110,6 @@ export class Header extends React.Component<HeaderProps> {
             setDisplay={setDisplay}
           />
         </div>
-      </div>
     );
   }
 }

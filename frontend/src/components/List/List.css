@@ -20,8 +20,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
   /* Prevents the list from auto-scrolling while cascading node
    * updates on new block, which helps with performance. */
   overflow-anchor: none;
-  margin-left: 10px;
-  margin-right: 10px;
 }
 
 .List-no-nodes {

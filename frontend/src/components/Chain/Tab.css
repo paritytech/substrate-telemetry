@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
 .Chain-Tab {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -25,18 +26,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
   line-height: 20px;
   height: 32px;
   width: 32px;
-  color: #00;
+  bottom: 50px;
   cursor: pointer;
   border-radius: 40px;
-  box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.2);
 }
 
 .Chain-Tab:hover {
-  background: #ccc;
+  background: #bd7c5b;
 }
 
 .Chain-Tab-on,
 .Chain-Tab-on:hover {
-  background: linear-gradient(to right,#034ad8, #0085fc);
-  color: #fff;
+  background: #bd7c5b;
+  color: #000;
 }
