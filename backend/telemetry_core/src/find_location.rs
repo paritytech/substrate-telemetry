@@ -81,7 +81,13 @@ struct Locator {
 }
 
 impl Locator {
-    /// Taken from here: https://github.com/P3TERX/GeoLite.mmdb/releases/tag/2022.06.07
+    /// GeoLite database release data: 2023-10-13
+    ///
+    /// To download the latest version visit: https://dev.maxmind.com/geoip/geolite2-free-geolocation-data.
+    ///
+    /// This database incorporates GeoNames [https://www.geonames.org] geographical data, which is made available
+    /// under the Creative Commons Attribution 4.0 License.
+    /// To view a copy of this license,visit https://creativecommons.org/licenses/by/4.0/.
     const CITY_DATA: &'static [u8] = include_bytes!("GeoLite2-City.mmdb");
 
     pub fn new(cache: FxHashMap<IpAddr, Arc<NodeLocation>>) -> Self {
@@ -138,6 +144,6 @@ mod tests {
     fn locate_random_ip() {
         let ip = "12.5.56.25".parse().unwrap();
         let node_location = Locator::new(Default::default()).locate(ip).unwrap();
-        assert_eq!(&*node_location.city, "El Paso");
+        assert_eq!(&*node_location.city, "Riverside");
     }
 }
