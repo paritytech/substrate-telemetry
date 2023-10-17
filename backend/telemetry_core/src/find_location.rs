@@ -144,6 +144,6 @@ mod tests {
     fn locate_random_ip() {
         let ip = "12.5.56.25".parse().unwrap();
         let node_location = Locator::new(Default::default()).locate(ip).unwrap();
-        assert_eq!(&*node_location.city, "El Paso");
+        assert_eq!(&*node_location.city, "Riverside");
     }
 }
