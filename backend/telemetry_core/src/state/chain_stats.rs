@@ -96,6 +96,7 @@ fn bucket_memory(memory: u64) -> (u32, Option<u32>) {
         48,
         56,
         64,
+        128,
     }
 }
 
