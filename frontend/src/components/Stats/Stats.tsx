@@ -110,6 +110,14 @@ function formatMemory(value: Range): string {
   return min + ' GB';
 }
 
+function formatLinuxKernel(value: string): string {
+  let index = value.indexOf('-');
+  if (index === -1) {
+    return value;
+  }
+  return value.substring(0, index);
+}
+
 function formatYesNo(value: boolean): string {
   if (value) {
     return 'Yes';
@@ -166,7 +174,7 @@ export class Stats extends React.Component<StatsProps> {
         stats.is_virtual_machine
       );
       add('linux_distro', 'Linux Distribution', identity, stats.linux_distro);
-      add('linux_kernel', 'Linux Kernel', identity, stats.linux_kernel);
+      add('linux_kernel', 'Linux Kernel', formatLinuxKernel, stats.linux_kernel);
       add(
         'cpu_hashrate_score',
         'CPU Speed',
