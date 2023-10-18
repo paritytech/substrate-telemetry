@@ -111,4 +111,5 @@ export type ChainStats = {
   memory_memcpy_score: Maybe<Ranking<Range>>;
   disk_sequential_write_score: Maybe<Ranking<Range>>;
   disk_random_write_score: Maybe<Ranking<Range>>;
+  cpu_vendor: Maybe<Ranking<string>>;
 };
