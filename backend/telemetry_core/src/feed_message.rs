@@ -240,4 +240,5 @@ pub struct ChainStats {
     pub memory_memcpy_score: Ranking<(u32, Option<u32>)>,
     pub disk_sequential_write_score: Ranking<(u32, Option<u32>)>,
     pub disk_random_write_score: Ranking<(u32, Option<u32>)>,
+    pub cpu_vendor: Ranking<String>,
 }

@@ -110,6 +110,16 @@ fn test_kernel_version_number() {
     assert_eq!(kernel_version_number(&"5.10.0".into()), "5.10.0");
 }
 
+fn cpu_vendor(cpu: &Box<str>) -> &str {
+    if cpu.contains("Intel") || cpu.contains("intel") {
+        "Intel"
+    } else if cpu.contains("AMD") || cpu.contains("amd") {
+        "AMD"
+    } else {
+        "Other"
+    }
+}
+
 #[derive(Default)]
 pub struct ChainStatsCollator {
     version: Counter<String>,
@@ -125,6 +135,7 @@ pub struct ChainStatsCollator {
     memory_memcpy_score: Counter<(u32, Option<u32>)>,
     disk_sequential_write_score: Counter<(u32, Option<u32>)>,
     disk_random_write_score: Counter<(u32, Option<u32>)>,
+    cpu_vendor: Counter<String>,
 }
 
 impl ChainStatsCollator {
@@ -172,6 +183,11 @@ impl ChainStatsCollator {
 
         self.is_virtual_machine.modify(
             sysinfo.and_then(|sysinfo| sysinfo.is_virtual_machine.as_ref()),
+            op,
+        );
+
+        self.cpu_vendor.modify(
+            sysinfo.and_then(|sysinfo| sysinfo.cpu.as_ref().map(cpu_vendor)),
             op,
         );
 
@@ -231,6 +247,7 @@ impl ChainStatsCollator {
                 .disk_sequential_write_score
                 .generate_ranking_ordered(),
             disk_random_write_score: self.disk_random_write_score.generate_ranking_ordered(),
+            cpu_vendor: self.cpu_vendor.generate_ranking_top(10),
         }
     }
 }
