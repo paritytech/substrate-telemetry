@@ -100,6 +100,16 @@ fn bucket_memory(memory: u64) -> (u32, Option<u32>) {
     }
 }
 
+fn kernel_version_number(version: &Box<str>) -> &str {
+    &version[0..version.find('-').unwrap_or(version.len())]
+}
+
+#[test]
+fn test_kernel_version_number() {
+    assert_eq!(kernel_version_number(&"5.10.0-8-amd64".into()), "5.10.0");
+    assert_eq!(kernel_version_number(&"5.10.0".into()), "5.10.0");
+}
+
 #[derive(Default)]
 pub struct ChainStatsCollator {
     version: Counter<String>,
@@ -156,7 +166,7 @@ impl ChainStatsCollator {
         self.linux_distro.modify(
             sysinfo
                 .and_then(|sysinfo| sysinfo.linux_distro.as_ref())
-                .map(|value| &**value),
+                .map(kernel_version_number),
             op,
         );
 
