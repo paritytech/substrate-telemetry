@@ -112,7 +112,9 @@ fn kernel_version_number(version: &Box<str>) -> &str {
 #[test]
 fn test_kernel_version_number() {
     assert_eq!(kernel_version_number(&"5.10.0-8-amd64".into()), "5.10.0");
-    assert_eq!(kernel_version_number(&"5.10.0+8-amd64".into()), "5.10.0");
+    // Plus sign indicates that the kernel was built from modified sources.
+    // This should only appear at the end of the version string.
+    assert_eq!(kernel_version_number(&"5.10.0+82453".into()), "5.10.0");
     assert_eq!(kernel_version_number(&"5.10.0".into()), "5.10.0");
 }
 
