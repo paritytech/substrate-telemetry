@@ -117,10 +117,14 @@ fn test_kernel_version_number() {
 }
 
 fn cpu_vendor(cpu: &Box<str>) -> &str {
-    if cpu.contains("Intel") || cpu.contains("intel") {
+    if cpu.eq_ignore_ascii_case("Intel") {
         "Intel"
-    } else if cpu.contains("AMD") || cpu.contains("amd") {
+    } else if cpu.eq_ignore_ascii_case("AMD") {
         "AMD"
+    } else if cpu.eq_ignore_ascii_case("ARM") {
+        "ARM"
+    } else if cpu.eq_ignore_ascii_case("Apple") {
+        "Apple"
     } else {
         "Other"
     }
