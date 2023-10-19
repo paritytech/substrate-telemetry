@@ -101,12 +101,18 @@ fn bucket_memory(memory: u64) -> (u32, Option<u32>) {
 }
 
 fn kernel_version_number(version: &Box<str>) -> &str {
-    &version[0..version.find('-').unwrap_or(version.len())]
+    let index = version
+        .find("-")
+        .or_else(|| version.find("+"))
+        .unwrap_or(version.len());
+
+    &version[0..index]
 }
 
 #[test]
 fn test_kernel_version_number() {
     assert_eq!(kernel_version_number(&"5.10.0-8-amd64".into()), "5.10.0");
+    assert_eq!(kernel_version_number(&"5.10.0+8-amd64".into()), "5.10.0");
     assert_eq!(kernel_version_number(&"5.10.0".into()), "5.10.0");
 }
 
