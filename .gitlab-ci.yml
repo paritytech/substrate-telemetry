@@ -209,7 +209,9 @@ deploy-commit-to-staging:
   <<:                     *deploy
   environment:
     name:                 parity-stg
-  when: manual
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^[0-9]+/'
+      when: manual
 
 # Automatically deploy `master` branch or tag like `v1.0` to staging
 deploy-master-to-staging:
