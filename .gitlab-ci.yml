@@ -91,8 +91,6 @@ stages:
       when: always
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
       when: always
-    - if: '$CI_COMMIT_BRANCH =~ /^[0-9]+/'
-      when: manual
   tags:
     - kubernetes-parity-build
 
@@ -188,6 +186,9 @@ build-backend-manual:
     DOCKER_USERNAME:      $PARITYPR_USER
     DOCKER_PASSWORD:      $PARITYPR_PASS
   <<:                     *dockerize
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^[0-9]+/'
+      when: manual
 
 build-frontend-manual:
   variables:
@@ -196,6 +197,9 @@ build-frontend-manual:
     DOCKER_USERNAME:      $PARITYPR_USER
     DOCKER_PASSWORD:      $PARITYPR_PASS
   <<:                     *dockerize
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^[0-9]+/'
+      when: manual
 
 deploy-commit-to-staging:
   variables:
