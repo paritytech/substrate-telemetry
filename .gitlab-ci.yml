@@ -74,8 +74,8 @@ stages:
         --format=docker \
         --tag "$CONTAINER_REPO:$DOCKER_IMAGE_TAG" "$DOCKERFILE_DIRECTORY"
       fi
-    - echo ${Docker_Hub_Pass_Parity} |
-        buildah login --username ${Docker_Hub_User_Parity} --password-stdin docker.io
+    - echo ${DOCKER_PASSWORD} |
+        buildah login --username ${DOCKER_USERNAME} --password-stdin docker.io
     - |-
       echo pushing "$CONTAINER_REPO:$DOCKER_IMAGE_TAG"
       if [[ $BUILD_LATEST_IMAGE ]]; then
@@ -154,12 +154,16 @@ build-backend:
   variables:
     CONTAINER_REPO:       "docker.io/parity/substrate-telemetry-backend"
     DOCKERFILE_DIRECTORY: "./backend/"
+    DOCKER_USERNAME:      $Docker_Hub_User_Parity
+    DOCKER_PASSWORD:      $Docker_Hub_Pass_Parity
   <<:                     *dockerize
 
 build-frontend:
   variables:
     CONTAINER_REPO:       "docker.io/parity/substrate-telemetry-frontend"
     DOCKERFILE_DIRECTORY: "./frontend/"
+    DOCKER_USERNAME:      $Docker_Hub_User_Parity
+    DOCKER_PASSWORD:      $Docker_Hub_Pass_Parity
   <<:                     *dockerize
 
 publish-backend-docker-image-description:
@@ -175,17 +179,39 @@ publish-frontend-docker-image-description:
     SHORT_DESCRIPTION:    "substrate-frontend Docker Image."
 
 # Manually build the docker images and deploy some commit to staging.
+build-backend-manual:
+  variables:
+    CONTAINER_REPO:       "docker.io/paritypr/substrate-telemetry-backend"
+    DOCKERFILE_DIRECTORY: "./backend/"
+    DOCKER_USERNAME:      $PARITYPR_USER
+    DOCKER_PASSWORD:      $PARITYPR_PASS
+  <<:                     *dockerize
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^[0-9]+/'
+      when: manual
+
+build-frontend-manual:
+  variables:
+    CONTAINER_REPO:       "docker.io/paritypr/substrate-telemetry-frontend"
+    DOCKERFILE_DIRECTORY: "./frontend/"
+    DOCKER_USERNAME:      $PARITYPR_USER
+    DOCKER_PASSWORD:      $PARITYPR_PASS
+  <<:                     *dockerize
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^[0-9]+/'
+      when: manual
+
 deploy-commit-to-staging:
   variables:
-    CONTAINER_REPO_BACKEND:  "docker.io/parity/substrate-telemetry-backend"
-    CONTAINER_REPO_FRONTEND: "docker.io/parity/substrate-telemetry-frontend"
+    CONTAINER_REPO_BACKEND:  "docker.io/paritypr/substrate-telemetry-backend"
+    CONTAINER_REPO_FRONTEND: "docker.io/paritypr/substrate-telemetry-frontend"
   stage:                  deploy-commit-to-staging
   <<:                     *deploy
   environment:
     name:                 parity-stg
   when: manual
 
-# Autoamtically deploy `master` branch or tag like `v1.0` to staging
+# Automatically deploy `master` branch or tag like `v1.0` to staging
 deploy-master-to-staging:
   variables:
     CONTAINER_REPO_BACKEND:  "docker.io/parity/substrate-telemetry-backend"
