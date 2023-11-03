@@ -96,6 +96,41 @@ fn bucket_memory(memory: u64) -> (u32, Option<u32>) {
         48,
         56,
         64,
+        128,
+    }
+}
+
+fn kernel_version_number(version: &Box<str>) -> &str {
+    let index = version
+        .find("-")
+        .or_else(|| version.find("+"))
+        .unwrap_or(version.len());
+
+    &version[0..index]
+}
+
+#[test]
+fn test_kernel_version_number() {
+    assert_eq!(kernel_version_number(&"5.10.0-8-amd64".into()), "5.10.0");
+    // Plus sign indicates that the kernel was built from modified sources.
+    // This should only appear at the end of the version string.
+    assert_eq!(kernel_version_number(&"5.10.0+82453".into()), "5.10.0");
+    assert_eq!(kernel_version_number(&"5.10.0".into()), "5.10.0");
+}
+
+fn cpu_vendor(cpu: &Box<str>) -> &str {
+    let lowercase_cpu = cpu.to_ascii_lowercase();
+
+    if lowercase_cpu.contains("intel") {
+        "Intel"
+    } else if lowercase_cpu.contains("amd") {
+        "AMD"
+    } else if lowercase_cpu.contains("arm") {
+        "ARM"
+    } else if lowercase_cpu.contains("apple") {
+        "Apple"
+    } else {
+        "Other"
     }
 }
 
@@ -114,6 +149,7 @@ pub struct ChainStatsCollator {
     memory_memcpy_score: Counter<(u32, Option<u32>)>,
     disk_sequential_write_score: Counter<(u32, Option<u32>)>,
     disk_random_write_score: Counter<(u32, Option<u32>)>,
+    cpu_vendor: Counter<String>,
 }
 
 impl ChainStatsCollator {
@@ -148,7 +184,7 @@ impl ChainStatsCollator {
         self.linux_kernel.modify(
             sysinfo
                 .and_then(|sysinfo| sysinfo.linux_kernel.as_ref())
-                .map(|value| &**value),
+                .map(kernel_version_number),
             op,
         );
 
@@ -161,6 +197,11 @@ impl ChainStatsCollator {
 
         self.is_virtual_machine.modify(
             sysinfo.and_then(|sysinfo| sysinfo.is_virtual_machine.as_ref()),
+            op,
+        );
+
+        self.cpu_vendor.modify(
+            sysinfo.and_then(|sysinfo| sysinfo.cpu.as_ref().map(cpu_vendor)),
             op,
         );
 
@@ -220,6 +261,7 @@ impl ChainStatsCollator {
                 .disk_sequential_write_score
                 .generate_ranking_ordered(),
             disk_random_write_score: self.disk_random_write_score.generate_ranking_ordered(),
+            cpu_vendor: self.cpu_vendor.generate_ranking_top(10),
         }
     }
 }

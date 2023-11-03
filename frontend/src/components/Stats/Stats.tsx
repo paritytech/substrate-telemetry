@@ -158,6 +158,7 @@ export class Stats extends React.Component<StatsProps> {
       add('target_arch', 'CPU Architecture', identity, stats.target_arch);
       add('cpu', 'CPU', identity, stats.cpu);
       add('core_count', 'CPU Cores', identity, stats.core_count);
+      add('cpu_vendor', 'CPU Vendor', identity, stats.cpu_vendor);
       add('memory', 'Memory', formatMemory, stats.memory);
       add(
         'is_virtual_machine',
