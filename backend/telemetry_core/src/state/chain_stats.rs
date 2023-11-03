@@ -182,14 +182,14 @@ impl ChainStatsCollator {
         self.linux_kernel.modify(
             sysinfo
                 .and_then(|sysinfo| sysinfo.linux_kernel.as_ref())
-                .map(|value| &**value),
+                .map(kernel_version_number),
             op,
         );
 
         self.linux_distro.modify(
             sysinfo
                 .and_then(|sysinfo| sysinfo.linux_distro.as_ref())
-                .map(kernel_version_number),
+                .map(|value| &**value),
             op,
         );
 
