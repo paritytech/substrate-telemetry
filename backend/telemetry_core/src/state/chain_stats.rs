@@ -119,13 +119,15 @@ fn test_kernel_version_number() {
 }
 
 fn cpu_vendor(cpu: &Box<str>) -> &str {
-    if cpu.eq_ignore_ascii_case("Intel") {
+    let lowercase_cpu = cpu.to_ascii_lowercase();
+
+    if lowercase_cpu.contains("intel") {
         "Intel"
-    } else if cpu.eq_ignore_ascii_case("AMD") {
+    } else if lowercase_cpu.contains("amd") {
         "AMD"
-    } else if cpu.eq_ignore_ascii_case("ARM") {
+    } else if lowercase_cpu.contains("arm") {
         "ARM"
-    } else if cpu.eq_ignore_ascii_case("Apple") {
+    } else if lowercase_cpu.contains("apple") {
         "Apple"
     } else {
         "Other"
