@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use super::counter::{Counter, CounterValue};
-use crate::feed_message::ChainStats;
+use crate::feed_message::{ChainStats, Ranking};
 
 // These are the benchmark scores generated on our reference hardware.
 const REFERENCE_CPU_SCORE: u64 = 1028;
@@ -211,7 +211,11 @@ impl ChainStatsCollator {
             cpu: self.cpu.generate_ranking_top(10),
             memory: self.memory.generate_ranking_ordered(),
             core_count: self.core_count.generate_ranking_top(10),
-            linux_kernel: self.linux_kernel.generate_ranking_top(10),
+            linux_kernel: Ranking {
+                list: vec![("NoKernel".to_string(), 1)],
+                other: 0,
+                unknown: 0,
+            },
             linux_distro: self.linux_distro.generate_ranking_top(10),
             is_virtual_machine: self.is_virtual_machine.generate_ranking_ordered(),
             cpu_hashrate_score: self.cpu_hashrate_score.generate_ranking_top(10),
