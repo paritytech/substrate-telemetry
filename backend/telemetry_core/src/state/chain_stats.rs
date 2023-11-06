@@ -251,10 +251,10 @@ impl ChainStatsCollator {
 
     pub fn generate(&self) -> ChainStats {
         ChainStats {
-            version: self.version.generate_ranking_top(TOP_K_STATS),
+            version: self.version.generate_ranking_top(MAXIMUM_STATS_COUNT),
             target_os: self.target_os.generate_ranking_top(TOP_K_STATS),
             target_arch: self.target_arch.generate_ranking_top(TOP_K_STATS),
-            cpu: self.cpu.generate_ranking_top(TOP_K_STATS),
+            cpu: self.cpu.generate_ranking_top(MAXIMUM_STATS_COUNT),
             memory: self.memory.generate_ranking_ordered(),
             core_count: self.core_count.generate_ranking_top(TOP_K_STATS),
             linux_kernel: self.linux_kernel.generate_ranking_top(MAXIMUM_STATS_COUNT),
