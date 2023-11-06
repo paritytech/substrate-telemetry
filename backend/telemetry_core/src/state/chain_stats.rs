@@ -23,6 +23,8 @@ const REFERENCE_MEMORY_SCORE: u64 = 14899;
 const REFERENCE_DISK_SEQUENTIAL_WRITE_SCORE: u64 = 485;
 const REFERENCE_DISK_RANDOM_WRITE_SCORE: u64 = 222;
 
+/// The maximum number of statistics sent to the frontend for one entry.
+const MAXIMUM_STATS_COUNT: usize = 1024;
 /// Top k statistics reported for one entry.
 const TOP_K_STATS: usize = 10;
 
@@ -255,7 +257,7 @@ impl ChainStatsCollator {
             cpu: self.cpu.generate_ranking_top(TOP_K_STATS),
             memory: self.memory.generate_ranking_ordered(),
             core_count: self.core_count.generate_ranking_top(TOP_K_STATS),
-            linux_kernel: self.linux_kernel.generate_ranking_top(TOP_K_STATS),
+            linux_kernel: self.linux_kernel.generate_ranking_top(MAXIMUM_STATS_COUNT),
             linux_distro: self.linux_distro.generate_ranking_top(TOP_K_STATS),
             is_virtual_machine: self.is_virtual_machine.generate_ranking_ordered(),
             cpu_hashrate_score: self.cpu_hashrate_score.generate_ranking_top(TOP_K_STATS),
