@@ -18,7 +18,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 .OfflineIndicator {
   position: absolute;
-  top: 30px;
+  bottom: 30px;
   right: 30px;
   z-index: 10;
   background: #338cf5;

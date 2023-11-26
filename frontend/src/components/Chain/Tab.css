@@ -17,8 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
 .Chain-Tab {
-  position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 5px;

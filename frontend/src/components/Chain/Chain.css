@@ -16,12 +16,19 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
+.Chain {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
 .Chain-content-container {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  top: 148px;
+  top: 240px;
 }
 
 .Chain-content {

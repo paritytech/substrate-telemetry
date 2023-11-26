@@ -30,6 +30,11 @@ import settingsIcon from '../../icons/settings.svg';
 import statsIcon from '../../icons/graph.svg';
 import kasarImg from '../../assets/kasarLogo.png'
 
+import { FiGithub } from "react-icons/fi";
+import { PiTwitterLogoBold } from "react-icons/pi";
+import { SiGoogledocs } from "react-icons/si";
+import { MdOutlineContactSupport } from "react-icons/md";
+
 import './Header.css';
 
 interface HeaderProps {
@@ -58,57 +63,69 @@ export class Header extends React.Component<HeaderProps> {
 
     return (
       <div className="Header">
-        <img
-          src={kasarImg}
-          alt="Deoxys"
-          className='ImageIcon'
-        />
-        <Tile icon={blockIcon} title="Best Block">
-          #{formatNumber(best)}
-        </Tile>
-        <Tile icon={finalizedIcon} title="Finalized Block">
-          #{formatNumber(finalized)}
-        </Tile>
-        <Tile icon={lastTimeIcon} title="Average Time">
-          {blockAverage == null
-            ? '-'
-            : secondsWithPrecision(blockAverage / 1000)}
-        </Tile>
-        <Tile icon={blockTimeIcon} title="Last Block">
-          <Ago when={blockTimestamp} />
-        </Tile>
-        <Tab
-          icon={listIcon}
-          label="List"
-          display="list"
-          tab=""
-          current={currentTab}
-          setDisplay={setDisplay}
-        />
-        <Tab
-          icon={worldIcon}
-          label="Map"
-          display="map"
-          tab="map"
-          current={currentTab}
-          setDisplay={setDisplay}
-        />
-        <Tab
-          icon={statsIcon}
-          label="Stats"
-          display="stats"
-          tab="stats"
-          current={currentTab}
-          setDisplay={setDisplay}
-        />
-        <Tab
-          icon={settingsIcon}
-          label="Settings"
-          display="settings"
-          tab="settings"
-          current={currentTab}
-          setDisplay={setDisplay}
-        />
+        <div className="Header-row-first">
+          <img
+            src={kasarImg}
+            alt="Deoxys"
+            className="ImageIcon"
+          />
+          <div className="Row-tiles">
+            <Tile icon={blockIcon} title="Best Block">
+              #{formatNumber(best)}
+            </Tile>
+            <Tile icon={finalizedIcon} title="Finalized Block">
+              #{formatNumber(finalized)}
+            </Tile>
+            <Tile icon={lastTimeIcon} title="Average Time">
+              {blockAverage == null
+                ? '-'
+                : secondsWithPrecision(blockAverage / 1000)}
+            </Tile>
+            <Tile icon={blockTimeIcon} title="Last Block">
+              <Ago when={blockTimestamp} />
+            </Tile>
+          </div>
+          <div className="Row-icons">
+            <FiGithub size={20} />
+            <PiTwitterLogoBold size={20} />
+            <SiGoogledocs size={20} />
+            <MdOutlineContactSupport size={20} />
+          </div>
+        </div>
+        <div className="Header-row-second">
+          <Tab
+            icon={listIcon}
+            label="List"
+            display="list"
+            tab=""
+            current={currentTab}
+            setDisplay={setDisplay}
+          />
+          <Tab
+            icon={worldIcon}
+            label="Map"
+            display="map"
+            tab="map"
+            current={currentTab}
+            setDisplay={setDisplay}
+          />
+          <Tab
+            icon={statsIcon}
+            label="Stats"
+            display="stats"
+            tab="stats"
+            current={currentTab}
+            setDisplay={setDisplay}
+          />
+          <Tab
+            icon={settingsIcon}
+            label="Settings"
+            display="settings"
+            tab="settings"
+            current={currentTab}
+            setDisplay={setDisplay}
+          />
+        </div>
       </div>
     );
   }
