@@ -20,10 +20,10 @@ import { formatNumber, secondsWithPrecision } from '../../utils';
 import { Tab, ChainDisplay } from './';
 import { Tile, Ago } from '../';
 
-import blockIcon from '../../icons/cube.svg';
-import finalizedIcon from '../../icons/cube-alt.svg';
-import blockTimeIcon from '../../icons/history.svg';
-import lastTimeIcon from '../../icons/watch.svg';
+import blockIcon from '../../icons/blockchain-icon.svg';
+import finalizedIcon from '../../icons/distribute-icon.svg';
+import blockTimeIcon from '../../icons/stopwatch-icon.svg';
+import lastTimeIcon from '../../icons/timer.svg';
 import listIcon from '../../icons/list-alt-regular.svg';
 import worldIcon from '../../icons/location.svg';
 import settingsIcon from '../../icons/settings.svg';
@@ -69,12 +69,12 @@ export class Header extends React.Component<HeaderProps> {
         <Tile icon={finalizedIcon} title="Finalized Block">
           #{formatNumber(finalized)}
         </Tile>
-        <Tile icon={blockTimeIcon} title="Average Time">
+        <Tile icon={lastTimeIcon} title="Average Time">
           {blockAverage == null
             ? '-'
             : secondsWithPrecision(blockAverage / 1000)}
         </Tile>
-        <Tile icon={lastTimeIcon} title="Last Block">
+        <Tile icon={blockTimeIcon} title="Last Block">
           <Ago when={blockTimestamp} />
         </Tile>
         <Tab
