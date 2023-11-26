@@ -24,7 +24,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 .List-no-nodes {
   font-size: 30px;
-  padding-top: 20vh;
   text-align: center;
   font-weight: 300;
 }
@@ -37,5 +36,5 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 .List--table {
   width: 100%;
   border-spacing: 0;
-  font-family: monospace, sans-serif;
+  height: 100%;
 }

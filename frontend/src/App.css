@@ -18,7 +18,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 .App {
   text-align: left;
-  font-family: 'Inter', Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Inter', Helvetica, Arial, sans-serif;
   font-size: 16px;
   min-width: 1318px;
 }

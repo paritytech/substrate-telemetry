@@ -16,14 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
+
 .THead {
-  background: #e4956e;
+  background: #338CF5;
 }
 
 .THeadCell {
   text-align: left;
-  padding: 8px 13px;
-  height: 23px;
+  padding: 0px 13px;
 }
 
 .THeadCell-sortable {
@@ -32,7 +32,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 .THeadCell-sorted {
   cursor: pointer;
-  background: #bd7c5b;
+  background: #338CF5;
   color: #fff;
 }
 

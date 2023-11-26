@@ -59,9 +59,9 @@ export class Header extends React.Component<HeaderProps> {
     return (
       <div className="Header">
         <img
-            src={kasarImg}
-            alt="Deoxys"
-            className='ImageIcon'
+          src={kasarImg}
+          alt="Deoxys"
+          className='ImageIcon'
         />
         <Tile icon={blockIcon} title="Best Block">
           #{formatNumber(best)}
@@ -77,39 +77,39 @@ export class Header extends React.Component<HeaderProps> {
         <Tile icon={lastTimeIcon} title="Last Block">
           <Ago when={blockTimestamp} />
         </Tile>
-          <Tab
-            icon={listIcon}
-            label="List"
-            display="list"
-            tab=""
-            current={currentTab}
-            setDisplay={setDisplay}
-          />
-          <Tab
-            icon={worldIcon}
-            label="Map"
-            display="map"
-            tab="map"
-            current={currentTab}
-            setDisplay={setDisplay}
-          />
-          <Tab
-            icon={statsIcon}
-            label="Stats"
-            display="stats"
-            tab="stats"
-            current={currentTab}
-            setDisplay={setDisplay}
-          />
-          <Tab
-            icon={settingsIcon}
-            label="Settings"
-            display="settings"
-            tab="settings"
-            current={currentTab}
-            setDisplay={setDisplay}
-          />
-        </div>
+        <Tab
+          icon={listIcon}
+          label="List"
+          display="list"
+          tab=""
+          current={currentTab}
+          setDisplay={setDisplay}
+        />
+        <Tab
+          icon={worldIcon}
+          label="Map"
+          display="map"
+          tab="map"
+          current={currentTab}
+          setDisplay={setDisplay}
+        />
+        <Tab
+          icon={statsIcon}
+          label="Stats"
+          display="stats"
+          tab="stats"
+          current={currentTab}
+          setDisplay={setDisplay}
+        />
+        <Tab
+          icon={settingsIcon}
+          label="Settings"
+          display="settings"
+          tab="settings"
+          current={currentTab}
+          setDisplay={setDisplay}
+        />
+      </div>
     );
   }
 }

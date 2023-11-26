@@ -20,9 +20,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
   width: 100%;
   height: 200px;
   overflow: hidden;
-  background-image: url('../../assets/deoxysBanner.jpg');
-  background-size: cover; /* Added */
-  background-position: center; /* Added - You may adjust as needed */
   color: #000;
   min-width: 1350px;
   position: relative;

@@ -24,19 +24,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
   margin-right: 5px;
   font-size: 18px;
   line-height: 20px;
-  height: 32px;
-  width: 32px;
+  height: 35px;
+  width: 35px;
   bottom: 50px;
   cursor: pointer;
   border-radius: 40px;
 }
 
 .Chain-Tab:hover {
-  background: #bd7c5b;
+  background: #FFF;
 }
 
 .Chain-Tab-on,
 .Chain-Tab-on:hover {
-  background: #bd7c5b;
+  background: #FFF;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
   color: #000;
 }
