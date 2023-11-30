@@ -22,13 +22,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
   height: 100%;
   width: 100%;
 }
-
+/* //ICI */
 .Chain-content-container {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  top: 240px;
+  top: 330px;
 }
 
 .Chain-content {

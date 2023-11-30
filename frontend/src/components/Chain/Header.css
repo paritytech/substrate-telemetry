@@ -7,10 +7,19 @@
   padding: 20px 0px;
 }
 
+.Header-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0px 50px;
+}
+
 .Header-row-first{
   display: flex;
-  justify-content: space-evenly;
+  justify-content: space-between;
   align-items: center;
+  width: 100%;
 }
 
 .Header-row-second {
@@ -19,6 +28,7 @@
   align-items: center;
   padding-top: 20px;
   padding-bottom: 20px;
+  gap: 20px;
 }
 
 .Row-icons{
@@ -37,6 +47,8 @@
   margin-top: 10px;
   margin-bottom: 10px;
   border-radius: 10px;
+  width: 100%;
+  margin: 10px 50px;
 }
 
 .Header-tabs {
@@ -51,4 +63,41 @@
   width: 75px;
   height: 75px;
   border-radius: 50%;
+}
+
+
+.button-outline {
+  background-color: white;
+  /* default background color */
+  border: none;
+  box-shadow:2px 2px 6px rgba(0, 0, 0, 0.1);
+  /* example shadow */
+  color: black;
+  /* default text color */
+  font-size: 16px;
+  /* assuming 'm' size is 16px */
+  font-weight: 400;
+  /* assuming 'normal' weight is 400 */
+  padding: 12px 24px;
+  /* assuming '3xs' and 's' spacings */
+  border-radius: 5px;
+  /* assuming 'm' radius is 8px */
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  margin: 2px;
+}
+
+.button-outline:hover {
+  color: #F5F5F5;
+  background: black;
+}
+
+
+.button-outline.pressed {
+  background-color: black;
+  color: white;
+}
+
+.button-outline.disabled {
+  cursor: not-allowed;
 }

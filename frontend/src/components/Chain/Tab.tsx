@@ -16,14 +16,13 @@
 
 import * as React from 'react';
 import { ChainDisplay } from './';
-import { Icon } from '../';
 import { setHashData } from '../../utils';
 
 import './Tab.css';
 
 interface TabProps {
   label: string;
-  icon: string;
+  text: string;
   display: ChainDisplay;
   current: string;
   tab: string;
@@ -32,14 +31,14 @@ interface TabProps {
 
 export class Tab extends React.Component<TabProps> {
   public render() {
-    const { label, icon, display, current } = this.props;
+    const { label, text, display, current } = this.props;
     const highlight = display === current;
-    const className = highlight ? 'Chain-Tab-on Chain-Tab' : 'Chain-Tab';
+    const className = highlight ? 'pressed button-outline' : 'button-outline';
 
     return (
-      <div className={className} onClick={this.onClick} title={label}>
-        <Icon src={icon} />
-      </div>
+      <button className={className} onClick={this.onClick} title={label}>
+        {text}
+      </button>
     );
   }
 

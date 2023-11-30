@@ -29,6 +29,7 @@ import worldIcon from '../../icons/location.svg';
 import settingsIcon from '../../icons/settings.svg';
 import statsIcon from '../../icons/graph.svg';
 import kasarImg from '../../assets/kasarLogo.png'
+import deoxysImg from '../../assets/deoxys.png'
 
 import { FiGithub } from "react-icons/fi";
 import { PiTwitterLogoBold } from "react-icons/pi";
@@ -46,29 +47,63 @@ interface HeaderProps {
   setDisplay: (display: ChainDisplay) => void;
 }
 
-export class Header extends React.Component<HeaderProps> {
-  public shouldComponentUpdate(nextProps: HeaderProps) {
+type ButtonId = 'nodes' | 'map' | 'stats' | 'params';
+
+export class Header extends React.Component<HeaderProps, { pressedButton: ButtonId | null }> {
+  public shouldComponentUpdate(nextProps: HeaderProps, nextState: any) {
     return (
       this.props.best !== nextProps.best ||
       this.props.finalized !== nextProps.finalized ||
       this.props.blockTimestamp !== nextProps.blockTimestamp ||
       this.props.blockAverage !== nextProps.blockAverage ||
-      this.props.currentTab !== nextProps.currentTab
+      this.props.currentTab !== nextProps.currentTab ||
+      this.state.pressedButton !== nextState.pressedButton // Add this line
     );
   }
 
+  state = {
+    pressedButton: 'nodes' as ButtonId, // Tracks the button currently pressed
+  };
+
+  // Event handler for button clicks
+  handleButtonClick = (buttonId: ButtonId) => {
+    console.log('Button clicked:', buttonId); // Add this line to check if method is called
+    this.setState({ pressedButton: buttonId });
+  };
   public render() {
     const { best, finalized, blockTimestamp, blockAverage } = this.props;
     const { currentTab, setDisplay } = this.props;
 
+    console.log(this.state.pressedButton)
     return (
       <div className="Header">
-        <div className="Header-row-first">
+        <div className="Header-top-row">
           <img
-            src={kasarImg}
+            src={deoxysImg}
             alt="Deoxys"
             className="ImageIcon"
           />
+          <div className="Row-icons">
+            <button className="button-outline" onClick={() => window.open('https://github.com/KasarLabs/deoxys')}>
+              Github
+            </button>
+            <button className="button-outline" onClick={() => window.open('https://twitter.com/kasarlabs')}>
+              Twitter
+            </button>
+            <button className="button-outline" onClick={() => window.open('https://deoxys-docs.kasar.io')}>
+              Docs
+            </button>
+            <button className="button-outline" onClick={() => window.open('https://t.me/kasarlabs')}>
+              Support
+            </button>
+            {/* <FiGithub onClick={() => window.open('https://github.com/KasarLabs/deoxys')} size={30} />
+            <PiTwitterLogoBold onClick={() => window.open('https://twitter.com/kasarlabs')} size={30} />
+            <SiGoogledocs onClick={() => window.open('https://deoxys-docs.kasar.io')} size={30} />
+            <MdOutlineContactSupport onClick={() => window.open('https://t.me/kasarlabs')} size={30} /> */}
+          </div>
+        </div>
+        <div className="Header-row-first">
+
           <div className="Row-tiles">
             <Tile icon={blockIcon} title="Best Block">
               #{formatNumber(best)}
@@ -85,24 +120,36 @@ export class Header extends React.Component<HeaderProps> {
               <Ago when={blockTimestamp} />
             </Tile>
           </div>
-          <div className="Row-icons">
-            <FiGithub size={20} />
-            <PiTwitterLogoBold size={20} />
-            <SiGoogledocs size={20} />
-            <MdOutlineContactSupport size={20} />
-          </div>
+
         </div>
         <div className="Header-row-second">
+          {/* <button className={`button-outline ${this.state.pressedButton === 'nodes' ? 'pressed' : ''}`}
+            onClick={() => this.handleButtonClick('nodes')}>
+            Nodes
+          </button>
+          <button className={`button-outline ${this.state.pressedButton === 'map' ? 'pressed' : ''}`}
+            onClick={() => this.handleButtonClick('map')}>
+            Map
+          </button>
+          <button className={`button-outline ${this.state.pressedButton === 'stats' ? 'pressed' : ''}`}
+            onClick={() => this.handleButtonClick('stats')}>
+            Stats
+          </button>
+          <button className={`button-outline ${this.state.pressedButton === 'params' ? 'pressed' : ''}`}
+            onClick={() => this.handleButtonClick('params')}>
+            Params
+          </button> */}
+
           <Tab
-            icon={listIcon}
-            label="List"
+            text="Nodes"
+            label="node"
             display="list"
-            tab=""
+            tab="node"
             current={currentTab}
             setDisplay={setDisplay}
           />
           <Tab
-            icon={worldIcon}
+            text="Map"
             label="Map"
             display="map"
             tab="map"
@@ -110,7 +157,7 @@ export class Header extends React.Component<HeaderProps> {
             setDisplay={setDisplay}
           />
           <Tab
-            icon={statsIcon}
+            text="Stats"
             label="Stats"
             display="stats"
             tab="stats"
@@ -118,7 +165,7 @@ export class Header extends React.Component<HeaderProps> {
             setDisplay={setDisplay}
           />
           <Tab
-            icon={settingsIcon}
+            text="Settings"
             label="Settings"
             display="settings"
             tab="settings"

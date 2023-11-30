@@ -40,3 +40,39 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
   box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
   color: #000;
 }
+
+
+.button-outline {
+  background-color: white;
+  /* default background color */
+  border: none;
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.1);
+  /* example shadow */
+  color: black;
+  /* default text color */
+  font-size: 16px;
+  /* assuming 'm' size is 16px */
+  font-weight: 400;
+  /* assuming 'normal' weight is 400 */
+  padding: 12px 24px;
+  /* assuming '3xs' and 's' spacings */
+  border-radius: 5px;
+  /* assuming 'm' radius is 8px */
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.button-outline:hover {
+  color: #F5F5F5;
+  background: black;
+}
+
+
+.button-outline.pressed {
+  background-color: black;
+  color: white;
+}
+
+.button-outline.disabled {
+  cursor: not-allowed;
+}
