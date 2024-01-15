@@ -67,7 +67,7 @@ const ICONS = {
   'Nodle Chain Node': nodleIcon,
   subzero: zeroIcon,
   Crust: crustIcon,
-  'Gossamer': gossamerIcon,
+  Gossamer: gossamerIcon,
 };
 const SEMVER_PATTERN = /^\d+\.\d+\.\d+/;
 
