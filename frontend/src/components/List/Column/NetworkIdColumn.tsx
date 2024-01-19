@@ -18,8 +18,7 @@ import * as React from 'react';
 import { Maybe } from '../../../common';
 import { ColumnProps } from './';
 import { Node } from '../../../state';
-import { Truncate } from '../../';
-import { Tooltip } from '../../';
+import { Tooltip, TooltipCopyCallback } from '../../';
 import icon from '../../../icons/fingerprint.svg';
 
 export class NetworkIdColumn extends React.Component<ColumnProps> {
@@ -30,6 +29,7 @@ export class NetworkIdColumn extends React.Component<ColumnProps> {
   public static readonly sortBy = ({ networkId }: Node) => networkId || '';
 
   private data: Maybe<string>;
+  private copy: Maybe<TooltipCopyCallback>;
 
   public shouldComponentUpdate(nextProps: ColumnProps) {
     return this.data !== nextProps.node.networkId;
@@ -45,10 +45,22 @@ export class NetworkIdColumn extends React.Component<ColumnProps> {
     }
 
     return (
-      <td className="Column">
-        <Tooltip text={networkId} position="left" />
-        <Truncate text={networkId} chars={10} />
+      <td className="Column" onClick={this.onClick}>
+        <Tooltip text={networkId} position="left" copy={this.onCopy} />
+        {networkId}
       </td>
     );
   }
+
+  private onCopy = (copy: TooltipCopyCallback) => {
+    this.copy = copy;
+  };
+
+  private onClick = (event: React.MouseEvent) => {
+    event.stopPropagation();
+
+    if (this.copy != null) {
+      this.copy();
+    }
+  };
 }
