@@ -118,8 +118,7 @@ stages:
         --helm-set substrate-telemetry.image.frontend.repository="${CONTAINER_REPO_FRONTEND}"
         --helm-set substrate-telemetry.image.frontend.tag="${DOCKER_IMAGE_TAG}"
     - argocd app sync $APP
-    # uncomment after https://github.com/paritytech/devops/issues/3141 is done
-    # - argocd app wait $APP --timeout 180
+    - argocd app wait $APP --timeout 180
   tags:
     - kubernetes-parity-build
 
