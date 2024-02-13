@@ -50,7 +50,7 @@ impl<'de> Visitor<'de> for HashVisitor {
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str(
-            "byte array of length 32, or hexidecimal string of 32 bytes beginning with 0x",
+            "byte array of length 32, or hexadecimal string of 32 bytes beginning with 0x",
         )
     }
 

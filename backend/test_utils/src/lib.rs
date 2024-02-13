@@ -21,7 +21,7 @@ pub mod server;
 /// is the slightly-lossy inverse of the custom serialization we do to feed messages.
 pub mod feed_message_de;
 
-/// A couple of macros to make it easier to test for the presense of things (mainly, feed messages)
+/// A couple of macros to make it easier to test for the presence of things (mainly, feed messages)
 /// in an iterable container.
 #[macro_use]
 pub mod contains_matches;
