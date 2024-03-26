@@ -150,6 +150,10 @@ export class Connection {
   }
 
   private handleMessages = (messages: FeedMessage.Message[]) => {
+    console.log("Messges \n");
+
+    console.log(messages);
+    
     this.messageTimeout?.reset();
     const { nodes, chains, sortBy, selectedColumns } = this.appState;
     const nodesStateRef = nodes.ref;
@@ -467,12 +471,15 @@ export class Connection {
   private handleFeedData = (event: MessageEvent) => {
     let data: FeedMessage.Data;
 
+    console.log("Am here on feedMessage  \n");
+    console.log(event.data as any as FeedMessage.Data);
+
     if (typeof event.data === 'string') {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data = event.data as any as FeedMessage.Data;
     } else {
       const u8aData = new Uint8Array(event.data);
-
+      
       // Future-proofing for when we switch to binary feed
       if (u8aData[0] === 0x00) {
         return this.newVersion();
@@ -482,8 +489,9 @@ export class Connection {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data = str as any as FeedMessage.Data;
+      
     }
-
+   
     this.handleMessages(FeedMessage.deserialize(data));
   };
 
