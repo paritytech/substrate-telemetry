@@ -1723,6 +1723,7 @@ name = "telemetry_core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "arrayvec",
  "bimap",
  "bincode",
  "bytes",

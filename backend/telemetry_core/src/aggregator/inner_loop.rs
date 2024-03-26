@@ -69,7 +69,7 @@ pub enum FromShardWebsocket {
     Disconnected,
 }
 
-/// The aggregator can these messages back to a shard connection.
+/// The aggregator can send these messages back to a shard connection.
 #[derive(Debug)]
 pub enum ToShardWebsocket {
     /// Mute messages to the core by passing the shard-local ID of them.
@@ -84,7 +84,7 @@ pub enum ToShardWebsocket {
 pub enum FromFeedWebsocket {
     /// When the socket is opened, it'll send this first
     /// so that we have a way to communicate back to it.
-    /// Unbounded so that slow feeds don't block aggregato
+    /// Unbounded so that slow feeds don't block aggregator
     /// progress.
     Initialize {
         channel: flume::Sender<ToFeedWebsocket>,
