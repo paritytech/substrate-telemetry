@@ -463,7 +463,7 @@ async fn e2e_feed_add_and_remove_shard() {
             }))
             .unwrap();
 
-        // Keep what we need to to keep connection alive and let us kill a shard:
+        // Keep what we need to keep connection alive and let us kill a shard:
         shards.push((shard_id, node_tx));
     }
 
