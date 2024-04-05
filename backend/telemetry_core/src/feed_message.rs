@@ -222,28 +222,30 @@ impl FeedMessageWrite for AddedNode<'_> {
 pub struct ChainStatsUpdate<'a>(pub &'a ChainStats);
 
 /// Ranking list out node details elements per node id and counts per elements
+/// `list`: List of node detail element per its count [( item, count )]
+/// `node_map`: A map 
 #[derive(Serialize, PartialEq, Eq, Default)]
-pub struct Ranking<K,NodeId: std::hash::Hash + Ord> {
+pub struct Ranking<K> {
     pub list: Vec<(K, u64)>,
     pub other: u64,
     pub unknown: u64,
-    pub node_map: HashMap<NodeId,K>
+    pub node_map: HashMap<ArrayString<64>,K>
 }
 
 #[derive(Serialize, PartialEq, Eq, Default)]
 pub struct ChainStats {
-    pub version: Ranking<String,ArrayString<64>>,
-    pub target_os: Ranking<String, ArrayString<64>>,
-    pub target_arch: Ranking<String,ArrayString<64>>,
-    pub cpu: Ranking<String, ArrayString<64>>,
-    pub memory: Ranking<(u32, Option<u32>),ArrayString<64>>,
-    pub core_count: Ranking<u32, ArrayString<64>>,
-    pub linux_kernel: Ranking<String,ArrayString<64>>,
-    pub linux_distro: Ranking<String,ArrayString<64>>,
-    pub is_virtual_machine: Ranking<bool,ArrayString<64>>,
-    pub cpu_hashrate_score: Ranking<(u32, Option<u32>),ArrayString<64>>,
-    pub memory_memcpy_score: Ranking<(u32, Option<u32>),ArrayString<64>>,
-    pub disk_sequential_write_score: Ranking<(u32, Option<u32>),ArrayString<64>>,
-    pub disk_random_write_score: Ranking<(u32, Option<u32>),ArrayString<64>>,
-    pub cpu_vendor: Ranking<String,ArrayString<64>>,
+    pub version: Ranking<String>,
+    pub target_os: Ranking<String>,
+    pub target_arch: Ranking<String>,
+    pub cpu: Ranking<String>,
+    pub memory: Ranking<(u32, Option<u32>)>,
+    pub core_count: Ranking<u32>,
+    pub linux_kernel: Ranking<String>,
+    pub linux_distro: Ranking<String>,
+    pub is_virtual_machine: Ranking<bool>,
+    pub cpu_hashrate_score: Ranking<(u32, Option<u32>)>,
+    pub memory_memcpy_score: Ranking<(u32, Option<u32>)>,
+    pub disk_sequential_write_score: Ranking<(u32, Option<u32>)>,
+    pub disk_random_write_score: Ranking<(u32, Option<u32>)>,
+    pub cpu_vendor: Ranking<String>,
 }

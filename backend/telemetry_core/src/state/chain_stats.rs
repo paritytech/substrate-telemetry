@@ -136,20 +136,20 @@ fn cpu_vendor(cpu: &Box<str>) -> &str {
 
 #[derive(Default)]
 pub struct ChainStatsCollator {
-    version: Counter<String,ArrayString<64>>,
-    target_os: Counter<String,ArrayString<64>>,
-    target_arch: Counter<String,ArrayString<64>>,
-    cpu: Counter<String,ArrayString<64>>,
-    memory: Counter<(u32, Option<u32>),ArrayString<64>>,
-    core_count: Counter<u32,ArrayString<64>>,
-    linux_kernel: Counter<String,ArrayString<64>>,
-    linux_distro: Counter<String,ArrayString<64>>,
-    is_virtual_machine: Counter<bool,ArrayString<64>>,
-    cpu_hashrate_score: Counter<(u32, Option<u32>),ArrayString<64>>,
-    memory_memcpy_score: Counter<(u32, Option<u32>),ArrayString<64>>,
-    disk_sequential_write_score: Counter<(u32, Option<u32>),ArrayString<64>>,
-    disk_random_write_score: Counter<(u32, Option<u32>),ArrayString<64>>,
-    cpu_vendor: Counter<String,ArrayString<64>>,
+    version: Counter<String>,
+    target_os: Counter<String>,
+    target_arch: Counter<String>,
+    cpu: Counter<String>,
+    memory: Counter<(u32, Option<u32>)>,
+    core_count: Counter<u32>,
+    linux_kernel: Counter<String>,
+    linux_distro: Counter<String>,
+    is_virtual_machine: Counter<bool>,
+    cpu_hashrate_score: Counter<(u32, Option<u32>),>,
+    memory_memcpy_score: Counter<(u32, Option<u32>)>,
+    disk_sequential_write_score: Counter<(u32, Option<u32>)>,
+    disk_random_write_score: Counter<(u32, Option<u32>)>,
+    cpu_vendor: Counter<String>,
 }
 
 impl ChainStatsCollator {

@@ -14,13 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+use arrayvec::ArrayString;
+
 use crate::feed_message::Ranking;
 use std::{collections::HashMap, str::FromStr};
 
 
 /// A data structure which counts how many occurrences of a given key we've seen.
 #[derive(Default)]
-pub struct Counter<K, NodeId> {
+pub struct Counter<K> {
     /// A map containing the number of occurrences of a given key.
     ///
     /// If there are none then the entry is removed.
@@ -31,7 +33,7 @@ pub struct Counter<K, NodeId> {
 
     /// The map of Node Id ( Network Id) to the node detail element
     /// i.e {"123DE": "aarch64"}
-    node_map: HashMap<NodeId,K>
+    node_map: HashMap<ArrayString<64>,K>
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -40,14 +42,13 @@ pub enum CounterValue {
     Decrement,
 }
 
-impl<K,NodeId> Counter<K,NodeId>
+impl<K> Counter<K>
 where
-    K: Sized + std::hash::Hash + Eq,
-    NodeId: std::hash::Hash + Eq + Clone + Copy + FromStr + AsRef<str> + Ord
+    K: Sized + std::hash::Hash + Eq
 
 {
     /// Either adds or removes a single occurence of a given `key`.
-    pub fn modify<'a, Q>(&mut self,node_id: NodeId, key: Option<&'a Q>, op: CounterValue)
+    pub fn modify<'a, Q>(&mut self,node_id: ArrayString<64>, key: Option<&'a Q>, op: CounterValue)
     where
         Q: ?Sized + std::hash::Hash + Eq,
         K: std::borrow::Borrow<Q>,
@@ -60,6 +61,7 @@ where
                         *entry += 1;
                         // add the node Id and the value ( key ) to the node_map
                         self.node_map.insert(node_id, key.to_owned());
+    
                     }
                     CounterValue::Decrement => {
                         *entry -= 1;
@@ -76,6 +78,7 @@ where
                 self.map.insert(key.to_owned(), 1);
                 // add the node Id and the value ( key ) to the node_map
                 self.node_map.insert(node_id, key.to_owned()); 
+        
             }
             
         } else {
@@ -92,10 +95,9 @@ where
     }
 
     /// Generates a top-N table of the most common keys.
-    pub fn generate_ranking_top(&self, max_count: usize) -> Ranking<K, NodeId>
+    pub fn generate_ranking_top(&self, max_count: usize) -> Ranking<K>
     where
         K: Clone,
-        NodeId: Clone + std::hash::Hash + Ord
     {
         let mut all: Vec<(&K, u64)> = self.map.iter().map(|(key, count)| (key, *count)).collect();
         all.sort_unstable_by_key(|&(_, count)| !count);
@@ -115,15 +117,14 @@ where
             list,
             other,
             unknown: self.empty,
-            node_map: HashMap::new(),
+            node_map: self.node_map.clone(),
         }
     }
 
     /// Generates a sorted table of all of the keys.
-    pub fn generate_ranking_ordered(&self) -> Ranking<K,NodeId>
+    pub fn generate_ranking_ordered(&self) -> Ranking<K>
     where
-        K: Copy + Clone + Ord,
-        NodeId: Clone + std::hash::Hash + Ord
+        K: Copy + Clone + Ord
     {
         let mut list: Vec<(K, u64)> = self.map.iter().map(|(key, count)| (*key, *count)).collect();
         list.sort_unstable_by_key(|&(key, count)| (key, !count));
@@ -132,7 +133,7 @@ where
             list,
             other: 0,
             unknown: self.empty,
-            node_map: HashMap::new(),
+            node_map: self.node_map.clone(),
         }
     }
 }
