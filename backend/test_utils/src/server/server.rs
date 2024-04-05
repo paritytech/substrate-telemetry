@@ -84,7 +84,7 @@ pub enum ServerMode {
         shards: DenseMap<ProcessId, ShardProcess>,
     },
     ConnectToExistingMode {
-        /// The hosts that we can connect to to submit things.
+        /// The hosts that we can connect to submit things.
         submit_hosts: Vec<String>,
         /// Which host do we use next (we'll cycle around them
         /// as shards are "added").
