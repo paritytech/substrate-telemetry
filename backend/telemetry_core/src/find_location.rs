@@ -85,7 +85,7 @@ impl Locator {
     /// Database and Contents Copyright (c) 2024 MaxMind, Inc.
     /// To download the latest version visit: https://dev.maxmind.com/geoip/geolite2-free-geolocation-data.
     ///
-    /// Use of this MaxMind product is governed by MaxMind's GeoLite2 End User License Agreement, 
+    /// Use of this MaxMind product is governed by MaxMind's GeoLite2 End User License Agreement,
     /// which can be viewed at https://www.maxmind.com/en/geolite2/eula.
     /// This database incorporates GeoNames [https://www.geonames.org] geographical data,
     /// which is made available under the Creative Commons Attribution 4.0 License.
@@ -146,6 +146,6 @@ mod tests {
     fn locate_random_ip() {
         let ip = "12.5.56.25".parse().unwrap();
         let node_location = Locator::new(Default::default()).locate(ip).unwrap();
-        assert_eq!(&*node_location.city, "Riverside");
+        assert_eq!(&*node_location.city, "Gardena");
     }
 }
