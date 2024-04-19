@@ -39,7 +39,7 @@ impl<K> Counter<K>
 where
     K: Sized + std::hash::Hash + Eq,
 {
-    /// Either adds or removes a single occurence of a given `key`.
+    /// Either adds or removes a single occurrence of a given `key`.
     pub fn modify<'a, Q>(&mut self, key: Option<&'a Q>, op: CounterValue)
     where
         Q: ?Sized + std::hash::Hash + Eq,

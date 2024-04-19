@@ -50,7 +50,7 @@ impl RollingTotalBuilder {
 
     /// Set the size of the window of time that we'll look back on
     /// to sum up values over to give us the current total. The size
-    /// is set as a multiple of the granularity; a granulatiry of 1s
+    /// is set as a multiple of the granularity; a granularity of 1s
     /// and a size of 10 means the window size will be 10 seconds.
     pub fn window_size_multiple(mut self, val: usize) -> Self {
         self.window_size_multiple = val;
