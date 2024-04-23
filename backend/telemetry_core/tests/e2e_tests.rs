@@ -767,7 +767,7 @@ async fn e2e_slow_feeds_are_disconnected() {
 }
 
 /// If something connects to the `/submit` endpoint, there is a limit to the number
-/// of different messags IDs it can send telemetry about, to prevent a malicious actor from
+/// of different messages IDs it can send telemetry about, to prevent a malicious actor from
 /// spamming a load of message IDs and exhausting our memory.
 #[tokio::test]
 async fn e2e_max_nodes_per_connection_is_enforced() {
