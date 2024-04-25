@@ -38,7 +38,7 @@ pub struct NodeDetails {
     pub validator: Option<Box<str>>,
     pub network_id: NetworkId,
     pub startup_time: Option<Box<str>>,
-    pub target_os: Option<Box<str>>,
+    pub target_os: Option<Box<str>>,   //starts here
     pub target_arch: Option<Box<str>>,
     pub target_env: Option<Box<str>>,
     pub sysinfo: Option<NodeSysInfo>,

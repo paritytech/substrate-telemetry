@@ -133,7 +133,7 @@ export class Connection {
     this.bindSocket();
   }
 
-  public subscribe(chain: Types.GenesisHash) {
+  public subscribe(chain: Types.GenesisHash) { //It has subscribed to the telemetry core
     if (
       this.appState.subscribed != null &&
       this.appState.subscribed !== chain
@@ -150,10 +150,6 @@ export class Connection {
   }
 
   private handleMessages = (messages: FeedMessage.Message[]) => {
-    console.log("Messges \n");
-
-    console.log(messages);
-    
     this.messageTimeout?.reset();
     const { nodes, chains, sortBy, selectedColumns } = this.appState;
     const nodesStateRef = nodes.ref;
@@ -166,6 +162,8 @@ export class Connection {
     }
 
     for (const message of messages) {
+      console.log('message ACTIONS', message.action);
+      console.log('message', message.payload);
       switch (message.action) {
         case ACTIONS.FeedVersion: {
           if (message.payload !== VERSION) {
@@ -205,6 +203,7 @@ export class Connection {
             startupTime,
           ] = message.payload;
           const pinned = this.pins.has(nodeDetails[0]);
+          console.log('added node:', message.payload); //similar to action 3
           const node = new Node(
             pinned,
             id,
@@ -214,7 +213,7 @@ export class Connection {
             nodeHardware,
             blockDetails,
             location,
-            startupTime
+            startupTime,
           );
 
           nodes.add(node);
@@ -273,7 +272,6 @@ export class Connection {
 
         case ACTIONS.NodeStats: {
           const [id, nodeStats] = message.payload;
-
           nodes.mutAndMaybeSort(
             id,
             (node) => node.updateStats(nodeStats),
@@ -366,6 +364,21 @@ export class Connection {
         }
 
         case ACTIONS.ChainStatsUpdate: {
+          console.log('chain stats:', message.payload);
+          //const nodeId = message.payload.version.node_map;
+          const chainStats = message.payload as Record<string, any>; // This casts payload to a more flexible type
+
+          for (const [key, value] of Object.entries(chainStats)) {
+            // Check if value is not null or undefined and has a property 'node_map'
+            if (value && 'node_map' in value) {
+              const nodeMap = value.node_map;
+              console.log(`${key} node map:`, nodeMap);
+
+              // Use nodeMap here to update the details for each node
+              // ...
+            }
+          }
+
           this.appUpdate({ chainStats: message.payload });
           break;
         }
@@ -471,15 +484,12 @@ export class Connection {
   private handleFeedData = (event: MessageEvent) => {
     let data: FeedMessage.Data;
 
-    console.log("Am here on feedMessage  \n");
-    console.log(event.data as any as FeedMessage.Data);
-
     if (typeof event.data === 'string') {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data = event.data as any as FeedMessage.Data;
     } else {
       const u8aData = new Uint8Array(event.data);
-      
+
       // Future-proofing for when we switch to binary feed
       if (u8aData[0] === 0x00) {
         return this.newVersion();
@@ -489,9 +499,8 @@ export class Connection {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data = str as any as FeedMessage.Data;
-      
     }
-   
+
     this.handleMessages(FeedMessage.deserialize(data));
   };
 

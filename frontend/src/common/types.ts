@@ -25,6 +25,15 @@ export type NodeId = Id<'Node'>;
 export type NodeName = Opaque<string, 'NodeName'>;
 export type NodeImplementation = Opaque<string, 'NodeImplementation'>;
 export type NodeVersion = Opaque<string, 'NodeVersion'>;
+export type OperatingSystem = Opaque<string, 'OperatingSystem'>; //step 1
+export type CpuArchitecture = Opaque<string, 'CpuArchitecture'>; //step 1
+export type Cpu = number; //step 1
+export type CpuCores = number; //step 1
+export type TargetEnv = string; //step 1
+export type Memory = number; //step 1
+export type VirtualMachine = boolean; //step 1
+export type LinuxKernel = number; //step 1
+export type LinuxDistro = string; //step 1
 export type BlockNumber = Opaque<number, 'BlockNumber'>;
 export type BlockHash = Opaque<string, 'BlockHash'>;
 export type Address = Opaque<string, 'Address'>;
@@ -43,6 +52,17 @@ export type Bytes = Opaque<number, 'Bytes'>;
 export type BytesPerSecond = Opaque<number, 'BytesPerSecond'>;
 export type NetworkId = Opaque<string, 'NetworkId'>;
 
+
+
+export type NodeSysInfo = {
+  cpu: string | null;
+  memory: number | null;
+  core_count: number | null;
+  linux_kernel: string | null;
+  linux_distro: string | null;
+  is_virtual_machine: boolean | null;
+} | null;
+
 export type BlockDetails = [
   BlockNumber,
   BlockHash,
@@ -56,8 +76,56 @@ export type NodeDetails = [
   NodeVersion,
   Maybe<Address>,
   Maybe<NetworkId>,
-  Maybe<string>
+  OperatingSystem,
+  CpuArchitecture,
+  TargetEnv,
+  NodeSysInfo
 ];
+
+export type NodeSpecificDetail<T> = {
+  list: Array<[T, number]>;
+  node_map: Record<NodeId, T>;
+  other: number;
+  unknown: number;
+  
+};
+
+export type ExtraNodeDetails = {
+  version: NodeSpecificDetail<string>;
+  target_os: NodeSpecificDetail<string>;
+  target_arch: NodeSpecificDetail<string>;
+  cpu: NodeSpecificDetail<number>;
+  core_count: NodeSpecificDetail<number>;
+  memory: NodeSpecificDetail<string>; // or number, if memory is a number
+  is_virtual_machine: NodeSpecificDetail<boolean>;
+  linux_distro: NodeSpecificDetail<string>;
+  linux_kernel: NodeSpecificDetail<string>;
+  cpu_hashrate_score: NodeSpecificDetail<number>;
+  memory_memcpy_score: NodeSpecificDetail<number>;
+  disk_sequential_write_score: NodeSpecificDetail<number>;
+  disk_random_write_score: NodeSpecificDetail<number>;
+  cpu_vendor: NodeSpecificDetail<string>;
+};
+
+// export type NodeSpecificDetails = {
+//   version: string;
+//   target_os: string;
+//   target_arch: string;
+//   cpu: number;
+//   core_count: number;
+//   memory: string;
+//   is_virtual_machine: boolean;
+//   linux_distro: string;
+//   linux_kernel: string;
+//   cpu_hashrate_score: number;
+//   memory_memcpy_score: number;
+//   disk_sequential_write_score: number;
+//   disk_random_write_score: number;
+//   cpu_vendor: string;
+// };
+
+
+
 export type NodeStats = [PeerCount, TransactionCount];
 export type NodeIO = [Array<Bytes>];
 export type NodeHardware = [

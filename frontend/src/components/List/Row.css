@@ -44,5 +44,5 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
 
 .Row:hover {
-  background-color: #1e1e1e;
+  background-color: #1e1e1e;  /*remember to change to #1e1e1e*/
 }

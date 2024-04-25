@@ -58,11 +58,25 @@ export class Node {
   public readonly id: Types.NodeId;
   public readonly name: Types.NodeName;
   public readonly implementation: Types.NodeImplementation;
-  public readonly version: Types.NodeVersion;
+  public readonly version: Types.NodeVersion; //step 3
   public readonly validator: Maybe<Types.Address>;
   public readonly networkId: Maybe<Types.NetworkId>;
   public readonly startupTime: Maybe<Types.Timestamp>;
+  public readonly target_os: Types.OperatingSystem; //starts here //step 3
+  public readonly target_arch: Types.CpuArchitecture; 
+  public readonly target_env: Types.TargetEnv; 
+  public readonly sysInfo: Types.NodeSysInfo;
 
+
+  public readonly cpu: Types.Cpu;
+  public readonly memory: Types.Memory;
+  public readonly core_count: Types.CpuCores;
+  public readonly linux_kernel: Types.LinuxKernel;
+  public readonly linux_distro: Types.LinuxDistro;
+  public readonly is_virtual_machine: Types.VirtualMachine;
+ 
+  
+  
   public readonly sortableName: string;
   public readonly sortableVersion: number;
 
@@ -100,9 +114,10 @@ export class Node {
     nodeHardware: Types.NodeHardware,
     blockDetails: Types.BlockDetails,
     location: Maybe<Types.NodeLocation>,
-    startupTime: Maybe<Types.Timestamp>
+    startupTime: Maybe<Types.Timestamp>,
+     
   ) {
-    const [name, implementation, version, validator, networkId] = nodeDetails;
+    const [name, implementation, version, validator, networkId, target_os, target_arch, target_env, sysInfo] = nodeDetails; //step 4
 
     this.pinned = pinned;
 
@@ -113,6 +128,27 @@ export class Node {
     this.validator = validator;
     this.networkId = networkId;
     this.startupTime = startupTime;
+    this.target_os = target_os;
+    this.target_arch = target_arch;
+    this.target_env = target_env;
+    this.sysInfo = {
+      cpu: sysInfo?.cpu ?? '', // Default value or some global constant
+      memory: sysInfo?.memory ?? 0,
+      core_count: sysInfo?.core_count ?? 0,
+      linux_kernel: sysInfo?.linux_kernel ?? '',
+      linux_distro: sysInfo?.linux_distro ?? '',
+      is_virtual_machine: sysInfo?.is_virtual_machine ?? false,
+    };
+
+    this.cpu = sysInfo && sysInfo.cpu ? Number(sysInfo.cpu) : 0; 
+    this.memory = sysInfo && sysInfo.memory ? Number(sysInfo.memory) : 0;
+    this.core_count = sysInfo && sysInfo.core_count ? Number(sysInfo.core_count) : 0; 
+    this.linux_kernel = sysInfo && sysInfo.linux_kernel ? Number(sysInfo.linux_kernel) : 0; 
+    this.linux_distro = sysInfo && sysInfo.linux_distro ? sysInfo.linux_distro : ''; 
+    this.is_virtual_machine = sysInfo && sysInfo.is_virtual_machine ? Boolean(sysInfo.is_virtual_machine) : false; 
+
+    
+    
 
     const [major = 0, minor = 0, patch = 0] = (version || '0.0.0')
       .split('.')
@@ -255,6 +291,22 @@ export interface StateSettings {
   blockpropagation: boolean;
   blocklasttime: boolean;
   uptime: boolean;
+
+  version: boolean; //starts here
+  target_os: boolean;
+  target_arch: boolean;
+  cpu: boolean;
+  core_count: boolean;
+  memory: boolean;
+  is_virtual_machine: boolean;
+  linux_distro: boolean;
+  linux_kernel: boolean;
+  cpu_hashrate_score: boolean;
+  memory_memcpy_score: boolean;
+  disk_sequential_write_score: boolean;
+  disk_random_write_score: boolean;
+  cpu_vendor: boolean;
+  
 }
 
 export interface State {
