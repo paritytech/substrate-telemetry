@@ -17,7 +17,7 @@
 use arrayvec::ArrayString;
 
 use crate::feed_message::Ranking;
-use std::{collections::HashMap, str::FromStr};
+use std::{collections::HashMap, /*str::FromStr*/};
 
 
 /// A data structure which counts how many occurrences of a given key we've seen.

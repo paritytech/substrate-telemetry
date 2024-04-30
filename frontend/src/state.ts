@@ -58,11 +58,11 @@ export class Node {
   public readonly id: Types.NodeId;
   public readonly name: Types.NodeName;
   public readonly implementation: Types.NodeImplementation;
-  public readonly version: Types.NodeVersion; //step 3
+  public readonly version: Types.NodeVersion; 
   public readonly validator: Maybe<Types.Address>;
   public readonly networkId: Maybe<Types.NetworkId>;
   public readonly startupTime: Maybe<Types.Timestamp>;
-  public readonly target_os: Types.OperatingSystem; //starts here //step 3
+  public readonly target_os: Types.OperatingSystem; 
   public readonly target_arch: Types.CpuArchitecture; 
   public readonly target_env: Types.TargetEnv; 
   public readonly sysInfo: Types.NodeSysInfo;
