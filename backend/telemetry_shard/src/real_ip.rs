@@ -114,7 +114,7 @@ fn pick_best_ip_from_options(
 /// Follow <https://datatracker.ietf.org/doc/html/rfc7239> to decode the Forwarded header value.
 /// Roughly, proxies can add new sets of values by appending a comma to the existing list
 /// (so we have something like "values1, values2, values3" from proxy1, proxy2 and proxy3 for
-/// instance) and then the valeus themselves are ';' separated name=value pairs. The value in each
+/// instance) and then the values themselves are ';' separated name=value pairs. The value in each
 /// pair may or may not be surrounded in double quotes.
 ///
 /// Examples from the RFC:
