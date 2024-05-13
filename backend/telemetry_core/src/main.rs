@@ -45,7 +45,7 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
 const NAME: &str = "Substrate Telemetry Backend Core";
 const ABOUT: &str = "This is the Telemetry Backend Core that receives telemetry messages \
-                     from Substrate/Polkadot nodes and provides the data to a subsribed feed";
+                     from Substrate/Polkadot nodes and provides the data to a subscribed feed";
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = NAME, version = VERSION, author = AUTHORS, about = ABOUT)]
