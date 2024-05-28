@@ -27,7 +27,7 @@ export class LinuxKernelColumn extends React.Component<ColumnProps> {
     public static readonly setting = 'linux_kernel';
     public static readonly sortBy = ({ linux_kernel }: Node) => linux_kernel || 0;
   
-    private data: number;
+    private data: string;
   
     public shouldComponentUpdate(nextProps: ColumnProps) {
       return this.data !== nextProps.node.linux_kernel;

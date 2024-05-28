@@ -27,12 +27,12 @@ export type NodeImplementation = Opaque<string, 'NodeImplementation'>;
 export type NodeVersion = Opaque<string, 'NodeVersion'>;
 export type OperatingSystem = Opaque<string, 'OperatingSystem'>; 
 export type CpuArchitecture = Opaque<string, 'CpuArchitecture'>; 
-export type Cpu = number; 
+export type Cpu = string; 
 export type CpuCores = number; 
 export type TargetEnv = string; 
 export type Memory = number; 
 export type VirtualMachine = boolean; 
-export type LinuxKernel = number; 
+export type LinuxKernel = string; 
 export type LinuxDistro = string; 
 export type BlockNumber = Opaque<number, 'BlockNumber'>;
 export type BlockHash = Opaque<string, 'BlockHash'>;
@@ -79,6 +79,7 @@ export type NodeDetails = [
   OperatingSystem,
   CpuArchitecture,
   TargetEnv,
+  undefined,
   NodeSysInfo
 ];
 
