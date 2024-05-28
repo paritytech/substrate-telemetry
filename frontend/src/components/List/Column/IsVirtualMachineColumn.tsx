@@ -41,7 +41,7 @@ export class IsVirtualMachineColumn extends React.Component<ColumnProps> {
   
       return (
         <td className="Column">
-          {is_virtual_machine}
+          {is_virtual_machine ? "True" : "False"}
         </td>
       );
     }

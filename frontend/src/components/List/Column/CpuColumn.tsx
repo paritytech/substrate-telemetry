@@ -28,7 +28,7 @@ export class CpuColumn extends React.Component<ColumnProps> {
     public static readonly setting = 'cpu';
     public static readonly sortBy = ({ cpu }: Node) => cpu || 0;
   
-    private data: number;
+    private data: string;
   
     public shouldComponentUpdate(nextProps: ColumnProps) {
       return this.data !== nextProps.node.cpu;

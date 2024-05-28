@@ -117,7 +117,7 @@ export class Node {
     startupTime: Maybe<Types.Timestamp>,
      
   ) {
-    const [name, implementation, version, validator, networkId, target_os, target_arch, target_env, sysInfo] = nodeDetails; //step 4
+    const [name, implementation, version, validator, networkId, target_os, target_arch, target_env, customNullField, sysInfo] = nodeDetails; //step 4
 
     this.pinned = pinned;
 
@@ -140,10 +140,10 @@ export class Node {
       is_virtual_machine: sysInfo?.is_virtual_machine ?? false,
     };
 
-    this.cpu = sysInfo && sysInfo.cpu ? Number(sysInfo.cpu) : 0; 
+    this.cpu = sysInfo && sysInfo.cpu ? sysInfo.cpu : ''; 
     this.memory = sysInfo && sysInfo.memory ? Number(sysInfo.memory) : 0;
     this.core_count = sysInfo && sysInfo.core_count ? Number(sysInfo.core_count) : 0; 
-    this.linux_kernel = sysInfo && sysInfo.linux_kernel ? Number(sysInfo.linux_kernel) : 0; 
+    this.linux_kernel = sysInfo && sysInfo.linux_kernel ? sysInfo.linux_kernel : ''; 
     this.linux_distro = sysInfo && sysInfo.linux_distro ? sysInfo.linux_distro : ''; 
     this.is_virtual_machine = sysInfo && sysInfo.is_virtual_machine ? Boolean(sysInfo.is_virtual_machine) : false; 
 
