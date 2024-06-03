@@ -20,9 +20,8 @@ import { Node } from '../../../state';
 import { Tooltip, Icon } from '../../';
 import icon from '../../../icons/terminal.svg';
 
-import parityPolkadotIcon from '../../../icons/dot.svg';
 import paritySubstrateIcon from '../../../icons/substrate.svg';
-import polkadotJsIcon from '../../../icons/polkadot-js.svg';
+import ggx from '../../../icons/ggx.svg';
 import airalabRobonomicsIcon from '../../../icons/robonomics.svg';
 import chainXIcon from '../../../icons/chainx.svg';
 import edgewareIcon from '../../../icons/edgeware.svg';
@@ -42,9 +41,9 @@ import zeroIcon from '../../../icons/zero.svg';
 import crustIcon from '../../../icons/crust.svg';
 
 const ICONS = {
-  'parity-polkadot': parityPolkadotIcon,
-  'Parity Polkadot': parityPolkadotIcon,
-  'polkadot-js': polkadotJsIcon,
+  'parity-ggx': ggx,
+  'Parity GGX': ggx,
+  ggx: ggx,
   'airalab-robonomics': airalabRobonomicsIcon,
   'substrate-node': paritySubstrateIcon,
   'Substrate Node': paritySubstrateIcon,

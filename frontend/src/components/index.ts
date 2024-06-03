@@ -29,4 +29,4 @@ export * from './Sparkline';
 export * from './Truncate';
 export * from './Tooltip';
 export * from './Filter';
-export * from './PolkadotIcon';
+export * from './GGXIcon';

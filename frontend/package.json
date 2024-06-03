@@ -3,7 +3,7 @@
   "version": "0.2.1",
   "author": "Parity Technologies Ltd. <admin@parity.io>",
   "license": "GPL-3.0",
-  "description": "Polkadot Telemetry frontend",
+  "description": "GGX Telemetry frontend",
   "scripts": {
     "start": "webpack serve --mode=development",
     "build": "webpack --mode=production",
