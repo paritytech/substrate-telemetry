@@ -17,9 +17,8 @@
 //! This module provides a way of encoding the various messages that we'll
 //! send to subscribed feeds (browsers).
 
-use std::collections::HashMap;
 
-use arrayvec::ArrayString;
+
 use serde::Serialize;
 
 use crate::state::Node;
@@ -223,15 +222,12 @@ impl FeedMessageWrite for AddedNode<'_> {
 #[derive(Serialize)]
 pub struct ChainStatsUpdate<'a>(pub &'a ChainStats);
 
-/// Ranking list out node details elements per node id and counts per elements
-/// `list`: List of node detail element per its count [( item, count )]
-/// `node_map`: A map 
+
 #[derive(Serialize, PartialEq, Eq, Default)]
 pub struct Ranking<K> {
     pub list: Vec<(K, u64)>,
     pub other: u64,
     pub unknown: u64,
-    pub node_map: HashMap<ArrayString<64>,K>
 }
 
 #[derive(Serialize, PartialEq, Eq, Default)]

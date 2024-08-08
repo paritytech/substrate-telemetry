@@ -99,7 +99,6 @@ interface AddedNodeMessage extends MessageBase {
     BlockDetails,
     Maybe<NodeLocation>,
     Maybe<Timestamp>,
-
   ];
 }
 

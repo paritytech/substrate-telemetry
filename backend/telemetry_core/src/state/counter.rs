@@ -14,10 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use arrayvec::ArrayString;
-
 use crate::feed_message::Ranking;
-use std::{collections::HashMap, /*str::FromStr*/};
+use std::collections::HashMap;
 
 
 /// A data structure which counts how many occurrences of a given key we've seen.
@@ -31,9 +29,6 @@ pub struct Counter<K> {
     /// The number of occurrences where the key is `None`.
     empty: u64,
 
-    /// The map of Node Id ( Network Id) to the node detail element
-    /// i.e {"123DE": "aarch64"}
-    node_map: HashMap<ArrayString<64>,K>
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -48,7 +43,7 @@ where
 
 {
     /// Either adds or removes a single occurence of a given `key`.
-    pub fn modify<'a, Q>(&mut self,node_id: ArrayString<64>, key: Option<&'a Q>, op: CounterValue)
+    pub fn modify<'a, Q>(&mut self, key: Option<&'a Q>, op: CounterValue)
     where
         Q: ?Sized + std::hash::Hash + Eq,
         K: std::borrow::Borrow<Q>,
@@ -59,8 +54,6 @@ where
                 match op {
                     CounterValue::Increment => {
                         *entry += 1;
-                        // add the node Id and the value ( key ) to the node_map
-                        self.node_map.insert(node_id, key.to_owned());
     
                     }
                     CounterValue::Decrement => {
@@ -69,20 +62,15 @@ where
                             // Don't keep entries for which there are no hits.
                             self.map.remove(key);
                         }
-                        // remove the node Id and the value ( key ) to the node_map
-                        self.node_map.remove(&node_id);
                     }
                 }
             } else {
                 assert_eq!(op, CounterValue::Increment);
                 self.map.insert(key.to_owned(), 1);
-                // add the node Id and the value ( key ) to the node_map
-                self.node_map.insert(node_id, key.to_owned()); 
         
             }
             
         } else {
-            // The key is None, no need to update the map (nodeId -> key)
             match op {
                 CounterValue::Increment => {
                     self.empty += 1;
@@ -117,7 +105,6 @@ where
             list,
             other,
             unknown: self.empty,
-            node_map: self.node_map.clone(),
         }
     }
 
@@ -133,7 +120,6 @@ where
             list,
             other: 0,
             unknown: self.empty,
-            node_map: self.node_map.clone(),
         }
     }
 }

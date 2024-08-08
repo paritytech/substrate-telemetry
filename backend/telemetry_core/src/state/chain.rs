@@ -227,9 +227,9 @@ impl Chain {
                     }
 
                     self.stats_collator
-                        .update_hwbench(node.details(),old_hwbench.as_ref(), CounterValue::Decrement);
+                        .update_hwbench(old_hwbench.as_ref(), CounterValue::Decrement);
                     self.stats_collator
-                        .update_hwbench(node.details(),node.hwbench(), CounterValue::Increment);
+                        .update_hwbench(node.hwbench(), CounterValue::Increment);
                 }
                 _ => {}
             }

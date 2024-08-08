@@ -16,7 +16,6 @@
 
 use super::counter::{Counter, CounterValue};
 use crate::feed_message::ChainStats;
-//use arrayvec::ArrayString;
 // These are the benchmark scores generated on our reference hardware.
 const REFERENCE_CPU_SCORE: u64 = 1028;
 const REFERENCE_MEMORY_SCORE: u64 = 14899;
@@ -159,17 +158,16 @@ impl ChainStatsCollator {
         hwbench: Option<&common::node_types::NodeHwBench>,
         op: CounterValue,
     ) {
-        self.version.modify(details.network_id,Some(&*details.version), op);
+        self.version.modify(Some(&*details.version), op);
 
         self.target_os
-            .modify(details.network_id,details.target_os.as_ref().map(|value| &**value), op);
+        .modify(details.target_os.as_ref().map(|value| &**value), op);
 
         self.target_arch
-            .modify(details.network_id,details.target_arch.as_ref().map(|value| &**value), op);
+        .modify(details.target_arch.as_ref().map(|value| &**value), op);
 
         let sysinfo = details.sysinfo.as_ref();
         self.cpu.modify(
-            details.network_id,
             sysinfo
                 .and_then(|sysinfo| sysinfo.cpu.as_ref())
                 .map(|value| &**value),
@@ -177,13 +175,12 @@ impl ChainStatsCollator {
         );
 
         let memory = sysinfo.and_then(|sysinfo| sysinfo.memory.map(bucket_memory));
-        self.memory.modify(details.network_id,memory.as_ref(), op);
+        self.memory.modify(memory.as_ref(), op);
 
         self.core_count
-            .modify(details.network_id,sysinfo.and_then(|sysinfo| sysinfo.core_count.as_ref()), op);
+        .modify(sysinfo.and_then(|sysinfo| sysinfo.core_count.as_ref()), op);
 
         self.linux_kernel.modify(
-            details.network_id,
             sysinfo
                 .and_then(|sysinfo| sysinfo.linux_kernel.as_ref())
                 .map(kernel_version_number),
@@ -191,7 +188,6 @@ impl ChainStatsCollator {
         );
 
         self.linux_distro.modify(
-            details.network_id,
             sysinfo
                 .and_then(|sysinfo| sysinfo.linux_distro.as_ref())
                 .map(|value| &**value),
@@ -199,28 +195,24 @@ impl ChainStatsCollator {
         );
 
         self.is_virtual_machine.modify(
-            details.network_id,
             sysinfo.and_then(|sysinfo| sysinfo.is_virtual_machine.as_ref()),
             op,
         );
 
         self.cpu_vendor.modify(
-            details.network_id,
             sysinfo.and_then(|sysinfo| sysinfo.cpu.as_ref().map(cpu_vendor)),
             op,
         );
 
-        self.update_hwbench(details,hwbench, op);
+        self.update_hwbench(hwbench, op);
     }
 
     pub fn update_hwbench(
         &mut self,
-        details: &common::node_types::NodeDetails,
         hwbench: Option<&common::node_types::NodeHwBench>,
         op: CounterValue,
     ) {
         self.cpu_hashrate_score.modify(
-            details.network_id,
             hwbench
                 .map(|hwbench| bucket_score(hwbench.cpu_hashrate_score, REFERENCE_CPU_SCORE))
                 .as_ref(),
@@ -228,7 +220,6 @@ impl ChainStatsCollator {
         );
 
         self.memory_memcpy_score.modify(
-            details.network_id,
             hwbench
                 .map(|hwbench| bucket_score(hwbench.memory_memcpy_score, REFERENCE_MEMORY_SCORE))
                 .as_ref(),
@@ -236,7 +227,6 @@ impl ChainStatsCollator {
         );
 
         self.disk_sequential_write_score.modify(
-            details.network_id,
             hwbench
                 .and_then(|hwbench| hwbench.disk_sequential_write_score)
                 .map(|score| bucket_score(score, REFERENCE_DISK_SEQUENTIAL_WRITE_SCORE))
@@ -245,7 +235,6 @@ impl ChainStatsCollator {
         );
 
         self.disk_random_write_score.modify(
-            details.network_id,
             hwbench
                 .and_then(|hwbench| hwbench.disk_random_write_score)
                 .map(|score| bucket_score(score, REFERENCE_DISK_RANDOM_WRITE_SCORE))

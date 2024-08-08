@@ -104,8 +104,6 @@ export class Row extends React.Component<RowProps, RowState> {
   public render() {
     const { node, columns } = this.props;
 
-  console.log('node details:',node );
-
 
     this.renderedChangeRef = node.changeRef;
 

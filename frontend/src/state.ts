@@ -291,8 +291,7 @@ export interface StateSettings {
   blockpropagation: boolean;
   blocklasttime: boolean;
   uptime: boolean;
-
-  version: boolean; //starts here
+  version: boolean; 
   target_os: boolean;
   target_arch: boolean;
   cpu: boolean;

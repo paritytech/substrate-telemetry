@@ -133,7 +133,7 @@ export class Connection {
     this.bindSocket();
   }
 
-  public subscribe(chain: Types.GenesisHash) { //It has subscribed to the telemetry core
+  public subscribe(chain: Types.GenesisHash) { 
     if (
       this.appState.subscribed != null &&
       this.appState.subscribed !== chain

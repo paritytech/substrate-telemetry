@@ -72,7 +72,7 @@ export default class App extends React.Component {
         blockpropagation: true,
         blocklasttime: false,
         uptime: false,
-        version: true, //starts here
+        version: true, 
         target_os: true,
         target_arch: true, 
         core_count: true,
