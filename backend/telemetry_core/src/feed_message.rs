@@ -17,8 +17,6 @@
 //! This module provides a way of encoding the various messages that we'll
 //! send to subscribed feeds (browsers).
 
-
-
 use serde::Serialize;
 
 use crate::state::Node;
@@ -187,9 +185,17 @@ impl FeedMessageWrite for AddedNode<'_> {
         let details = node.details();
         // Always include sysinfo, conditionally include ip and hwbench based on expose_node_details.
         let node_hwbench = node.hwbench();
-        let ip = if *expose_node_details { &details.ip } else { &None };
+        let ip = if *expose_node_details {
+            &details.ip
+        } else {
+            &None
+        };
         let sys_info = &details.sysinfo;
-        let hwbench = if *expose_node_details { &node_hwbench } else { &None };
+        let hwbench = if *expose_node_details {
+            &node_hwbench
+        } else {
+            &None
+        };
 
         let details = (
             &details.name,
@@ -218,10 +224,8 @@ impl FeedMessageWrite for AddedNode<'_> {
     }
 }
 
-
 #[derive(Serialize)]
 pub struct ChainStatsUpdate<'a>(pub &'a ChainStats);
-
 
 #[derive(Serialize, PartialEq, Eq, Default)]
 pub struct Ranking<K> {

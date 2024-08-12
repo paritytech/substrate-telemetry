@@ -144,7 +144,7 @@ pub struct ChainStatsCollator {
     linux_kernel: Counter<String>,
     linux_distro: Counter<String>,
     is_virtual_machine: Counter<bool>,
-    cpu_hashrate_score: Counter<(u32, Option<u32>),>,
+    cpu_hashrate_score: Counter<(u32, Option<u32>)>,
     memory_memcpy_score: Counter<(u32, Option<u32>)>,
     disk_sequential_write_score: Counter<(u32, Option<u32>)>,
     disk_random_write_score: Counter<(u32, Option<u32>)>,
@@ -161,10 +161,10 @@ impl ChainStatsCollator {
         self.version.modify(Some(&*details.version), op);
 
         self.target_os
-        .modify(details.target_os.as_ref().map(|value| &**value), op);
+            .modify(details.target_os.as_ref().map(|value| &**value), op);
 
         self.target_arch
-        .modify(details.target_arch.as_ref().map(|value| &**value), op);
+            .modify(details.target_arch.as_ref().map(|value| &**value), op);
 
         let sysinfo = details.sysinfo.as_ref();
         self.cpu.modify(
@@ -178,7 +178,7 @@ impl ChainStatsCollator {
         self.memory.modify(memory.as_ref(), op);
 
         self.core_count
-        .modify(sysinfo.and_then(|sysinfo| sysinfo.core_count.as_ref()), op);
+            .modify(sysinfo.and_then(|sysinfo| sysinfo.core_count.as_ref()), op);
 
         self.linux_kernel.modify(
             sysinfo

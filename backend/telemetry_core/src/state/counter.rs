@@ -17,7 +17,6 @@
 use crate::feed_message::Ranking;
 use std::collections::HashMap;
 
-
 /// A data structure which counts how many occurrences of a given key we've seen.
 #[derive(Default)]
 pub struct Counter<K> {
@@ -28,7 +27,6 @@ pub struct Counter<K> {
 
     /// The number of occurrences where the key is `None`.
     empty: u64,
-
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -39,8 +37,7 @@ pub enum CounterValue {
 
 impl<K> Counter<K>
 where
-    K: Sized + std::hash::Hash + Eq
-
+    K: Sized + std::hash::Hash + Eq,
 {
     /// Either adds or removes a single occurence of a given `key`.
     pub fn modify<'a, Q>(&mut self, key: Option<&'a Q>, op: CounterValue)
@@ -54,7 +51,6 @@ where
                 match op {
                     CounterValue::Increment => {
                         *entry += 1;
-    
                     }
                     CounterValue::Decrement => {
                         *entry -= 1;
@@ -67,9 +63,7 @@ where
             } else {
                 assert_eq!(op, CounterValue::Increment);
                 self.map.insert(key.to_owned(), 1);
-        
             }
-            
         } else {
             match op {
                 CounterValue::Increment => {
@@ -111,7 +105,7 @@ where
     /// Generates a sorted table of all of the keys.
     pub fn generate_ranking_ordered(&self) -> Ranking<K>
     where
-        K: Copy + Clone + Ord
+        K: Copy + Clone + Ord,
     {
         let mut list: Vec<(K, u64)> = self.map.iter().map(|(key, count)| (*key, *count)).collect();
         list.sort_unstable_by_key(|&(key, count)| (key, !count));
