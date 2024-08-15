@@ -22,31 +22,23 @@ import { Node } from '../../../state';
 import icon from '../../../icons/file-binary.svg';
 
 export class CpuColumn extends React.Component<ColumnProps> {
-    public static readonly label = 'CPU Column';
-    public static readonly icon = icon;
-    public static readonly width = 154;
-    public static readonly setting = 'cpu';
-    public static readonly sortBy = ({ cpu }: Node) => cpu || 0;
-  
-    private data: string;
-  
-    public shouldComponentUpdate(nextProps: ColumnProps) {
-      return this.data !== nextProps.node.cpu;
-    }
+  public static readonly label = 'CPU Column';
+  public static readonly icon = icon;
+  public static readonly width = 154;
+  public static readonly setting = 'cpu';
+  public static readonly sortBy = ({ cpu }: Node) => cpu || 0;
 
-    render() {
-      const { cpu } = this.props.node;
-  
-      this.data = cpu;
+  private data: string;
 
-      return (
-        <td className="Column">
-          {cpu}
-        </td>
-      ); 
-      
-    }
-  
-    
+  public shouldComponentUpdate(nextProps: ColumnProps) {
+    return this.data !== nextProps.node.cpu;
   }
-  
+
+  render() {
+    const { cpu } = this.props.node;
+
+    this.data = cpu;
+
+    return <td className="Column">{cpu}</td>;
+  }
+}

@@ -38,7 +38,7 @@ import {
   BlockPropagationColumn,
   LastBlockColumn,
   UptimeColumn,
-  CpuArchitectureColumn, //extra columns added 
+  CpuArchitectureColumn, //extra columns added
   CpuColumn,
   CpuCoresColumn,
   LinuxKernelColumn,

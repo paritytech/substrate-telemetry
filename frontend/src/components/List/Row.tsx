@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-// Each Row in the List Page 
+// Each Row in the List Page
 import * as React from 'react';
 import { Types } from '../../common';
 import { Node } from '../../state';
@@ -47,7 +47,7 @@ import {
   VersionColumn,
   IsVirtualMachineColumn,
   LinuxDistroColumn,
-  LinuxKernelColumn
+  LinuxKernelColumn,
 } from './';
 
 import './Row.css';
@@ -90,7 +90,7 @@ export class Row extends React.Component<RowProps, RowState> {
     MemoryColumn,
     OperatingSystemColumn,
     VersionColumn,
-    IsVirtualMachineColumn
+    IsVirtualMachineColumn,
   ];
   private renderedChangeRef = 0;
 
@@ -103,7 +103,6 @@ export class Row extends React.Component<RowProps, RowState> {
 
   public render() {
     const { node, columns } = this.props;
-
 
     this.renderedChangeRef = node.changeRef;
 

@@ -133,7 +133,7 @@ export class Connection {
     this.bindSocket();
   }
 
-  public subscribe(chain: Types.GenesisHash) { 
+  public subscribe(chain: Types.GenesisHash) {
     if (
       this.appState.subscribed != null &&
       this.appState.subscribed !== chain
@@ -210,7 +210,7 @@ export class Connection {
             nodeHardware,
             blockDetails,
             location,
-            startupTime,
+            startupTime
           );
 
           nodes.add(node);

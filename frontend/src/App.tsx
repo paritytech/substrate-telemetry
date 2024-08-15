@@ -72,9 +72,9 @@ export default class App extends React.Component {
         blockpropagation: true,
         blocklasttime: false,
         uptime: false,
-        version: true, 
+        version: true,
         target_os: true,
-        target_arch: true, 
+        target_arch: true,
         core_count: true,
         memory: true,
         is_virtual_machine: true,
@@ -85,7 +85,6 @@ export default class App extends React.Component {
         disk_sequential_write_score: true,
         disk_random_write_score: true,
         cpu_vendor: true,
-
       },
       (settings) => {
         const selectedColumns = this.selectedColumns(settings);
