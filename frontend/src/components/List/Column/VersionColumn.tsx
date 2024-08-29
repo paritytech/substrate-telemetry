@@ -39,6 +39,6 @@ export class VersionColumn extends React.Component<ColumnProps> {
 
     this.data = version;
 
-    return <td className="Column">{version}</td>;
+    return <td className="Column">{version || '-'}</td>;
   }
 }

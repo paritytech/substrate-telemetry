@@ -82,14 +82,14 @@ export class Row extends React.Component<RowProps, RowState> {
     BlockPropagationColumn,
     LastBlockColumn,
     UptimeColumn,
+    VersionColumn,
+    OperatingSystemColumn,
     CpuArchitectureColumn,
     CpuColumn,
     CpuCoresColumn,
+    MemoryColumn,
     LinuxDistroColumn,
     LinuxKernelColumn,
-    MemoryColumn,
-    OperatingSystemColumn,
-    VersionColumn,
     IsVirtualMachineColumn,
   ];
   private renderedChangeRef = 0;

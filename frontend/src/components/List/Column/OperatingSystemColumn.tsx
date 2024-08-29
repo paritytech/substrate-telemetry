@@ -39,6 +39,6 @@ export class OperatingSystemColumn extends React.Component<ColumnProps> {
 
     this.data = target_os;
 
-    return <td className="Column">{target_os}</td>;
+    return <td className="Column">{target_os || '-'}</td>;
   }
 }

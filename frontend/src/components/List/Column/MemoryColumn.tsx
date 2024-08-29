@@ -38,6 +38,6 @@ export class MemoryColumn extends React.Component<ColumnProps> {
 
     this.data = memory;
 
-    return <td className="Column">{memory}</td>;
+    return <td className="Column">{memory || '-'}</td>;
   }
 }

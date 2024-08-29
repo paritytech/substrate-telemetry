@@ -40,6 +40,6 @@ export class LinuxDistroColumn extends React.Component<ColumnProps> {
 
     this.data = linux_distro;
 
-    return <td className="Column">{linux_distro}</td>;
+    return <td className="Column">{linux_distro || '-'}</td>;
   }
 }

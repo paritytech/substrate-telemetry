@@ -39,6 +39,6 @@ export class IsVirtualMachineColumn extends React.Component<ColumnProps> {
 
     this.data = is_virtual_machine;
 
-    return <td className="Column">{is_virtual_machine ? 'True' : 'False'}</td>;
+    return <td className="Column">{is_virtual_machine ? 'Yes' : 'No'}</td>;
   }
 }

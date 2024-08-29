@@ -53,13 +53,13 @@ export type BytesPerSecond = Opaque<number, 'BytesPerSecond'>;
 export type NetworkId = Opaque<string, 'NetworkId'>;
 
 export type NodeSysInfo = {
-  cpu: string | null;
-  memory: number | null;
-  core_count: number | null;
-  linux_kernel: string | null;
-  linux_distro: string | null;
-  is_virtual_machine: boolean | null;
-} | null;
+  cpu: string;
+  memory: number;
+  core_count: number;
+  linux_kernel: string;
+  linux_distro: string;
+  is_virtual_machine: boolean;
+};
 
 export type BlockDetails = [
   BlockNumber,

@@ -39,6 +39,6 @@ export class CpuColumn extends React.Component<ColumnProps> {
 
     this.data = cpu;
 
-    return <td className="Column">{cpu}</td>;
+    return <td className="Column">{cpu || '-'}</td>;
   }
 }

@@ -38,6 +38,6 @@ export class CpuArchitectureColumn extends React.Component<ColumnProps> {
 
     this.data = target_arch;
 
-    return <td className="Column">{target_arch}</td>;
+    return <td className="Column">{target_arch || '-'}</td>;
   }
 }

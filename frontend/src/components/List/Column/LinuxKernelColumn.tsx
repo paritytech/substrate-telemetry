@@ -38,6 +38,6 @@ export class LinuxKernelColumn extends React.Component<ColumnProps> {
 
     this.data = linux_kernel;
 
-    return <td className="Column">{linux_kernel}</td>;
+    return <td className="Column">{linux_kernel || '-'}</td>;
   }
 }

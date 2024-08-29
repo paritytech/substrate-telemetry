@@ -26,8 +26,8 @@ export const PINNED_CHAINS = {
 };
 
 export function comparePinnedChains(a: string, b: string) {
-  const aWeight = PINNED_CHAINS[a] || 1024;
-  const bWeight = PINNED_CHAINS[b] || 1024;
+  const aWeight: number = (PINNED_CHAINS as any)[a] || 1024;
+  const bWeight: number = (PINNED_CHAINS as any)[b] || 1024;
 
   return aWeight - bWeight;
 }

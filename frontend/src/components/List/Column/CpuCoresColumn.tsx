@@ -36,6 +36,6 @@ export class CpuCoresColumn extends React.Component<ColumnProps> {
 
     this.data = core_count;
 
-    return <td className="Column">{core_count}</td>;
+    return <td className="Column">{core_count || '-'}</td>;
   }
 }
