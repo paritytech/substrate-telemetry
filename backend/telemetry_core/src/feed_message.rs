@@ -183,12 +183,18 @@ impl FeedMessageWrite for AddedNode<'_> {
         let AddedNode(nid, node, expose_node_details) = self;
 
         let details = node.details();
-        // Hide the ip, sysinfo and hwbench if the `expose_node_details` flag was not specified.
+        // Always include sysinfo, conditionally include ip and hwbench based on expose_node_details.
         let node_hwbench = node.hwbench();
-        let (ip, sys_info, hwbench) = if *expose_node_details {
-            (&details.ip, &details.sysinfo, &node_hwbench)
+        let ip = if *expose_node_details {
+            &details.ip
         } else {
-            (&None, &None, &None)
+            &None
+        };
+        let sys_info = &details.sysinfo;
+        let hwbench = if *expose_node_details {
+            &node_hwbench
+        } else {
+            &None
         };
 
         let details = (
@@ -197,6 +203,9 @@ impl FeedMessageWrite for AddedNode<'_> {
             &details.version,
             &details.validator,
             &details.network_id,
+            &details.target_os,
+            &details.target_arch,
+            &details.target_env,
             &ip,
             &sys_info,
             &hwbench,

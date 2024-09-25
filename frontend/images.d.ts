@@ -14,6 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-declare module '*.svg'
-declare module '*.png'
-declare module '*.jpg'
+declare module '*.svg';
+declare module '*.png';
+declare module '*.jpg';

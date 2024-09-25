@@ -269,7 +269,6 @@ export class Connection {
 
         case ACTIONS.NodeStats: {
           const [id, nodeStats] = message.payload;
-
           nodes.mutAndMaybeSort(
             id,
             (node) => node.updateStats(nodeStats),

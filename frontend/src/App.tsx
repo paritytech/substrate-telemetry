@@ -46,6 +46,7 @@ export default class App extends React.Component {
   constructor(props: Record<string, unknown>) {
     super(props);
 
+    //todo! Check what's important to set to true, false
     this.settings = new PersistentObject(
       'settings',
       {
@@ -55,8 +56,6 @@ export default class App extends React.Component {
         networkId: false,
         peers: true,
         txs: true,
-        cpu: true,
-        mem: true,
         upload: false,
         download: false,
         stateCacheSize: false,
@@ -65,12 +64,27 @@ export default class App extends React.Component {
         diskWrite: false,
         blocknumber: true,
         blockhash: true,
-        blocktime: true,
         finalized: false,
         finalizedhash: false,
+        blocktime: true,
         blockpropagation: true,
         blocklasttime: false,
         uptime: false,
+        version: false,
+        target_os: false,
+        target_arch: false,
+        cpu: false,
+        cpu_hashrate_score: true,
+        cpu_vendor: true,
+        core_count: false,
+        mem: true,
+        memory: false,
+        linux_distro: false,
+        linux_kernel: false,
+        memory_memcpy_score: true,
+        disk_sequential_write_score: true,
+        disk_random_write_score: true,
+        is_virtual_machine: false,
       },
       (settings) => {
         const selectedColumns = this.selectedColumns(settings);

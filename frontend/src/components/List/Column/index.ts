@@ -33,3 +33,12 @@ export * from './BlockTimeColumn';
 export * from './BlockPropagationColumn';
 export * from './LastBlockColumn';
 export * from './UptimeColumn';
+export * from './CpuArchitectureColumn'; //extra columns added
+export * from './CpuCoresColumn';
+export * from './LinuxDistroColumn';
+export * from './IsVirtualMachineColumn';
+export * from './MemoryColumn';
+export * from './CpuColumn';
+export * from './OperatingSystemColumn';
+export * from './VersionColumn';
+export * from './LinuxKernelColumn';

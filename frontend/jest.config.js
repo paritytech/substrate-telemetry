@@ -20,7 +20,8 @@ module.exports = {
   testEnvironment: 'jsdom',
   setupFiles: ['<rootDir>/setupJest.js'],
   moduleNameMapper: {
-    "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/assets/mock.image.js",
-    "\\.(css|less|scss|sass)$": "<rootDir>/assets/mock.style.js"
+    '\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$':
+      '<rootDir>/assets/mock.image.js',
+    '\\.(css|less|scss|sass)$': '<rootDir>/assets/mock.style.js',
   },
 };

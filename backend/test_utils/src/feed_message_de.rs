@@ -136,6 +136,9 @@ pub struct NodeDetails {
     pub version: String,
     pub validator: Option<String>,
     pub network_id: Option<String>,
+    pub os: String,
+    pub arch: String,
+    pub target_env: String,
     pub ip: Option<String>,
     pub sysinfo: Option<NodeSysInfo>,
 }
@@ -144,7 +147,6 @@ impl FeedMessage {
     /// Decode a slice of bytes into a vector of feed messages
     pub fn from_bytes(bytes: &[u8]) -> Result<Vec<FeedMessage>, anyhow::Error> {
         let v: Vec<&RawValue> = serde_json::from_slice(bytes)?;
-
         let mut feed_messages = vec![];
         for raw_keyval in v.chunks(2) {
             let raw_key = raw_keyval[0];
@@ -161,6 +163,8 @@ impl FeedMessage {
 
     // Deserialize the feed message to a value based on the "action" key
     fn decode(action: u8, raw_val: &RawValue) -> Result<FeedMessage, anyhow::Error> {
+        println!("\n\n");
+        println!("{raw_val:#?}");
         let feed_message = match action {
             // Version:
             0 => {
@@ -189,7 +193,19 @@ impl FeedMessage {
             3 => {
                 let (
                     node_id,
-                    (name, implementation, version, validator, network_id, ip, sysinfo, hwbench),
+                    (
+                        name,
+                        implementation,
+                        version,
+                        validator,
+                        network_id,
+                        os,
+                        arch,
+                        target_env,
+                        ip,
+                        sysinfo,
+                        hwbench,
+                    ),
                     stats,
                     io,
                     hardware,
@@ -209,6 +225,9 @@ impl FeedMessage {
                         version,
                         validator,
                         network_id,
+                        os,
+                        arch,
+                        target_env,
                         ip,
                         sysinfo,
                     },

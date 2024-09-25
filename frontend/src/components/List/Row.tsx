@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+// Each Row in the List Page
 import * as React from 'react';
 import { Types } from '../../common';
 import { Node } from '../../state';
@@ -38,6 +39,15 @@ import {
   BlockPropagationColumn,
   LastBlockColumn,
   UptimeColumn,
+  CpuArchitectureColumn,
+  CpuColumn,
+  CpuCoresColumn,
+  MemoryColumn,
+  OperatingSystemColumn,
+  VersionColumn,
+  IsVirtualMachineColumn,
+  LinuxDistroColumn,
+  LinuxKernelColumn,
 } from './';
 
 import './Row.css';
@@ -72,8 +82,16 @@ export class Row extends React.Component<RowProps, RowState> {
     BlockPropagationColumn,
     LastBlockColumn,
     UptimeColumn,
+    VersionColumn,
+    OperatingSystemColumn,
+    CpuArchitectureColumn,
+    CpuColumn,
+    CpuCoresColumn,
+    MemoryColumn,
+    LinuxDistroColumn,
+    LinuxKernelColumn,
+    IsVirtualMachineColumn,
   ];
-
   private renderedChangeRef = 0;
 
   public shouldComponentUpdate(nextProps: RowProps): boolean {

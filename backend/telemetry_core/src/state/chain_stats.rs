@@ -16,7 +16,6 @@
 
 use super::counter::{Counter, CounterValue};
 use crate::feed_message::ChainStats;
-
 // These are the benchmark scores generated on our reference hardware.
 const REFERENCE_CPU_SCORE: u64 = 1028;
 const REFERENCE_MEMORY_SCORE: u64 = 14899;

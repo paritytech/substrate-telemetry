@@ -38,6 +38,15 @@ import {
   BlockPropagationColumn,
   LastBlockColumn,
   UptimeColumn,
+  CpuArchitectureColumn, //extra columns added
+  CpuColumn,
+  CpuCoresColumn,
+  LinuxKernelColumn,
+  IsVirtualMachineColumn,
+  MemoryColumn,
+  OperatingSystemColumn,
+  VersionColumn,
+  LinuxDistroColumn,
 } from './';
 
 export type Column =
@@ -58,7 +67,16 @@ export type Column =
   | typeof BlockTimeColumn
   | typeof BlockPropagationColumn
   | typeof LastBlockColumn
-  | typeof UptimeColumn;
+  | typeof UptimeColumn
+  | typeof CpuArchitectureColumn
+  | typeof CpuColumn
+  | typeof CpuCoresColumn
+  | typeof LinuxDistroColumn
+  | typeof LinuxKernelColumn
+  | typeof IsVirtualMachineColumn
+  | typeof MemoryColumn
+  | typeof OperatingSystemColumn
+  | typeof VersionColumn;
 
 export interface ColumnProps {
   node: Node;
