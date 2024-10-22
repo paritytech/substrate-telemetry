@@ -48,7 +48,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: backend
-          file: ./Dockerfile
+          file: ./backend/Dockerfile
           push: false
           tags: |
             ${{ env.IMAGE_NAME }}-backend:${{ env.VERSION }}
@@ -67,7 +67,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: frontend
-          file: ./Dockerfile
+          file: ./frontend/Dockerfile
           push: false
           tags: |
             ${{ env.IMAGE_NAME }}-frontend:${{ env.VERSION }}
