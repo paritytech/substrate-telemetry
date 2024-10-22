@@ -65,6 +65,7 @@ jobs:
         uses: Swatinem/rust-cache@23bce251a8cd2ffc3c1075eaa2367cf899916d84 # v2.7.3
         with:
           workspaces: backend
+          cache-on-failure: true
 
       - name: Cargo test
         run: cargo test --verbose --jobs 1
