@@ -1,5 +1,4 @@
-name: Docker Build
-# Workflow checks that docker build works
+name: Publish and deploy
 
 on:
   push:
