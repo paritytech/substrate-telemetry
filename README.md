@@ -207,7 +207,7 @@ Once we're happy with things in staging, we can do a deployment to live as follo
    - The suffix is a short git commit hash (which can be generated with `git rev-parse --short HEAD`), just so that it's really easy to relate the built docker images back to the corresponding code.
 3. Pushing the tag (eg `git push origin v1.0-a1b2c3d`) will kick off the deployment process, which in this case will also lead to new docker images being built. You can view the progress at https://github.com/paritytech/substrate-telemetry/actions.
 
-> ![WARNING]
+> [!WARNING]  
 > After the tag is pushed the deploy will be done to both environments (staging and production) automatically.
 
 4. Once a deployment to staging has been successful, run whatever tests you need against the staging deployment to convince yourself that you're happy with it.
