@@ -11,6 +11,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+#to use reusable workflow
+permissions:
+  id-token: write
+  contents: read
+
 env:
   IMAGE_NAME: parity/substrate-telemetry
   APP: "substrate-telemetry"
