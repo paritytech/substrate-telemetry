@@ -193,9 +193,9 @@ This section covers the internal deployment of Substrate Telemetry to our stagin
 
 Every time new code is merged to `master`, a new version of telemetry will be automatically built and deployed to our staging environment, so there is nothing that you need to do. Roughly what will happen is:
 
-- An image tag will be generated that looks like `$CI_COMMIT_SHORT_SHA-beta`, for example `224b1fae-beta`.
+- An image tag will be generated that looks like `master-$CI_COMMIT_SHORT_SHA`, for example `master-224b1fae`.
 - Docker images for the frontend and backend will be pushed to the docker repo (see https://hub.docker.com/r/parity/substrate-telemetry-backend/tags?page=1&ordering=last_updated and https://hub.docker.com/r/parity/substrate-telemetry-frontend/tags?page=1&ordering=last_updated).
-- A deployment to the staging environment will be performed using these images. Go to https://gitlab.parity.io/parity/substrate-telemetry/-/pipelines to inspect the progress of such deployments.
+- A deployment to the staging environment will be performed using these images. Go to https://github.com/paritytech/substrate-telemetry/actions to inspect the progress of such deployments.
 
 ### Deployment to live
 
@@ -205,18 +205,19 @@ Once we're happy with things in staging, we can do a deployment to live as follo
 2. Tag the commit on `master` that you'd like to deploy with the form `v1.0-a1b2c3d`.
    - The version number (`1.0` here) should just be incremented from whatever the latest version found using `git tag` is. We don't use semantic versioning or anything like that; this is just a dumb "increment version number" approach so that we can see clearly what we've deployed to live and in what order.
    - The suffix is a short git commit hash (which can be generated with `git rev-parse --short HEAD`), just so that it's really easy to relate the built docker images back to the corresponding code.
-3. Pushing the tag (eg `git push origin v1.0-a1b2c3d`) will kick off the deployment process, which in this case will also lead to new docker images being built. You can view the progress at https://gitlab.parity.io/parity/substrate-telemetry/-/pipelines.
+3. Pushing the tag (eg `git push origin v1.0-a1b2c3d`) will kick off the deployment process, which in this case will also lead to new docker images being built. You can view the progress at https://github.com/paritytech/substrate-telemetry/actions.
+
+> [!WARNING]  
+> After the tag is pushed the deploy will be done to both environments (staging and production) automatically.
+
 4. Once a deployment to staging has been successful, run whatever tests you need against the staging deployment to convince yourself that you're happy with it.
-5. Visit the CI/CD pipelines page again (URl above) and click the "play" button on the "Deploy-production" stage to perform the deployment to live.
-6. Confirm that things are working once the deployment has finished by visiting https://telemetry.polkadot.io/.
+5. Confirm that things are working once the deployment has finished by visiting https://telemetry.polkadot.io/.
 
 ### Rolling back to a previous deployment
 
 If something goes wrong running the above, we can roll back the deployment to live as follows.
 
-1. Decide what image tag you'd like to roll back to. Go to https://hub.docker.com/r/parity/substrate-telemetry-backend/tags?page=1&ordering=last_updated and have a look at the available tags (eg `v1.0-a1b2c3d`) to select one you'd like. You can cross reference this with the tags available using `git tag` in the repository to help see which tags correspond to which code changes.
-2. Navigate to https://gitlab.parity.io/parity/substrate-telemetry/-/pipelines/new.
-3. Add a variable called `FORCE_DEPLOY` with the value `true`.
-4. Add a variable called `FORCE_DOCKER_TAG` with a value corresponding to the tag you want to deploy, eg `v1.0-a1b2c3d`. Images must exist already for this tag.
-5. Hit 'Run Pipeline'. As above, a deployment to staging will be carried out, and if you're happy with that, you can hit the "play" button on the "Deploy-production" stage to perform the deployment to live.
-6. Confirm that things are working once the deployment has finished by visiting https://telemetry.polkadot.io/.
+1. Decide what image tag you'd like to roll back to. Push the tag to the commit you want to revert to.
+2. Navigate to https://github.com/paritytech/substrate-telemetry/actions and check that the pipeline is successful.
+3. Confirm that things are working once the deployment has finished by visiting https://telemetry.polkadot.io/.
+4. In case of issues contact devops team.
