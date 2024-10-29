@@ -220,4 +220,4 @@ If something goes wrong running the above, we can roll back the deployment to li
 1. Decide what image tag you'd like to roll back to. Push the tag to the commit you want to revert to.
 2. Navigate to https://github.com/paritytech/substrate-telemetry/actions and check that the pipeline is successful.
 3. Confirm that things are working once the deployment has finished by visiting https://telemetry.polkadot.io/.
-4. In case of issue contact devops team.
+4. In case of issues contact devops team.
