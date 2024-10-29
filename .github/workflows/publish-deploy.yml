@@ -64,7 +64,7 @@ jobs:
         with:
           context: backend
           file: ./backend/Dockerfile
-          push: false
+          push: true
           tags: |
             ${{ env.IMAGE_NAME }}-backend:${{ env.VERSION }}
 
@@ -90,7 +90,7 @@ jobs:
         with:
           context: frontend
           file: ./frontend/Dockerfile
-          push: false
+          push: true
           tags: |
             ${{ env.IMAGE_NAME }}-frontend:${{ env.VERSION }}
 
