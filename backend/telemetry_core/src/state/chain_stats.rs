@@ -22,6 +22,11 @@ const REFERENCE_MEMORY_SCORE: u64 = 14899;
 const REFERENCE_DISK_SEQUENTIAL_WRITE_SCORE: u64 = 485;
 const REFERENCE_DISK_RANDOM_WRITE_SCORE: u64 = 222;
 
+/// The maximum number of statistics sent to the frontend for one entry.
+const MAXIMUM_STATS_COUNT: usize = 1024;
+/// Top k statistics reported for one entry.
+const TOP_K_STATS: usize = 10;
+
 macro_rules! buckets {
     (@try $value:expr, $bucket_min:expr, $bucket_max:expr,) => {
         if $value < $bucket_max {
@@ -183,7 +188,7 @@ impl ChainStatsCollator {
         self.linux_kernel.modify(
             sysinfo
                 .and_then(|sysinfo| sysinfo.linux_kernel.as_ref())
-                .map(kernel_version_number),
+                .map(|value| &**value),
             op,
         );
 
@@ -245,22 +250,22 @@ impl ChainStatsCollator {
 
     pub fn generate(&self) -> ChainStats {
         ChainStats {
-            version: self.version.generate_ranking_top(10),
-            target_os: self.target_os.generate_ranking_top(10),
-            target_arch: self.target_arch.generate_ranking_top(10),
-            cpu: self.cpu.generate_ranking_top(10),
+            version: self.version.generate_ranking_top(MAXIMUM_STATS_COUNT),
+            target_os: self.target_os.generate_ranking_top(TOP_K_STATS),
+            target_arch: self.target_arch.generate_ranking_top(TOP_K_STATS),
+            cpu: self.cpu.generate_ranking_top(MAXIMUM_STATS_COUNT),
             memory: self.memory.generate_ranking_ordered(),
-            core_count: self.core_count.generate_ranking_top(10),
-            linux_kernel: self.linux_kernel.generate_ranking_top(10),
-            linux_distro: self.linux_distro.generate_ranking_top(10),
+            core_count: self.core_count.generate_ranking_top(TOP_K_STATS),
+            linux_kernel: self.linux_kernel.generate_ranking_top(MAXIMUM_STATS_COUNT),
+            linux_distro: self.linux_distro.generate_ranking_top(TOP_K_STATS),
             is_virtual_machine: self.is_virtual_machine.generate_ranking_ordered(),
-            cpu_hashrate_score: self.cpu_hashrate_score.generate_ranking_top(10),
+            cpu_hashrate_score: self.cpu_hashrate_score.generate_ranking_top(TOP_K_STATS),
             memory_memcpy_score: self.memory_memcpy_score.generate_ranking_ordered(),
             disk_sequential_write_score: self
                 .disk_sequential_write_score
                 .generate_ranking_ordered(),
             disk_random_write_score: self.disk_random_write_score.generate_ranking_ordered(),
-            cpu_vendor: self.cpu_vendor.generate_ranking_top(10),
+            cpu_vendor: self.cpu_vendor.generate_ranking_top(TOP_K_STATS),
         }
     }
 }
