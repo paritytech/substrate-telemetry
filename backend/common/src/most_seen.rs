@@ -124,7 +124,7 @@ impl<T: Hash + Eq + Clone> MostSeen<T> {
 
         // Item is in the map; not the best anyway. decrement count.
         if let Some(count) = self.others.get_mut(item) {
-            *count += 1;
+            *count = count.saturating_sub(1);
         }
         ChangeResult::NoChange
     }
