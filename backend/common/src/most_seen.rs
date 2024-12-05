@@ -124,7 +124,7 @@ impl<T: Hash + Eq + Clone> MostSeen<T> {
 
         // Item is in the map; not the best anyway. decrement count.
         if let Some(count) = self.others.get_mut(item) {
-            *count += 1;
+            *count = count.saturating_sub(1);
         }
         ChangeResult::NoChange
     }
@@ -248,5 +248,11 @@ mod test {
         assert!(res.has_changed());
         assert_eq!(a.best_count(), 2);
         assert_eq!(*a.best(), "First"); // First is now ahead
+
+        a.remove(&"Third"); // 0, or 2 with bug #595
+        a.remove(&"Third"); // 0, or 4 with bug #595
+        a.insert(&"Third"); // 1, or 5 with bug #595
+        assert_eq!(a.best_count(), 2);
+        assert_eq!(*a.best(), "First"); // First is still ahead
     }
 }
