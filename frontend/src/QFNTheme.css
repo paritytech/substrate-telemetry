@@ -79,3 +79,7 @@
 .Location-synced {
   border-color: var(--secondary-color);
 }
+/* Table overflow by horizontal scroll for many columns */
+.Chain-content {
+  overflow-y: auto;
+}
