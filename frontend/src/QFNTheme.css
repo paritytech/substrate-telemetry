@@ -19,13 +19,18 @@
   color: var(--secondary-color);
 }
 
-.Chain-Tab-on, .Chain-Tab-on:hover {
+.Chain-Tab-on,
+.Chain-Tab-on:hover {
   background: var(--active-tab-color);
 }
 
 .AllChains-controls-sortby-active {
   background-color: var(--active-tab-color);
   border-color: var(--active-tab-color);
+}
+
+.AllChains-chain-selected .AllChains-node-count {
+  color: var(--primary-color);
 }
 
 .Setting-on .Setting-switch {
@@ -35,6 +40,14 @@
 
 .AllChains-chain-selected {
   background: var(--secondary-color);
+}
+
+.Row-pinned td:first-child {
+  border-left: 3px solid var(--secondary-color);
+}
+
+.Row-pinned td:last-child {
+  border-right: 3px solid var(--secondary-color);
 }
 
 .Row-pinned.Row-synced {
@@ -51,4 +64,18 @@
 
 .Chains-all-chains {
   right: 10px;
+}
+
+.Chains-extra-subscribed-chain {
+  background: var(--secondary-color);
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0) 0px,
+    var(--secondary-color) 30px,
+    var(--secondary-color) 100%
+  );
+}
+
+.Location-synced {
+  border-color: var(--secondary-color);
 }
