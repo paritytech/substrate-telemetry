@@ -31,4 +31,5 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
   background: #2c2b2b;
   color: #fff;
   box-shadow: rgba(0, 0, 0, 0.5) 0 3px 30px;
+  overflow-y: auto;
 }
