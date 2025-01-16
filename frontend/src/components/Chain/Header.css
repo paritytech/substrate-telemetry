@@ -24,6 +24,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
   color: #000;
   min-width: 1350px;
   position: relative;
+  background: linear-gradient(0deg, rgba(0,0,0,0.2) 0%, rgb(255, 255, 255) 17%), white;
 }
 
 .Header-tabs {
