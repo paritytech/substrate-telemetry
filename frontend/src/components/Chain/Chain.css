@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
 .Chain-content-container {
-  position: absolute;
+
   left: 0;
   right: 0;
   bottom: 0;
@@ -26,7 +26,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 .Chain-content {
   width: 100%;
-  min-width: 1350px;
   min-height: 100%;
   background: #2c2b2b;
   color: #fff;
