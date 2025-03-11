@@ -25,6 +25,7 @@ import { viewport } from '../../utils';
 const HEADER = 148;
 const TH_HEIGHT = 35;
 const TR_HEIGHT = 31;
+const BOTTOM_PADDING = 40;
 const ROW_MARGIN = 5;
 
 import './List.css';
@@ -102,7 +103,7 @@ export class List extends React.Component<ListProps> {
 
     return (
       <>
-        <div className="List" style={{ height }}>
+        <div className="List" style={{ height: height + BOTTOM_PADDING }}>
           <table className="List--table">
             <THead columns={selectedColumns} sortBy={sortBy} />
             <tbody>
