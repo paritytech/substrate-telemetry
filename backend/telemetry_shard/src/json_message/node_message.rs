@@ -211,6 +211,8 @@ pub struct NodeHwBench {
     pub memory_memcpy_score: u64,
     pub disk_sequential_write_score: Option<u64>,
     pub disk_random_write_score: Option<u64>,
+    pub parallel_cpu_hashrate_score: Option<u64>,
+    pub parallel_cpu_cores: Option<usize>,
 }
 
 impl From<NodeHwBench> for node_types::NodeHwBench {
@@ -220,6 +222,8 @@ impl From<NodeHwBench> for node_types::NodeHwBench {
             memory_memcpy_score: hwbench.memory_memcpy_score,
             disk_sequential_write_score: hwbench.disk_sequential_write_score,
             disk_random_write_score: hwbench.disk_random_write_score,
+            parallel_cpu_hashrate_score: hwbench.parallel_cpu_hashrate_score,
+            parallel_cpu_cores: hwbench.parallel_cpu_cores,
         }
     }
 }
@@ -231,6 +235,8 @@ impl From<NodeHwBench> for internal::NodeHwBench {
             memory_memcpy_score: msg.memory_memcpy_score,
             disk_sequential_write_score: msg.disk_sequential_write_score,
             disk_random_write_score: msg.disk_random_write_score,
+            parallel_cpu_hashrate_score: msg.parallel_cpu_hashrate_score,
+            parallel_cpu_cores: msg.parallel_cpu_cores,
         }
     }
 }
