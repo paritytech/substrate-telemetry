@@ -200,7 +200,7 @@ interface ChainStatsUpdate extends MessageBase {
 
 interface TelemetryInfo extends MessageBase {
   action: typeof ACTIONS.TelemetryInfo;
-  payload: { git_hash: string }
+  payload: { git_hash: string };
 }
 
 export type Message =

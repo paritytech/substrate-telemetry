@@ -78,7 +78,7 @@ export class Chains extends React.Component<ChainsProps> {
 
     const githubLink = this.props.gitHash
       ? `https://github.com/paritytech/substrate-telemetry/tree/${this.props.gitHash}`
-      : "https://github.com/paritytech/substrate-telemetry"
+      : 'https://github.com/paritytech/substrate-telemetry';
 
     return (
       <div className="Chains">
