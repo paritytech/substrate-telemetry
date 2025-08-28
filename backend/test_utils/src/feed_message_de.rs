@@ -370,7 +370,9 @@ impl FeedMessage {
                 let (node_id, _node_io): (_, &RawValue) = serde_json::from_str(raw_val.get())?;
                 FeedMessage::NodeIOUpdate { node_id }
             }
-            22 => {
+            // Note: 22: ChainStatsUpdate is not here. Add when we want to test it.
+            // TelemetryInfo
+            23 => {
                 #[derive(serde::Deserialize)]
                 struct TelemetryInfo {
                     git_hash: String,
