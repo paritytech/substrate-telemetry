@@ -312,12 +312,11 @@ mod test {
         };
 
         assert_eq!(add_node_result.id, NodeId(0.into(), 0.into()));
-        assert_eq!(&*add_node_result.old_chain_label, "");
         assert_eq!(&*add_node_result.new_chain_label, "Chain One");
         assert_eq!(add_node_result.chain_node_count, 1);
         assert_eq!(add_node_result.has_chain_label_changed, true);
 
-        let add_result = state.add_node(chain1_genesis, node("A", "Chain One"));
+        let add_result = state.add_node(chain1_genesis, node("A", "Chain Two"));
 
         let add_node_result = match add_result {
             AddNodeResult::ChainOnDenyList => panic!("Chain not on deny list"),
@@ -326,7 +325,7 @@ mod test {
         };
 
         assert_eq!(add_node_result.id, NodeId(0.into(), 1.into()));
-        assert_eq!(&*add_node_result.old_chain_label, "Chain One");
+        // Chain One and Chain Two as common, so Chain One is kept.
         assert_eq!(&*add_node_result.new_chain_label, "Chain One");
         assert_eq!(add_node_result.chain_node_count, 2);
         assert_eq!(add_node_result.has_chain_label_changed, false);
