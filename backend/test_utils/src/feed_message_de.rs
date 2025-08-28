@@ -122,6 +122,9 @@ pub enum FeedMessage {
         node_id: usize,
         // details: NodeIO, // can't losslessly deserialize
     },
+    TelemetryInfo {
+        git_hash: String,
+    },
     /// A "special" case when we don't know how to decode an action:
     UnknownValue {
         action: u8,
@@ -366,6 +369,18 @@ impl FeedMessage {
                 // ignore NodeIO for now:
                 let (node_id, _node_io): (_, &RawValue) = serde_json::from_str(raw_val.get())?;
                 FeedMessage::NodeIOUpdate { node_id }
+            }
+            // Note: 22: ChainStatsUpdate is not here. Add when we want to test it.
+            // TelemetryInfo
+            23 => {
+                #[derive(serde::Deserialize)]
+                struct TelemetryInfo {
+                    git_hash: String,
+                }
+                let val: TelemetryInfo = serde_json::from_str(raw_val.get())?;
+                FeedMessage::TelemetryInfo {
+                    git_hash: val.git_hash,
+                }
             }
             // A catchall for messages we don't know/care about yet:
             _ => {

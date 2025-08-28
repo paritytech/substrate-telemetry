@@ -41,29 +41,30 @@ import {
 } from './types';
 
 export const ACTIONS = {
-  FeedVersion: 0x00 as const,
-  BestBlock: 0x01 as const,
-  BestFinalized: 0x02 as const,
-  AddedNode: 0x03 as const,
-  RemovedNode: 0x04 as const,
-  LocatedNode: 0x05 as const,
-  ImportedBlock: 0x06 as const,
-  FinalizedBlock: 0x07 as const,
-  NodeStats: 0x08 as const,
-  NodeHardware: 0x09 as const,
-  TimeSync: 0x0a as const,
-  AddedChain: 0x0b as const,
-  RemovedChain: 0x0c as const,
-  SubscribedTo: 0x0d as const,
-  UnsubscribedFrom: 0x0e as const,
-  Pong: 0x0f as const,
-  AfgFinalized: 0x10 as const,
-  AfgReceivedPrevote: 0x11 as const,
-  AfgReceivedPrecommit: 0x12 as const,
-  AfgAuthoritySet: 0x13 as const,
-  StaleNode: 0x14 as const,
-  NodeIO: 0x15 as const,
-  ChainStatsUpdate: 0x16 as const,
+  FeedVersion: 0 as const,
+  BestBlock: 1 as const,
+  BestFinalized: 2 as const,
+  AddedNode: 3 as const,
+  RemovedNode: 4 as const,
+  LocatedNode: 5 as const,
+  ImportedBlock: 6 as const,
+  FinalizedBlock: 7 as const,
+  NodeStats: 8 as const,
+  NodeHardware: 9 as const,
+  TimeSync: 10 as const,
+  AddedChain: 11 as const,
+  RemovedChain: 12 as const,
+  SubscribedTo: 13 as const,
+  UnsubscribedFrom: 14 as const,
+  Pong: 15 as const,
+  AfgFinalized: 16 as const,
+  AfgReceivedPrevote: 17 as const,
+  AfgReceivedPrecommit: 18 as const,
+  AfgAuthoritySet: 19 as const,
+  StaleNode: 20 as const,
+  NodeIO: 21 as const,
+  ChainStatsUpdate: 22 as const,
+  TelemetryInfo: 23 as const,
 };
 
 export type Action = typeof ACTIONS[keyof typeof ACTIONS];
@@ -197,6 +198,11 @@ interface ChainStatsUpdate extends MessageBase {
   payload: ChainStats;
 }
 
+interface TelemetryInfo extends MessageBase {
+  action: typeof ACTIONS.TelemetryInfo;
+  payload: { git_hash: string };
+}
+
 export type Message =
   | FeedVersionMessage
   | BestBlockMessage
@@ -220,7 +226,8 @@ export type Message =
   | StaleNodeMessage
   | PongMessage
   | NodeIOMessage
-  | ChainStatsUpdate;
+  | ChainStatsUpdate
+  | TelemetryInfo;
 
 /**
  * Data type to be sent to the feed. Passing through strings means we can only serialize once,

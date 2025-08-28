@@ -41,6 +41,7 @@ use jemallocator::Jemalloc;
 #[global_allocator]
 static GLOBAL: Jemalloc = Jemalloc;
 
+const GIT_HASH: &str = env!("GIT_HASH");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
 const NAME: &str = "Substrate Telemetry Backend Core";

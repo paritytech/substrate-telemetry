@@ -113,6 +113,7 @@ export default class App extends React.Component {
 
     this.appUpdate = bindState(this, {
       status: 'offline',
+      gitHash: '',
       best: 0 as Types.BlockNumber,
       finalized: 0 as Types.BlockNumber,
       blockTimestamp: 0 as Types.Timestamp,
@@ -145,6 +146,7 @@ export default class App extends React.Component {
   public render() {
     const { timeDiff, subscribed, status, tab } = this.appState;
     const chains = this.chains();
+    const gitHash = this.appState.gitHash;
     const subscribedData = subscribed
       ? this.appState.chains.get(subscribed)
       : null;
@@ -173,6 +175,7 @@ export default class App extends React.Component {
       <div className="App">
         <OfflineIndicator status={status} />
         <Chains
+          gitHash={gitHash}
           chains={chains}
           subscribedHash={subscribed}
           subscribedData={subscribedData}

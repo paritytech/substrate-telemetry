@@ -365,6 +365,11 @@ export class Connection {
           break;
         }
 
+        case ACTIONS.TelemetryInfo: {
+          this.appUpdate({ gitHash: message.payload.git_hash });
+          break;
+        }
+
         default: {
           break;
         }

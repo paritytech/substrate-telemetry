@@ -318,6 +318,7 @@ export interface StateSettings {
 }
 
 export interface State {
+  gitHash: string;
   status: 'online' | 'offline' | 'upgrade-requested';
   best: Types.BlockNumber;
   finalized: Types.BlockNumber;

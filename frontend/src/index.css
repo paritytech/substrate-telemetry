@@ -21,7 +21,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   background-color: #2c2b2b;
 }
 
