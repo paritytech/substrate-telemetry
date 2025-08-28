@@ -260,5 +260,5 @@ pub struct ChainStats {
 
 #[derive(Serialize)]
 pub struct TelemetryInfo {
-    pub git_hash: &'static str
+    pub git_hash: &'static str,
 }

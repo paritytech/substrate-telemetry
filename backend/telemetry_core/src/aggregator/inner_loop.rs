@@ -452,7 +452,9 @@ impl InnerLoop {
                 // Tell the new feed subscription some basic things to get it going:
                 let mut feed_serializer = FeedMessageSerializer::new();
                 feed_serializer.push(feed_message::Version(crate::feed_message::FEED_VERSION));
-                feed_serializer.push(feed_message::TelemetryInfo { git_hash: crate::GIT_HASH });
+                feed_serializer.push(feed_message::TelemetryInfo {
+                    git_hash: crate::GIT_HASH,
+                });
                 for chain in self.node_state.iter_chains() {
                     feed_serializer.push(feed_message::AddedChain(
                         chain.label(),
