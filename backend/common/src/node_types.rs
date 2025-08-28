@@ -73,6 +73,11 @@ pub struct NodeHwBench {
     pub disk_sequential_write_score: Option<u64>,
     /// Random disk write speed in MB/s.
     pub disk_random_write_score: Option<u64>,
+    /// The parallel CPU speed, as measured in how many MB/s it can hash using the BLAKE2b-256 hash.
+    pub parallel_cpu_hashrate_score: Option<u64>,
+    //// Dev note: this exists but isn't needed yet:
+    // /// The number of cores used for the parallel CPU benchmark.
+    // pub parallel_cpu_cores: Option<usize>,
 }
 
 /// A couple of node statistics.

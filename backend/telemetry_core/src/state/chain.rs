@@ -213,6 +213,7 @@ impl Chain {
                         memory_memcpy_score: hwbench.memory_memcpy_score,
                         disk_sequential_write_score: hwbench.disk_sequential_write_score,
                         disk_random_write_score: hwbench.disk_random_write_score,
+                        parallel_cpu_hashrate_score: hwbench.parallel_cpu_hashrate_score,
                     };
                     let old_hwbench = node.update_hwbench(new_hwbench);
                     // The `hwbench` for this node has changed, send an updated "add node".

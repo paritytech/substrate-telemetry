@@ -246,6 +246,7 @@ pub struct ChainStats {
     pub linux_distro: Ranking<String>,
     pub is_virtual_machine: Ranking<bool>,
     pub cpu_hashrate_score: Ranking<(u32, Option<u32>)>,
+    pub parallel_cpu_hashrate_score: Ranking<(u32, Option<u32>)>,
     pub memory_memcpy_score: Ranking<(u32, Option<u32>)>,
     pub disk_sequential_write_score: Ranking<(u32, Option<u32>)>,
     pub disk_random_write_score: Ranking<(u32, Option<u32>)>,

@@ -98,6 +98,9 @@ pub struct NodeHwBench {
     pub memory_memcpy_score: u64,
     pub disk_sequential_write_score: Option<u64>,
     pub disk_random_write_score: Option<u64>,
+    pub parallel_cpu_hashrate_score: Option<u64>,
+    //// Dev note: this exists but isn't needed yet:
+    // pub parallel_cpu_cores: Option<usize>,
 }
 
 impl Payload {

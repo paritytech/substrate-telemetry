@@ -175,6 +175,12 @@ export class Stats extends React.Component<StatsProps> {
         stats.cpu_hashrate_score
       );
       add(
+        'parallel_cpi_hashrate_score',
+        'Parallel CPU Speed',
+        formatScore,
+        stats.parallel_cpu_hashrate_score
+      );
+      add(
         'memory_memcpy_score',
         'Memory Speed',
         formatScore,

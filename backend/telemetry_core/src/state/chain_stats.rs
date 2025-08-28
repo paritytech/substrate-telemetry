@@ -149,6 +149,7 @@ pub struct ChainStatsCollator {
     disk_sequential_write_score: Counter<(u32, Option<u32>)>,
     disk_random_write_score: Counter<(u32, Option<u32>)>,
     cpu_vendor: Counter<String>,
+    parallel_cpu_hashrate_score: Counter<(u32, Option<u32>)>,
 }
 
 impl ChainStatsCollator {
@@ -241,6 +242,14 @@ impl ChainStatsCollator {
                 .as_ref(),
             op,
         );
+
+        self.parallel_cpu_hashrate_score.modify(
+            hwbench
+                .and_then(|hwbench| hwbench.parallel_cpu_hashrate_score)
+                .map(|score| bucket_score(score, REFERENCE_CPU_SCORE))
+                .as_ref(),
+            op,
+        );
     }
 
     pub fn generate(&self) -> ChainStats {
@@ -261,6 +270,7 @@ impl ChainStatsCollator {
                 .generate_ranking_ordered(),
             disk_random_write_score: self.disk_random_write_score.generate_ranking_ordered(),
             cpu_vendor: self.cpu_vendor.generate_ranking_top(10),
+            parallel_cpu_hashrate_score: self.parallel_cpu_hashrate_score.generate_ranking_top(10),
         }
     }
 }

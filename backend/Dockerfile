@@ -1,14 +1,14 @@
-FROM docker.io/paritytech/ci-linux:production as builder
+FROM docker.io/paritytech/ci-unified:bullseye-1.88.0-2025-06-27-v202507221446 AS builder
 
 ARG PROFILE=release
 WORKDIR /app
 
 COPY . .
 
-RUN cargo build --${PROFILE} --bins
+RUN cargo build --${PROFILE} --bins -j 2
 
 # MAIN IMAGE FOR PEOPLE TO PULL --- small one#
-FROM docker.io/debian:buster-slim
+FROM docker.io/debian:bullseye-slim
 LABEL maintainer="Parity Technologies"
 LABEL description="Substrate Telemetry Backend shard/core binaries, static build"
 

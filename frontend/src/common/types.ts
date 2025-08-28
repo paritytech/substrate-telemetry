@@ -131,6 +131,7 @@ export type ChainStats = {
   linux_distro: Maybe<Ranking<string>>;
   linux_kernel: Maybe<Ranking<string>>;
   cpu_hashrate_score: Maybe<Ranking<Range>>;
+  parallel_cpu_hashrate_score: Maybe<Ranking<Range>>;
   memory_memcpy_score: Maybe<Ranking<Range>>;
   disk_sequential_write_score: Maybe<Ranking<Range>>;
   disk_random_write_score: Maybe<Ranking<Range>>;

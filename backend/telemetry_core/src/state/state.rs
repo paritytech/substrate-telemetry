@@ -79,8 +79,6 @@ impl<'a> AddNodeResult<'a> {
 pub struct NodeAddedToChain<'a> {
     /// The ID assigned to this node.
     pub id: NodeId,
-    /// The old label of the chain.
-    pub old_chain_label: Box<str>,
     /// The new label of the chain.
     pub new_chain_label: &'a str,
     /// The node that was added.
@@ -97,8 +95,6 @@ pub struct RemovedNode {
     pub chain_node_count: usize,
     /// Has the chain label been updated?
     pub has_chain_label_changed: bool,
-    /// The old label of the chain.
-    pub old_chain_label: Box<str>,
     /// Genesis hash of the chain to be updated.
     pub chain_genesis_hash: BlockHash,
     /// The new label of the chain.
@@ -164,7 +160,6 @@ impl State {
         );
 
         let node = Node::new(node_details);
-        let old_chain_label = chain.label().into();
 
         match chain.add_node(node) {
             chain::AddNodeResult::Overquota => AddNodeResult::ChainOverQuota,
@@ -174,7 +169,6 @@ impl State {
                 AddNodeResult::NodeAddedToChain(NodeAddedToChain {
                     id: NodeId(chain_id, id),
                     node: chain.get_node(id).expect("node added above"),
-                    old_chain_label,
                     new_chain_label: chain.label(),
                     chain_node_count: chain.node_count(),
                     has_chain_label_changed: chain_renamed,
@@ -186,7 +180,6 @@ impl State {
     /// Remove a node
     pub fn remove_node(&mut self, NodeId(chain_id, chain_node_id): NodeId) -> Option<RemovedNode> {
         let chain = self.chains.get_mut(chain_id)?;
-        let old_chain_label = chain.label().into();
 
         // Actually remove the node
         let remove_result = chain.remove_node(chain_node_id);
@@ -204,7 +197,6 @@ impl State {
         }
 
         Some(RemovedNode {
-            old_chain_label,
             new_chain_label,
             chain_node_count,
             chain_genesis_hash,
@@ -320,12 +312,11 @@ mod test {
         };
 
         assert_eq!(add_node_result.id, NodeId(0.into(), 0.into()));
-        assert_eq!(&*add_node_result.old_chain_label, "");
         assert_eq!(&*add_node_result.new_chain_label, "Chain One");
         assert_eq!(add_node_result.chain_node_count, 1);
         assert_eq!(add_node_result.has_chain_label_changed, true);
 
-        let add_result = state.add_node(chain1_genesis, node("A", "Chain One"));
+        let add_result = state.add_node(chain1_genesis, node("A", "Chain Two"));
 
         let add_node_result = match add_result {
             AddNodeResult::ChainOnDenyList => panic!("Chain not on deny list"),
@@ -334,7 +325,7 @@ mod test {
         };
 
         assert_eq!(add_node_result.id, NodeId(0.into(), 1.into()));
-        assert_eq!(&*add_node_result.old_chain_label, "Chain One");
+        // Chain One and Chain Two as common, so Chain One is kept.
         assert_eq!(&*add_node_result.new_chain_label, "Chain One");
         assert_eq!(add_node_result.chain_node_count, 2);
         assert_eq!(add_node_result.has_chain_label_changed, false);
