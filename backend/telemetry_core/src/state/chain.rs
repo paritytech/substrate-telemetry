@@ -214,7 +214,6 @@ impl Chain {
                         disk_sequential_write_score: hwbench.disk_sequential_write_score,
                         disk_random_write_score: hwbench.disk_random_write_score,
                         parallel_cpu_hashrate_score: hwbench.parallel_cpu_hashrate_score,
-                        parallel_cpu_cores: hwbench.parallel_cpu_cores,
                     };
                     let old_hwbench = node.update_hwbench(new_hwbench);
                     // The `hwbench` for this node has changed, send an updated "add node".

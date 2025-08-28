@@ -212,7 +212,8 @@ pub struct NodeHwBench {
     pub disk_sequential_write_score: Option<u64>,
     pub disk_random_write_score: Option<u64>,
     pub parallel_cpu_hashrate_score: Option<u64>,
-    pub parallel_cpu_cores: Option<usize>,
+    //// This exists but isn't needed at the moment:
+    // pub parallel_cpu_cores: Option<usize>,
 }
 
 impl From<NodeHwBench> for node_types::NodeHwBench {
@@ -223,7 +224,6 @@ impl From<NodeHwBench> for node_types::NodeHwBench {
             disk_sequential_write_score: hwbench.disk_sequential_write_score,
             disk_random_write_score: hwbench.disk_random_write_score,
             parallel_cpu_hashrate_score: hwbench.parallel_cpu_hashrate_score,
-            parallel_cpu_cores: hwbench.parallel_cpu_cores,
         }
     }
 }
@@ -236,7 +236,6 @@ impl From<NodeHwBench> for internal::NodeHwBench {
             disk_sequential_write_score: msg.disk_sequential_write_score,
             disk_random_write_score: msg.disk_random_write_score,
             parallel_cpu_hashrate_score: msg.parallel_cpu_hashrate_score,
-            parallel_cpu_cores: msg.parallel_cpu_cores,
         }
     }
 }
