@@ -25,6 +25,10 @@ use common::node_types::{
 };
 use serde_json::to_writer;
 
+/// The version of the feed messages. This should be incremented
+/// on the backend and frontend when the feed API changes.
+pub const FEED_VERSION: usize = 33;
+
 type FeedNodeId = usize;
 
 pub trait FeedMessage {
@@ -123,6 +127,7 @@ actions! {
     20: StaleNode,
     21: NodeIOUpdate<'_>,
     22: ChainStatsUpdate<'_>,
+    23: TelemetryInfo,
 }
 
 #[derive(Serialize)]
@@ -251,4 +256,9 @@ pub struct ChainStats {
     pub disk_sequential_write_score: Ranking<(u32, Option<u32>)>,
     pub disk_random_write_score: Ranking<(u32, Option<u32>)>,
     pub cpu_vendor: Ranking<String>,
+}
+
+#[derive(Serialize)]
+pub struct TelemetryInfo {
+    pub git_hash: &'static str
 }

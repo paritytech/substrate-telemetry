@@ -26,6 +26,7 @@ import listIcon from '../icons/kebab-horizontal.svg';
 import './Chains.css';
 
 interface ChainsProps {
+  gitHash: string;
   chains: ChainData[];
   subscribedHash: Maybe<Types.GenesisHash>;
   subscribedData: Maybe<ChainData>;
@@ -75,6 +76,10 @@ export class Chains extends React.Component<ChainsProps> {
         </div>
       ) : null;
 
+    const githubLink = this.props.gitHash
+      ? `https://github.com/paritytech/substrate-telemetry/tree/${this.props.gitHash}`
+      : "https://github.com/paritytech/substrate-telemetry"
+
     return (
       <div className="Chains">
         {subscribedChain}
@@ -88,9 +93,9 @@ export class Chains extends React.Component<ChainsProps> {
         </a>
         <a
           className="Chains-fork-me"
-          href="https://github.com/paritytech/substrate-telemetry"
+          href={githubLink}
           target="_blank"
-          title="Fork Me!"
+          title="Take me to Github!"
           rel="noreferrer"
         >
           <Icon src={githubIcon} />
