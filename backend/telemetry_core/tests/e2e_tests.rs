@@ -46,6 +46,8 @@ use test_utils::{
     workspace::{start_server, start_server_debug, CoreOpts, ServerOpts, ShardOpts},
 };
 
+const GIT_HASH: &str = env!("GIT_HASH");
+
 fn polkadot_genesis_hash() -> BlockHash {
     BlockHash::from_str("0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3")
         .expect("valid polkadot genesis hash")
@@ -69,7 +71,12 @@ async fn e2e_feed_sent_version_on_connect() {
     let feed_messages = feed_rx.recv_feed_messages().await.unwrap();
     assert_eq!(
         feed_messages,
-        vec![FeedMessage::Version(32)],
+        vec![
+            FeedMessage::Version(33),
+            FeedMessage::TelemetryInfo {
+                git_hash: GIT_HASH.to_string()
+            }
+        ],
         "expecting version"
     );
 
@@ -127,7 +134,12 @@ async fn e2e_multiple_feeds_sent_version_on_connect() {
     for feed_messages in responses {
         assert_eq!(
             feed_messages.expect("should have messages"),
-            vec![FeedMessage::Version(32)],
+            vec![
+                FeedMessage::Version(33),
+                FeedMessage::TelemetryInfo {
+                    git_hash: GIT_HASH.to_string()
+                }
+            ],
             "expecting version"
         );
     }
