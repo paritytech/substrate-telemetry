@@ -110,7 +110,7 @@ jobs:
           tag: "${{ env.VERSION }}"
           app_name: "${{ env.APP }}"
           app_packages: "frontend,backend"
-          argocd_additional_args: "-p substrate-telemetry.image.backend.repository=docker.io/parity/substrate-telemetry-backend -p substrate-telemetry.image.frontend.repository=docker.io/parity/substrate-telemetry-frontend"
+          argocd_additional_args: "-p substrate-telemetry.image.backend.tag=${{ env.VERSION }} -p substrate-telemetry.image.frontend.tag=${{ env.VERSION }}"
           argocd_server: ${{ env.ARGOCD_SERVER }}
           teleport_token: ${{ env.APP }}
           teleport_app_name: "argocd-stg"
@@ -134,7 +134,7 @@ jobs:
           tag: "${{ env.VERSION }}"
           app_name: "${{ env.APP }}"
           app_packages: "frontend,backend"
-          argocd_additional_args: "-p substrate-telemetry.image.backend.repository=docker.io/parity/substrate-telemetry-backend -p substrate-telemetry.image.frontend.repository=docker.io/parity/substrate-telemetry-frontend"
+          argocd_additional_args: "-p substrate-telemetry.image.backend.tag=${{ env.VERSION }} -p substrate-telemetry.image.frontend.tag=${{ env.VERSION }}"
           argocd_server: ${{ env.ARGOCD_SERVER }}
           teleport_token: ${{ env.APP }}
           teleport_app_name: "argocd-prod"
