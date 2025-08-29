@@ -42,11 +42,11 @@ export default class App extends React.Component {
   private readonly pins: PersistentSet<Types.NodeName>;
   private readonly sortBy: Persistent<Maybe<number>>;
   private readonly connection: Promise<Connection>;
+  private cacheTimer: NodeJS.Timeout | null = null;
 
   constructor(props: Record<string, unknown>) {
     super(props);
 
-    //todo! Check what's important to set to true, false
     this.settings = new PersistentObject(
       'settings',
       {
@@ -84,7 +84,7 @@ export default class App extends React.Component {
         memory_memcpy_score: true,
         disk_sequential_write_score: true,
         disk_random_write_score: true,
-        is_virtual_machine: false,
+        is_virtual_machine: false
       },
       (settings) => {
         const selectedColumns = this.selectedColumns(settings);
@@ -139,8 +139,26 @@ export default class App extends React.Component {
       this.appState,
       this.appUpdate
     );
+  }
 
-    setInterval(() => (this.chainsCache = []), 10000); // Wipe sorted chains cache every 10 seconds
+  componentDidMount() {
+    // Wipe sorted chains cache every 10 seconds
+    this.cacheTimer = setInterval(() => {
+      this.chainsCache = [];
+    }, 10000);
+
+    window.addEventListener('keydown', this.onKeyPress);
+    window.addEventListener('hashchange', this.onHashChange);
+  }
+
+  componentWillUnmount() {
+    if (this.cacheTimer) {
+      clearInterval(this.cacheTimer);
+      this.cacheTimer = null;
+    }
+
+    window.removeEventListener('keydown', this.onKeyPress);
+    window.removeEventListener('hashchange', this.onHashChange);
   }
 
   public render() {
