@@ -20,6 +20,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
   /* Prevents the list from auto-scrolling while cascading node
    * updates on new block, which helps with performance. */
   overflow-anchor: none;
+  overflow-x: auto;
+  min-height: 150px;
 }
 
 .List-no-nodes {
@@ -36,6 +38,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 .List--table {
   width: 100%;
+  min-width: 1200px;
   border-spacing: 0;
   font-family: monospace, sans-serif;
 }
