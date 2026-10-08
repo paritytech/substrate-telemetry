@@ -1,0 +1,111 @@
+/*
+Source code for the Substrate Telemetry Server.
+Copyright (C) 2023 Parity Technologies (UK) Ltd.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+*/
+
+.Page {
+  text-align: center;
+  background: #2c2b2b;
+  color: #fff;
+}
+
+.Category {
+  text-align: left;
+  width: 500px;
+  max-width: calc(100% - 2em);
+  margin: 0 auto;
+  padding: 2em 0;
+}
+
+.Intro {
+  margin: 0 0 2em 0;
+  color: #bbb;
+  line-height: 1.4;
+}
+
+.Section {
+  margin-bottom: 2em;
+}
+
+.Category h2 {
+  padding: 0;
+  margin: 0 0 0.5em 0;
+  font-size: 20px;
+  font-weight: 100;
+}
+
+.Form {
+  display: flex;
+  align-items: center;
+}
+
+.Form input {
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  padding: 0.5em;
+  flex-grow: 1;
+  min-width: 100px;
+}
+
+.Form button {
+  padding: 0.5em 1em;
+  margin-left: 0.5em;
+  border: 1px solid #e6007a;
+  border-radius: 4px;
+  background-color: #e6007a;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.Form button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.Error {
+  margin-top: 0.5em;
+  color: #e6007a;
+}
+
+.Check {
+  margin-top: 1em;
+  overflow-wrap: anywhere;
+}
+
+.Check-ok {
+  color: #4caf50;
+}
+
+.Check pre {
+  margin: 0.5em 0 0 0;
+  padding: 0.5em;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  color: inherit;
+  white-space: pre-wrap;
+}
+
+.Secondary,
+.Form .Secondary {
+  padding: 0.5em 1em;
+  border: 1px solid #e6007a;
+  border-radius: 4px;
+  background: transparent;
+  color: #e6007a;
+  font-weight: bold;
+  cursor: pointer;
+}

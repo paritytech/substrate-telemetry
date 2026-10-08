@@ -82,14 +82,23 @@ export class Chains extends React.Component<ChainsProps> {
 
     return (
       <div className="Chains">
-        {subscribedChain}
-        {renderedChains}
+        <div className="Chains-tabs">
+          {subscribedChain}
+          {renderedChains}
+        </div>
         <a
           className="Chains-all-chains"
           href={allChainsHref}
           title="All Chains"
         >
           <Icon src={listIcon} />
+        </a>
+        <a
+          className="Chains-meta-node-checker"
+          href="#metaNodeChecker"
+          title="Metanode checker"
+        >
+          Metanode checker
         </a>
         <a
           className="Chains-fork-me"

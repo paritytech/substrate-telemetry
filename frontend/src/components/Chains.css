@@ -19,15 +19,25 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 .Chains {
   background: #e6007a;
   color: #000;
-  padding: 0 76px 0 16px;
+  padding: 0 12px 0 16px;
   height: 40px;
   min-width: 1350px;
+  display: flex;
+}
+
+/* Takes whatever width the items on the right leave, hiding tabs that don't fit */
+.Chains-tabs {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 40px;
+  overflow: hidden;
+  white-space: nowrap;
   position: relative;
 }
 
 .Chains-extra-subscribed-chain {
   position: absolute;
-  right: 80px;
+  right: 0;
   top: 0px;
   background: #e6007a;
   background: linear-gradient(
@@ -57,21 +67,37 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
 
 .Chains-all-chains {
-  display: block;
+  display: flex;
+  flex-shrink: 0;
+  align-self: center;
   padding: 0;
-  margin: 0;
-  position: absolute;
-  right: 48px;
-  top: 6px;
+  margin: 0 0 0 8px;
+}
+
+.Chains-meta-node-checker {
+  flex-shrink: 0;
+  align-self: center;
+  margin: 0 0 0 8px;
+  padding: 4px 10px;
+  border: 1px solid #fff;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.8em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.Chains-meta-node-checker:hover {
+  background: #fff;
+  color: #e6007a;
 }
 
 .Chains-fork-me {
-  display: block;
+  display: flex;
+  flex-shrink: 0;
+  align-self: center;
   padding: 0;
-  margin: 0;
-  position: absolute;
-  right: 12px;
-  top: 6px;
+  margin: 0 0 0 8px;
 }
 
 .Chains-all-chains .Icon,

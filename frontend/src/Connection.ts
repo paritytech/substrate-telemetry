@@ -135,8 +135,9 @@ export class Connection {
 
   public subscribe(chain: Types.GenesisHash) {
     if (
-      this.appState.subscribed != null &&
-      this.appState.subscribed !== chain
+      (this.appState.subscribed != null &&
+        this.appState.subscribed !== chain) ||
+      this.appState.tab === 'metaNodeChecker'
     ) {
       this.appUpdate({
         tab: 'list',

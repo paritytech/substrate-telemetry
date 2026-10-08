@@ -16,7 +16,14 @@
 
 import * as React from 'react';
 import { Types, SortedCollection, Maybe, Compare } from './common';
-import { AllChains, Chains, Chain, Ago, OfflineIndicator } from './components';
+import {
+  AllChains,
+  Chains,
+  Chain,
+  Ago,
+  OfflineIndicator,
+  MetaNodeChecker,
+} from './components';
 import { Row, Column } from './components/List';
 import { Connection } from './Connection';
 import { Persistent, PersistentObject, PersistentSet } from './persist';
@@ -144,9 +151,14 @@ export default class App extends React.Component {
   }
 
   public render() {
-    const { timeDiff, subscribed, status, tab } = this.appState;
+    const { timeDiff, status, tab } = this.appState;
     const chains = this.chains();
     const gitHash = this.appState.gitHash;
+
+    let {subscribed} = this.appState;
+    if (tab === 'metaNodeChecker') {
+      subscribed = null
+    }
     const subscribedData = subscribed
       ? this.appState.chains.get(subscribed)
       : null;
@@ -181,14 +193,18 @@ export default class App extends React.Component {
           subscribedData={subscribedData}
           connection={this.connection}
         />
-        <Chain
-          appState={this.appState}
-          appUpdate={this.appUpdate}
-          connection={this.connection}
-          settings={this.settings}
-          pins={this.pins}
-          sortBy={this.sortBy}
-        />
+        {tab === 'metaNodeChecker' ? (
+          <MetaNodeChecker />
+        ) : (
+          <Chain
+            appState={this.appState}
+            appUpdate={this.appUpdate}
+            connection={this.connection}
+            settings={this.settings}
+            pins={this.pins}
+            sortBy={this.sortBy}
+          />
+        )}
         {overlay}
       </div>
     );

@@ -30,3 +30,4 @@ export * from './Truncate';
 export * from './Tooltip';
 export * from './Filter';
 export * from './PolkadotIcon';
+export * from './MetaNodeChecker';
