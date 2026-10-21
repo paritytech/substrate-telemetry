@@ -42,7 +42,7 @@ jobs:
       VERSION: ${{ needs.set-variables.outputs.VERSION }}
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Build and push Docker image from main
         uses: docker/build-push-action@v5
@@ -61,7 +61,7 @@ jobs:
       VERSION: ${{ needs.set-variables.outputs.VERSION }}
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Build and push Docker image from main
         uses: docker/build-push-action@v5
